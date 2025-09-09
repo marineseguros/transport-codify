@@ -9,6 +9,11 @@ import { Layout } from "@/components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Cotacoes from "./pages/Cotacoes";
 import Funil from "./pages/Funil";
+import Clientes from "./pages/Clientes";
+import Tarefas from "./pages/Tarefas";
+import Usuarios from "./pages/Usuarios";
+import Configuracoes from "./pages/Configuracoes";
+import Relatorios from "./pages/Relatorios";
 import NotFoundPage from "./pages/NotFoundPage";
 
 const queryClient = new QueryClient();
@@ -34,14 +39,14 @@ const AppContent = () => {
         <Route path="/" element={<Dashboard />} />
         <Route path="/cotacoes" element={<Cotacoes />} />
         <Route path="/funil" element={<Funil />} />
-        <Route path="/clientes" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-        <Route path="/tarefas" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-        <Route path="/usuarios" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
+        <Route path="/clientes" element={<Clientes />} />
+        <Route path="/tarefas" element={<Tarefas />} />
+        <Route path="/usuarios" element={<Usuarios />} />
         <Route path="/produtores" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
         <Route path="/seguradoras" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
         <Route path="/ramos" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-        <Route path="/configuracoes" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-        <Route path="/relatorios" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
+        <Route path="/configuracoes" element={<Configuracoes />} />
+        <Route path="/relatorios" element={<Relatorios />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Layout>
