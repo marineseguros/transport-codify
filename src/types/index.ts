@@ -14,6 +14,9 @@ export interface Produtor {
   id: string;
   nome: string;
   email?: string;
+  telefone?: string;
+  regional?: string;
+  status: 'Ativo' | 'Inativo';
   user_id?: string;
   ativo: boolean;
   created_at: string;
@@ -37,6 +40,7 @@ export interface Ramo {
   id: string;
   codigo: string;
   descricao: string;
+  segmento: 'EMBARCADOR' | 'TRANSPORTADOR';
   created_at: string;
   updated_at: string;
 }
@@ -44,27 +48,51 @@ export interface Ramo {
 export interface Seguradora {
   id: string;
   nome: string;
+  codigo: string;
   cnpj?: string;
+  telefone?: string;
+  email?: string;
+  status: 'Ativa' | 'Inativa';
   created_at: string;
   updated_at: string;
 }
 
+export interface Captacao {
+  id: string;
+  codigo: string;
+  descricao: string;
+}
+
+export interface StatusSeguradora {
+  id: string;
+  codigo: string;
+  descricao: string;
+}
+
 export type CotacaoStatus = 'Em cotação' | 'Negócio fechado' | 'Declinado';
-export type CotacaoTipo = 'Novo' | 'Endosso' | 'Renovação';
+export type CotacaoTipo = 'Novo' | 'Migração' | 'Renovação';
 
 export interface CotacaoTRN {
   id: string;
   cliente_id: string;
-  produtor_id: string;
+  unidade: 'Matriz' | 'Filial';
+  produtor_origem_id: string;
+  produtor_negociador_id: string;
+  produtor_cotador_id: string;
+  cnpj: string;
+  segurado: string;
   seguradora_id: string;
   ramo_id: string;
+  captacao_id: string;
+  status_seguradora_id: string;
+  motivo_recusa?: string;
   tipo: CotacaoTipo;
   data_cotacao: string;
+  data_fechamento?: string;
   inicio_vigencia: string;
   fim_vigencia: string;
   valor_premio: number;
   status: CotacaoStatus;
-  data_fechamento?: string;
   num_apolice?: string;
   observacoes?: string;
   created_by: string;
@@ -74,9 +102,13 @@ export interface CotacaoTRN {
   
   // Relations (populated in queries)
   cliente?: Cliente;
-  produtor?: Produtor;
+  produtor_origem?: Produtor;
+  produtor_negociador?: Produtor;
+  produtor_cotador?: Produtor;
   seguradora?: Seguradora;
   ramo?: Ramo;
+  captacao?: Captacao;
+  status_seguradora?: StatusSeguradora;
   created_user?: UserProfile;
 }
 

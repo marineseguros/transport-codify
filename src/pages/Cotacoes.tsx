@@ -257,7 +257,7 @@ const Cotacoes = () => {
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell>{cotacao.produtor?.nome}</TableCell>
+                  <TableCell>{cotacao.produtor_origem?.nome}</TableCell>
                   <TableCell>{cotacao.seguradora?.nome}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{cotacao.ramo?.codigo}</Badge>

@@ -18,14 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { CotacaoTRN, CotacaoStatus, CotacaoTipo } from "@/types";
 import { 
   MOCK_CLIENTES, MOCK_PRODUTORES, MOCK_SEGURADORAS, 
-  MOCK_RAMOS 
+  MOCK_RAMOS, MOCK_CAPTACAO, MOCK_STATUS_SEGURADORA 
 } from "@/data/mockData";
 import { toast } from "@/hooks/use-toast";
-import { Save, X, FileText, MessageSquare, History, Paperclip } from "lucide-react";
+import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Download } from "lucide-react";
+import { exportToCsv, parseCsvFile } from "@/utils/csvUtils";
 
 interface CotacaoModalProps {
   isOpen: boolean;
@@ -44,9 +44,16 @@ export const CotacaoModal = ({
 }: CotacaoModalProps) => {
   const [formData, setFormData] = useState<Partial<CotacaoTRN>>({
     cliente_id: '',
-    produtor_id: '',
+    unidade: 'Matriz',
+    produtor_origem_id: '',
+    produtor_negociador_id: '',
+    produtor_cotador_id: '',
+    cnpj: '',
+    segurado: '',
     seguradora_id: '',
     ramo_id: '',
+    captacao_id: '',
+    status_seguradora_id: '',
     tipo: 'Novo',
     data_cotacao: new Date().toISOString().split('T')[0],
     inicio_vigencia: '',
@@ -70,6 +77,7 @@ export const CotacaoModal = ({
 
       setFormData({
         ...(cotacao || {}), // Se é duplicação, mantém dados existentes
+        unidade: 'Matriz',
         tipo: 'Novo',
         status: 'Em cotação',
         data_cotacao: hoje.toISOString().split('T')[0],
@@ -104,6 +112,21 @@ export const CotacaoModal = ({
       }));
     }
 
+    // Habilita motivo recusa quando status seguradora é RECUSA
+    if (field === 'status_seguradora_id' && value !== '5') {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        motivo_recusa: undefined
+      }));
+    }
+
+    // Auto preencher segmento baseado no ramo selecionado
+    if (field === 'ramo_id') {
+      const ramo = MOCK_RAMOS.find(r => r.id === value);
+      // Pode ser usado para filtrar seguradoras se necessário
+    }
+
     // Validar datas
     if (field === 'inicio_vigencia' || field === 'fim_vigencia') {
       const inicio = field === 'inicio_vigencia' ? value : formData.inicio_vigencia;
@@ -121,40 +144,29 @@ export const CotacaoModal = ({
 
   const handleSave = () => {
     // Validações básicas
-    if (!formData.cliente_id) {
-      toast({
-        title: "Campo obrigatório",
-        description: "Selecione um cliente.",
-        variant: "destructive",
-      });
-      return;
-    }
+    const requiredFields = [
+      { field: 'cliente_id', message: 'Selecione um cliente.' },
+      { field: 'unidade', message: 'Selecione uma unidade.' },
+      { field: 'produtor_origem_id', message: 'Selecione o produtor origem.' },
+      { field: 'produtor_negociador_id', message: 'Selecione o produtor negociador.' },
+      { field: 'produtor_cotador_id', message: 'Selecione o produtor cotador.' },
+      { field: 'cnpj', message: 'Informe o CNPJ.' },
+      { field: 'segurado', message: 'Informe o segurado.' },
+      { field: 'seguradora_id', message: 'Selecione uma seguradora.' },
+      { field: 'ramo_id', message: 'Selecione um ramo.' },
+      { field: 'captacao_id', message: 'Selecione uma captação.' },
+      { field: 'status_seguradora_id', message: 'Selecione o status da seguradora.' }
+    ];
 
-    if (!formData.produtor_id) {
-      toast({
-        title: "Campo obrigatório", 
-        description: "Selecione um produtor.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.seguradora_id) {
-      toast({
-        title: "Campo obrigatório",
-        description: "Selecione uma seguradora.", 
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.ramo_id) {
-      toast({
-        title: "Campo obrigatório",
-        description: "Selecione um ramo.",
-        variant: "destructive",
-      });
-      return;
+    for (const { field, message } of requiredFields) {
+      if (!formData[field as keyof typeof formData]) {
+        toast({
+          title: "Campo obrigatório",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     if (!formData.valor_premio || formData.valor_premio <= 0) {
@@ -170,6 +182,15 @@ export const CotacaoModal = ({
       toast({
         title: "Campo obrigatório",
         description: "Data de fechamento é obrigatória quando o status é 'Negócio fechado'.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.status_seguradora_id === '5' && !formData.motivo_recusa) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Motivo da recusa é obrigatório quando o status da seguradora é 'RECUSA'.",
         variant: "destructive",
       });
       return;
@@ -200,24 +221,40 @@ export const CotacaoModal = ({
     onSave();
   };
 
-  const formatCurrency = (value: number) => 
-    new Intl.NumberFormat('pt-BR', { 
-      style: 'currency', 
-      currency: 'BRL' 
-    }).format(value);
+  const handleExportCsv = () => {
+    const data = cotacao ? [cotacao] : [];
+    exportToCsv(data, `cotacao_${cotacao?.id || 'nova'}.csv`);
+  };
 
-  const getStatusBadgeVariant = (status: CotacaoStatus) => {
-    switch (status) {
-      case 'Negócio fechado': return 'default';
-      case 'Em cotação': return 'secondary';  
-      case 'Declinado': return 'destructive';
-      default: return 'secondary';
+  const handleImportCsv = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const data = await parseCsvFile(file);
+      console.log('Dados importados:', data);
+      
+      toast({
+        title: "Importação concluída",
+        description: `${data.length} registros importados com sucesso.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro na importação",
+        description: "Erro ao processar o arquivo CSV.",
+        variant: "destructive",
+      });
     }
+  };
+
+  const getSegmentoByRamo = (ramoId: string) => {
+    const ramo = MOCK_RAMOS.find(r => r.id === ramoId);
+    return ramo?.segmento;
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -227,10 +264,32 @@ export const CotacaoModal = ({
           </DialogTitle>
           {cotacao && mode === 'view' && (
             <DialogDescription>
-              Cotação #{cotacao.id} • {cotacao.cliente?.segurado}
+              Cotação #{cotacao.id} • {cotacao.segurado}
             </DialogDescription>
           )}
         </DialogHeader>
+
+        {/* CSV Actions */}
+        <div className="flex justify-end gap-2 mb-4">
+          <Button variant="outline" size="sm" onClick={handleExportCsv}>
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
+          <label className="cursor-pointer">
+            <Button variant="outline" size="sm" asChild>
+              <span>
+                <Upload className="h-4 w-4 mr-2" />
+                Importar CSV
+              </span>
+            </Button>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleImportCsv}
+              className="hidden"
+            />
+          </label>
+        </div>
 
         <Tabs defaultValue="dados" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -243,36 +302,77 @@ export const CotacaoModal = ({
           <TabsContent value="dados" className="space-y-6 mt-6">
             <div className="grid gap-6">
               {/* Informações Básicas */}
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div>
-                  <Label htmlFor="cliente_id">Cliente *</Label>
+                  <Label htmlFor="unidade">Unidade *</Label>
                   <Select 
-                    value={formData.cliente_id || ''} 
-                    onValueChange={(value) => handleInputChange('cliente_id', value)}
+                    value={formData.unidade || 'Matriz'} 
+                    onValueChange={(value: 'Matriz' | 'Filial') => handleInputChange('unidade', value)}
                     disabled={isReadOnly}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o cliente" />
+                      <SelectValue placeholder="Selecione a unidade" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_CLIENTES.map(cliente => (
-                        <SelectItem key={cliente.id} value={cliente.id}>
-                          {cliente.segurado} - {cliente.cidade}/{cliente.uf}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="Matriz">Matriz</SelectItem>
+                      <SelectItem value="Filial">Filial</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="produtor_id">Produtor *</Label>
+                  <Label htmlFor="cnpj">CNPJ *</Label>
+                  <Input
+                    value={formData.cnpj || ''}
+                    onChange={(e) => handleInputChange('cnpj', e.target.value)}
+                    placeholder="00.000.000/0000-00"
+                    readOnly={isReadOnly}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="segurado">Segurado *</Label>
+                  <Input
+                    value={formData.segurado || ''}
+                    onChange={(e) => handleInputChange('segurado', e.target.value)}
+                    placeholder="Nome do segurado"
+                    readOnly={isReadOnly}
+                  />
+                </div>
+              </div>
+
+              {/* Cliente */}
+              <div>
+                <Label htmlFor="cliente_id">Cliente *</Label>
+                <Select 
+                  value={formData.cliente_id || ''} 
+                  onValueChange={(value) => handleInputChange('cliente_id', value)}
+                  disabled={isReadOnly}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MOCK_CLIENTES.map(cliente => (
+                      <SelectItem key={cliente.id} value={cliente.id}>
+                        {cliente.segurado} - {cliente.cidade}/{cliente.uf}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Produtores */}
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <Label htmlFor="produtor_origem_id">Produtor Origem *</Label>
                   <Select 
-                    value={formData.produtor_id || ''} 
-                    onValueChange={(value) => handleInputChange('produtor_id', value)}
+                    value={formData.produtor_origem_id || ''} 
+                    onValueChange={(value) => handleInputChange('produtor_origem_id', value)}
                     disabled={isReadOnly}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o produtor" />
+                      <SelectValue placeholder="Selecione o produtor origem" />
                     </SelectTrigger>
                     <SelectContent>
                       {MOCK_PRODUTORES.map(produtor => (
@@ -284,6 +384,49 @@ export const CotacaoModal = ({
                   </Select>
                 </div>
 
+                <div>
+                  <Label htmlFor="produtor_negociador_id">Produtor Negociador *</Label>
+                  <Select 
+                    value={formData.produtor_negociador_id || ''} 
+                    onValueChange={(value) => handleInputChange('produtor_negociador_id', value)}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o produtor negociador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOCK_PRODUTORES.map(produtor => (
+                        <SelectItem key={produtor.id} value={produtor.id}>
+                          {produtor.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="produtor_cotador_id">Produtor Cotador *</Label>
+                  <Select 
+                    value={formData.produtor_cotador_id || ''} 
+                    onValueChange={(value) => handleInputChange('produtor_cotador_id', value)}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o produtor cotador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOCK_PRODUTORES.map(produtor => (
+                        <SelectItem key={produtor.id} value={produtor.id}>
+                          {produtor.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Seguradora e Ramo */}
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="seguradora_id">Seguradora *</Label>
                   <Select 
@@ -297,7 +440,7 @@ export const CotacaoModal = ({
                     <SelectContent>
                       {MOCK_SEGURADORAS.map(seguradora => (
                         <SelectItem key={seguradora.id} value={seguradora.id}>
-                          {seguradora.nome}
+                          {seguradora.codigo} - {seguradora.nome}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -317,13 +460,70 @@ export const CotacaoModal = ({
                     <SelectContent>
                       {MOCK_RAMOS.map(ramo => (
                         <SelectItem key={ramo.id} value={ramo.id}>
-                          {ramo.codigo} - {ramo.descricao}
+                          {ramo.codigo} - {ramo.descricao} ({ramo.segmento})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+
+              {/* Captação e Status Seguradora */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="captacao_id">Captação *</Label>
+                  <Select 
+                    value={formData.captacao_id || ''} 
+                    onValueChange={(value) => handleInputChange('captacao_id', value)}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a captação" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOCK_CAPTACAO.map(captacao => (
+                        <SelectItem key={captacao.id} value={captacao.id}>
+                          {captacao.codigo} - {captacao.descricao}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="status_seguradora_id">Status da Seguradora *</Label>
+                  <Select 
+                    value={formData.status_seguradora_id || ''} 
+                    onValueChange={(value) => handleInputChange('status_seguradora_id', value)}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status da seguradora" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOCK_STATUS_SEGURADORA.map(status => (
+                        <SelectItem key={status.id} value={status.id}>
+                          {status.codigo} - {status.descricao}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Motivo Recusa - Condicional */}
+              {formData.status_seguradora_id === '5' && (
+                <div>
+                  <Label htmlFor="motivo_recusa">Motivo da Recusa *</Label>
+                  <Textarea
+                    value={formData.motivo_recusa || ''}
+                    onChange={(e) => handleInputChange('motivo_recusa', e.target.value)}
+                    placeholder="Descreva o motivo da recusa..."
+                    rows={3}
+                    readOnly={isReadOnly}
+                  />
+                </div>
+              )}
 
               {/* Tipo e Status */}
               <div className="grid gap-4 md:grid-cols-3">
@@ -339,7 +539,7 @@ export const CotacaoModal = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Novo">Novo</SelectItem>
-                      <SelectItem value="Endosso">Endosso</SelectItem>
+                      <SelectItem value="Migração">Migração</SelectItem>
                       <SelectItem value="Renovação">Renovação</SelectItem>
                     </SelectContent>
                   </Select>

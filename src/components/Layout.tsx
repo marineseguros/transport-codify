@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -28,6 +29,7 @@ export const Layout = ({ children }: LayoutProps) => {
             </div>
             
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               <div className="text-right">
                 <p className="text-sm font-medium">{user?.nome}</p>
                 <p className="text-xs text-muted-foreground">{user?.papel}</p>
