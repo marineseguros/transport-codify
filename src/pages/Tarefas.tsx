@@ -222,23 +222,23 @@ const Tarefas = () => {
                 className="pl-9"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value === "todos-status" ? "" : value)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos Status</SelectItem>
+                <SelectItem key="" value="todos-status">Todos Status</SelectItem>
                 <SelectItem value="Aberta">Aberta</SelectItem>
                 <SelectItem value="Em andamento">Em andamento</SelectItem>
                 <SelectItem value="Concluída">Concluída</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={prioridadeFilter} onValueChange={setPrioridadeFilter}>
+            <Select value={prioridadeFilter} onValueChange={(value) => setPrioridadeFilter(value === "todas-prioridades" ? "" : value)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Prioridade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas Prioridades</SelectItem>
+                <SelectItem key="" value="todas-prioridades">Todas Prioridades</SelectItem>
                 <SelectItem value="Alta">Alta</SelectItem>
                 <SelectItem value="Média">Média</SelectItem>
                 <SelectItem value="Baixa">Baixa</SelectItem>
