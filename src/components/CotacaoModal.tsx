@@ -43,7 +43,6 @@ export const CotacaoModal = ({
   onSave 
 }: CotacaoModalProps) => {
   const [formData, setFormData] = useState<Partial<CotacaoTRN>>({
-    cliente_id: '',
     unidade: 'Matriz',
     produtor_origem_id: '',
     produtor_negociador_id: '',
@@ -145,7 +144,6 @@ export const CotacaoModal = ({
   const handleSave = () => {
     // Validações básicas
     const requiredFields = [
-      { field: 'cliente_id', message: 'Selecione um cliente.' },
       { field: 'unidade', message: 'Selecione uma unidade.' },
       { field: 'produtor_origem_id', message: 'Selecione o produtor origem.' },
       { field: 'produtor_negociador_id', message: 'Selecione o produtor negociador.' },
@@ -341,26 +339,6 @@ export const CotacaoModal = ({
                 </div>
               </div>
 
-              {/* Cliente */}
-              <div>
-                <Label htmlFor="cliente_id">Cliente *</Label>
-                <Select 
-                  value={formData.cliente_id || ''} 
-                  onValueChange={(value) => handleInputChange('cliente_id', value)}
-                  disabled={isReadOnly}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MOCK_CLIENTES.map(cliente => (
-                      <SelectItem key={cliente.id} value={cliente.id}>
-                        {cliente.segurado} - {cliente.cidade}/{cliente.uf}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
               {/* Produtores */}
               <div className="grid gap-4 md:grid-cols-3">
