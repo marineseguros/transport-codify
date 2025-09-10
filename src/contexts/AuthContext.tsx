@@ -51,7 +51,6 @@ const MOCK_USERS: UserProfile[] = [
 ];
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  console.log('AuthProvider iniciando...');
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

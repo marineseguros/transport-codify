@@ -19,7 +19,6 @@ import NotFoundPage from "./pages/NotFoundPage";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  console.log('AppContent iniciando...');
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -56,15 +55,15 @@ const AppContent = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <AuthProvider>
-        <TooltipProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
           <AppContent />
-          <Toaster />
-          <Sonner />
-        </TooltipProvider>
-      </AuthProvider>
-    </BrowserRouter>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 
