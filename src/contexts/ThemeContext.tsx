@@ -57,15 +57,15 @@ export function ThemeProvider({
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
+    setTheme: (newTheme: Theme) => {
       try {
         if (typeof window !== 'undefined' && window.localStorage) {
-          localStorage.setItem(storageKey, theme);
+          localStorage.setItem(storageKey, newTheme);
         }
       } catch (error) {
         console.error('Error saving theme to localStorage:', error);
       }
-      setTheme(theme);
+      setTheme(newTheme);
     },
   };
 
