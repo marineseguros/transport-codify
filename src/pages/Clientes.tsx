@@ -185,7 +185,6 @@ const Clientes = () => {
                 <SelectValue placeholder="Todos os UFs" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os UFs</SelectItem>
                 {ufs.map(uf => (
                   <SelectItem key={uf} value={uf}>{uf}</SelectItem>
                 ))}
