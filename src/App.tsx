@@ -19,6 +19,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
+  console.log('AppContent iniciando...');
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
