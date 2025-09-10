@@ -56,11 +56,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     // Check if user is logged in
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user from localStorage:', error);
+      // Clear potentially corrupted data
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.removeItem('user');
+      }
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -71,7 +83,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     if (mockUser && password === '123456') { // Mock password
       setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          localStorage.setItem('user', JSON.stringify(mockUser));
+        }
+      } catch (error) {
+        console.error('Error saving user to localStorage:', error);
+      }
       setIsLoading(false);
       return true;
     }
@@ -82,7 +100,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.removeItem('user');
+      }
+    } catch (error) {
+      console.error('Error removing user from localStorage:', error);
+    }
   };
 
   return (
