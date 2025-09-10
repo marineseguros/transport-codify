@@ -34,8 +34,8 @@ const Relatorios = () => {
   const filteredCotacoes = useMemo(() => {
     return cotacoes.filter(cotacao => {
       const cotacaoDate = new Date(cotacao.data_cotacao);
-      const dateInRange = (!dateRange.from || cotacaoDate >= dateRange.from) &&
-                         (!dateRange.to || cotacaoDate <= dateRange.to);
+      const dateInRange = (!dateRange?.from || cotacaoDate >= dateRange.from) &&
+                         (!dateRange?.to || cotacaoDate <= dateRange.to);
       const produtorMatch = !produtorFilter || cotacao.produtor?.nome === produtorFilter;
       const seguradoraMatch = !seguradoraFilter || cotacao.seguradora?.nome === seguradoraFilter;
       
@@ -50,17 +50,15 @@ const Relatorios = () => {
     const cotacoesDeclinadas = filteredCotacoes.filter(c => c.status === 'Declinado');
     
     const taxaFechamento = totalCotacoes > 0 ? (cotacoesFechadas.length / totalCotacoes) * 100 : 0;
-    const premioTotal = cotacoesFechadas.reduce((sum, c) => sum + c.valor_premio, 0);
-    const comissaoTotal = cotacoesFechadas.reduce((sum, c) => sum + c.valor_comissao, 0);
-    const ticketMedio = cotacoesFechadas.length > 0 ? premioTotal / cotacoesFechadas.length : 0;
+    const totalPremio = cotacoesFechadas.reduce((sum, c) => sum + c.valor_premio, 0);
+    const ticketMedio = cotacoesFechadas.length > 0 ? totalPremio / cotacoesFechadas.length : 0;
 
     return {
       totalCotacoes,
       cotacoesFechadas: cotacoesFechadas.length,
       cotacoesDeclinadas: cotacoesDeclinadas.length,
       taxaFechamento,
-      premioTotal,
-      comissaoTotal,
+      totalPremio,
       ticketMedio
     };
   }, [filteredCotacoes]);
@@ -78,8 +76,7 @@ const Relatorios = () => {
           total: 0,
           fechadas: 0,
           declinadas: 0,
-          premio: 0,
-          comissao: 0
+          premio: 0
         };
       }
       
@@ -88,7 +85,6 @@ const Relatorios = () => {
       if (cotacao.status === 'Negócio fechado') {
         monthlyStats[month].fechadas++;
         monthlyStats[month].premio += cotacao.valor_premio;
-        monthlyStats[month].comissao += cotacao.valor_comissao;
       } else if (cotacao.status === 'Declinado') {
         monthlyStats[month].declinadas++;
       }
@@ -111,8 +107,7 @@ const Relatorios = () => {
           nome: produtorNome,
           total: 0,
           fechadas: 0,
-          premio: 0,
-          comissao: 0
+          premio: 0
         };
       }
       
@@ -121,7 +116,6 @@ const Relatorios = () => {
       if (cotacao.status === 'Negócio fechado') {
         produtorStats[produtorNome].fechadas++;
         produtorStats[produtorNome].premio += cotacao.valor_premio;
-        produtorStats[produtorNome].comissao += cotacao.valor_comissao;
       }
     });
     
@@ -261,22 +255,20 @@ const Relatorios = () => {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(kpis.premioTotal)}</div>
-            <div className="text-xs text-muted-foreground">
-              Ticket médio: {formatCurrency(kpis.ticketMedio)}
-            </div>
+            <div className="text-2xl font-bold">{formatCurrency(kpis.totalPremio)}</div>
+            <p className="text-xs text-muted-foreground">Total em prêmios</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Comissão Total</CardTitle>
+            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(kpis.comissaoTotal)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(kpis.ticketMedio)}</div>
             <div className="text-xs text-muted-foreground">
-              {kpis.premioTotal > 0 ? ((kpis.comissaoTotal / kpis.premioTotal) * 100).toFixed(1) : 0}% do prêmio
+              Ticket médio das cotações fechadas
             </div>
           </CardContent>
         </Card>
@@ -296,8 +288,8 @@ const Relatorios = () => {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip formatter={(value, name) => [
-                  name === 'premio' || name === 'comissao' ? formatCurrency(Number(value)) : value,
-                  name === 'premio' ? 'Prêmio' : name === 'comissao' ? 'Comissão' : name
+                  name === 'premio' ? formatCurrency(Number(value)) : value,
+                  name === 'premio' ? 'Prêmio' : name
                 ]} />
                 <Bar dataKey="fechadas" fill="#3b82f6" name="Fechadas" />
                 <Bar dataKey="declinadas" fill="#ef4444" name="Declinadas" />
@@ -347,10 +339,9 @@ const Relatorios = () => {
               <XAxis type="number" />
               <YAxis dataKey="nome" type="category" width={120} />
               <Tooltip formatter={(value, name) => [
-                name === 'premio' || name === 'comissao' ? formatCurrency(Number(value)) : 
+                name === 'premio' ? formatCurrency(Number(value)) : 
                 name === 'taxa' ? `${Number(value).toFixed(1)}%` : value,
                 name === 'premio' ? 'Prêmio' : 
-                name === 'comissao' ? 'Comissão' :
                 name === 'taxa' ? 'Taxa' : name
               ]} />
               <Bar dataKey="premio" fill="#3b82f6" name="Prêmio" />

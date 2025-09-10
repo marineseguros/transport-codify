@@ -31,6 +31,9 @@ const Clientes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUF, setSelectedUF] = useState('');
+  const [filtroUF, setFiltroUF] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('');
 
   // Calculate stats for each client
   const clientesWithStats = useMemo(() => {
@@ -167,32 +170,60 @@ const Clientes = () => {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, CPF/CNPJ ou email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={selectedUF} onValueChange={setSelectedUF}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Todos os UFs" />
-              </SelectTrigger>
-              <SelectContent>
-                {ufs.map(uf => (
-                  <SelectItem key={uf} value={uf}>{uf}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filtros adicionais */}
+      <div className="flex flex-wrap gap-4 mb-6">
+        <div className="min-w-[200px]">
+          <Input
+            placeholder="Buscar por nome, CPF/CNPJ, email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        
+        <Select value={filtroUF} onValueChange={setFiltroUF}>
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="Todos os UFs" />
+          </SelectTrigger>
+          <SelectContent>
+            {ufs.map(uf => (
+              <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Todos</SelectItem>
+            <SelectItem value="pf">Pessoa Física</SelectItem>
+            <SelectItem value="pj">Pessoa Jurídica</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Todos</SelectItem>
+            <SelectItem value="ativo">Ativo</SelectItem>
+            <SelectItem value="inativo">Inativo</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {searchTerm && (
+          <Button 
+            variant="outline" 
+            onClick={() => setSearchTerm('')}
+            className="px-3"
+          >
+            Limpar
+          </Button>
+        )}
+      </div>
 
       {/* Table */}
       <Card>

@@ -43,9 +43,17 @@ export const CotacaoModal = ({
   onSave 
 }: CotacaoModalProps) => {
   const [formData, setFormData] = useState<Partial<CotacaoTRN>>({
+    cliente_id: '',
+    produtor_id: '',
+    seguradora_id: '',
+    ramo_id: '',
     tipo: 'Novo',
-    status: 'Em cotação',
     data_cotacao: new Date().toISOString().split('T')[0],
+    inicio_vigencia: '',
+    fim_vigencia: '',
+    valor_premio: 0,
+    status: 'Em cotação',
+    observacoes: ''
   });
 
   const isReadOnly = mode === 'view';
@@ -68,7 +76,6 @@ export const CotacaoModal = ({
         inicio_vigencia: inicioVigencia.toISOString().split('T')[0],
         fim_vigencia: fimVigencia.toISOString().split('T')[0],
         valor_premio: 0,
-        valor_comissao: 0,
       });
     }
   }, [cotacao, mode]);
@@ -198,10 +205,6 @@ export const CotacaoModal = ({
       style: 'currency', 
       currency: 'BRL' 
     }).format(value);
-
-  const percentualComissao = formData.valor_premio && formData.valor_comissao 
-    ? ((formData.valor_comissao / formData.valor_premio) * 100).toFixed(2)
-    : '0.00';
 
   const getStatusBadgeVariant = (status: CotacaoStatus) => {
     switch (status) {
@@ -394,8 +397,8 @@ export const CotacaoModal = ({
                 </div>
               </div>
 
-              {/* Valores */}
-              <div className="grid gap-4 md:grid-cols-2">
+              {/* Valor do Prêmio */}
+              <div className="grid gap-4 md:grid-cols-1">
                 <div>
                   <Label htmlFor="valor_premio">Valor do Prêmio *</Label>
                   <Input
@@ -406,23 +409,8 @@ export const CotacaoModal = ({
                     onChange={(e) => handleInputChange('valor_premio', parseFloat(e.target.value) || 0)}
                     placeholder="0,00"
                     readOnly={isReadOnly}
+                    required
                   />
-                </div>
-
-                <div>
-                  <Label htmlFor="valor_comissao">Valor da Comissão</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.valor_comissao || ''}
-                    onChange={(e) => handleInputChange('valor_comissao', parseFloat(e.target.value) || 0)}
-                    placeholder="0,00"
-                    readOnly={isReadOnly}
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Percentual: {percentualComissao}%
-                  </p>
                 </div>
               </div>
 
@@ -501,18 +489,17 @@ export const CotacaoModal = ({
               <span className="font-medium">Histórico de Alterações</span>
             </div>
             <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-              <p className="text-muted-foreground">Nenhum histórico encontrado</p>
+              <p className="text-muted-foreground">Nenhuma alteração registrada</p>
             </div>
           </TabsContent>
         </Tabs>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-6 border-t">
           <Button variant="outline" onClick={onClose}>
             <X className="h-4 w-4 mr-2" />
             {isReadOnly ? 'Fechar' : 'Cancelar'}
           </Button>
-          
           {!isReadOnly && (
             <Button onClick={handleSave}>
               <Save className="h-4 w-4 mr-2" />

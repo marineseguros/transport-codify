@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   BarChart3, FileText, Users, Settings, Kanban, 
-  Building2, Tags, CheckSquare, Home
+  Building2, Tags, Home
 } from "lucide-react";
 
 import {
@@ -22,7 +22,6 @@ const menuItems = [
   { title: "Cotações", url: "/cotacoes", icon: FileText },
   { title: "Funil", url: "/funil", icon: Kanban },
   { title: "Clientes", url: "/clientes", icon: Users },
-  { title: "Tarefas", url: "/tarefas", icon: CheckSquare },
 ];
 
 const adminItems = [

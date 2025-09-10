@@ -241,10 +241,8 @@ const Cotacoes = () => {
                 <TableHead>Seguradora</TableHead>
                 <TableHead>Ramo</TableHead>
                 <TableHead>Tipo</TableHead>
+                <TableHead>Prêmio</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Prêmio</TableHead>
-                <TableHead className="text-right">Comissão</TableHead>
-                <TableHead>Vigência</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -272,12 +270,6 @@ const Cotacoes = () => {
                   </TableCell>
                   <TableCell className="text-right font-mono">
                     {formatCurrency(cotacao.valor_premio)}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatCurrency(cotacao.valor_comissao)}
-                    <div className="text-xs text-muted-foreground">
-                      {((cotacao.valor_comissao / cotacao.valor_premio) * 100).toFixed(1)}%
-                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">

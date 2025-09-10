@@ -63,7 +63,6 @@ export interface CotacaoTRN {
   inicio_vigencia: string;
   fim_vigencia: string;
   valor_premio: number;
-  valor_comissao: number;
   status: CotacaoStatus;
   data_fechamento?: string;
   num_apolice?: string;
@@ -130,9 +129,10 @@ export interface AuditLog {
 
 export interface KPI {
   totalCotacoes: number;
-  taxaFechamento: number;
+  emAndamento: number;
+  negocioFechado: number;
+  declinado: number;
   ticketMedio: number;
-  comissaoTotal: number;
   tempoMedioFechamento: number;
 }
 

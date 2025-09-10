@@ -86,7 +86,6 @@ const generateMockCotacoes = (): CotacaoTRN[] => {
       inicio_vigencia: inicioVigencia.toISOString().split('T')[0],
       fim_vigencia: fimVigencia.toISOString().split('T')[0],
       valor_premio: valorPremio,
-      valor_comissao: valorComissao,
       status,
       created_by: '1', // Admin
       created_at: dataCotacao.toISOString(),

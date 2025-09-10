@@ -5,7 +5,7 @@ import { getCotacoesWithRelations, MOCK_COTACOES } from "@/data/mockData";
 import { CotacaoTRN, KPI } from "@/types";
 import { 
   TrendingUp, TrendingDown, DollarSign, FileText, 
-  Clock, Target, Plus, Upload, CheckSquare 
+  Clock, Target, Plus, Upload
 } from "lucide-react";
 import { useMemo } from "react";
 
@@ -13,15 +13,15 @@ const Dashboard = () => {
   const cotacoes = getCotacoesWithRelations();
   
   // Calcular KPIs
-  const kpis = useMemo((): KPI => {
+  const kpis = useMemo(() => {
     const totalCotacoes = cotacoes.length;
-    const cotacoesFechadas = cotacoes.filter(c => c.status === 'Negócio fechado');
-    const taxaFechamento = totalCotacoes > 0 ? (cotacoesFechadas.length / totalCotacoes) * 100 : 0;
+    const emAndamento = cotacoes.filter(c => c.status === 'Em cotação').length;
+    const negocioFechado = cotacoes.filter(c => c.status === 'Negócio fechado').length;
+    const declinado = cotacoes.filter(c => c.status === 'Declinado').length;
     
+    const cotacoesFechadas = cotacoes.filter(c => c.status === 'Negócio fechado');
     const premioTotal = cotacoesFechadas.reduce((sum, c) => sum + c.valor_premio, 0);
     const ticketMedio = cotacoesFechadas.length > 0 ? premioTotal / cotacoesFechadas.length : 0;
-    
-    const comissaoTotal = cotacoesFechadas.reduce((sum, c) => sum + c.valor_comissao, 0);
     
     // Tempo médio de fechamento (dias)
     const temposFechamento = cotacoesFechadas
@@ -38,9 +38,10 @@ const Dashboard = () => {
 
     return {
       totalCotacoes,
-      taxaFechamento,
+      emAndamento,
+      negocioFechado,
+      declinado,
       ticketMedio,
-      comissaoTotal,
       tempoMedioFechamento
     };
   }, [cotacoes]);
@@ -97,10 +98,6 @@ const Dashboard = () => {
             <Upload className="h-4 w-4" />
             Importar CSV
           </Button>
-          <Button variant="outline" className="gap-2">
-            <CheckSquare className="h-4 w-4" />
-            Nova Tarefa
-          </Button>
           <Button className="gap-2">
             <Plus className="h-4 w-4" />
             Nova Cotação
@@ -108,32 +105,86 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Distribuição por Status - Moved up */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Distribuição por Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {distribuicaoStatus.map(({ status, count, percentage }) => (
+              <div key={status} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Badge variant={getStatusBadgeVariant(status)}>
+                    {status}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {count} cotações
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-24 bg-secondary rounded-full h-2">
+                    <div 
+                      className="bg-primary rounded-full h-2"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-medium w-12 text-right">
+                    {percentage.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* KPI Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Cotações</CardTitle>
+            <CardTitle className="text-sm font-medium">Total</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{kpis.totalCotacoes}</div>
-            <p className="text-xs text-muted-foreground">
-              +12% em relação ao mês anterior
+            <p className="text-xs text-muted-foreground">Cotações</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kpis.emAndamento}</div>
+            <p className="text-xs text-muted-foreground">Em cotação</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Fechados</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kpis.negocioFechado}</div>
+            <p className="text-xs text-success flex items-center gap-1">
+              <TrendingUp className="h-3 w-3" />
+              Negócios
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Fechamento</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Declinados</CardTitle>
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{kpis.taxaFechamento.toFixed(1)}%</div>
-            <p className="text-xs text-success flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
-              +2.5% vs último período
-            </p>
+            <div className="text-2xl font-bold">{kpis.declinado}</div>
+            <p className="text-xs text-destructive">Perdidos</p>
           </CardContent>
         </Card>
 
@@ -144,9 +195,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(kpis.ticketMedio)}</div>
-            <p className="text-xs text-muted-foreground">
-              {formatCurrency(kpis.comissaoTotal)} em comissões
-            </p>
+            <p className="text-xs text-muted-foreground">Negócios fechados</p>
           </CardContent>
         </Card>
 
@@ -157,75 +206,45 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{Math.round(kpis.tempoMedioFechamento)} dias</div>
-            <p className="text-xs text-muted-foreground">
-              Para fechamento de negócios
-            </p>
+            <p className="text-xs text-muted-foreground">Para fechamento</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Distribuição por Status */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Distribuição por Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {distribuicaoStatus.map(({ status, count, percentage }) => (
-                <div key={status} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Badge variant={getStatusBadgeVariant(status)}>
-                      {status}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {count} cotações
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-24 bg-secondary rounded-full h-2">
-                      <div 
-                        className="bg-primary rounded-full h-2"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-medium w-12 text-right">
-                      {percentage.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Atividades Recentes */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Cotações Recentes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      {/* Cotações Recentes */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Cotações Recentes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {cotacoesRecentes.map((cotacao) => (
-              <div key={cotacao.id} className="flex items-center justify-between p-3 rounded-lg border">
-                <div>
-                  <p className="font-medium text-sm">{cotacao.cliente?.segurado}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {cotacao.seguradora?.nome} • {cotacao.ramo?.descricao}
-                  </p>
-                </div>
-                <div className="text-right">
+              <div key={cotacao.id} className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
                   <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
                     {cotacao.status}
                   </Badge>
-                  <p className="text-xs font-medium mt-1">
+                  <span className="text-sm font-bold text-primary">
                     {formatCurrency(cotacao.valor_premio)}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="font-medium text-sm">{cotacao.cliente?.segurado}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {cotacao.seguradora?.nome}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {cotacao.ramo?.descricao} • {cotacao.tipo}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Produtor: {cotacao.produtor?.nome}
                   </p>
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
