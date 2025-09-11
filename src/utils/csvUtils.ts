@@ -1,5 +1,21 @@
 import { CotacaoTRN } from '@/types';
 
+export const formatCPFCNPJ = (value: string): string => {
+  const numbers = value.replace(/\D/g, '');
+  
+  if (numbers.length <= 11) {
+    // CPF format: 000.000.000-00
+    return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  } else {
+    // CNPJ format: 00.000.000/0000-00
+    return numbers
+      .replace(/^(\d{2})(\d)/, '$1.$2')
+      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1/$2')
+      .replace(/(\d{4})(\d)/, '$1-$2');
+  }
+};
+
 export const exportToCsv = (data: CotacaoTRN[], filename: string = 'cotacoes.csv') => {
   if (!data.length) return;
 

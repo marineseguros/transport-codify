@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { formatCPFCNPJ } from '@/utils/csvUtils';
 import { useProfiles, useSeguradoras, useCotacoes, type Cotacao } from '@/hooks/useSupabaseData';
 
 interface CotacaoModalProps {
@@ -158,7 +159,7 @@ const CotacaoModal: React.FC<CotacaoModalProps> = ({ isOpen, onClose, cotacao })
               <Input
                 id="cpf_cnpj"
                 value={formData.cpf_cnpj}
-                onChange={(e) => setFormData({ ...formData, cpf_cnpj: formatCNPJ(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, cpf_cnpj: formatCPFCNPJ(e.target.value) })}
                 placeholder="00.000.000/0000-00"
                 maxLength={18}
               />
