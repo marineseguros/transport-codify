@@ -301,9 +301,9 @@ export function useCotacoes() {
         .from('cotacoes')
         .select(`
           *,
-          produtor_origem:produtor_origem_id(id, nome, email, papel, ativo),
-          produtor_negociador:produtor_negociador_id(id, nome, email, papel, ativo),
-          produtor_cotador:produtor_cotador_id(id, nome, email, papel, ativo),
+          produtor_origem:produtor_origem_id(id, nome, email),
+          produtor_negociador:produtor_negociador_id(id, nome, email),
+          produtor_cotador:produtor_cotador_id(id, nome, email),
           seguradora:seguradora_id(id, nome, codigo),
           cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
           ramo:ramo_id(id, codigo, descricao, ativo),
