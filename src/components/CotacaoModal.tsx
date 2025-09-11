@@ -175,9 +175,9 @@ export const CotacaoModal = ({
         const ramoDesc = ramo.descricao.toUpperCase();
         
         if (['NACIONAL', 'EXPORTAÇÃO', 'IMPORTAÇÃO', 'NACIONAL AVULSA', 'IMPORTAÇÃO AVULSA', 'EXPORTAÇÃO AVULSA'].includes(ramoDesc)) {
-          segmento = 'EMBARCADOR';
+          segmento = 'embarcador';
         } else if (['RCTR-C', 'RC-DC', 'RCTR-VI', 'GARANTIA', 'RCTA-C', 'AMBIENTAL', 'RC-V'].includes(ramoDesc)) {
-          segmento = 'TRANSPORTADOR';
+          segmento = 'transportador';
         }
         
         setFormData(prev => ({
@@ -231,8 +231,11 @@ export const CotacaoModal = ({
     }
 
     if (!formData.valor_premio || formData.valor_premio <= 0) {
-      toast.error("O valor do prêmio deve ser maior que zero.");
-      return;
+      // Only require premium value when status is "Negócio fechado"
+      if (formData.status === 'Negócio fechado') {
+        toast.error("O valor do prêmio deve ser maior que zero.");
+        return;
+      }
     }
 
     // Validate dates
