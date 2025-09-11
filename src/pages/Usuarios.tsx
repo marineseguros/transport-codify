@@ -96,8 +96,8 @@ const Usuarios = () => {
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = !roleFilter || user.papel === roleFilter;
-    const matchesStatus = statusFilter === '' || 
+    const matchesRole = roleFilter === 'todos' || !roleFilter || user.papel === roleFilter;
+    const matchesStatus = statusFilter === '' || statusFilter === 'todos' || 
                          (statusFilter === 'ativo' && user.ativo) ||
                          (statusFilter === 'inativo' && !user.ativo);
     
@@ -206,7 +206,7 @@ const Usuarios = () => {
                 <SelectValue placeholder="Todos os papéis" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os papéis</SelectItem>
+                <SelectItem value="todos">Todos os papéis</SelectItem>
                 <SelectItem value="Administrador">Administrador</SelectItem>
                 <SelectItem value="Gerente">Gerente</SelectItem>
                 <SelectItem value="Produtor">Produtor</SelectItem>
@@ -218,7 +218,7 @@ const Usuarios = () => {
                 <SelectValue placeholder="Todos os status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os status</SelectItem>
+                <SelectItem value="todos">Todos os status</SelectItem>
                 <SelectItem value="ativo">Ativo</SelectItem>
                 <SelectItem value="inativo">Inativo</SelectItem>
               </SelectContent>

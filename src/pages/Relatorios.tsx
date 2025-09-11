@@ -36,8 +36,8 @@ const Relatorios = () => {
       const cotacaoDate = new Date(cotacao.data_cotacao);
       const dateInRange = (!dateRange?.from || cotacaoDate >= dateRange.from) &&
                          (!dateRange?.to || cotacaoDate <= dateRange.to);
-      const produtorMatch = !produtorFilter || cotacao.produtor_origem?.nome === produtorFilter;
-      const seguradoraMatch = !seguradoraFilter || cotacao.seguradora?.nome === seguradoraFilter;
+      const produtorMatch = produtorFilter === 'todos' || !produtorFilter || cotacao.produtor_origem?.nome === produtorFilter;
+      const seguradoraMatch = seguradoraFilter === 'todos' || !seguradoraFilter || cotacao.seguradora?.nome === seguradoraFilter;
       
       return dateInRange && produtorMatch && seguradoraMatch;
     });
@@ -196,7 +196,7 @@ const Relatorios = () => {
                   <SelectValue placeholder="Todos os produtores" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os produtores</SelectItem>
+                  <SelectItem value="todos">Todos os produtores</SelectItem>
                   {produtores.map(nome => (
                     <SelectItem key={nome} value={nome}>{nome}</SelectItem>
                   ))}
@@ -210,7 +210,7 @@ const Relatorios = () => {
                   <SelectValue placeholder="Todas as seguradoras" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as seguradoras</SelectItem>
+                  <SelectItem value="todos">Todas as seguradoras</SelectItem>
                   {seguradoras.map(nome => (
                     <SelectItem key={nome} value={nome}>{nome}</SelectItem>
                   ))}

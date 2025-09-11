@@ -87,8 +87,8 @@ const Tarefas = () => {
     return tarefas.filter(tarefa => {
       const matchesSearch = tarefa.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            tarefa.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = !statusFilter || tarefa.status === statusFilter;
-      const matchesPrioridade = !prioridadeFilter || tarefa.prioridade === prioridadeFilter;
+      const matchesStatus = statusFilter === 'todos' || !statusFilter || tarefa.status === statusFilter;
+      const matchesPrioridade = prioridadeFilter === 'todos' || !prioridadeFilter || tarefa.prioridade === prioridadeFilter;
       
       return matchesSearch && matchesStatus && matchesPrioridade;
     });
@@ -227,7 +227,7 @@ const Tarefas = () => {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos Status</SelectItem>
+                <SelectItem value="todos">Todos Status</SelectItem>
                 <SelectItem value="Aberta">Aberta</SelectItem>
                 <SelectItem value="Em andamento">Em andamento</SelectItem>
                 <SelectItem value="Concluída">Concluída</SelectItem>
@@ -238,7 +238,7 @@ const Tarefas = () => {
                 <SelectValue placeholder="Prioridade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas Prioridades</SelectItem>
+                <SelectItem value="todos">Todas Prioridades</SelectItem>
                 <SelectItem value="Alta">Alta</SelectItem>
                 <SelectItem value="Média">Média</SelectItem>
                 <SelectItem value="Baixa">Baixa</SelectItem>

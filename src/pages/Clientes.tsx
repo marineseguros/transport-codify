@@ -59,10 +59,16 @@ const Clientes = () => {
                            cliente.cpf_cnpj.includes(searchTerm) ||
                            cliente.email?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesUF = !selectedUF || cliente.uf === selectedUF;
+      const matchesTipo = filtroTipo === 'todos' || !filtroTipo || 
+                         (filtroTipo === 'pf' && cliente.cpf_cnpj.length === 11) ||
+                         (filtroTipo === 'pj' && cliente.cpf_cnpj.length === 14);
+      const matchesStatus = filtroStatus === 'todos' || !filtroStatus || 
+                           (filtroStatus === 'ativo' && cliente.totalCotacoes > 0) ||
+                           (filtroStatus === 'inativo' && cliente.totalCotacoes === 0);
       
-      return matchesSearch && matchesUF;
+      return matchesSearch && matchesUF && matchesTipo && matchesStatus;
     });
-  }, [clientesWithStats, searchTerm, selectedUF]);
+  }, [clientesWithStats, searchTerm, selectedUF, filtroTipo, filtroStatus]);
 
   const ufs = [...new Set(clientes.map(c => c.uf).filter(Boolean))].sort();
 
@@ -197,7 +203,7 @@ const Clientes = () => {
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
+            <SelectItem value="todos">Todos</SelectItem>
             <SelectItem value="pf">Pessoa Física</SelectItem>
             <SelectItem value="pj">Pessoa Jurídica</SelectItem>
           </SelectContent>
@@ -208,7 +214,7 @@ const Clientes = () => {
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
+            <SelectItem value="todos">Todos</SelectItem>
             <SelectItem value="ativo">Ativo</SelectItem>
             <SelectItem value="inativo">Inativo</SelectItem>
           </SelectContent>
