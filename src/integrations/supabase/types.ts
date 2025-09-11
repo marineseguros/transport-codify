@@ -14,6 +14,201 @@ export type Database = {
   }
   public: {
     Tables: {
+      clientes: {
+        Row: {
+          ativo: boolean
+          cep: string | null
+          cidade: string | null
+          cpf_cnpj: string
+          created_at: string
+          email: string | null
+          endereco: string | null
+          id: string
+          segurado: string
+          telefone: string | null
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cep?: string | null
+          cidade?: string | null
+          cpf_cnpj: string
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          segurado: string
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cep?: string | null
+          cidade?: string | null
+          cpf_cnpj?: string
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          segurado?: string
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cotacoes: {
+        Row: {
+          cliente_id: string | null
+          cpf_cnpj: string
+          created_at: string
+          data_cotacao: string
+          id: string
+          numero_cotacao: string
+          observacoes: string | null
+          produtor_cotador_id: string | null
+          produtor_negociador_id: string | null
+          produtor_origem_id: string | null
+          segmento: string | null
+          segurado: string
+          seguradora_id: string | null
+          status: string
+          updated_at: string
+          valor_premio: number | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          cpf_cnpj: string
+          created_at?: string
+          data_cotacao?: string
+          id?: string
+          numero_cotacao: string
+          observacoes?: string | null
+          produtor_cotador_id?: string | null
+          produtor_negociador_id?: string | null
+          produtor_origem_id?: string | null
+          segmento?: string | null
+          segurado: string
+          seguradora_id?: string | null
+          status?: string
+          updated_at?: string
+          valor_premio?: number | null
+        }
+        Update: {
+          cliente_id?: string | null
+          cpf_cnpj?: string
+          created_at?: string
+          data_cotacao?: string
+          id?: string
+          numero_cotacao?: string
+          observacoes?: string | null
+          produtor_cotador_id?: string | null
+          produtor_negociador_id?: string | null
+          produtor_origem_id?: string | null
+          segmento?: string | null
+          segurado?: string
+          seguradora_id?: string | null
+          status?: string
+          updated_at?: string
+          valor_premio?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacoes_produtor_cotador_id_fkey"
+            columns: ["produtor_cotador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacoes_produtor_negociador_id_fkey"
+            columns: ["produtor_negociador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacoes_produtor_origem_id_fkey"
+            columns: ["produtor_origem_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacoes_seguradora_id_fkey"
+            columns: ["seguradora_id"]
+            isOneToOne: false
+            referencedRelation: "seguradoras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          email: string
+          id: string
+          nome: string
+          papel: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          nome: string
+          papel?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+          papel?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      seguradoras: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
@@ -37,7 +232,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_cotacao_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

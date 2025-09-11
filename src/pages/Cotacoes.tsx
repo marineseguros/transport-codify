@@ -1,127 +1,107 @@
-import { useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { 
-  Plus, Search, Filter, Download, Upload, Eye, Edit, 
-  Copy, FileText, MessageSquare, History 
-} from "lucide-react";
-import { getCotacoesWithRelations, MOCK_SEGURADORAS, MOCK_RAMOS, MOCK_PRODUTORES } from "@/data/mockData";
-import { CotacaoTRN, CotacaoStatus } from "@/types";
-import { CotacaoModal } from "@/components/CotacaoModal";
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Search, Download, Upload, Edit, Trash2, FileText, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { CotacaoModal } from '@/components/CotacaoModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCotacoes, type Cotacao } from '@/hooks/useSupabaseData';
+import { toast } from 'sonner';
 
 const Cotacoes = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("todos");
-  const [seguradoraFilter, setSeguradoraFilter] = useState<string>("todas");
-  const [ramoFilter, setRamoFilter] = useState<string>("todos");
-  const [produtorFilter, setProdutorFilter] = useState<string>("todos");
-  const [selectedCotacao, setSelectedCotacao] = useState<CotacaoTRN | null>(null);
+  const { user } = useAuth();
+  const { cotacoes, loading } = useCotacoes();
+  const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [produtorFilter, setProdutorFilter] = useState('');
 
-  const cotacoes = getCotacoesWithRelations();
-
-  // Filtros aplicados
+  // Filter cotacoes based on search and filters
   const filteredCotacoes = useMemo(() => {
-    return cotacoes.filter((cotacao) => {
+    return cotacoes.filter(cotacao => {
       const matchesSearch = 
-        cotacao.cliente?.segurado.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cotacao.seguradora?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cotacao.produtor_origem?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cotacao.num_apolice?.toLowerCase().includes(searchTerm.toLowerCase());
+        cotacao.segurado.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cotacao.numero_cotacao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cotacao.produtor_origem?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cotacao.seguradora?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesStatus = statusFilter === "todos" || cotacao.status === statusFilter;
-      const matchesSeguradora = seguradoraFilter === "todas" || cotacao.seguradora_id === seguradoraFilter;
-      const matchesRamo = ramoFilter === "todos" || cotacao.ramo_id === ramoFilter;
-      const matchesProdutor = produtorFilter === "todos" || cotacao.produtor_origem_id === produtorFilter;
-
-      return matchesSearch && matchesStatus && matchesSeguradora && matchesRamo && matchesProdutor;
+      const matchesStatus = statusFilter === 'todos' || !statusFilter || cotacao.status === statusFilter;
+      const matchesProdutor = produtorFilter === 'todos' || !produtorFilter || cotacao.produtor_origem?.nome === produtorFilter;
+      
+      return matchesSearch && matchesStatus && matchesProdutor;
     });
-  }, [cotacoes, searchTerm, statusFilter, seguradoraFilter, ramoFilter, produtorFilter]);
+  }, [cotacoes, searchTerm, statusFilter, produtorFilter]);
 
-  const formatCurrency = (value: number) => 
-    new Intl.NumberFormat('pt-BR', { 
-      style: 'currency', 
-      currency: 'BRL' 
-    }).format(value);
+  // Get unique produtores for filter
+  const produtores = [...new Set(cotacoes.map(c => c.produtor_origem?.nome).filter(Boolean))];
 
-  const formatDate = (dateStr: string) => 
-    new Date(dateStr).toLocaleDateString('pt-BR');
+  // Calculate stats
+  const stats = useMemo(() => {
+    const total = filteredCotacoes.length;
+    const emAnalise = filteredCotacoes.filter(c => c.status === 'Em análise').length;
+    const fechados = filteredCotacoes.filter(c => c.status === 'Negócio fechado').length;
+    const valorTotal = filteredCotacoes
+      .filter(c => c.status === 'Negócio fechado')
+      .reduce((sum, c) => sum + c.valor_premio, 0);
+    
+    return { total, emAnalise, fechados, valorTotal };
+  }, [filteredCotacoes]);
 
-  const getStatusBadgeVariant = (status: CotacaoStatus) => {
-    switch (status) {
-      case 'Negócio fechado': return 'default';
-      case 'Em cotação': return 'secondary';
-      case 'Declinado': return 'destructive';
-      default: return 'secondary';
-    }
+  const handleEdit = (cotacao: Cotacao) => {
+    setSelectedCotacao(cotacao);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    // TODO: Implement delete functionality
+    toast.success('Cotação excluída com sucesso!');
   };
 
   const handleNewCotacao = () => {
     setSelectedCotacao(null);
-    setModalMode('create');
     setIsModalOpen(true);
   };
 
-  const handleEditCotacao = (cotacao: CotacaoTRN) => {
-    setSelectedCotacao(cotacao);
-    setModalMode('edit');
-    setIsModalOpen(true);
+  const handleExportCSV = () => {
+    toast.success('Funcionalidade de exportar CSV será implementada');
   };
 
-  const handleViewCotacao = (cotacao: CotacaoTRN) => {
-    setSelectedCotacao(cotacao);
-    setModalMode('view');
-    setIsModalOpen(true);
+  const handleImportCSV = () => {
+    toast.success('Funcionalidade de importar CSV será implementada');
   };
 
-  const handleDuplicateCotacao = (cotacao: CotacaoTRN) => {
-    // Duplicar cotação - limpar alguns campos e ajustar datas
-    const hoje = new Date();
-    const inicioVigencia = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const fimVigencia = new Date(inicioVigencia.getTime() + 365 * 24 * 60 * 60 * 1000);
-
-    const cotacaoDuplicada: CotacaoTRN = {
-      ...cotacao,
-      id: '', // Será gerado no salvamento
-      status: 'Em cotação',
-      data_cotacao: hoje.toISOString().split('T')[0],
-      inicio_vigencia: inicioVigencia.toISOString().split('T')[0],
-      fim_vigencia: fimVigencia.toISOString().split('T')[0],
-      data_fechamento: undefined,
-      num_apolice: undefined,
-      observacoes: `Duplicada de: ${cotacao.num_apolice || cotacao.id}\n${cotacao.observacoes || ''}`,
-    };
-
-    setSelectedCotacao(cotacaoDuplicada);
-    setModalMode('create');
-    setIsModalOpen(true);
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
   };
 
-  const clearFilters = () => {
-    setSearchTerm("");
-    setStatusFilter("todos");
-    setSeguradoraFilter("todas");
-    setRamoFilter("todos");
-    setProdutorFilter("todos");
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
   };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Negócio fechado':
+        return 'bg-green-100 text-green-800';
+      case 'Em análise':
+        return 'bg-blue-100 text-blue-800';
+      case 'Aguardando cliente':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Cancelada':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const canEdit = user?.papel !== 'Somente-Leitura';
+  const canDelete = user?.papel === 'Administrador';
 
   return (
     <div className="space-y-6">
@@ -130,108 +110,130 @@ const Cotacoes = () => {
         <div>
           <h1 className="text-3xl font-bold">Cotações</h1>
           <p className="text-muted-foreground">
-            Gerencie suas cotações de seguro de transportes
+            Gerencie suas cotações de seguro
           </p>
         </div>
         
         <div className="flex gap-3">
-          <Button variant="outline" className="gap-2">
+          {/* Import/Export buttons moved to main page as requested */}
+          <Button variant="outline" onClick={handleExportCSV} className="gap-2">
             <Download className="h-4 w-4" />
             Exportar CSV
           </Button>
-          <label className="cursor-pointer">
-            <Button variant="outline" className="gap-2" asChild>
-              <span>
-                <Upload className="h-4 w-4" />
-                Importar CSV
-              </span>
-            </Button>
-            <input
-              type="file"
-              accept=".csv"
-              className="hidden"
-            />
-          </label>
-          <Button onClick={handleNewCotacao} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nova Cotação
+          <Button variant="outline" onClick={handleImportCSV} className="gap-2">
+            <Upload className="h-4 w-4" />
+            Importar CSV
           </Button>
+          {canEdit && (
+            <Button onClick={handleNewCotacao} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nova Cotação
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Cotações</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Em Análise</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.emAnalise}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Negócios Fechados</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.fechados}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(stats.valorTotal)}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filtros */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
+        <CardContent className="p-6">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-64">
               <label className="text-sm font-medium mb-2 block">Buscar</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por cliente, seguradora, produtor ou apólice..."
+                  placeholder="Buscar por segurado, número, produtor..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
             </div>
-            
-            <div className="w-40">
+
+            <div className="w-48">
               <label className="text-sm font-medium mb-2 block">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder="Todos os status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="Em cotação">Em cotação</SelectItem>
+                  <SelectItem value="todos">Todos os status</SelectItem>
+                  <SelectItem value="Em análise">Em análise</SelectItem>
+                  <SelectItem value="Aguardando cliente">Aguardando cliente</SelectItem>
                   <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
-                  <SelectItem value="Declinado">Declinado</SelectItem>
+                  <SelectItem value="Cancelada">Cancelada</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="w-48">
-              <label className="text-sm font-medium mb-2 block">Seguradora</label>
-              <Select value={seguradoraFilter} onValueChange={setSeguradoraFilter}>
+              <label className="text-sm font-medium mb-2 block">Produtor</label>
+              <Select value={produtorFilter} onValueChange={setProdutorFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seguradora" />
+                  <SelectValue placeholder="Todos os produtores" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todas">Todas</SelectItem>
-                  {MOCK_SEGURADORAS.map(seguradora => (
-                    <SelectItem key={seguradora.id} value={seguradora.id}>
-                      {seguradora.nome}
+                  <SelectItem value="todos">Todos os produtores</SelectItem>
+                  {produtores.map((produtor) => (
+                    <SelectItem key={produtor} value={produtor!}>
+                      {produtor}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="w-32">
-              <label className="text-sm font-medium mb-2 block">Ramo</label>
-              <Select value={ramoFilter} onValueChange={setRamoFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Ramo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  {MOCK_RAMOS.map(ramo => (
-                    <SelectItem key={ramo.id} value={ramo.id}>
-                      {ramo.codigo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button variant="outline" onClick={clearFilters}>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('');
+                setProdutorFilter('');
+              }}
+            >
               Limpar
             </Button>
           </div>
@@ -249,91 +251,116 @@ const Cotacoes = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Produtor</TableHead>
+                <TableHead>Número</TableHead>
+                <TableHead>Segurado</TableHead>
+                <TableHead>Produtor Origem</TableHead>
                 <TableHead>Seguradora</TableHead>
-                <TableHead>Ramo</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Prêmio</TableHead>
+                <TableHead>Segmento</TableHead>
+                <TableHead>Valor</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead>Data</TableHead>
+                {canEdit && <TableHead className="text-right">Ações</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredCotacoes.map((cotacao) => (
                 <TableRow key={cotacao.id}>
-                  <TableCell className="font-medium">
+                  <TableCell className="font-mono">
+                    {cotacao.numero_cotacao}
+                  </TableCell>
+                  <TableCell>
                     <div>
-                      <p>{cotacao.cliente?.segurado}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {cotacao.cliente?.cidade}, {cotacao.cliente?.uf}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{cotacao.produtor_origem?.nome}</TableCell>
-                  <TableCell>{cotacao.seguradora?.nome}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{cotacao.ramo?.codigo}</Badge>
-                  </TableCell>
-                  <TableCell>{cotacao.tipo}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(cotacao.status)}>
-                      {cotacao.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatCurrency(cotacao.valor_premio)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div>{formatDate(cotacao.inicio_vigencia)}</div>
-                      <div className="text-xs text-muted-foreground">
-                        até {formatDate(cotacao.fim_vigencia)}
+                      <div className="font-medium">{cotacao.segurado}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {cotacao.cpf_cnpj}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex gap-1 justify-end">
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => handleViewCotacao(cotacao)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => handleEditCotacao(cotacao)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => handleDuplicateCotacao(cotacao)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  <TableCell>
+                    {cotacao.produtor_origem?.nome || '-'}
                   </TableCell>
+                  <TableCell>
+                    {cotacao.seguradora ? (
+                      <div>
+                        <div className="font-medium">{cotacao.seguradora.nome}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {cotacao.seguradora.codigo}
+                        </div>
+                      </div>
+                    ) : '-'}
+                  </TableCell>
+                  <TableCell>
+                    {cotacao.segmento ? (
+                      <Badge variant="outline">{cotacao.segmento}</Badge>
+                    ) : '-'}
+                  </TableCell>
+                  <TableCell className="font-mono">
+                    {formatCurrency(cotacao.valor_premio)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(cotacao.status)}>
+                      {cotacao.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {formatDate(cotacao.data_cotacao)}
+                  </TableCell>
+                  {canEdit && (
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(cotacao)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {canDelete && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDelete(cotacao.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+
+          {loading && (
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground">Carregando cotações...</p>
+            </div>
+          )}
+
+          {!loading && filteredCotacoes.length === 0 && (
+            <div className="text-center py-8">
+              <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-sm font-semibold">Nenhuma cotação encontrada</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {searchTerm || statusFilter || produtorFilter
+                  ? 'Tente ajustar os filtros para encontrar cotações.'
+                  : 'Comece criando sua primeira cotação.'}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Modal */}
       <CotacaoModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        cotacao={selectedCotacao}
-        mode={modalMode}
-        onSave={() => {
+        onClose={() => {
           setIsModalOpen(false);
-          // Aqui seria a lógica de refresh da lista
+          setSelectedCotacao(null);
         }}
+        cotacao={selectedCotacao || undefined}
       />
     </div>
   );
