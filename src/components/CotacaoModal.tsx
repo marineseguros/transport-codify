@@ -21,8 +21,17 @@ import {
 import { toast } from "sonner";
 import { Save, X, FileText, MessageSquare, History, Paperclip, Upload } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
-import { useProfiles, useSeguradoras, useClientes, useCotacoes, type Cotacao } from '@/hooks/useSupabaseData';
-import { MOCK_PRODUTORES, MOCK_SEGURADORAS, MOCK_RAMOS, MOCK_CAPTACAO, MOCK_STATUS_SEGURADORA } from '@/data/mockData';
+import { 
+  useProfiles, 
+  useSeguradoras, 
+  useClientes, 
+  useCotacoes, 
+  useProdutores,
+  useRamos,
+  useCaptacao,
+  useStatusSeguradora,
+  type Cotacao 
+} from '@/hooks/useSupabaseData';
 
 interface CotacaoModalProps {
   isOpen: boolean;
@@ -38,7 +47,11 @@ export const CotacaoModal = ({
   mode = 'create'
 }: CotacaoModalProps) => {
   const { profiles } = useProfiles();
+  const { produtores } = useProdutores();
   const { seguradoras } = useSeguradoras();
+  const { ramos } = useRamos();
+  const { captacao } = useCaptacao();
+  const { statusSeguradora } = useStatusSeguradora();
   const { clientes } = useClientes();
   const { createCotacao, updateCotacao } = useCotacoes();
 
@@ -155,11 +168,11 @@ export const CotacaoModal = ({
 
     // Auto-fill segment based on ramo
     if (field === 'ramo_id') {
-      const ramo = MOCK_RAMOS.find(r => r.id === value);
+      const ramo = ramos.find(r => r.id === value);
       setFormData(prev => ({
         ...prev,
         ramo_id: value,
-        segmento: ramo ? ramo.segmento : ''
+        segmento: ramo ? ramo.descricao : ''
       }));
     }
 
@@ -329,7 +342,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o produtor origem" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_PRODUTORES.map(produtor => (
+                      {produtores.map(produtor => (
                         <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
                         </SelectItem>
@@ -349,7 +362,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o produtor negociador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_PRODUTORES.map(produtor => (
+                      {produtores.map(produtor => (
                         <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
                         </SelectItem>
@@ -369,7 +382,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o produtor cotador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_PRODUTORES.map(produtor => (
+                      {produtores.map(produtor => (
                         <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
                         </SelectItem>
@@ -392,7 +405,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione a seguradora" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_SEGURADORAS.map(seguradora => (
+                      {seguradoras.map(seguradora => (
                         <SelectItem key={seguradora.id} value={seguradora.id}>
                           {seguradora.nome}
                         </SelectItem>
@@ -412,7 +425,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o ramo" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_RAMOS.map(ramo => (
+                      {ramos.map(ramo => (
                         <SelectItem key={ramo.id} value={ramo.id}>
                           {ramo.descricao}
                         </SelectItem>
@@ -445,9 +458,9 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione a captação" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_CAPTACAO.map(captacao => (
-                        <SelectItem key={captacao.id} value={captacao.id}>
-                          {captacao.descricao}
+                      {captacao.map(capt => (
+                        <SelectItem key={capt.id} value={capt.id}>
+                          {capt.descricao}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -465,7 +478,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o status da seguradora" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_STATUS_SEGURADORA.map(status => (
+                      {statusSeguradora.map(status => (
                         <SelectItem key={status.id} value={status.id}>
                           {status.descricao}
                         </SelectItem>
