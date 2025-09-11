@@ -9,12 +9,11 @@ import { Plus, Search, Download, Upload, Edit, Trash2, FileText, TrendingUp, Use
 import { CotacaoModal } from '@/components/CotacaoModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCotacoes, type Cotacao } from '@/hooks/useSupabaseData';
-import { parseCsvFile } from '@/utils/csvUtils';
 import { toast } from 'sonner';
 
 const Cotacoes = () => {
   const { user } = useAuth();
-  const { cotacoes, loading, createCotacao, refetch } = useCotacoes();
+  const { cotacoes, loading } = useCotacoes();
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,69 +71,7 @@ const Cotacoes = () => {
   };
 
   const handleImportCSV = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      try {
-        toast.info('Processando arquivo CSV...');
-        const csvData = await parseCsvFile(file);
-        
-        let successCount = 0;
-        let errorCount = 0;
-
-        for (const row of csvData) {
-          try {
-            const cotacaoData = {
-              segurado: row['Segurado'] || '',
-              cpf_cnpj: row['CNPJ'] || '',
-              segmento: row['Tipo'] || '',
-              data_cotacao: row['Data Cotação'] || new Date().toISOString().split('T')[0],
-              data_fechamento: row['Data Fechamento'] || null,
-              inicio_vigencia: row['Início Vigência'] || '',
-              fim_vigencia: row['Fim Vigência'] || '',
-              valor_premio: parseFloat(row['Valor Prêmio']) || 0,
-              status: row['Status'] || 'Em cotação',
-              observacoes: row['Observações'] || '',
-              num_apolice: row['Número Apólice'] || '',
-              motivo_recusa: row['Motivo Recusa'] || '',
-              // Campos opcionais que podem precisar de lookup
-              produtor_origem_id: null,
-              produtor_negociador_id: null,
-              produtor_cotador_id: null,
-              seguradora_id: null,
-              ramo_id: null,
-              captacao_id: null,
-              status_seguradora_id: null,
-            };
-
-            await createCotacao(cotacaoData);
-            successCount++;
-          } catch (error) {
-            console.error('Erro ao criar cotação:', error);
-            errorCount++;
-          }
-        }
-
-        if (successCount > 0) {
-          toast.success(`${successCount} cotação(ões) importada(s) com sucesso!`);
-          refetch();
-        }
-        
-        if (errorCount > 0) {
-          toast.error(`${errorCount} cotação(ões) falharam na importação.`);
-        }
-
-      } catch (error) {
-        console.error('Erro ao processar CSV:', error);
-        toast.error('Erro ao processar o arquivo CSV. Verifique o formato.');
-      }
-    };
-    
-    input.click();
+    toast.success('Funcionalidade de importar CSV será implementada');
   };
 
   const formatCurrency = (value: number) => {

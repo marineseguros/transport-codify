@@ -8,9 +8,14 @@ import {
   Clock, Target, Plus, Upload
 } from "lucide-react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   const cotacoes = getCotacoesWithRelations();
+  
+  const handleImportCSV = () => {
+    toast.success('Funcionalidade de importar CSV será implementada');
+  };
   
   // Calcular KPIs
   const kpis = useMemo(() => {
@@ -94,7 +99,7 @@ const Dashboard = () => {
         </div>
         
         <div className="flex gap-3">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" onClick={handleImportCSV} className="gap-2">
             <Upload className="h-4 w-4" />
             Importar CSV
           </Button>
