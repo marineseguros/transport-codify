@@ -237,7 +237,7 @@ const Dashboard = () => {
                     {cotacao.ramo?.descricao} • {cotacao.tipo}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Produtor: {cotacao.produtor?.nome}
+                    Produtor: {cotacao.produtor_origem?.nome}
                   </p>
                 </div>
               </div>

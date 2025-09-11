@@ -27,7 +27,7 @@ const Relatorios = () => {
   const [seguradoraFilter, setSeguradoraFilter] = useState('');
 
   // Get unique values for filters
-  const produtores = [...new Set(cotacoes.map(c => c.produtor?.nome).filter(Boolean))];
+  const produtores = [...new Set(cotacoes.map(c => c.produtor_origem?.nome).filter(Boolean))];
   const seguradoras = [...new Set(cotacoes.map(c => c.seguradora?.nome).filter(Boolean))];
 
   // Filter data based on selected criteria
@@ -36,7 +36,7 @@ const Relatorios = () => {
       const cotacaoDate = new Date(cotacao.data_cotacao);
       const dateInRange = (!dateRange?.from || cotacaoDate >= dateRange.from) &&
                          (!dateRange?.to || cotacaoDate <= dateRange.to);
-      const produtorMatch = !produtorFilter || cotacao.produtor?.nome === produtorFilter;
+      const produtorMatch = !produtorFilter || cotacao.produtor_origem?.nome === produtorFilter;
       const seguradoraMatch = !seguradoraFilter || cotacao.seguradora?.nome === seguradoraFilter;
       
       return dateInRange && produtorMatch && seguradoraMatch;
@@ -100,7 +100,7 @@ const Relatorios = () => {
     const produtorStats = {};
     
     filteredCotacoes.forEach(cotacao => {
-      const produtorNome = cotacao.produtor?.nome || 'Sem Produtor';
+      const produtorNome = cotacao.produtor_origem?.nome || 'Sem Produtor';
       
       if (!produtorStats[produtorNome]) {
         produtorStats[produtorNome] = {
