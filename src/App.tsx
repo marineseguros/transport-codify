@@ -18,55 +18,53 @@ import NotFoundPage from "./pages/NotFoundPage";
 
 const queryClient = new QueryClient();
 
-const App = () => {
-  const AppContent = () => {
-    const { user, isLoading } = useAuth();
+const AppContent = () => {
+  const { user, isLoading } = useAuth();
 
-    if (isLoading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      );
-    }
-
-    if (!user) {
-      return <LoginForm />;
-    }
-
+  if (isLoading) {
     return (
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/cotacoes" element={<Cotacoes />} />
-          <Route path="/funil" element={<Funil />} />
-          <Route path="/clientes" element={<Clientes />} />
-          <Route path="/tarefas" element={<Tarefas />} />
-          <Route path="/usuarios" element={<Usuarios />} />
-          <Route path="/produtores" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-          <Route path="/seguradoras" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-          <Route path="/ramos" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="/relatorios" element={<Relatorios />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </Layout>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     );
-  };
+  }
+
+  if (!user) {
+    return <LoginForm />;
+  }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/cotacoes" element={<Cotacoes />} />
+        <Route path="/funil" element={<Funil />} />
+        <Route path="/clientes" element={<Clientes />} />
+        <Route path="/tarefas" element={<Tarefas />} />
+        <Route path="/usuarios" element={<Usuarios />} />
+        <Route path="/produtores" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
+        <Route path="/seguradoras" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
+        <Route path="/ramos" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
+        <Route path="/configuracoes" element={<Configuracoes />} />
+        <Route path="/relatorios" element={<Relatorios />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Layout>
   );
 };
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

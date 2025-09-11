@@ -27,7 +27,7 @@ const Relatorios = () => {
   const [seguradoraFilter, setSeguradoraFilter] = useState('');
 
   // Get unique values for filters
-  const produtores = [...new Set(cotacoes.map(c => c.produtor_origem?.nome).filter(Boolean))];
+  const produtores = [...new Set(cotacoes.map(c => c.produtor?.nome).filter(Boolean))];
   const seguradoras = [...new Set(cotacoes.map(c => c.seguradora?.nome).filter(Boolean))];
 
   // Filter data based on selected criteria
@@ -36,10 +36,8 @@ const Relatorios = () => {
       const cotacaoDate = new Date(cotacao.data_cotacao);
       const dateInRange = (!dateRange?.from || cotacaoDate >= dateRange.from) &&
                          (!dateRange?.to || cotacaoDate <= dateRange.to);
-      const produtorMatch = !produtorFilter || 
-        (produtorFilter === "todos-produtores" ? true : cotacao.produtor_origem?.nome === produtorFilter);
-      const seguradoraMatch = !seguradoraFilter || 
-        (seguradoraFilter === "todas-seguradoras" ? true : cotacao.seguradora?.nome === seguradoraFilter);
+      const produtorMatch = !produtorFilter || cotacao.produtor?.nome === produtorFilter;
+      const seguradoraMatch = !seguradoraFilter || cotacao.seguradora?.nome === seguradoraFilter;
       
       return dateInRange && produtorMatch && seguradoraMatch;
     });
@@ -102,7 +100,7 @@ const Relatorios = () => {
     const produtorStats = {};
     
     filteredCotacoes.forEach(cotacao => {
-      const produtorNome = cotacao.produtor_origem?.nome || 'Sem Produtor';
+      const produtorNome = cotacao.produtor?.nome || 'Sem Produtor';
       
       if (!produtorStats[produtorNome]) {
         produtorStats[produtorNome] = {
@@ -193,12 +191,12 @@ const Relatorios = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Produtor</label>
-              <Select value={produtorFilter} onValueChange={(value) => setProdutorFilter(value === "todos-produtores" ? "" : value)}>
+              <Select value={produtorFilter} onValueChange={setProdutorFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os produtores" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem key="" value="todos-produtores">Todos os produtores</SelectItem>
+                  <SelectItem value="">Todos os produtores</SelectItem>
                   {produtores.map(nome => (
                     <SelectItem key={nome} value={nome}>{nome}</SelectItem>
                   ))}
@@ -207,12 +205,12 @@ const Relatorios = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Seguradora</label>
-              <Select value={seguradoraFilter} onValueChange={(value) => setSeguradoraFilter(value === "todas-seguradoras" ? "" : value)}>
+              <Select value={seguradoraFilter} onValueChange={setSeguradoraFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as seguradoras" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem key="" value="todas-seguradoras">Todas as seguradoras</SelectItem>
+                  <SelectItem value="">Todas as seguradoras</SelectItem>
                   {seguradoras.map(nome => (
                     <SelectItem key={nome} value={nome}>{nome}</SelectItem>
                   ))}

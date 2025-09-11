@@ -192,23 +192,23 @@ const Clientes = () => {
           </SelectContent>
         </Select>
 
-        <Select value={filtroTipo} onValueChange={(value) => setFiltroTipo(value === "todos" ? "" : value)}>
+        <Select value={filtroTipo} onValueChange={setFiltroTipo}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
-                    <SelectItem key="" value="todos">Todos</SelectItem>
+            <SelectItem value="">Todos</SelectItem>
             <SelectItem value="pf">Pessoa Física</SelectItem>
             <SelectItem value="pj">Pessoa Jurídica</SelectItem>
           </SelectContent>
         </Select>
 
-        <Select value={filtroStatus} onValueChange={(value) => setFiltroStatus(value === "todos-status" ? "" : value)}>
+        <Select value={filtroStatus} onValueChange={setFiltroStatus}>
           <SelectTrigger className="w-32">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem key="" value="todos-status">Todos</SelectItem>
+            <SelectItem value="">Todos</SelectItem>
             <SelectItem value="ativo">Ativo</SelectItem>
             <SelectItem value="inativo">Inativo</SelectItem>
           </SelectContent>

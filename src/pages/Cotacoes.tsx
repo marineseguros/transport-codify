@@ -38,19 +38,19 @@ const Cotacoes = () => {
 
   const cotacoes = getCotacoesWithRelations();
 
-  // Update filter handling to use new "todos-*" values
+  // Filtros aplicados
   const filteredCotacoes = useMemo(() => {
     return cotacoes.filter((cotacao) => {
       const matchesSearch = 
         cotacao.cliente?.segurado.toLowerCase().includes(searchTerm.toLowerCase()) ||
         cotacao.seguradora?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cotacao.produtor_origem?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cotacao.produtor?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         cotacao.num_apolice?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus = statusFilter === "todos" || cotacao.status === statusFilter;
       const matchesSeguradora = seguradoraFilter === "todas" || cotacao.seguradora_id === seguradoraFilter;
       const matchesRamo = ramoFilter === "todos" || cotacao.ramo_id === ramoFilter;
-      const matchesProdutor = produtorFilter === "todos" || cotacao.produtor_origem_id === produtorFilter;
+      const matchesProdutor = produtorFilter === "todos" || cotacao.produtor_id === produtorFilter;
 
       return matchesSearch && matchesStatus && matchesSeguradora && matchesRamo && matchesProdutor;
     });

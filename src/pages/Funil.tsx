@@ -74,7 +74,7 @@ const Funil = () => {
             
             <div className="flex items-center gap-2 text-xs">
               <User className="h-3 w-3" />
-              <span>{cotacao.produtor_origem?.nome}</span>
+              <span>{cotacao.produtor?.nome}</span>
             </div>
 
             <div className="flex items-center gap-2 text-xs">

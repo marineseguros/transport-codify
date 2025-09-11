@@ -106,8 +106,8 @@ const SidebarProvider = React.forwardRef<
   );
 
   return (
-      // Fix TooltipProvider nesting issue
-      <SidebarProvider>
+    <SidebarContext.Provider value={contextValue}>
+      <TooltipProvider delayDuration={0}>
         <div
           style={
             {
@@ -122,7 +122,8 @@ const SidebarProvider = React.forwardRef<
         >
           {children}
         </div>
-      </SidebarProvider>
+      </TooltipProvider>
+    </SidebarContext.Provider>
   );
 });
 SidebarProvider.displayName = "SidebarProvider";

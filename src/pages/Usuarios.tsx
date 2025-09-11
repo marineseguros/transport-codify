@@ -201,24 +201,24 @@ const Usuarios = () => {
                 className="pl-9"
               />
             </div>
-            <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value === "todos-papeis" ? "" : value)}>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Todos os papéis" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem key="" value="todos-papeis">Todos os papéis</SelectItem>
+                <SelectItem value="">Todos os papéis</SelectItem>
                 <SelectItem value="Administrador">Administrador</SelectItem>
                 <SelectItem value="Gerente">Gerente</SelectItem>
                 <SelectItem value="Produtor">Produtor</SelectItem>
                 <SelectItem value="Somente-Leitura">Somente-Leitura</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value === "todos-status-users" ? "" : value)}>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Todos os status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem key="" value="todos-status-users">Todos os status</SelectItem>
+                <SelectItem value="">Todos os status</SelectItem>
                 <SelectItem value="ativo">Ativo</SelectItem>
                 <SelectItem value="inativo">Inativo</SelectItem>
               </SelectContent>
