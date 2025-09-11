@@ -154,8 +154,7 @@ export const CotacaoModal = ({
       { field: 'segurado', message: 'Informe o segurado.' },
       { field: 'seguradora_id', message: 'Selecione uma seguradora.' },
       { field: 'ramo_id', message: 'Selecione um ramo.' },
-      { field: 'captacao_id', message: 'Selecione uma captação.' },
-      { field: 'status_seguradora_id', message: 'Selecione o status da seguradora.' }
+      { field: 'captacao_id', message: 'Selecione uma captação.' }
     ];
 
     for (const { field, message } of requiredFields) {
@@ -269,27 +268,6 @@ export const CotacaoModal = ({
           )}
         </DialogHeader>
 
-        {/* CSV Actions */}
-        <div className="flex justify-end gap-2 mb-4">
-          <Button variant="outline" size="sm" onClick={handleExportCsv}>
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
-          </Button>
-          <label className="cursor-pointer">
-            <Button variant="outline" size="sm" asChild>
-              <span>
-                <Upload className="h-4 w-4 mr-2" />
-                Importar CSV
-              </span>
-            </Button>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleImportCsv}
-              className="hidden"
-            />
-          </label>
-        </div>
 
         <Tabs defaultValue="dados" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -331,36 +309,33 @@ export const CotacaoModal = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="segurado">Segurado *</Label>
-                  <Input
-                    value={formData.segurado || ''}
-                    onChange={(e) => handleInputChange('segurado', e.target.value)}
-                    placeholder="Nome do segurado"
-                    readOnly={isReadOnly}
-                  />
+                  <Label htmlFor="cliente_id">Segurado *</Label>
+                  <Select 
+                    value={formData.cliente_id || ''} 
+                    onValueChange={(value) => {
+                      handleInputChange('cliente_id', value);
+                      const cliente = MOCK_CLIENTES.find(c => c.id === value);
+                      if (cliente) {
+                        handleInputChange('segurado', cliente.segurado);
+                        handleInputChange('cnpj', cliente.cpf_cnpj);
+                      }
+                    }}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o segurado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOCK_CLIENTES.map(cliente => (
+                        <SelectItem key={cliente.id} value={cliente.id}>
+                          {cliente.segurado} - {cliente.cidade}/{cliente.uf}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              {/* Cliente */}
-              <div>
-                <Label htmlFor="cliente_id">Cliente *</Label>
-                <Select 
-                  value={formData.cliente_id || ''} 
-                  onValueChange={(value) => handleInputChange('cliente_id', value)}
-                  disabled={isReadOnly}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MOCK_CLIENTES.map(cliente => (
-                      <SelectItem key={cliente.id} value={cliente.id}>
-                        {cliente.segurado} - {cliente.cidade}/{cliente.uf}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
               {/* Produtores */}
               <div className="grid gap-4 md:grid-cols-3">
@@ -425,8 +400,8 @@ export const CotacaoModal = ({
                 </div>
               </div>
 
-              {/* Seguradora e Ramo */}
-              <div className="grid gap-4 md:grid-cols-2">
+              {/* Seguradora, Ramo e Segmento */}
+              <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <Label htmlFor="seguradora_id">Seguradora *</Label>
                   <Select 
@@ -460,11 +435,21 @@ export const CotacaoModal = ({
                     <SelectContent>
                       {MOCK_RAMOS.map(ramo => (
                         <SelectItem key={ramo.id} value={ramo.id}>
-                          {ramo.codigo} - {ramo.descricao} ({ramo.segmento})
+                          {ramo.codigo} - {ramo.descricao}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="segmento">Segmento</Label>
+                  <Input
+                    value={getSegmentoByRamo(formData.ramo_id || '') || ''}
+                    placeholder="Segmento será preenchido automaticamente"
+                    readOnly
+                    className="bg-muted"
+                  />
                 </div>
               </div>
 
@@ -483,7 +468,7 @@ export const CotacaoModal = ({
                     <SelectContent>
                       {MOCK_CAPTACAO.map(captacao => (
                         <SelectItem key={captacao.id} value={captacao.id}>
-                          {captacao.codigo} - {captacao.descricao}
+                          {captacao.descricao}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -491,7 +476,7 @@ export const CotacaoModal = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="status_seguradora_id">Status da Seguradora *</Label>
+                  <Label htmlFor="status_seguradora_id">Status da Seguradora</Label>
                   <Select 
                     value={formData.status_seguradora_id || ''} 
                     onValueChange={(value) => handleInputChange('status_seguradora_id', value)}
@@ -503,7 +488,7 @@ export const CotacaoModal = ({
                     <SelectContent>
                       {MOCK_STATUS_SEGURADORA.map(status => (
                         <SelectItem key={status.id} value={status.id}>
-                          {status.codigo} - {status.descricao}
+                          {status.descricao}
                         </SelectItem>
                       ))}
                     </SelectContent>

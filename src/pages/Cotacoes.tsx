@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { 
-  Plus, Search, Filter, Download, Eye, Edit, 
+  Plus, Search, Filter, Download, Upload, Eye, Edit, 
   Copy, FileText, MessageSquare, History 
 } from "lucide-react";
 import { getCotacoesWithRelations, MOCK_SEGURADORAS, MOCK_RAMOS, MOCK_PRODUTORES } from "@/data/mockData";
@@ -137,8 +137,21 @@ const Cotacoes = () => {
         <div className="flex gap-3">
           <Button variant="outline" className="gap-2">
             <Download className="h-4 w-4" />
-            Exportar
+            Exportar CSV
           </Button>
+          <label className="cursor-pointer">
+            <Button variant="outline" className="gap-2" asChild>
+              <span>
+                <Upload className="h-4 w-4" />
+                Importar CSV
+              </span>
+            </Button>
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+            />
+          </label>
           <Button onClick={handleNewCotacao} className="gap-2">
             <Plus className="h-4 w-4" />
             Nova Cotação
