@@ -104,7 +104,7 @@ export const CotacaoModal = ({
         inicio_vigencia: '',
         fim_vigencia: '',
         valor_premio: cotacao.valor_premio || 0,
-        status: cotacao.status || 'Em cotação',
+        status: cotacao.status || 'Em análise',
         observacoes: cotacao.observacoes || '',
         segmento: cotacao.segmento || '',
         data_fechamento: undefined,
@@ -134,7 +134,7 @@ export const CotacaoModal = ({
         inicio_vigencia: inicioVigencia.toISOString().split('T')[0],
         fim_vigencia: fimVigencia.toISOString().split('T')[0],
         valor_premio: 0,
-        status: 'Em cotação',
+        status: 'Em análise',
         observacoes: '',
         segmento: '',
         data_fechamento: undefined,
@@ -175,9 +175,9 @@ export const CotacaoModal = ({
         const ramoDesc = ramo.descricao.toUpperCase();
         
         if (['NACIONAL', 'EXPORTAÇÃO', 'IMPORTAÇÃO', 'NACIONAL AVULSA', 'IMPORTAÇÃO AVULSA', 'EXPORTAÇÃO AVULSA'].includes(ramoDesc)) {
-          segmento = 'embarcador';
+          segmento = 'Embarcador';
         } else if (['RCTR-C', 'RC-DC', 'RCTR-VI', 'GARANTIA', 'RCTA-C', 'AMBIENTAL', 'RC-V'].includes(ramoDesc)) {
-          segmento = 'transportador';
+          segmento = 'Transportador';
         }
         
         setFormData(prev => ({
@@ -558,6 +558,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="Em análise">Em análise</SelectItem>
                       <SelectItem value="Em cotação">Em cotação</SelectItem>
                       <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
                       <SelectItem value="Declinado">Declinado</SelectItem>
