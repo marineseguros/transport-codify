@@ -178,21 +178,21 @@ export type Database = {
             foreignKeyName: "cotacoes_produtor_cotador_id_fkey"
             columns: ["produtor_cotador_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "produtores"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "cotacoes_produtor_negociador_id_fkey"
             columns: ["produtor_negociador_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "produtores"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "cotacoes_produtor_origem_id_fkey"
             columns: ["produtor_origem_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "produtores"
             referencedColumns: ["id"]
           },
           {
