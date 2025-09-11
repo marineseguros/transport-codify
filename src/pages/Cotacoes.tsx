@@ -427,6 +427,7 @@ const Cotacoes = () => {
           setSelectedCotacao(null);
         }}
         cotacao={selectedCotacao || undefined}
+        mode={selectedCotacao ? 'edit' : 'create'}
       />
     </div>
   );

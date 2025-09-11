@@ -7,24 +7,106 @@ import {
   TrendingUp, TrendingDown, DollarSign, FileText, 
   Clock, Target, Plus, Upload
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { DatePickerWithRange } from "@/components/ui/date-picker";
+import { DateRange } from "react-day-picker";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarIcon } from "lucide-react";
 
 const Dashboard = () => {
   const { cotacoes, loading } = useCotacoes();
   
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [dateFilter, setDateFilter] = useState<string>('todos');
+  
   const handleImportCSV = () => {
     toast.success('Funcionalidade de importar CSV será implementada');
+  };
+
+  // Filter cotacoes by date
+  const filteredCotacoes = useMemo(() => {
+    if (dateFilter === 'todos') return cotacoes;
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    let startDate: Date;
+    let endDate: Date = now;
+    
+    switch (dateFilter) {
+      case 'hoje':
+        startDate = today;
+        break;
+      case '7dias':
+        startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30dias':
+        startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90dias':
+        startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'personalizado':
+        if (!dateRange?.from) return cotacoes;
+        startDate = dateRange.from;
+        endDate = dateRange.to || dateRange.from;
+        break;
+      default:
+        return cotacoes;
+    }
+    
+    return cotacoes.filter(cotacao => {
+      const cotacaoDate = new Date(cotacao.data_cotacao);
+      return cotacaoDate >= startDate && cotacaoDate <= endDate;
+    });
+  }, [cotacoes, dateFilter, dateRange]);
+
+  const getDateFilteredCotacoes = () => {
+    if (dateFilter === 'todos') return cotacoes;
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    let startDate: Date;
+    let endDate: Date = now;
+    
+    switch (dateFilter) {
+      case 'hoje':
+        startDate = today;
+        break;
+      case '7dias':
+        startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30dias':
+        startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90dias':
+        startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'personalizado':
+        if (!dateRange?.from) return cotacoes;
+        startDate = dateRange.from;
+        endDate = dateRange.to || dateRange.from;
+        break;
+      default:
+        return cotacoes;
+    }
+    
+    return cotacoes.filter(cotacao => {
+      const cotacaoDate = new Date(cotacao.data_cotacao);
+      return cotacaoDate >= startDate && cotacaoDate <= endDate;
+    });
   };
   
   // Calcular KPIs
   const kpis = useMemo(() => {
-    const totalCotacoes = cotacoes.length;
-    const emAndamento = cotacoes.filter(c => c.status === 'Em cotação').length;
-    const negocioFechado = cotacoes.filter(c => c.status === 'Negócio fechado').length;
-    const declinado = cotacoes.filter(c => c.status === 'Declinado').length;
+    const totalCotacoes = filteredCotacoes.length;
+    const emAndamento = filteredCotacoes.filter(c => c.status === 'Em cotação').length;
+    const negocioFechado = filteredCotacoes.filter(c => c.status === 'Negócio fechado').length;
+    const declinado = filteredCotacoes.filter(c => c.status === 'Declinado').length;
     
-    const cotacoesFechadas = cotacoes.filter(c => c.status === 'Negócio fechado');
+    const cotacoesFechadas = filteredCotacoes.filter(c => c.status === 'Negócio fechado');
     const premioTotal = cotacoesFechadas.reduce((sum, c) => sum + c.valor_premio, 0);
     const ticketMedio = cotacoesFechadas.length > 0 ? premioTotal / cotacoesFechadas.length : 0;
     
@@ -49,18 +131,18 @@ const Dashboard = () => {
       ticketMedio,
       tempoMedioFechamento
     };
-  }, [cotacoes]);
+  }, [filteredCotacoes]);
 
   // Dados recentes
   const cotacoesRecentes = useMemo(() => {
-    return cotacoes
+    return filteredCotacoes
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
-  }, [cotacoes]);
+  }, [filteredCotacoes]);
 
   // Distribuição por status
   const distribuicaoStatus = useMemo(() => {
-    const counts = cotacoes.reduce((acc, cotacao) => {
+    const counts = filteredCotacoes.reduce((acc, cotacao) => {
       acc[cotacao.status] = (acc[cotacao.status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -68,9 +150,9 @@ const Dashboard = () => {
     return Object.entries(counts).map(([status, count]) => ({
       status,
       count,
-      percentage: cotacoes.length > 0 ? (count / cotacoes.length) * 100 : 0
+      percentage: filteredCotacoes.length > 0 ? (count / filteredCotacoes.length) * 100 : 0
     }));
-  }, [cotacoes]);
+  }, [filteredCotacoes]);
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { 
@@ -109,6 +191,56 @@ const Dashboard = () => {
           </Button>
         </div>
       </div>
+
+      {/* Filtros de Data */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5" />
+            Filtros de Data
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="w-48">
+              <label className="text-sm font-medium mb-2 block">Período</label>
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os períodos</SelectItem>
+                  <SelectItem value="hoje">Hoje</SelectItem>
+                  <SelectItem value="7dias">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30dias">Últimos 30 dias</SelectItem>
+                  <SelectItem value="90dias">Últimos 90 dias</SelectItem>
+                  <SelectItem value="personalizado">Período personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {dateFilter === 'personalizado' && (
+              <div className="flex-1 min-w-80">
+                <label className="text-sm font-medium mb-2 block">Data personalizada</label>
+                <DatePickerWithRange
+                  date={dateRange}
+                  onDateChange={setDateRange}
+                />
+              </div>
+            )}
+
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDateFilter('todos');
+                setDateRange(undefined);
+              }}
+            >
+              Limpar filtros
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Distribuição por Status - Moved up */}
       <Card className="mb-6">

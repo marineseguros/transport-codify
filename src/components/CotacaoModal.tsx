@@ -96,21 +96,21 @@ export const CotacaoModal = ({
         cnpj: cotacao.cpf_cnpj || '',
         segurado: cotacao.segurado || '',
         seguradora_id: cotacao.seguradora_id || '',
-        ramo_id: '',
-        captacao_id: '',
-        status_seguradora_id: '',
-        tipo: 'Novo',
+        ramo_id: cotacao.ramo_id || '',
+        captacao_id: cotacao.captacao_id || '',
+        status_seguradora_id: cotacao.status_seguradora_id || '',
+        tipo: cotacao.tipo || 'Novo',
         data_cotacao: cotacao.data_cotacao || new Date().toISOString().split('T')[0],
-        inicio_vigencia: '',
-        fim_vigencia: '',
+        inicio_vigencia: cotacao.data_cotacao || '',
+        fim_vigencia: cotacao.data_fechamento || '',
         valor_premio: cotacao.valor_premio || 0,
         status: cotacao.status || 'Em cotação',
         observacoes: cotacao.observacoes || '',
         segmento: cotacao.segmento || '',
-        data_fechamento: undefined,
-        num_apolice: undefined,
-        motivo_recusa: '',
-        comentarios: ''
+        data_fechamento: cotacao.data_fechamento || undefined,
+        num_apolice: cotacao.num_apolice || undefined,
+        motivo_recusa: cotacao.motivo_recusa || '',
+        comentarios: cotacao.comentarios || ''
       });
     } else if (isCreating) {
       const hoje = new Date();
