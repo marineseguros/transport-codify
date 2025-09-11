@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Save, X, FileText, MessageSquare, History, Paperclip } from "lucide-react";
+import { Save, X, FileText, MessageSquare, History, Paperclip, Upload } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
 import { useProfiles, useSeguradoras, useClientes, useCotacoes, type Cotacao } from '@/hooks/useSupabaseData';
 import { MOCK_PRODUTORES, MOCK_SEGURADORAS, MOCK_RAMOS, MOCK_CAPTACAO, MOCK_STATUS_SEGURADORA } from '@/data/mockData';
@@ -64,7 +64,8 @@ export const CotacaoModal = ({
     segmento: '',
     data_fechamento: undefined as string | undefined,
     num_apolice: undefined as string | undefined,
-    motivo_recusa: ''
+    motivo_recusa: '',
+    comentarios: ''
   });
 
   const isReadOnly = mode === 'view';
@@ -95,7 +96,8 @@ export const CotacaoModal = ({
         segmento: cotacao.segmento || '',
         data_fechamento: undefined,
         num_apolice: undefined,
-        motivo_recusa: ''
+        motivo_recusa: '',
+        comentarios: ''
       });
     } else if (isCreating) {
       const hoje = new Date();
@@ -124,7 +126,8 @@ export const CotacaoModal = ({
         segmento: '',
         data_fechamento: undefined,
         num_apolice: undefined,
-        motivo_recusa: ''
+        motivo_recusa: '',
+        comentarios: ''
       });
     }
   }, [cotacao, mode]);
@@ -586,22 +589,55 @@ export const CotacaoModal = ({
           </TabsContent>
 
           <TabsContent value="anexos" className="space-y-6 mt-6">
-            <div className="text-center py-12">
-              <Paperclip className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">Anexos</h3>
-              <p className="text-muted-foreground">
-                Funcionalidade de anexos será implementada
-              </p>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Anexos</h3>
+                {!isReadOnly && (
+                  <label className="cursor-pointer">
+                    <Button variant="outline" className="gap-2" asChild>
+                      <span>
+                        <Upload className="h-4 w-4" />
+                        Importar Arquivo
+                      </span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          toast.success('Funcionalidade de anexos será implementada');
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+              <div className="text-center py-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
+                <Paperclip className="mx-auto h-8 w-8 text-muted-foreground" />
+                <p className="text-muted-foreground mt-2">
+                  Nenhum arquivo anexado
+                </p>
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="comentarios" className="space-y-6 mt-6">
-            <div className="text-center py-12">
-              <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">Comentários</h3>
-              <p className="text-muted-foreground">
-                Funcionalidade de comentários será implementada
-              </p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                <h3 className="text-lg font-semibold">Comentários</h3>
+              </div>
+              <div>
+                <Textarea
+                  value={formData.comentarios}
+                  onChange={(e) => handleInputChange('comentarios', e.target.value)}
+                  placeholder="Adicione seus comentários sobre esta cotação..."
+                  className="min-h-[150px]"
+                  readOnly={isReadOnly}
+                />
+              </div>
             </div>
           </TabsContent>
 
