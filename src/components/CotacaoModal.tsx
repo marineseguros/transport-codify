@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Download } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
 import { useProfiles, useSeguradoras, useClientes, useCotacoes, type Cotacao } from '@/hooks/useSupabaseData';
+import { MOCK_PRODUTORES, MOCK_SEGURADORAS, MOCK_RAMOS, MOCK_CAPTACAO, MOCK_STATUS_SEGURADORA } from '@/data/mockData';
 
 interface CotacaoModalProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ export const CotacaoModal = ({
     cnpj: '',
     segurado: '',
     seguradora_id: '',
+    ramo_id: '',
     captacao_id: '',
     status_seguradora_id: '',
     tipo: 'Novo',
@@ -80,6 +82,7 @@ export const CotacaoModal = ({
         cnpj: cotacao.cpf_cnpj || '',
         segurado: cotacao.segurado || '',
         seguradora_id: cotacao.seguradora_id || '',
+        ramo_id: '',
         captacao_id: '',
         status_seguradora_id: '',
         tipo: 'Novo',
@@ -108,6 +111,7 @@ export const CotacaoModal = ({
         cnpj: '',
         segurado: '',
         seguradora_id: '',
+        ramo_id: '',
         captacao_id: '',
         status_seguradora_id: '',
         tipo: 'Novo',
@@ -146,21 +150,13 @@ export const CotacaoModal = ({
       }
     }
 
-    // Auto-fill segment based on produtor origem
-    if (field === 'produtor_origem_id') {
-      const profile = profiles.find(p => p.id === value);
-      let segmento = '';
-      
-      if (profile?.nome.toLowerCase().includes('transportador')) {
-        segmento = 'TRANSPORTADOR';
-      } else if (profile?.nome.toLowerCase().includes('embarcador')) {
-        segmento = 'EMBARCADOR';
-      }
-      
+    // Auto-fill segment based on ramo
+    if (field === 'ramo_id') {
+      const ramo = MOCK_RAMOS.find(r => r.id === value);
       setFormData(prev => ({
         ...prev,
-        produtor_origem_id: value,
-        segmento: segmento
+        ramo_id: value,
+        segmento: ramo ? ramo.segmento : ''
       }));
     }
 
@@ -264,19 +260,6 @@ export const CotacaoModal = ({
     }
   };
 
-  // Mock data for dropdowns that don't have Supabase tables yet
-  const MOCK_CAPTACAO = [
-    { id: '1', descricao: 'Captação Direta' },
-    { id: '2', descricao: 'Indicação' },
-    { id: '3', descricao: 'Renovação' }
-  ];
-
-  const MOCK_STATUS_SEGURADORA = [
-    { id: '1', descricao: 'Análise' },
-    { id: '2', descricao: 'Aprovado' },
-    { id: '3', descricao: 'Pendente' },
-    { id: '4', descricao: 'Recusado' }
-  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -336,32 +319,12 @@ export const CotacaoModal = ({
 
                 <div>
                   <Label htmlFor="segurado">Segurado *</Label>
-                  {isCreating ? (
-                    <Input
-                      value={formData.segurado}
-                      onChange={(e) => handleInputChange('segurado', e.target.value)}
-                      placeholder="Digite o nome do segurado"
-                      className="border-2 border-green-200 bg-green-50 focus:border-green-400"
-                      readOnly={isReadOnly}
-                    />
-                  ) : (
-                    <Select 
-                      value={formData.cliente_id} 
-                      onValueChange={(value) => handleInputChange('cliente_id', value)}
-                      disabled={isReadOnly}
-                    >
-                      <SelectTrigger className="border-2 border-green-200 bg-green-50 focus:border-green-400">
-                        <SelectValue placeholder="Selecione o segurado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clientes.map(cliente => (
-                          <SelectItem key={cliente.id} value={cliente.id}>
-                            {cliente.segurado} - {cliente.cidade}/{cliente.uf}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                  <Input
+                    value={formData.segurado}
+                    onChange={(e) => handleInputChange('segurado', e.target.value)}
+                    placeholder="Digite o nome do segurado"
+                    readOnly={isReadOnly}
+                  />
                 </div>
               </div>
 
@@ -378,7 +341,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o produtor origem" />
                     </SelectTrigger>
                     <SelectContent>
-                      {profiles.map(produtor => (
+                      {MOCK_PRODUTORES.map(produtor => (
                         <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
                         </SelectItem>
@@ -398,7 +361,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o produtor negociador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {profiles.map(produtor => (
+                      {MOCK_PRODUTORES.map(produtor => (
                         <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
                         </SelectItem>
@@ -418,7 +381,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o produtor cotador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {profiles.map(produtor => (
+                      {MOCK_PRODUTORES.map(produtor => (
                         <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
                         </SelectItem>
@@ -428,8 +391,8 @@ export const CotacaoModal = ({
                 </div>
               </div>
 
-              {/* Seguradora e Segmento */}
-              <div className="grid gap-4 md:grid-cols-2">
+              {/* Seguradora, Ramo e Segmento */}
+              <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <Label htmlFor="seguradora_id">Seguradora *</Label>
                   <Select 
@@ -441,9 +404,29 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione a seguradora" />
                     </SelectTrigger>
                     <SelectContent>
-                      {seguradoras.map(seguradora => (
+                      {MOCK_SEGURADORAS.map(seguradora => (
                         <SelectItem key={seguradora.id} value={seguradora.id}>
                           {seguradora.codigo} - {seguradora.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="ramo_id">Ramo *</Label>
+                  <Select 
+                    value={formData.ramo_id} 
+                    onValueChange={(value) => handleInputChange('ramo_id', value)}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o ramo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOCK_RAMOS.map(ramo => (
+                        <SelectItem key={ramo.id} value={ramo.id}>
+                          {ramo.codigo} - {ramo.descricao}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -455,8 +438,8 @@ export const CotacaoModal = ({
                   <Input
                     value={formData.segmento}
                     onChange={(e) => handleInputChange('segmento', e.target.value)}
-                    placeholder="Segmento será preenchido automaticamente"
-                    readOnly={isReadOnly}
+                    placeholder="Preenchido automaticamente"
+                    readOnly
                   />
                 </div>
               </div>
@@ -519,7 +502,7 @@ export const CotacaoModal = ({
                     <SelectContent>
                       <SelectItem value="Novo">Novo</SelectItem>
                       <SelectItem value="Renovação">Renovação</SelectItem>
-                      <SelectItem value="Aditivo">Aditivo</SelectItem>
+                      <SelectItem value="Migração">Migração</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -536,10 +519,7 @@ export const CotacaoModal = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Em cotação">Em cotação</SelectItem>
-                      <SelectItem value="Em análise">Em análise</SelectItem>
-                      <SelectItem value="Aguardando cliente">Aguardando cliente</SelectItem>
                       <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
-                      <SelectItem value="Cancelada">Cancelada</SelectItem>
                       <SelectItem value="Declinado">Declinado</SelectItem>
                     </SelectContent>
                   </Select>
