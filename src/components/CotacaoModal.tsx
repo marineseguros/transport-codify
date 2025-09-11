@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Download } from "lucide-react";
+import { Save, X, FileText, MessageSquare, History, Paperclip } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
 import { useProfiles, useSeguradoras, useClientes, useCotacoes, type Cotacao } from '@/hooks/useSupabaseData';
 import { MOCK_PRODUTORES, MOCK_SEGURADORAS, MOCK_RAMOS, MOCK_CAPTACAO, MOCK_STATUS_SEGURADORA } from '@/data/mockData';
@@ -64,7 +64,7 @@ export const CotacaoModal = ({
     segmento: '',
     data_fechamento: undefined as string | undefined,
     num_apolice: undefined as string | undefined,
-    motivo_recusa: undefined as string | undefined
+    motivo_recusa: ''
   });
 
   const isReadOnly = mode === 'view';
@@ -95,7 +95,7 @@ export const CotacaoModal = ({
         segmento: cotacao.segmento || '',
         data_fechamento: undefined,
         num_apolice: undefined,
-        motivo_recusa: undefined
+        motivo_recusa: ''
       });
     } else if (isCreating) {
       const hoje = new Date();
@@ -124,7 +124,7 @@ export const CotacaoModal = ({
         segmento: '',
         data_fechamento: undefined,
         num_apolice: undefined,
-        motivo_recusa: undefined
+        motivo_recusa: ''
       });
     }
   }, [cotacao, mode]);
@@ -242,21 +242,6 @@ export const CotacaoModal = ({
     } catch (error) {
       toast.error('Erro ao salvar cotação');
       console.error('Error saving cotacao:', error);
-    }
-  };
-
-  const handleExportCsv = () => {
-    toast.success('Funcionalidade de exportar CSV será implementada');
-  };
-
-  const handleImportCsv = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      toast.success('Funcionalidade de importar CSV será implementada');
-    } catch (error) {
-      toast.error('Erro ao processar o arquivo CSV.');
     }
   };
 
@@ -406,7 +391,7 @@ export const CotacaoModal = ({
                     <SelectContent>
                       {MOCK_SEGURADORAS.map(seguradora => (
                         <SelectItem key={seguradora.id} value={seguradora.id}>
-                          {seguradora.codigo} - {seguradora.nome}
+                          {seguradora.nome}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -426,7 +411,7 @@ export const CotacaoModal = ({
                     <SelectContent>
                       {MOCK_RAMOS.map(ramo => (
                         <SelectItem key={ramo.id} value={ramo.id}>
-                          {ramo.codigo} - {ramo.descricao}
+                          {ramo.descricao}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -486,6 +471,20 @@ export const CotacaoModal = ({
                   </Select>
                 </div>
               </div>
+
+              {/* Motivo Recusa - Condicional */}
+              {formData.status_seguradora_id === '5' && (
+                <div>
+                  <Label htmlFor="motivo_recusa">Motivo da Recusa</Label>
+                  <Textarea
+                    value={formData.motivo_recusa}
+                    onChange={(e) => handleInputChange('motivo_recusa', e.target.value)}
+                    placeholder="Descreva o motivo da recusa..."
+                    className="min-h-[80px]"
+                    readOnly={isReadOnly}
+                  />
+                </div>
+              )}
 
               {/* Tipo, Status e Data */}
               <div className="grid gap-4 md:grid-cols-3">
@@ -618,32 +617,7 @@ export const CotacaoModal = ({
         </Tabs>
 
         {/* Actions */}
-        <div className="flex justify-between pt-6 border-t">
-          <div className="flex gap-2">
-            {!isReadOnly && (
-              <>
-                <Button variant="outline" onClick={handleExportCsv} className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Exportar
-                </Button>
-                <label className="cursor-pointer">
-                  <Button variant="outline" className="gap-2" asChild>
-                    <span>
-                      <Upload className="h-4 w-4" />
-                      Importar
-                    </span>
-                  </Button>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={handleImportCsv}
-                    className="hidden"
-                  />
-                </label>
-              </>
-            )}
-          </div>
-          
+        <div className="flex justify-end pt-6 border-t">
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>
               <X className="h-4 w-4 mr-2" />
