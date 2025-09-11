@@ -22,63 +22,9 @@ import {
 import { Tarefa } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Mock tasks data
-const MOCK_TAREFAS: Tarefa[] = [
-  {
-    id: '1',
-    titulo: 'Revisar documentação da cotação TRN-001',
-    descricao: 'Verificar se todos os documentos estão em ordem antes do fechamento',
-    responsavel_id: '1',
-    prioridade: 'Alta',
-    status: 'Em andamento',
-    data_limite: '2024-02-15',
-    relacionada_a: 'Cotacao',
-    cotacao_id: 'cotacao-1',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    titulo: 'Atualizar dados do cliente Transportes Rápido',
-    descricao: 'Cliente solicitou alteração no endereço e telefone',
-    responsavel_id: '2',
-    prioridade: 'Média',
-    status: 'Aberta',
-    data_limite: '2024-02-20',
-    relacionada_a: 'Geral',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    titulo: 'Renovar apólice vencendo em março',
-    descricao: 'Contatar cliente para renovação da apólice TRN-345',
-    responsavel_id: '3',
-    prioridade: 'Alta',
-    status: 'Aberta',
-    data_limite: '2024-02-28',
-    relacionada_a: 'Cotacao',
-    cotacao_id: 'cotacao-2',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    titulo: 'Emitir relatório mensal de comissões',
-    descricao: 'Gerar relatório de comissões do mês de janeiro',
-    responsavel_id: '1',
-    prioridade: 'Baixa',
-    status: 'Concluída',
-    data_limite: '2024-02-05',
-    relacionada_a: 'Geral',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
 const Tarefas = () => {
   const { user } = useAuth();
-  const [tarefas] = useState(MOCK_TAREFAS);
+  const [tarefas] = useState<Tarefa[]>([]);  // Empty array - tasks feature to be implemented with Supabase
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [prioridadeFilter, setPrioridadeFilter] = useState('');

@@ -20,13 +20,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ClienteModal } from '@/components/ClienteModal';
-import { MOCK_CLIENTES, MOCK_COTACOES } from '@/data/mockData';
-import { Cliente } from '@/types';
+import { useClientes, useCotacoes } from '@/hooks/useSupabaseData';
+import { Cliente, ClienteWithStats } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Clientes = () => {
   const { user } = useAuth();
-  const [clientes] = useState(MOCK_CLIENTES);
+  const { clientes, loading: clientesLoading } = useClientes();
+  const { cotacoes, loading: cotacoesLoading } = useCotacoes();
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,19 +39,21 @@ const Clientes = () => {
   // Calculate stats for each client
   const clientesWithStats = useMemo(() => {
     return clientes.map(cliente => {
-      const cotacoes = MOCK_COTACOES.filter(c => c.cliente_id === cliente.id);
-      const cotacoesFechadas = cotacoes.filter(c => c.status === 'Negócio fechado');
+      const clienteCotacoes = cotacoes.filter(c => c.cliente_id === cliente.id);
+      const cotacoesFechadas = clienteCotacoes.filter(c => c.status === 'Negócio fechado');
       const premioTotal = cotacoesFechadas.reduce((sum, c) => sum + c.valor_premio, 0);
       
       return {
         ...cliente,
-        totalCotacoes: cotacoes.length,
+        totalCotacoes: clienteCotacoes.length,
         cotacoesFechadas: cotacoesFechadas.length,
         premioTotal,
-        ultimaCotacao: cotacoes.length > 0 ? Math.max(...cotacoes.map(c => new Date(c.created_at).getTime())) : null
-      };
+        ultimaCotacao: clienteCotacoes.length > 0 
+          ? Math.max(...clienteCotacoes.map(c => new Date(c.created_at).getTime()))
+          : 0,
+      } as ClienteWithStats;
     });
-  }, [clientes]);
+  }, [clientes, cotacoes]);
 
   // Filter clients
   const filteredClientes = useMemo(() => {

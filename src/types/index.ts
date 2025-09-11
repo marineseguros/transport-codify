@@ -23,6 +23,14 @@ export interface Produtor {
   updated_at: string;
 }
 
+// Cliente com estatísticas adicionais
+export interface ClienteWithStats extends Cliente {
+  totalCotacoes: number;
+  cotacoesFechadas: number;
+  premioTotal: number;
+  ultimaCotacao: number;
+}
+
 export interface Cliente {
   id: string;
   segurado: string;

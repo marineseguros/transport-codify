@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Download, Upload, Edit, Trash2, FileText, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { Plus, Search, Download, Upload, Edit, Trash2, FileText, TrendingUp, Users, DollarSign, RefreshCw } from 'lucide-react';
 import { CotacaoModal } from '@/components/CotacaoModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCotacoes, type Cotacao } from '@/hooks/useSupabaseData';
@@ -178,7 +178,10 @@ const Cotacoes = () => {
         </div>
         
         <div className="flex gap-3">
-          {/* Import/Export buttons moved to main page as requested */}
+          <Button variant="outline" onClick={refetch} className="gap-2" disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
           <Button variant="outline" onClick={handleExportCSV} className="gap-2">
             <Download className="h-4 w-4" />
             Exportar CSV

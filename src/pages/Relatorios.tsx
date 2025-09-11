@@ -12,13 +12,13 @@ import {
 } from '@/components/ui/select';
 import { DatePickerWithRange } from '@/components/ui/date-picker';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { getCotacoesWithRelations } from '@/data/mockData';
+import { useCotacoes } from '@/hooks/useSupabaseData';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
 
 const Relatorios = () => {
-  const cotacoes = getCotacoesWithRelations();
+  const { cotacoes, loading } = useCotacoes();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date())

@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getCotacoesWithRelations, MOCK_COTACOES } from "@/data/mockData";
-import { CotacaoTRN, KPI } from "@/types";
+import { useCotacoes } from "@/hooks/useSupabaseData";
+import { KPI } from "@/types";
 import { 
   TrendingUp, TrendingDown, DollarSign, FileText, 
   Clock, Target, Plus, Upload
@@ -11,7 +11,7 @@ import { useMemo } from "react";
 import { toast } from "sonner";
 
 const Dashboard = () => {
-  const cotacoes = getCotacoesWithRelations();
+  const { cotacoes, loading } = useCotacoes();
   
   const handleImportCSV = () => {
     toast.success('Funcionalidade de importar CSV será implementada');
@@ -68,7 +68,7 @@ const Dashboard = () => {
     return Object.entries(counts).map(([status, count]) => ({
       status,
       count,
-      percentage: (count / cotacoes.length) * 100
+      percentage: cotacoes.length > 0 ? (count / cotacoes.length) * 100 : 0
     }));
   }, [cotacoes]);
 

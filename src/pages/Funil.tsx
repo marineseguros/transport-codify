@@ -1,13 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getCotacoesWithRelations } from "@/data/mockData";
-import { CotacaoTRN } from "@/types";
+import { useCotacoes, type Cotacao } from "@/hooks/useSupabaseData";
 import { useMemo } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Calendar, DollarSign, Building2, User } from "lucide-react";
 
 const Funil = () => {
-  const cotacoes = getCotacoesWithRelations();
+  const { cotacoes, loading } = useCotacoes();
   
   // Organizar cotações por status
   const cotacoesPorStatus = useMemo(() => {
@@ -50,7 +49,7 @@ const Funil = () => {
     console.log('Drag result:', result);
   };
 
-  const CotacaoCard = ({ cotacao, index }: { cotacao: CotacaoTRN; index: number }) => (
+  const CotacaoCard = ({ cotacao, index }: { cotacao: Cotacao; index: number }) => (
     <Draggable draggableId={cotacao.id} index={index}>
       {(provided) => (
         <div
