@@ -28,32 +28,19 @@ const Cotacoes = () => {
     getFirstPage,
     getPrevPage,
     getNextPage,
-    setPageSize: changePageSize
+    setPageSize: changePageSize,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    produtorFilter,
+    setProdutorFilter
   } = useCotacoes();
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [produtorFilter, setProdutorFilter] = useState('');
 
-  // Filter cotacoes based on search and filters
-  const filteredCotacoes = useMemo(() => {
-    return cotacoes.filter(cotacao => {
-      const matchesSearch = 
-        cotacao.segurado.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cotacao.numero_cotacao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cotacao.produtor_origem?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cotacao.seguradora?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesStatus = statusFilter === 'todos' || !statusFilter || cotacao.status === statusFilter;
-      const matchesProdutor = produtorFilter === 'todos' || !produtorFilter || cotacao.produtor_origem?.nome === produtorFilter;
-      
-      return matchesSearch && matchesStatus && matchesProdutor;
-    });
-  }, [cotacoes, searchTerm, statusFilter, produtorFilter]);
-
-  // Get unique produtores for filter
-  const produtores = [...new Set(cotacoes.map(c => c.produtor_origem?.nome).filter(Boolean))];
+  // Get unique produtores for filter from all cotacoes
+  const produtores = [...new Set(cotacoes.map(c => c.produtor_cotador?.nome).filter(Boolean))];
 
   // Valid status options
   const validStatuses = ['Em cotação', 'Negócio fechado', 'Declinado'];
@@ -269,7 +256,7 @@ const Cotacoes = () => {
       <Card>
         <CardHeader>
           <CardTitle>
-            {filteredCotacoes.length} cotação{filteredCotacoes.length !== 1 ? 'ões' : ''} encontrada{filteredCotacoes.length !== 1 ? 's' : ''}
+            {totalCount} cotação{totalCount !== 1 ? 'ões' : ''} encontrada{totalCount !== 1 ? 's' : ''}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -278,7 +265,7 @@ const Cotacoes = () => {
               <TableRow>
                 <TableHead>Número</TableHead>
                 <TableHead>Segurado</TableHead>
-                <TableHead>Produtor Origem</TableHead>
+                <TableHead>Produtor Cotador</TableHead>
                 <TableHead>Seguradora</TableHead>
                 <TableHead>Segmento</TableHead>
                 <TableHead>Valor</TableHead>
@@ -288,7 +275,7 @@ const Cotacoes = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCotacoes.map((cotacao) => (
+              {cotacoes.map((cotacao) => (
                 <TableRow key={cotacao.id}>
                   <TableCell className="font-mono">
                     {cotacao.numero_cotacao}
@@ -302,7 +289,7 @@ const Cotacoes = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {cotacao.produtor_origem?.nome || '-'}
+                    {cotacao.produtor_cotador?.nome || '-'}
                   </TableCell>
                   <TableCell>
                     {cotacao.seguradora ? (
@@ -364,7 +351,7 @@ const Cotacoes = () => {
             </div>
           )}
 
-          {!loading && filteredCotacoes.length === 0 && (
+          {!loading && cotacoes.length === 0 && (
             <div className="text-center py-8">
               <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-sm font-semibold">Nenhuma cotação encontrada</h3>

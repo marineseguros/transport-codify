@@ -298,24 +298,50 @@ export function useCotacoes() {
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(200);
+  const [pageSize, setPageSize] = useState(20);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [cursorStack, setCursorStack] = useState<string[]>([]);
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [produtorFilter, setProdutorFilter] = useState('');
 
   useEffect(() => {
     getTotalCount();
     getFirstPage();
-  }, []);
+  }, [searchTerm, statusFilter, produtorFilter]);
 
   useEffect(() => {
     getFirstPage();
   }, [pageSize]);
 
+  const buildFilteredQuery = (query: any) => {
+    if (searchTerm) {
+      query = query.or(`segurado.ilike.%${searchTerm}%,numero_cotacao.ilike.%${searchTerm}%,produtor_cotador.nome.ilike.%${searchTerm}%,seguradora.nome.ilike.%${searchTerm}%`);
+    }
+    if (statusFilter && statusFilter !== 'todos') {
+      query = query.eq('status', statusFilter);
+    }
+    if (produtorFilter && produtorFilter !== 'todos') {
+      query = query.eq('produtor_cotador.nome', produtorFilter);
+    }
+    return query;
+  };
+
   const getTotalCount = async () => {
     try {
-      const { count, error } = await supabase
+      let query = supabase
         .from('cotacoes')
-        .select('*', { count: 'exact', head: true });
+        .select(`
+          *,
+          produtor_cotador:produtor_cotador_id(nome),
+          seguradora:seguradora_id(nome)
+        `, { count: 'exact', head: true });
+      
+      query = buildFilteredQuery(query);
+      
+      const { count, error } = await query;
       
       if (error) throw error;
       setTotalCount(count || 0);
@@ -328,7 +354,7 @@ export function useCotacoes() {
   const getFirstPage = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('cotacoes')
         .select(`
           *,
@@ -344,6 +370,9 @@ export function useCotacoes() {
         .order('created_at', { ascending: false })
         .limit(pageSize);
 
+      query = buildFilteredQuery(query);
+      const { data, error } = await query;
+
       if (error) throw error;
       
       const cotacoesData = (data as any[]) || [];
@@ -357,6 +386,9 @@ export function useCotacoes() {
       } else {
         setNextCursor(null);
       }
+      
+      // Update total count with current filters
+      await getTotalCount();
     } catch (error) {
       console.error('Error fetching first page:', error);
       setCotacoes([]);
@@ -370,7 +402,7 @@ export function useCotacoes() {
     
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('cotacoes')
         .select(`
           *,
@@ -386,6 +418,9 @@ export function useCotacoes() {
         .order('created_at', { ascending: false })
         .lt('created_at', nextCursor)
         .limit(pageSize);
+
+      query = buildFilteredQuery(query);
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -420,7 +455,7 @@ export function useCotacoes() {
       setLoading(true);
       const prevCursor = cursorStack[cursorStack.length - 1];
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('cotacoes')
         .select(`
           *,
@@ -436,6 +471,9 @@ export function useCotacoes() {
         .order('created_at', { ascending: false })
         .gte('created_at', prevCursor)
         .limit(pageSize);
+
+      query = buildFilteredQuery(query);
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -572,7 +610,13 @@ export function useCotacoes() {
       setCurrentPage(1);
       setCursorStack([]);
       setNextCursor(null);
-    }
+    },
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    produtorFilter,
+    setProdutorFilter
   };
 }
 
