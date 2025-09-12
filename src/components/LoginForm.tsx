@@ -93,9 +93,12 @@ export const LoginForm = () => {
 
             {/* Credenciais de teste para administrador */}
             <div className="mt-4 p-3 bg-muted rounded-lg text-xs text-muted-foreground">
-              <p><strong>Credenciais de teste:</strong></p>
+              <p><strong>Credenciais de teste (Administrador):</strong></p>
               <p>Email: faturamento@marineseguros.com.br</p>
-              <p>Senha: (usar a senha configurada no Supabase)</p>
+              <p>Senha: Teste@2025</p>
+              <p className="text-amber-600 mt-1">
+                💡 Se não funcionar, redefina a senha no Supabase Authentication → Users
+              </p>
             </div>
           </CardContent>
         </Card>
