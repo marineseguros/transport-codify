@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Download, Upload, Edit, Trash2, FileText, TrendingUp, Users, DollarSign, RefreshCw } from 'lucide-react';
 import { CotacaoModal } from '@/components/CotacaoModal';
+import { PaginationControls } from '@/components/ui/pagination-controls';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCotacoes, type Cotacao } from '@/hooks/useSupabaseData';
 import { parseCsvFile } from '@/utils/csvUtils';
@@ -14,7 +15,21 @@ import { toast } from 'sonner';
 
 const Cotacoes = () => {
   const { user } = useAuth();
-  const { cotacoes, loading, createCotacao, refetch } = useCotacoes();
+  const { 
+    cotacoes, 
+    loading, 
+    totalCount,
+    currentPage,
+    pageSize,
+    canGoPrev,
+    canGoNext,
+    createCotacao, 
+    refetch,
+    getFirstPage,
+    getPrevPage,
+    getNextPage,
+    setPageSize: changePageSize
+  } = useCotacoes();
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -414,6 +429,24 @@ const Cotacoes = () => {
                   ? 'Tente ajustar os filtros para encontrar cotações.'
                   : 'Comece criando sua primeira cotação.'}
               </p>
+            </div>
+          )}
+          
+          {/* Pagination Controls */}
+          {totalCount > 0 && (
+            <div className="mt-4 border-t pt-4">
+              <PaginationControls
+                currentPage={currentPage}
+                totalCount={totalCount}
+                pageSize={pageSize}
+                canGoPrev={canGoPrev}
+                canGoNext={canGoNext}
+                onFirstPage={getFirstPage}
+                onPrevPage={getPrevPage}
+                onNextPage={getNextPage}
+                onPageSizeChange={changePageSize}
+                loading={loading}
+              />
             </div>
           )}
         </CardContent>

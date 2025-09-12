@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useCotacoes } from "@/hooks/useSupabaseData";
+import { useCotacoesRecentes, useCotacoesTotais, type Cotacao } from '@/hooks/useSupabaseData';
 import { KPI } from "@/types";
 import { 
   TrendingUp, TrendingDown, DollarSign, FileText, 
@@ -15,7 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CalendarIcon } from "lucide-react";
 
 const Dashboard = () => {
-  const { cotacoes, loading } = useCotacoes();
+  const { cotacoes: recentQuotes, loading: loadingRecentes } = useCotacoesRecentes(10);
+  const { cotacoes: allQuotes, loading: loadingTodas } = useCotacoesTotais();
+  
+  const loading = loadingRecentes || loadingTodas;
   
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [dateFilter, setDateFilter] = useState<string>('todos');
@@ -26,7 +29,7 @@ const Dashboard = () => {
 
   // Filter cotacoes by date
   const filteredCotacoes = useMemo(() => {
-    if (dateFilter === 'todos') return cotacoes;
+    if (dateFilter === 'todos') return allQuotes;
     
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -48,56 +51,76 @@ const Dashboard = () => {
         startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
         break;
       case 'personalizado':
-        if (!dateRange?.from) return cotacoes;
+        if (!dateRange?.from) return allQuotes;
         startDate = dateRange.from;
         endDate = dateRange.to || dateRange.from;
         break;
       default:
-        return cotacoes;
+        return allQuotes;
     }
     
-    return cotacoes.filter(cotacao => {
+    return allQuotes.filter(cotacao => {
       const cotacaoDate = new Date(cotacao.data_cotacao);
       return cotacaoDate >= startDate && cotacaoDate <= endDate;
     });
-  }, [cotacoes, dateFilter, dateRange]);
+  }, [allQuotes, dateFilter, dateRange]);
 
-  const getDateFilteredCotacoes = () => {
-    if (dateFilter === 'todos') return cotacoes;
+  // Calculate stats from all cotações
+  const stats = useMemo(() => {
+    const total = allQuotes.length;
+    const emAnalise = allQuotes.filter(c => c.status === 'Em análise').length;
+    const fechados = allQuotes.filter(c => c.status === 'Negócio fechado').length;
+    const valorTotal = allQuotes
+      .filter(c => c.status === 'Negócio fechado')
+      .reduce((sum, c) => sum + c.valor_premio, 0);
     
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thisMonth = new Date();
+    thisMonth.setDate(1);
+    thisMonth.setHours(0, 0, 0, 0);
     
-    let startDate: Date;
-    let endDate: Date = now;
+    const thisMonthCotacoes = allQuotes.filter(c => 
+      new Date(c.data_cotacao) >= thisMonth
+    );
     
-    switch (dateFilter) {
-      case 'hoje':
-        startDate = today;
-        break;
-      case '7dias':
-        startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case '30dias':
-        startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      case '90dias':
-        startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
-        break;
-      case 'personalizado':
-        if (!dateRange?.from) return cotacoes;
-        startDate = dateRange.from;
-        endDate = dateRange.to || dateRange.from;
-        break;
-      default:
-        return cotacoes;
-    }
+    const mesAtual = thisMonthCotacoes.length;
+    const valorMes = thisMonthCotacoes
+      .filter(c => c.status === 'Negócio fechado')
+      .reduce((sum, c) => sum + c.valor_premio, 0);
     
-    return cotacoes.filter(cotacao => {
-      const cotacaoDate = new Date(cotacao.data_cotacao);
-      return cotacaoDate >= startDate && cotacaoDate <= endDate;
+    return { total, emAnalise, fechados, valorTotal, mesAtual, valorMes };
+  }, [allQuotes]);
+
+  // Chart data based on all cotações
+  const chartData = useMemo(() => {
+    const last6Months = Array.from({ length: 6 }, (_, i) => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      return {
+        month: date.toLocaleDateString('pt-BR', { month: 'short' }),
+        year: date.getFullYear(),
+        monthIndex: date.getMonth()
+      };
+    }).reverse();
+
+    return last6Months.map(({ month, year, monthIndex }) => {
+      const monthCotacoes = allQuotes.filter(c => {
+        const cotacaoDate = new Date(c.data_cotacao);
+        return cotacaoDate.getMonth() === monthIndex && cotacaoDate.getFullYear() === year;
+      });
+      
+      const fechados = monthCotacoes.filter(c => c.status === 'Negócio fechado').length;
+      const valor = monthCotacoes
+        .filter(c => c.status === 'Negócio fechado')
+        .reduce((sum, c) => sum + c.valor_premio, 0);
+      
+      return {
+        month,
+        cotacoes: monthCotacoes.length,
+        fechados,
+        valor
+      };
     });
-  };
+  }, [allQuotes]);
   
   // Calcular KPIs
   const kpis = useMemo(() => {
@@ -131,13 +154,6 @@ const Dashboard = () => {
       ticketMedio,
       tempoMedioFechamento
     };
-  }, [filteredCotacoes]);
-
-  // Dados recentes
-  const cotacoesRecentes = useMemo(() => {
-    return filteredCotacoes
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 5);
   }, [filteredCotacoes]);
 
   // Distribuição por status
@@ -242,7 +258,7 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Distribuição por Status - Moved up */}
+      {/* Distribuição por Status */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Distribuição por Status</CardTitle>
@@ -355,30 +371,36 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {cotacoesRecentes.map((cotacao) => (
-              <div key={cotacao.id} className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                <div className="flex items-start justify-between mb-2">
-                  <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
-                    {cotacao.status}
-                  </Badge>
-                  <span className="text-sm font-bold text-primary">
-                    {formatCurrency(cotacao.valor_premio)}
-                  </span>
+            {recentQuotes.length > 0 ? (
+              recentQuotes.map((cotacao) => (
+                <div key={cotacao.id} className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                  <div className="flex items-start justify-between mb-2">
+                    <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
+                      {cotacao.status}
+                    </Badge>
+                    <span className="text-sm font-bold text-primary">
+                      {formatCurrency(cotacao.valor_premio)}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-medium text-sm">{cotacao.segurado}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {cotacao.seguradora?.nome}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {cotacao.ramo?.descricao} • {cotacao.tipo}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Produtor: {cotacao.produtor_origem?.nome}
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="font-medium text-sm">{cotacao.segurado}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {cotacao.seguradora?.nome}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {cotacao.ramo?.descricao} • {cotacao.tipo}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Produtor: {cotacao.produtor_origem?.nome}
-                  </p>
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 col-span-full">
+                <p className="text-sm text-muted-foreground">Nenhuma cotação recente encontrada.</p>
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>

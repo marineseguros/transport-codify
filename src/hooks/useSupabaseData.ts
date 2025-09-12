@@ -296,13 +296,38 @@ export function useStatusSeguradora() {
 export function useCotacoes() {
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(200);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [cursorStack, setCursorStack] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchCotacoes();
+    getTotalCount();
+    getFirstPage();
   }, []);
 
-  const fetchCotacoes = async () => {
+  useEffect(() => {
+    getFirstPage();
+  }, [pageSize]);
+
+  const getTotalCount = async () => {
     try {
+      const { count, error } = await supabase
+        .from('cotacoes')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw error;
+      setTotalCount(count || 0);
+    } catch (error) {
+      console.error('Error getting total count:', error);
+      setTotalCount(0);
+    }
+  };
+
+  const getFirstPage = async () => {
+    try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('cotacoes')
         .select(`
@@ -316,16 +341,125 @@ export function useCotacoes() {
           captacao:captacao_id(id, descricao, ativo),
           status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(pageSize);
 
       if (error) throw error;
-      setCotacoes((data as any[]) || []);
+      
+      const cotacoesData = (data as any[]) || [];
+      setCotacoes(cotacoesData);
+      setCurrentPage(1);
+      setCursorStack([]);
+      
+      // Set next cursor if we have full page
+      if (cotacoesData.length === pageSize) {
+        setNextCursor(cotacoesData[cotacoesData.length - 1].created_at);
+      } else {
+        setNextCursor(null);
+      }
     } catch (error) {
-      console.error('Error fetching cotacoes:', error);
+      console.error('Error fetching first page:', error);
+      setCotacoes([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const getNextPage = async () => {
+    if (!nextCursor) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('cotacoes')
+        .select(`
+          *,
+          produtor_origem:produtor_origem_id(id, nome, email),
+          produtor_negociador:produtor_negociador_id(id, nome, email),
+          produtor_cotador:produtor_cotador_id(id, nome, email),
+          seguradora:seguradora_id(id, nome, codigo),
+          cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
+          ramo:ramo_id(id, codigo, descricao, ativo),
+          captacao:captacao_id(id, descricao, ativo),
+          status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
+        `)
+        .order('created_at', { ascending: false })
+        .lt('created_at', nextCursor)
+        .limit(pageSize);
+
+      if (error) throw error;
+      
+      const cotacoesData = (data as any[]) || [];
+      setCotacoes(cotacoesData);
+      
+      // Add current cursor to stack for going back
+      setCursorStack(prev => [...prev, nextCursor]);
+      setCurrentPage(prev => prev + 1);
+      
+      // Set next cursor if we have full page
+      if (cotacoesData.length === pageSize) {
+        setNextCursor(cotacoesData[cotacoesData.length - 1].created_at);
+      } else {
+        setNextCursor(null);
+      }
+    } catch (error) {
+      console.error('Error fetching next page:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getPrevPage = async () => {
+    if (cursorStack.length === 0) {
+      // Go to first page
+      getFirstPage();
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const prevCursor = cursorStack[cursorStack.length - 1];
+      
+      const { data, error } = await supabase
+        .from('cotacoes')
+        .select(`
+          *,
+          produtor_origem:produtor_origem_id(id, nome, email),
+          produtor_negociador:produtor_negociador_id(id, nome, email),
+          produtor_cotador:produtor_cotador_id(id, nome, email),
+          seguradora:seguradora_id(id, nome, codigo),
+          cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
+          ramo:ramo_id(id, codigo, descricao, ativo),
+          captacao:captacao_id(id, descricao, ativo),
+          status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
+        `)
+        .order('created_at', { ascending: false })
+        .gte('created_at', prevCursor)
+        .limit(pageSize);
+
+      if (error) throw error;
+      
+      const cotacoesData = (data as any[]) || [];
+      setCotacoes(cotacoesData);
+      
+      // Remove last cursor from stack
+      setCursorStack(prev => prev.slice(0, -1));
+      setCurrentPage(prev => prev - 1);
+      
+      // Set next cursor
+      if (cotacoesData.length === pageSize) {
+        setNextCursor(cotacoesData[cotacoesData.length - 1].created_at);
+      } else {
+        setNextCursor(null);
+      }
+    } catch (error) {
+      console.error('Error fetching previous page:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCotacoes = getFirstPage;
 
   const createCotacao = async (cotacaoData: any) => {
     try {
@@ -420,8 +554,119 @@ export function useCotacoes() {
   return { 
     cotacoes, 
     loading, 
+    totalCount,
+    currentPage,
+    pageSize,
+    nextCursor,
+    canGoNext: !!nextCursor,
+    canGoPrev: currentPage > 1,
     refetch: fetchCotacoes,
     createCotacao,
-    updateCotacao
+    updateCotacao,
+    getTotalCount,
+    getFirstPage,
+    getNextPage,
+    getPrevPage,
+    setPageSize: (newSize: number) => {
+      setPageSize(newSize);
+      setCurrentPage(1);
+      setCursorStack([]);
+      setNextCursor(null);
+    }
   };
+}
+
+// Hook específico para Dashboard - busca apenas cotações recentes
+export function useCotacoesRecentes(limit: number = 10) {
+  const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCotacoesRecentes();
+  }, [limit]);
+
+  const fetchCotacoesRecentes = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('cotacoes')
+        .select(`
+          *,
+          produtor_origem:produtor_origem_id(id, nome, email),
+          produtor_negociador:produtor_negociador_id(id, nome, email),
+          produtor_cotador:produtor_cotador_id(id, nome, email),
+          seguradora:seguradora_id(id, nome, codigo),
+          cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
+          ramo:ramo_id(id, codigo, descricao, ativo),
+          captacao:captacao_id(id, descricao, ativo),
+          status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      setCotacoes((data as any[]) || []);
+    } catch (error) {
+      console.error('Error fetching cotacoes recentes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { cotacoes, loading, refetch: fetchCotacoesRecentes };
+}
+
+// Hook para buscar todas as cotações (para estatísticas)
+export function useCotacoesTotais() {
+  const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAllCotacoes();
+  }, []);
+
+  const fetchAllCotacoes = async () => {
+    try {
+      setLoading(true);
+      
+      // First get the total count
+      const { count } = await supabase
+        .from('cotacoes')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch all data in batches to avoid timeout
+      const batchSize = 1000;
+      const totalBatches = Math.ceil((count || 0) / batchSize);
+      let allCotacoes: any[] = [];
+
+      for (let i = 0; i < totalBatches; i++) {
+        const { data, error } = await supabase
+          .from('cotacoes')
+          .select(`
+            *,
+            produtor_origem:produtor_origem_id(id, nome, email),
+            produtor_negociador:produtor_negociador_id(id, nome, email),
+            produtor_cotador:produtor_cotador_id(id, nome, email),
+            seguradora:seguradora_id(id, nome, codigo),
+            cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
+            ramo:ramo_id(id, codigo, descricao, ativo),
+            captacao:captacao_id(id, descricao, ativo),
+            status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
+          `)
+          .order('created_at', { ascending: false })
+          .range(i * batchSize, (i + 1) * batchSize - 1);
+
+        if (error) throw error;
+        allCotacoes = [...allCotacoes, ...(data || [])];
+      }
+
+      setCotacoes(allCotacoes);
+    } catch (error) {
+      console.error('Error fetching all cotacoes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { cotacoes, loading, refetch: fetchAllCotacoes };
 }

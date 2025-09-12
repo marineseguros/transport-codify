@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useCotacoes, type Cotacao } from "@/hooks/useSupabaseData";
+import { useCotacoesTotais, type Cotacao } from '@/hooks/useSupabaseData';
 import { useMemo } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Calendar, DollarSign, Building2, User } from "lucide-react";
 
 const Funil = () => {
-  const { cotacoes, loading } = useCotacoes();
+  const { cotacoes, loading } = useCotacoesTotais();
   
   // Organizar cotações por status
   const cotacoesPorStatus = useMemo(() => {
