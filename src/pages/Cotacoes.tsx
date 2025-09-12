@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Download, Upload, Edit, Trash2, FileText, TrendingUp, Users, DollarSign, RefreshCw } from 'lucide-react';
+import { Plus, Search, Download, Upload, Edit, Trash2, RefreshCw, FileText } from 'lucide-react';
 import { CotacaoModal } from '@/components/CotacaoModal';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { useAuth } from '@/contexts/AuthContext';
@@ -55,17 +55,8 @@ const Cotacoes = () => {
   // Get unique produtores for filter
   const produtores = [...new Set(cotacoes.map(c => c.produtor_origem?.nome).filter(Boolean))];
 
-  // Calculate stats
-  const stats = useMemo(() => {
-    const total = filteredCotacoes.length;
-    const emAnalise = filteredCotacoes.filter(c => c.status === 'Em análise').length;
-    const fechados = filteredCotacoes.filter(c => c.status === 'Negócio fechado').length;
-    const valorTotal = filteredCotacoes
-      .filter(c => c.status === 'Negócio fechado')
-      .reduce((sum, c) => sum + c.valor_premio, 0);
-    
-    return { total, emAnalise, fechados, valorTotal };
-  }, [filteredCotacoes]);
+  // Valid status options
+  const validStatuses = ['Em cotação', 'Negócio fechado', 'Declinado'];
 
   const handleEdit = (cotacao: Cotacao) => {
     setSelectedCotacao(cotacao);
@@ -163,18 +154,12 @@ const Cotacoes = () => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'Negócio fechado':
-        return 'bg-green-100 text-green-800';
-      case 'Em análise':
-        return 'bg-blue-100 text-blue-800';
-      case 'Aguardando cliente':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Cancelada':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'Negócio fechado': return 'default';
+      case 'Em cotação': return 'secondary';
+      case 'Declinado': return 'destructive';
+      default: return 'secondary';
     }
   };
 
@@ -188,7 +173,7 @@ const Cotacoes = () => {
         <div>
           <h1 className="text-3xl font-bold">Cotações</h1>
           <p className="text-muted-foreground">
-            Gerencie suas cotações de seguro
+            Listagem completa e filtros de cotações
           </p>
         </div>
         
@@ -214,48 +199,6 @@ const Cotacoes = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Cotações</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Análise</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.emAnalise}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Negócios Fechados</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.fechados}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.valorTotal)}</div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Filtros */}
       <Card>
@@ -282,10 +225,11 @@ const Cotacoes = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os status</SelectItem>
-                  <SelectItem value="Em análise">Em análise</SelectItem>
-                  <SelectItem value="Aguardando cliente">Aguardando cliente</SelectItem>
-                  <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
-                  <SelectItem value="Cancelada">Cancelada</SelectItem>
+                  {validStatuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -379,7 +323,7 @@ const Cotacoes = () => {
                     {formatCurrency(cotacao.valor_premio)}
                   </TableCell>
                   <TableCell>
-                    <Badge className={getStatusColor(cotacao.status)}>
+                    <Badge variant={getStatusBadgeVariant(cotacao.status)}>
                       {cotacao.status}
                     </Badge>
                   </TableCell>

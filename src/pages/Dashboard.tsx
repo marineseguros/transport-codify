@@ -1,135 +1,134 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useCotacoesRecentes, useCotacoesTotais, type Cotacao } from '@/hooks/useSupabaseData';
-import { KPI } from "@/types";
+import { useCotacoesTotais, useProdutores, type Cotacao } from '@/hooks/useSupabaseData';
 import { 
   TrendingUp, TrendingDown, DollarSign, FileText, 
-  Clock, Target, Plus, Upload
+  Clock, Target, Plus, Upload, CalendarIcon, Users, Building
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DatePickerWithRange } from "@/components/ui/date-picker";
 import { DateRange } from "react-day-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon } from "lucide-react";
 
 const Dashboard = () => {
-  const { cotacoes: recentQuotes, loading: loadingRecentes } = useCotacoesRecentes(10);
-  const { cotacoes: allQuotes, loading: loadingTodas } = useCotacoesTotais();
+  const { cotacoes: allQuotes, loading: loadingCotacoes } = useCotacoesTotais();
+  const { produtores, loading: loadingProdutores } = useProdutores();
   
-  const loading = loadingRecentes || loadingTodas;
+  const loading = loadingCotacoes || loadingProdutores;
   
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [dateFilter, setDateFilter] = useState<string>('todos');
+  const [dateFilter, setDateFilter] = useState<string>('mes_atual');
+  const [produtorFilter, setProdutorFilter] = useState<string>('todos');
+  const [unidadeFilter, setUnidadeFilter] = useState<string>('todas');
   
   const handleImportCSV = () => {
     toast.success('Funcionalidade de importar CSV será implementada');
   };
 
-  // Filter cotacoes by date
+  // Filter cotacoes by date, produtor and unidade
   const filteredCotacoes = useMemo(() => {
-    if (dateFilter === 'todos') return allQuotes;
-    
+    let filtered = allQuotes;
+
+    // Apply produtor filter
+    if (produtorFilter !== 'todos') {
+      filtered = filtered.filter(cotacao => 
+        cotacao.produtor_origem?.nome === produtorFilter
+      );
+    }
+
+    // Apply unidade filter (placeholder for now)
+    if (unidadeFilter !== 'todas') {
+      // TODO: Implement unidade filtering when unidades are available
+    }
+
+    // Apply date filter
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
     let startDate: Date;
     let endDate: Date = now;
     
     switch (dateFilter) {
       case 'hoje':
-        startDate = today;
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         break;
       case '7dias':
-        startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
       case '30dias':
-        startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
       case '90dias':
-        startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'mes_atual':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'mes_anterior':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
         break;
       case 'personalizado':
-        if (!dateRange?.from) return allQuotes;
+        if (!dateRange?.from) return filtered;
         startDate = dateRange.from;
         endDate = dateRange.to || dateRange.from;
         break;
       default:
-        return allQuotes;
+        return filtered;
     }
     
-    return allQuotes.filter(cotacao => {
+    return filtered.filter(cotacao => {
       const cotacaoDate = new Date(cotacao.data_cotacao);
       return cotacaoDate >= startDate && cotacaoDate <= endDate;
     });
-  }, [allQuotes, dateFilter, dateRange]);
+  }, [allQuotes, dateFilter, dateRange, produtorFilter, unidadeFilter]);
 
-  // Calculate stats from all cotações
-  const stats = useMemo(() => {
-    const total = allQuotes.length;
-    const emAnalise = allQuotes.filter(c => c.status === 'Em análise').length;
-    const fechados = allQuotes.filter(c => c.status === 'Negócio fechado').length;
-    const valorTotal = allQuotes
-      .filter(c => c.status === 'Negócio fechado')
-      .reduce((sum, c) => sum + c.valor_premio, 0);
+  // Calculate monthly stats with comparisons
+  const monthlyStats = useMemo(() => {
+    const now = new Date();
     
-    const thisMonth = new Date();
-    thisMonth.setDate(1);
-    thisMonth.setHours(0, 0, 0, 0);
+    // Current month
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     
-    const thisMonthCotacoes = allQuotes.filter(c => 
-      new Date(c.data_cotacao) >= thisMonth
-    );
+    // Previous month
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
     
-    const mesAtual = thisMonthCotacoes.length;
-    const valorMes = thisMonthCotacoes
-      .filter(c => c.status === 'Negócio fechado')
-      .reduce((sum, c) => sum + c.valor_premio, 0);
-    
-    return { total, emAnalise, fechados, valorTotal, mesAtual, valorMes };
-  }, [allQuotes]);
-
-  // Chart data based on all cotações
-  const chartData = useMemo(() => {
-    const last6Months = Array.from({ length: 6 }, (_, i) => {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      return {
-        month: date.toLocaleDateString('pt-BR', { month: 'short' }),
-        year: date.getFullYear(),
-        monthIndex: date.getMonth()
-      };
-    }).reverse();
-
-    return last6Months.map(({ month, year, monthIndex }) => {
-      const monthCotacoes = allQuotes.filter(c => {
-        const cotacaoDate = new Date(c.data_cotacao);
-        return cotacaoDate.getMonth() === monthIndex && cotacaoDate.getFullYear() === year;
-      });
-      
-      const fechados = monthCotacoes.filter(c => c.status === 'Negócio fechado').length;
-      const valor = monthCotacoes
-        .filter(c => c.status === 'Negócio fechado')
-        .reduce((sum, c) => sum + c.valor_premio, 0);
-      
-      return {
-        month,
-        cotacoes: monthCotacoes.length,
-        fechados,
-        valor
-      };
+    const currentMonthCotacoes = filteredCotacoes.filter(c => {
+      const date = new Date(c.data_cotacao);
+      return date >= currentMonthStart && date <= currentMonthEnd;
     });
-  }, [allQuotes]);
-  
-  // Calcular KPIs
-  const kpis = useMemo(() => {
-    const totalCotacoes = filteredCotacoes.length;
-    const emAndamento = filteredCotacoes.filter(c => c.status === 'Em cotação').length;
-    const negocioFechado = filteredCotacoes.filter(c => c.status === 'Negócio fechado').length;
-    const declinado = filteredCotacoes.filter(c => c.status === 'Declinado').length;
     
-    const cotacoesFechadas = filteredCotacoes.filter(c => c.status === 'Negócio fechado');
+    const previousMonthCotacoes = allQuotes.filter(c => {
+      const date = new Date(c.data_cotacao);
+      return date >= previousMonthStart && date <= previousMonthEnd;
+    });
+    
+    // Current month stats
+    const emCotacao = currentMonthCotacoes.filter(c => c.status === 'Em cotação').length;
+    const fechados = currentMonthCotacoes.filter(c => c.status === 'Negócio fechado').length;
+    const declinados = currentMonthCotacoes.filter(c => c.status === 'Declinado').length;
+    
+    // Previous month stats
+    const emCotacaoAnterior = previousMonthCotacoes.filter(c => c.status === 'Em cotação').length;
+    const fechadosAnterior = previousMonthCotacoes.filter(c => c.status === 'Negócio fechado').length;
+    const declinadosAnterior = previousMonthCotacoes.filter(c => c.status === 'Declinado').length;
+    
+    // Calculate differences and percentages
+    const calculateComparison = (current: number, previous: number) => {
+      const diff = current - previous;
+      const percentage = previous > 0 ? ((diff / previous) * 100) : 0;
+      return { diff, percentage };
+    };
+    
+    const emCotacaoComp = calculateComparison(emCotacao, emCotacaoAnterior);
+    const fechadosComp = calculateComparison(fechados, fechadosAnterior);
+    const declinadosComp = calculateComparison(declinados, declinadosAnterior);
+    
+    // KPIs calculations
+    const cotacoesFechadas = currentMonthCotacoes.filter(c => c.status === 'Negócio fechado');
     const premioTotal = cotacoesFechadas.reduce((sum, c) => sum + c.valor_premio, 0);
     const ticketMedio = cotacoesFechadas.length > 0 ? premioTotal / cotacoesFechadas.length : 0;
     
@@ -145,29 +144,42 @@ const Dashboard = () => {
     const tempoMedioFechamento = temposFechamento.length > 0 
       ? temposFechamento.reduce((sum, tempo) => sum + tempo, 0) / temposFechamento.length
       : 0;
-
+    
     return {
-      totalCotacoes,
-      emAndamento,
-      negocioFechado,
-      declinado,
+      emCotacao,
+      fechados,
+      declinados,
+      emCotacaoComp,
+      fechadosComp,
+      declinadosComp,
       ticketMedio,
-      tempoMedioFechamento
+      tempoMedioFechamento,
+      premioTotal
     };
-  }, [filteredCotacoes]);
+  }, [filteredCotacoes, allQuotes]);
 
-  // Distribuição por status
+  // Distribuição por status no período atual
   const distribuicaoStatus = useMemo(() => {
+    const validStatuses = ['Em cotação', 'Negócio fechado', 'Declinado'];
     const counts = filteredCotacoes.reduce((acc, cotacao) => {
-      acc[cotacao.status] = (acc[cotacao.status] || 0) + 1;
+      if (validStatuses.includes(cotacao.status)) {
+        acc[cotacao.status] = (acc[cotacao.status] || 0) + 1;
+      }
       return acc;
     }, {} as Record<string, number>);
     
-    return Object.entries(counts).map(([status, count]) => ({
+    return validStatuses.map(status => ({
       status,
-      count,
-      percentage: filteredCotacoes.length > 0 ? (count / filteredCotacoes.length) * 100 : 0
+      count: counts[status] || 0,
+      percentage: filteredCotacoes.length > 0 ? ((counts[status] || 0) / filteredCotacoes.length) * 100 : 0
     }));
+  }, [filteredCotacoes]);
+  
+  // Recent quotes for display (last 10)
+  const recentQuotes = useMemo(() => {
+    return [...filteredCotacoes]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 10);
   }, [filteredCotacoes]);
 
   const formatCurrency = (value: number) => 
@@ -185,6 +197,19 @@ const Dashboard = () => {
     }
   };
 
+  const formatComparison = (diff: number, percentage: number) => {
+    const sign = diff > 0 ? '+' : '';
+    const icon = diff > 0 ? <TrendingUp className="h-3 w-3" /> : diff < 0 ? <TrendingDown className="h-3 w-3" /> : null;
+    const color = diff > 0 ? 'text-success' : diff < 0 ? 'text-destructive' : 'text-muted-foreground';
+    
+    return (
+      <span className={`text-xs flex items-center gap-1 ${color}`}>
+        {icon}
+        {sign}{diff} ({sign}{percentage.toFixed(1)}%)
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -192,7 +217,7 @@ const Dashboard = () => {
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">
-            Visão geral do desempenho de cotações de transportes
+            Análise completa e KPIs de cotações
           </p>
         </div>
         
@@ -208,35 +233,66 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Filtros de Data */}
+      {/* Filtros Globais */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
-            Filtros de Data
+            Filtros Globais
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="w-48">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+            <div>
               <label className="text-sm font-medium mb-2 block">Período</label>
               <Select value={dateFilter} onValueChange={setDateFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o período" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todos">Todos os períodos</SelectItem>
                   <SelectItem value="hoje">Hoje</SelectItem>
                   <SelectItem value="7dias">Últimos 7 dias</SelectItem>
                   <SelectItem value="30dias">Últimos 30 dias</SelectItem>
                   <SelectItem value="90dias">Últimos 90 dias</SelectItem>
+                  <SelectItem value="mes_atual">Este mês</SelectItem>
+                  <SelectItem value="mes_anterior">Mês passado</SelectItem>
                   <SelectItem value="personalizado">Período personalizado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
+            <div>
+              <label className="text-sm font-medium mb-2 block">Produtor</label>
+              <Select value={produtorFilter} onValueChange={setProdutorFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os produtores" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os produtores</SelectItem>
+                  {produtores.map((produtor) => (
+                    <SelectItem key={produtor.id} value={produtor.nome}>
+                      {produtor.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Unidade</label>
+              <Select value={unidadeFilter} onValueChange={setUnidadeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as unidades" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as unidades</SelectItem>
+                  {/* TODO: Add unidades when available */}
+                </SelectContent>
+              </Select>
+            </div>
+
             {dateFilter === 'personalizado' && (
-              <div className="flex-1 min-w-80">
+              <div className="col-span-full">
                 <label className="text-sm font-medium mb-2 block">Data personalizada</label>
                 <DatePickerWithRange
                   date={dateRange}
@@ -248,9 +304,12 @@ const Dashboard = () => {
             <Button 
               variant="outline" 
               onClick={() => {
-                setDateFilter('todos');
+                setDateFilter('mes_atual');
+                setProdutorFilter('todos');
+                setUnidadeFilter('todas');
                 setDateRange(undefined);
               }}
+              className="col-span-full md:col-span-1"
             >
               Limpar filtros
             </Button>
@@ -258,10 +317,68 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
+      {/* KPIs Mensais com Comparativos */}
+      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Em Cotação</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-secondary">{monthlyStats.emCotacao}</div>
+            {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Negócio Fechado</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-success">{monthlyStats.fechados}</div>
+            {formatComparison(monthlyStats.fechadosComp.diff, monthlyStats.fechadosComp.percentage)}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Declinado</CardTitle>
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">{monthlyStats.declinados}</div>
+            {formatComparison(monthlyStats.declinadosComp.diff, monthlyStats.declinadosComp.percentage)}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(monthlyStats.ticketMedio)}</div>
+            <p className="text-xs text-muted-foreground">Média mensal</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{Math.round(monthlyStats.tempoMedioFechamento)} dias</div>
+            <p className="text-xs text-muted-foreground">Fechamento</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Distribuição por Status */}
-      <Card className="mb-6">
+      <Card>
         <CardHeader>
-          <CardTitle>Distribuição por Status</CardTitle>
+          <CardTitle>Distribuição por Status (Período Atual)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -291,78 +408,6 @@ const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{kpis.totalCotacoes}</div>
-            <p className="text-xs text-muted-foreground">Cotações</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{kpis.emAndamento}</div>
-            <p className="text-xs text-muted-foreground">Em cotação</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fechados</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{kpis.negocioFechado}</div>
-            <p className="text-xs text-success flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
-              Negócios
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Declinados</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{kpis.declinado}</div>
-            <p className="text-xs text-destructive">Perdidos</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(kpis.ticketMedio)}</div>
-            <p className="text-xs text-muted-foreground">Negócios fechados</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Math.round(kpis.tempoMedioFechamento)} dias</div>
-            <p className="text-xs text-muted-foreground">Para fechamento</p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Cotações Recentes */}
       <Card>
