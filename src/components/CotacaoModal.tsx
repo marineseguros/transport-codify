@@ -51,7 +51,7 @@ export const CotacaoModal = ({
 }: CotacaoModalProps) => {
   const { user } = useAuth();
   const { profiles } = useProfiles();
-  const { produtores } = useProdutores();
+  const { produtores, loading: produtoresLoading, refetch: refetchProdutores } = useProdutores();
   const { seguradoras } = useSeguradoras();
   const { ramos } = useRamos();
   const { captacao } = useCaptacao();
@@ -89,6 +89,13 @@ export const CotacaoModal = ({
   const isEditing = mode === 'edit';
   const isCreating = mode === 'create';
 
+  // Fetch produtores when modal opens
+  useEffect(() => {
+    if (isOpen && produtores.length === 0) {
+      refetchProdutores();
+    }
+  }, [isOpen, produtores.length, refetchProdutores]);
+
   useEffect(() => {
     if (cotacao && (isEditing || mode === 'view')) {
       setFormData({
@@ -122,7 +129,11 @@ export const CotacaoModal = ({
       const fimVigencia = new Date(inicioVigencia.getTime() + 365 * 24 * 60 * 60 * 1000);
 
       // Find current user in produtores list to set as default cotador
-      const currentUserProdutor = produtores.find(p => p.email === user?.email);
+      // Try to match by email first, then by name if available
+      const currentUserProdutor = produtores.find(p => 
+        (p.email && user?.email && p.email.toLowerCase() === user.email.toLowerCase()) ||
+        (p.nome && user?.nome && p.nome.toLowerCase().includes(user.nome.toLowerCase()))
+      ) || produtores[0]; // Fallback to first produtor if no match
 
       setFormData({
         cliente_id: '',

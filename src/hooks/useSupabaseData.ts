@@ -179,26 +179,32 @@ export function useProdutores() {
   const [produtores, setProdutores] = useState<Produtor[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchProdutores();
-  }, []);
-
   const fetchProdutores = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('produtores')
         .select('*')
         .eq('ativo', true)
         .order('nome');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching produtores:', error);
+        throw error;
+      }
+      
       setProdutores(data || []);
     } catch (error) {
-      console.error('Error fetching produtores:', error);
+      console.error('Error in fetchProdutores:', error);
+      setProdutores([]);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProdutores();
+  }, []);
 
   return { produtores, loading, refetch: fetchProdutores };
 }
