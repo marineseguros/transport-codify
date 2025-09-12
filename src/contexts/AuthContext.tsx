@@ -1,92 +1,169 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserProfile } from '@/types';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { UserProfile, UserRole } from '@/types';
 
 interface AuthContextType {
   user: UserProfile | null;
+  session: Session | null;
   login: (email: string, password: string) => Promise<boolean>;
+  signUp: (email: string, password: string, nome: string, papel?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users data
-const MOCK_USERS: UserProfile[] = [
-  {
-    id: '1',
-    nome: 'Carlos Silva',
-    email: 'admin@cotacoes.com',
-    papel: 'Administrador',
-    ativo: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    nome: 'Maria Santos',
-    email: 'gerente@cotacoes.com',
-    papel: 'Gerente',
-    ativo: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    nome: 'João Oliveira',
-    email: 'produtor@cotacoes.com',
-    papel: 'Produtor',
-    ativo: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    nome: 'Ana Costa',
-    email: 'usuario@cotacoes.com',
-    papel: 'Somente-Leitura',
-    ativo: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        
+        if (session?.user) {
+          // Fetch user profile from profiles table
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
+          
+          if (profile) {
+            setUser({
+              ...profile,
+              papel: profile.papel as UserRole
+            });
+          }
+        } else {
+          setUser(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        // Fetch user profile
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            if (profile) {
+              setUser({
+                ...profile,
+                papel: profile.papel as UserRole
+              });
+            }
+            setSession(session);
+            setIsLoading(false);
+          });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
-    // Mock authentication - in production, this would call Supabase
-    const mockUser = MOCK_USERS.find(u => u.email === email);
-    
-    if (mockUser && password === '123456') { // Mock password
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        console.error('Login error:', error.message);
+        setIsLoading(false);
+        return false;
+      }
+
+      if (data.user) {
+        // Profile will be set by the auth state change listener
+        return true;
+      }
+      
       setIsLoading(false);
-      return true;
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      setIsLoading(false);
+      return false;
     }
-    
-    setIsLoading(false);
-    return false;
   };
 
-  const logout = () => {
+  const signUp = async (email: string, password: string, nome: string, papel: string = 'Produtor') => {
+    setIsLoading(true);
+    
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            nome,
+            papel
+          }
+        }
+      });
+
+      if (error) {
+        setIsLoading(false);
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        // Create profile in profiles table
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              user_id: data.user.id,
+              nome,
+              email,
+              papel,
+              ativo: true
+            }
+          ]);
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          setIsLoading(false);
+          return { success: false, error: 'Erro ao criar perfil do usuário' };
+        }
+      }
+
+      setIsLoading(false);
+      return { success: true };
+    } catch (error) {
+      console.error('SignUp error:', error);
+      setIsLoading(false);
+      return { success: false, error: 'Erro inesperado ao criar usuário' };
+    }
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('user');
+    setSession(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, session, login, signUp, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
