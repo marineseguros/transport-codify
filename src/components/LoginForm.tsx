@@ -33,12 +33,12 @@ export const LoginForm = () => {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="bg-primary rounded-full p-3">
-              <Truck className="h-8 w-8 text-primary-foreground" />
+            <div className="bg-white rounded-lg p-4 shadow-sm">
+              <img src="/marine-logo.png" alt="Marine Seguros" className="h-16 w-auto" />
             </div>
           </div>
           <h1 className="text-2xl font-bold">Sistema de Cotações TRN</h1>
-          <p className="text-muted-foreground">Faça login para acessar o sistema</p>
+          <p className="text-muted-foreground">Marine Seguros - Faça login para acessar o sistema</p>
         </div>
 
         <Card>
@@ -89,6 +89,27 @@ export const LoginForm = () => {
                 {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-muted/50">
+          <CardHeader>
+            <CardTitle className="text-sm">Credenciais de Teste - Administrador</CardTitle>
+            <CardDescription className="text-xs">
+              Use estas credenciais para acessar como administrador
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-sm">
+              <p><strong>Email:</strong> faturamento@marineseguros.com.br</p>
+              <p><strong>Senha:</strong> Solicite ao desenvolvedor para configurar</p>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <p>💡 Para criar seu próprio usuário administrador:</p>
+              <p>1. Acesse Authentication &gt; Users no painel Supabase</p>
+              <p>2. Crie um novo usuário com email e senha</p>
+              <p>3. Adicione um registro na tabela 'profiles' com papel 'Administrador'</p>
+            </div>
           </CardContent>
         </Card>
       </div>
