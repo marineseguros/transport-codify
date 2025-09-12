@@ -366,7 +366,7 @@ const Dashboard = () => {
                   </span>
                 </div>
                 <div className="space-y-1">
-                  <p className="font-medium text-sm">{cotacao.cliente?.segurado}</p>
+                  <p className="font-medium text-sm">{cotacao.segurado}</p>
                   <p className="text-xs text-muted-foreground">
                     {cotacao.seguradora?.nome}
                   </p>

@@ -60,7 +60,7 @@ const Funil = () => {
         >
           <div className="space-y-3">
             <div>
-              <h4 className="font-semibold text-sm">{cotacao.cliente?.segurado}</h4>
+              <h4 className="font-semibold text-sm">{cotacao.segurado}</h4>
               <p className="text-xs text-muted-foreground">
                 {cotacao.cliente?.cidade}, {cotacao.cliente?.uf}
               </p>

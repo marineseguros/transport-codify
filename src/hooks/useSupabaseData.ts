@@ -316,8 +316,7 @@ export function useCotacoes() {
           captacao:captacao_id(id, descricao, ativo),
           status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
         `)
-        .order('created_at', { ascending: false })
-        .limit(5000);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setCotacoes((data as any[]) || []);
