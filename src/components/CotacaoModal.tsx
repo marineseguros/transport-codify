@@ -150,7 +150,7 @@ export const CotacaoModal = ({
         comentarios: ''
       });
     }
-  }, [cotacao, mode]);
+  }, [cotacao, mode, produtores, user]);
 
   const handleInputChange = (field: string, value: any) => {
     if (isReadOnly) return;
