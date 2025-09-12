@@ -406,30 +406,14 @@ export type Database = {
       }
     }
     Views: {
-      current_user_role: {
-        Row: {
-          email: string | null
-          is_active: boolean | null
-          role: Database["public"]["Enums"]["user_role"] | null
-          user_id: string | null
-        }
-        Insert: {
-          email?: string | null
-          is_active?: boolean | null
-          role?: Database["public"]["Enums"]["user_role"] | null
-          user_id?: string | null
-        }
-        Update: {
-          email?: string | null
-          is_active?: boolean | null
-          role?: Database["public"]["Enums"]["user_role"] | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       generate_cotacao_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
