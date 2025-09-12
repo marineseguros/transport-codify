@@ -38,13 +38,15 @@ interface CotacaoModalProps {
   onClose: () => void;
   cotacao?: Cotacao | null;
   mode?: 'create' | 'edit' | 'view';
+  onSaved?: () => void;
 }
 
 export const CotacaoModal = ({ 
   isOpen, 
   onClose, 
   cotacao, 
-  mode = 'create'
+  mode = 'create',
+  onSaved
 }: CotacaoModalProps) => {
   const { profiles } = useProfiles();
   const { produtores } = useProdutores();
@@ -67,12 +69,12 @@ export const CotacaoModal = ({
     ramo_id: '',
     captacao_id: '',
     status_seguradora_id: '',
-    tipo: 'Novo',
-    data_cotacao: new Date().toISOString().split('T')[0],
-    inicio_vigencia: '',
-    fim_vigencia: '',
-    valor_premio: 0,
-    status: 'Em cotação',
+        tipo: 'Nova',
+        data_cotacao: new Date().toISOString().split('T')[0],
+        inicio_vigencia: '',
+        fim_vigencia: '',
+        valor_premio: 0,
+        status: 'Em análise',
     observacoes: '',
     segmento: '',
     data_fechamento: undefined as string | undefined,
@@ -99,12 +101,12 @@ export const CotacaoModal = ({
         ramo_id: cotacao.ramo_id || '',
         captacao_id: cotacao.captacao_id || '',
         status_seguradora_id: cotacao.status_seguradora_id || '',
-        tipo: cotacao.tipo || 'Novo',
+        tipo: cotacao.tipo || 'Nova',
         data_cotacao: cotacao.data_cotacao || new Date().toISOString().split('T')[0],
         inicio_vigencia: cotacao.data_cotacao || '',
         fim_vigencia: cotacao.data_fechamento || '',
         valor_premio: cotacao.valor_premio || 0,
-        status: cotacao.status || 'Em cotação',
+        status: cotacao.status || 'Em análise',
         observacoes: cotacao.observacoes || '',
         segmento: cotacao.segmento || '',
         data_fechamento: cotacao.data_fechamento || undefined,
@@ -129,12 +131,12 @@ export const CotacaoModal = ({
         ramo_id: '',
         captacao_id: '',
         status_seguradora_id: '',
-        tipo: 'Novo',
+        tipo: 'Nova',
         data_cotacao: hoje.toISOString().split('T')[0],
         inicio_vigencia: inicioVigencia.toISOString().split('T')[0],
         fim_vigencia: fimVigencia.toISOString().split('T')[0],
         valor_premio: 0,
-        status: 'Em cotação',
+        status: 'Em análise',
         observacoes: '',
         segmento: '',
         data_fechamento: undefined,
@@ -238,6 +240,18 @@ export const CotacaoModal = ({
       }
     }
 
+    // Validate required fields for "Negócio fechado"
+    if (formData.status === 'Negócio fechado') {
+      if (!formData.data_fechamento) {
+        toast.error("Data de fechamento é obrigatória para negócios fechados.");
+        return;
+      }
+      if (!formData.num_apolice) {
+        toast.error("Número da apólice é obrigatório para negócios fechados.");
+        return;
+      }
+    }
+
     // Validate dates
     if (formData.inicio_vigencia && formData.fim_vigencia) {
       if (new Date(formData.fim_vigencia) <= new Date(formData.inicio_vigencia)) {
@@ -274,6 +288,11 @@ export const CotacaoModal = ({
       } else {
         await createCotacao(cotacaoData);
         toast.success('Cotação criada com sucesso!');
+      }
+      
+      // Call callback if provided
+      if (onSaved) {
+        onSaved();
       }
       
       onClose();
@@ -539,11 +558,11 @@ export const CotacaoModal = ({
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Novo">Novo</SelectItem>
-                      <SelectItem value="Renovação">Renovação</SelectItem>
-                      <SelectItem value="Migração">Migração</SelectItem>
-                    </SelectContent>
+                     <SelectContent>
+                       <SelectItem value="Nova">Nova</SelectItem>
+                       <SelectItem value="Renovação">Renovação</SelectItem>
+                       <SelectItem value="Migração">Migração</SelectItem>
+                     </SelectContent>
                   </Select>
                 </div>
 
@@ -557,11 +576,12 @@ export const CotacaoModal = ({
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Em cotação">Em cotação</SelectItem>
-                      <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
-                      <SelectItem value="Declinado">Declinado</SelectItem>
-                    </SelectContent>
+                     <SelectContent>
+                       <SelectItem value="Em análise">Em análise</SelectItem>
+                       <SelectItem value="Em cotação">Em cotação</SelectItem>
+                       <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
+                       <SelectItem value="Declinado">Declinado</SelectItem>
+                     </SelectContent>
                   </Select>
                 </div>
 
@@ -579,41 +599,63 @@ export const CotacaoModal = ({
               {/* Campos condicionais para Negócio Fechado */}
               {formData.status === 'Negócio fechado' && (
                 <>
-                  {/* Vigência */}
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <Label htmlFor="inicio_vigencia">Início da Vigência</Label>
-                      <Input
-                        type="date"
-                        value={formData.inicio_vigencia}
-                        onChange={(e) => handleInputChange('inicio_vigencia', e.target.value)}
-                        readOnly={isReadOnly}
-                      />
-                    </div>
+                   {/* Vigência */}
+                   <div className="grid gap-4 md:grid-cols-3">
+                     <div>
+                       <Label htmlFor="data_fechamento">Data de Fechamento *</Label>
+                       <Input
+                         type="date"
+                         value={formData.data_fechamento || ''}
+                         onChange={(e) => handleInputChange('data_fechamento', e.target.value)}
+                         readOnly={isReadOnly}
+                       />
+                     </div>
+                     
+                     <div>
+                       <Label htmlFor="inicio_vigencia">Início da Vigência</Label>
+                       <Input
+                         type="date"
+                         value={formData.inicio_vigencia}
+                         onChange={(e) => handleInputChange('inicio_vigencia', e.target.value)}
+                         readOnly={isReadOnly}
+                       />
+                     </div>
 
-                    <div>
-                      <Label htmlFor="fim_vigencia">Fim da Vigência</Label>
-                      <Input
-                        type="date"
-                        value={formData.fim_vigencia}
-                        onChange={(e) => handleInputChange('fim_vigencia', e.target.value)}
-                        readOnly={isReadOnly}
-                      />
-                    </div>
-                  </div>
+                     <div>
+                       <Label htmlFor="fim_vigencia">Fim da Vigência</Label>
+                       <Input
+                         type="date"
+                         value={formData.fim_vigencia}
+                         onChange={(e) => handleInputChange('fim_vigencia', e.target.value)}
+                         readOnly={isReadOnly}
+                       />
+                     </div>
+                   </div>
 
-                  {/* Valor do Prêmio */}
-                  <div>
-                    <Label htmlFor="valor_premio">Valor do Prêmio *</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.valor_premio}
-                      onChange={(e) => handleInputChange('valor_premio', parseFloat(e.target.value) || 0)}
-                      placeholder="0,00"
-                      readOnly={isReadOnly}
-                    />
-                  </div>
+                   {/* Número da Apólice e Valor do Prêmio */}
+                   <div className="grid gap-4 md:grid-cols-2">
+                     <div>
+                       <Label htmlFor="num_apolice">Número da Apólice *</Label>
+                       <Input
+                         value={formData.num_apolice || ''}
+                         onChange={(e) => handleInputChange('num_apolice', e.target.value)}
+                         placeholder="Digite o número da apólice"
+                         readOnly={isReadOnly}
+                       />
+                     </div>
+                     
+                     <div>
+                       <Label htmlFor="valor_premio">Valor do Prêmio *</Label>
+                       <Input
+                         type="number"
+                         step="0.01"
+                         value={formData.valor_premio}
+                         onChange={(e) => handleInputChange('valor_premio', parseFloat(e.target.value) || 0)}
+                         placeholder="0,00"
+                         readOnly={isReadOnly}
+                       />
+                     </div>
+                   </div>
                 </>
               )}
 

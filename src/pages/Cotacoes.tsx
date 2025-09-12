@@ -428,6 +428,7 @@ const Cotacoes = () => {
         }}
         cotacao={selectedCotacao || undefined}
         mode={selectedCotacao ? 'edit' : 'create'}
+        onSaved={() => refetch()}
       />
     </div>
   );

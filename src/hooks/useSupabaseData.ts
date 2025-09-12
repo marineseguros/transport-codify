@@ -310,7 +310,8 @@ export function useCotacoes() {
           captacao:captacao_id(id, descricao, ativo),
           status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(2000);
 
       if (error) throw error;
       setCotacoes((data as any[]) || []);
@@ -343,7 +344,7 @@ export function useCotacoes() {
         segmento: cotacaoData.segmento,
         tipo: cotacaoData.tipo || 'Nova',
         valor_premio: cotacaoData.valor_premio || 0,
-        status: cotacaoData.status || 'Em cotação',
+        status: cotacaoData.status || 'Em análise',
         data_fechamento: cotacaoData.data_fechamento,
         num_apolice: cotacaoData.num_apolice,
         motivo_recusa: cotacaoData.motivo_recusa,
@@ -382,9 +383,9 @@ export function useCotacoes() {
         captacao_id: updates.captacao_id,
         status_seguradora_id: updates.status_seguradora_id,
         segmento: updates.segmento,
-        tipo: updates.tipo || 'Nova',
+        tipo: updates.tipo,
         valor_premio: updates.valor_premio || 0,
-        status: updates.status || 'Em cotação',
+        status: updates.status,
         data_fechamento: updates.data_fechamento,
         num_apolice: updates.num_apolice,
         motivo_recusa: updates.motivo_recusa,
