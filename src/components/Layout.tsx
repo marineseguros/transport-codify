@@ -22,12 +22,14 @@ export const Layout = ({ children }: LayoutProps) => {
           <header className="h-16 border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 flex items-center justify-between px-6">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
-              <div className="flex items-center gap-3">
-                <img src="/marine-logo.png" alt="Marine Seguros" className="h-8 w-auto" />
-                <div>
-                  <h1 className="text-lg font-semibold text-primary">Sistema de Cotações TRN</h1>
-                  <p className="text-sm text-muted-foreground">Marine Seguros - Gestão de Cotações</p>
-                </div>
+              <img 
+                src="/marine-logo.png" 
+                alt="Marine Seguros Logo" 
+                className="h-8 w-auto"
+              />
+              <div>
+                <h1 className="text-lg font-semibold text-primary">Sistema de Cotações TRN</h1>
+                <p className="text-sm text-muted-foreground">Gestão de Cotações de Transportes</p>
               </div>
             </div>
             
