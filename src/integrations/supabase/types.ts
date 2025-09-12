@@ -356,81 +356,33 @@ export type Database = {
         }
         Relationships: []
       }
-      tmp_cotacoes_import: {
+      user_profiles: {
         Row: {
-          captacao_id: string | null
-          cliente_id: string | null
-          comentarios: string | null
-          cpf_cnpj: string | null
-          created_at: string | null
-          data_cotacao: string | null
-          data_fechamento: string | null
-          motivo_recusa: string | null
-          num_apolice: string | null
-          numero_cotacao: string | null
-          observacoes: string | null
-          produtor_cotador_id: string | null
-          produtor_negociador_id: string | null
-          produtor_origem_id: string | null
-          ramo_id: string | null
-          segmento: string | null
-          segurado: string | null
-          seguradora_id: string | null
-          status: string | null
-          status_seguradora_id: string | null
-          tipo: string | null
-          updated_at: string | null
-          valor_premio: string | null
+          created_at: string
+          display_name: string | null
+          email: string
+          is_active: boolean
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          captacao_id?: string | null
-          cliente_id?: string | null
-          comentarios?: string | null
-          cpf_cnpj?: string | null
-          created_at?: string | null
-          data_cotacao?: string | null
-          data_fechamento?: string | null
-          motivo_recusa?: string | null
-          num_apolice?: string | null
-          numero_cotacao?: string | null
-          observacoes?: string | null
-          produtor_cotador_id?: string | null
-          produtor_negociador_id?: string | null
-          produtor_origem_id?: string | null
-          ramo_id?: string | null
-          segmento?: string | null
-          segurado?: string | null
-          seguradora_id?: string | null
-          status?: string | null
-          status_seguradora_id?: string | null
-          tipo?: string | null
-          updated_at?: string | null
-          valor_premio?: string | null
+          created_at?: string
+          display_name?: string | null
+          email: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          captacao_id?: string | null
-          cliente_id?: string | null
-          comentarios?: string | null
-          cpf_cnpj?: string | null
-          created_at?: string | null
-          data_cotacao?: string | null
-          data_fechamento?: string | null
-          motivo_recusa?: string | null
-          num_apolice?: string | null
-          numero_cotacao?: string | null
-          observacoes?: string | null
-          produtor_cotador_id?: string | null
-          produtor_negociador_id?: string | null
-          produtor_origem_id?: string | null
-          ramo_id?: string | null
-          segmento?: string | null
-          segurado?: string | null
-          seguradora_id?: string | null
-          status?: string | null
-          status_seguradora_id?: string | null
-          tipo?: string | null
-          updated_at?: string | null
-          valor_premio?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -454,7 +406,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      current_user_role: {
+        Row: {
+          email: string | null
+          is_active: boolean | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          user_id: string | null
+        }
+        Insert: {
+          email?: string | null
+          is_active?: boolean | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          user_id?: string | null
+        }
+        Update: {
+          email?: string | null
+          is_active?: boolean | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_cotacao_number: {
@@ -463,7 +435,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "faturamento" | "produtor" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -590,6 +562,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "faturamento", "produtor", "viewer"],
+    },
   },
 } as const
