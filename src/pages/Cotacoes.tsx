@@ -39,8 +39,13 @@ const Cotacoes = () => {
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Get unique produtores for filter from all cotacoes
-  const produtores = [...new Set(cotacoes.map(c => c.produtor_cotador?.nome).filter(Boolean))];
+  // Get unique produtores for filter from all loaded cotacoes
+  const produtores = useMemo(() => {
+    return [...new Set(cotacoes
+      .map(c => c.produtor_cotador?.nome)
+      .filter(Boolean)
+    )] as string[];
+  }, [cotacoes]);
 
   // Valid status options
   const validStatuses = ['Em cotação', 'Negócio fechado', 'Declinado'];
@@ -288,9 +293,9 @@ const Cotacoes = () => {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    {cotacao.produtor_cotador?.nome || '-'}
-                  </TableCell>
+                   <TableCell>
+                     {cotacao.produtor_cotador?.nome || 'Não informado'}
+                   </TableCell>
                   <TableCell>
                     {cotacao.seguradora ? (
                       <div>

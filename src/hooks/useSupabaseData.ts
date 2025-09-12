@@ -299,8 +299,6 @@ export function useCotacoes() {
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [cursorStack, setCursorStack] = useState<string[]>([]);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -309,22 +307,28 @@ export function useCotacoes() {
 
   useEffect(() => {
     getTotalCount();
-    getFirstPage();
-  }, [searchTerm, statusFilter, produtorFilter]);
+    fetchCotacoes();
+  }, [searchTerm, statusFilter, produtorFilter, currentPage, pageSize]);
 
-  useEffect(() => {
-    getFirstPage();
-  }, [pageSize]);
+  const buildBaseQuery = () => {
+    return supabase
+      .from('cotacoes')
+      .select(`
+        *,
+        produtor_origem:produtor_origem_id(id, nome, email),
+        produtor_negociador:produtor_negociador_id(id, nome, email),
+        produtor_cotador:produtor_cotador_id(id, nome, email),
+        seguradora:seguradora_id(id, nome, codigo),
+        cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
+        ramo:ramo_id(id, codigo, descricao, ativo),
+        captacao:captacao_id(id, descricao, ativo),
+        status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
+      `);
+  };
 
-  const buildFilteredQuery = (query: any) => {
-    if (searchTerm) {
-      query = query.or(`segurado.ilike.%${searchTerm}%,numero_cotacao.ilike.%${searchTerm}%,produtor_cotador.nome.ilike.%${searchTerm}%,seguradora.nome.ilike.%${searchTerm}%`);
-    }
+  const applyFilters = (query: any) => {
     if (statusFilter && statusFilter !== 'todos') {
       query = query.eq('status', statusFilter);
-    }
-    if (produtorFilter && produtorFilter !== 'todos') {
-      query = query.eq('produtor_cotador.nome', produtorFilter);
     }
     return query;
   };
@@ -333,13 +337,32 @@ export function useCotacoes() {
     try {
       let query = supabase
         .from('cotacoes')
-        .select(`
-          *,
-          produtor_cotador:produtor_cotador_id(nome),
-          seguradora:seguradora_id(nome)
-        `, { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
       
-      query = buildFilteredQuery(query);
+      query = applyFilters(query);
+      
+      // Apply search filter separately for text fields only
+      if (searchTerm) {
+        query = query.or(`segurado.ilike.%${searchTerm}%,numero_cotacao.ilike.%${searchTerm}%,cpf_cnpj.ilike.%${searchTerm}%`);
+      }
+      
+      // If filtering by produtor, we need to do a more complex query
+      if (produtorFilter && produtorFilter !== 'todos') {
+        // Get produtor IDs that match the name
+        const { data: produtorData } = await supabase
+          .from('produtores')
+          .select('id')
+          .eq('nome', produtorFilter);
+        
+        if (produtorData && produtorData.length > 0) {
+          const produtorIds = produtorData.map(p => p.id);
+          query = query.in('produtor_cotador_id', produtorIds);
+        } else {
+          // No matching produtor found, return 0 count
+          setTotalCount(0);
+          return;
+        }
+      }
       
       const { count, error } = await query;
       
@@ -351,153 +374,85 @@ export function useCotacoes() {
     }
   };
 
-  const getFirstPage = async () => {
+  const fetchCotacoes = async () => {
     try {
       setLoading(true);
-      let query = supabase
-        .from('cotacoes')
-        .select(`
-          *,
-          produtor_origem:produtor_origem_id(id, nome, email),
-          produtor_negociador:produtor_negociador_id(id, nome, email),
-          produtor_cotador:produtor_cotador_id(id, nome, email),
-          seguradora:seguradora_id(id, nome, codigo),
-          cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
-          ramo:ramo_id(id, codigo, descricao, ativo),
-          captacao:captacao_id(id, descricao, ativo),
-          status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
-        `)
+      let query = buildBaseQuery()
         .order('created_at', { ascending: false })
-        .limit(pageSize);
+        .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
-      query = buildFilteredQuery(query);
+      query = applyFilters(query);
+      
+      // Apply search filter for basic text fields
+      if (searchTerm) {
+        query = query.or(`segurado.ilike.%${searchTerm}%,numero_cotacao.ilike.%${searchTerm}%,cpf_cnpj.ilike.%${searchTerm}%`);
+      }
+      
+      // Handle produtor filter
+      if (produtorFilter && produtorFilter !== 'todos') {
+        const { data: produtorData } = await supabase
+          .from('produtores')
+          .select('id')
+          .eq('nome', produtorFilter);
+        
+        if (produtorData && produtorData.length > 0) {
+          const produtorIds = produtorData.map(p => p.id);
+          query = query.in('produtor_cotador_id', produtorIds);
+        } else {
+          // No matching produtor found
+          setCotacoes([]);
+          setLoading(false);
+          return;
+        }
+      }
+
       const { data, error } = await query;
 
       if (error) throw error;
       
-      const cotacoesData = (data as any[]) || [];
-      setCotacoes(cotacoesData);
-      setCurrentPage(1);
-      setCursorStack([]);
+      let cotacoesData = (data as any[]) || [];
       
-      // Set next cursor if we have full page
-      if (cotacoesData.length === pageSize) {
-        setNextCursor(cotacoesData[cotacoesData.length - 1].created_at);
-      } else {
-        setNextCursor(null);
+      // Apply search filter for joined fields (seguradora and produtor names)
+      if (searchTerm && cotacoesData.length > 0) {
+        const searchLower = searchTerm.toLowerCase();
+        cotacoesData = cotacoesData.filter(cotacao => {
+          const seguradoraMatch = cotacao.seguradora?.nome?.toLowerCase().includes(searchLower);
+          const produtorMatch = cotacao.produtor_cotador?.nome?.toLowerCase().includes(searchLower);
+          return seguradoraMatch || produtorMatch;
+        });
       }
       
-      // Update total count with current filters
-      await getTotalCount();
+      setCotacoes(cotacoesData);
     } catch (error) {
-      console.error('Error fetching first page:', error);
+      console.error('Error fetching cotacoes:', error);
       setCotacoes([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const getFirstPage = async () => {
+    setCurrentPage(1);
+    await fetchCotacoes();
+  };
+
   const getNextPage = async () => {
-    if (!nextCursor) return;
-    
-    try {
-      setLoading(true);
-      let query = supabase
-        .from('cotacoes')
-        .select(`
-          *,
-          produtor_origem:produtor_origem_id(id, nome, email),
-          produtor_negociador:produtor_negociador_id(id, nome, email),
-          produtor_cotador:produtor_cotador_id(id, nome, email),
-          seguradora:seguradora_id(id, nome, codigo),
-          cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
-          ramo:ramo_id(id, codigo, descricao, ativo),
-          captacao:captacao_id(id, descricao, ativo),
-          status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
-        `)
-        .order('created_at', { ascending: false })
-        .lt('created_at', nextCursor)
-        .limit(pageSize);
-
-      query = buildFilteredQuery(query);
-      const { data, error } = await query;
-
-      if (error) throw error;
-      
-      const cotacoesData = (data as any[]) || [];
-      setCotacoes(cotacoesData);
-      
-      // Add current cursor to stack for going back
-      setCursorStack(prev => [...prev, nextCursor]);
+    const totalPages = Math.ceil(totalCount / pageSize);
+    if (currentPage < totalPages) {
       setCurrentPage(prev => prev + 1);
-      
-      // Set next cursor if we have full page
-      if (cotacoesData.length === pageSize) {
-        setNextCursor(cotacoesData[cotacoesData.length - 1].created_at);
-      } else {
-        setNextCursor(null);
-      }
-    } catch (error) {
-      console.error('Error fetching next page:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const getPrevPage = async () => {
-    if (cursorStack.length === 0) {
-      // Go to first page
-      getFirstPage();
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      const prevCursor = cursorStack[cursorStack.length - 1];
-      
-      let query = supabase
-        .from('cotacoes')
-        .select(`
-          *,
-          produtor_origem:produtor_origem_id(id, nome, email),
-          produtor_negociador:produtor_negociador_id(id, nome, email),
-          produtor_cotador:produtor_cotador_id(id, nome, email),
-          seguradora:seguradora_id(id, nome, codigo),
-          cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
-          ramo:ramo_id(id, codigo, descricao, ativo),
-          captacao:captacao_id(id, descricao, ativo),
-          status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
-        `)
-        .order('created_at', { ascending: false })
-        .gte('created_at', prevCursor)
-        .limit(pageSize);
-
-      query = buildFilteredQuery(query);
-      const { data, error } = await query;
-
-      if (error) throw error;
-      
-      const cotacoesData = (data as any[]) || [];
-      setCotacoes(cotacoesData);
-      
-      // Remove last cursor from stack
-      setCursorStack(prev => prev.slice(0, -1));
+    if (currentPage > 1) {
       setCurrentPage(prev => prev - 1);
-      
-      // Set next cursor
-      if (cotacoesData.length === pageSize) {
-        setNextCursor(cotacoesData[cotacoesData.length - 1].created_at);
-      } else {
-        setNextCursor(null);
-      }
-    } catch (error) {
-      console.error('Error fetching previous page:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const fetchCotacoes = getFirstPage;
+  const refetch = async () => {
+    await getTotalCount();
+    await fetchCotacoes();
+  };
 
   const createCotacao = async (cotacaoData: any) => {
     try {
@@ -595,10 +550,9 @@ export function useCotacoes() {
     totalCount,
     currentPage,
     pageSize,
-    nextCursor,
-    canGoNext: !!nextCursor,
+    canGoNext: currentPage < Math.ceil(totalCount / pageSize),
     canGoPrev: currentPage > 1,
-    refetch: fetchCotacoes,
+    refetch,
     createCotacao,
     updateCotacao,
     getTotalCount,
@@ -608,8 +562,6 @@ export function useCotacoes() {
     setPageSize: (newSize: number) => {
       setPageSize(newSize);
       setCurrentPage(1);
-      setCursorStack([]);
-      setNextCursor(null);
     },
     searchTerm,
     setSearchTerm,
