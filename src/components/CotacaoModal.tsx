@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { Save, X, FileText, MessageSquare, History, Paperclip, Upload } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   useProfiles, 
   useSeguradoras, 
@@ -48,6 +49,7 @@ export const CotacaoModal = ({
   mode = 'create',
   onSaved
 }: CotacaoModalProps) => {
+  const { user } = useAuth();
   const { profiles } = useProfiles();
   const { produtores } = useProdutores();
   const { seguradoras } = useSeguradoras();
@@ -119,12 +121,15 @@ export const CotacaoModal = ({
       const inicioVigencia = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
       const fimVigencia = new Date(inicioVigencia.getTime() + 365 * 24 * 60 * 60 * 1000);
 
+      // Find current user in produtores list to set as default cotador
+      const currentUserProdutor = produtores.find(p => p.email === user?.email);
+
       setFormData({
         cliente_id: '',
         unidade: 'Matriz',
         produtor_origem_id: '',
         produtor_negociador_id: '',
-        produtor_cotador_id: '',
+        produtor_cotador_id: currentUserProdutor?.id || '',
         cnpj: '',
         segurado: '',
         seguradora_id: '',
