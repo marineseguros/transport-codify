@@ -356,6 +356,84 @@ export type Database = {
         }
         Relationships: []
       }
+      tmp_cotacoes_import: {
+        Row: {
+          captacao_id: string | null
+          cliente_id: string | null
+          comentarios: string | null
+          cpf_cnpj: string | null
+          created_at: string | null
+          data_cotacao: string | null
+          data_fechamento: string | null
+          motivo_recusa: string | null
+          num_apolice: string | null
+          numero_cotacao: string | null
+          observacoes: string | null
+          produtor_cotador_id: string | null
+          produtor_negociador_id: string | null
+          produtor_origem_id: string | null
+          ramo_id: string | null
+          segmento: string | null
+          segurado: string | null
+          seguradora_id: string | null
+          status: string | null
+          status_seguradora_id: string | null
+          tipo: string | null
+          updated_at: string | null
+          valor_premio: string | null
+        }
+        Insert: {
+          captacao_id?: string | null
+          cliente_id?: string | null
+          comentarios?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string | null
+          data_cotacao?: string | null
+          data_fechamento?: string | null
+          motivo_recusa?: string | null
+          num_apolice?: string | null
+          numero_cotacao?: string | null
+          observacoes?: string | null
+          produtor_cotador_id?: string | null
+          produtor_negociador_id?: string | null
+          produtor_origem_id?: string | null
+          ramo_id?: string | null
+          segmento?: string | null
+          segurado?: string | null
+          seguradora_id?: string | null
+          status?: string | null
+          status_seguradora_id?: string | null
+          tipo?: string | null
+          updated_at?: string | null
+          valor_premio?: string | null
+        }
+        Update: {
+          captacao_id?: string | null
+          cliente_id?: string | null
+          comentarios?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string | null
+          data_cotacao?: string | null
+          data_fechamento?: string | null
+          motivo_recusa?: string | null
+          num_apolice?: string | null
+          numero_cotacao?: string | null
+          observacoes?: string | null
+          produtor_cotador_id?: string | null
+          produtor_negociador_id?: string | null
+          produtor_origem_id?: string | null
+          ramo_id?: string | null
+          segmento?: string | null
+          segurado?: string | null
+          seguradora_id?: string | null
+          status?: string | null
+          status_seguradora_id?: string | null
+          tipo?: string | null
+          updated_at?: string | null
+          valor_premio?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
