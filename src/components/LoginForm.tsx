@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
+import { ForgotPasswordModal } from '@/components/ForgotPasswordModal';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -90,6 +91,14 @@ export const LoginForm = () => {
                 {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
+
+            <div className="mt-4 text-center">
+              <ForgotPasswordModal>
+                <Button variant="link" className="text-sm">
+                  Esqueci minha senha
+                </Button>
+              </ForgotPasswordModal>
+            </div>
 
             {/* Credenciais de teste para administrador */}
             <div className="mt-4 p-3 bg-muted rounded-lg text-xs text-muted-foreground">

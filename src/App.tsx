@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LoginForm } from "@/components/LoginForm";
+import { ResetPasswordForm } from "@/components/ResetPasswordForm";
 import { Layout } from "@/components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Cotacoes from "./pages/Cotacoes";
@@ -30,7 +31,12 @@ const AppContent = () => {
   }
 
   if (!user) {
-    return <LoginForm />;
+    return (
+      <Routes>
+        <Route path="/reset-password" element={<ResetPasswordForm />} />
+        <Route path="*" element={<LoginForm />} />
+      </Routes>
+    );
   }
 
   return (

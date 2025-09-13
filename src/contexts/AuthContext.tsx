@@ -9,6 +9,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   signUp: (email: string, password: string, nome: string, papel?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (password: string) => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
 }
 
@@ -142,6 +144,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const redirectUrl = `${window.location.origin}/reset-password`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Reset password error:', error);
+      return { success: false, error: 'Erro inesperado ao solicitar redefinição de senha' };
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: password
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Update password error:', error);
+      return { success: false, error: 'Erro inesperado ao atualizar senha' };
+    }
+  };
+
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -149,7 +187,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, login, signUp, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, session, login, signUp, logout, resetPassword, updatePassword, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
