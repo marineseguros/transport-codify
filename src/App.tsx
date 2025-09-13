@@ -20,7 +20,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { user, isLoading } = useAuth();
+  const { user, session, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -30,32 +30,33 @@ const AppContent = () => {
     );
   }
 
-  if (!user) {
-    return (
-      <Routes>
-        <Route path="/reset-password" element={<ResetPasswordForm />} />
-        <Route path="*" element={<LoginForm />} />
-      </Routes>
-    );
-  }
-
+  // Sempre permitir acesso à página de reset de senha
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/cotacoes" element={<Cotacoes />} />
-        <Route path="/funil" element={<Funil />} />
-        <Route path="/clientes" element={<Clientes />} />
-        <Route path="/tarefas" element={<Tarefas />} />
-        <Route path="/usuarios" element={<Usuarios />} />
-        <Route path="/produtores" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-        <Route path="/seguradoras" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-        <Route path="/ramos" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-        <Route path="/configuracoes" element={<Configuracoes />} />
-        <Route path="/relatorios" element={<Relatorios />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Layout>
+    <Routes>
+      <Route path="/reset-password" element={<ResetPasswordForm />} />
+      {user ? (
+        <Route path="/*" element={
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/cotacoes" element={<Cotacoes />} />
+              <Route path="/funil" element={<Funil />} />
+              <Route path="/clientes" element={<Clientes />} />
+              <Route path="/tarefas" element={<Tarefas />} />
+              <Route path="/usuarios" element={<Usuarios />} />
+              <Route path="/produtores" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
+              <Route path="/seguradoras" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
+              <Route path="/ramos" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
+              <Route path="/configuracoes" element={<Configuracoes />} />
+              <Route path="/relatorios" element={<Relatorios />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Layout>
+        } />
+      ) : (
+        <Route path="*" element={<LoginForm />} />
+      )}
+    </Routes>
   );
 };
 

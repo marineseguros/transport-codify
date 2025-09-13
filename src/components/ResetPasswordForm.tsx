@@ -14,22 +14,34 @@ export const ResetPasswordForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidSession, setIsValidSession] = useState(false);
   
   const { updatePassword, session } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    // Verifica se o usuário tem uma sessão válida (veio do link de recuperação)
-    if (!session) {
+    // Verifica se há parâmetros de verificação na URL ou uma sessão válida
+    const token = searchParams.get('token');
+    const type = searchParams.get('type');
+    
+    console.log('Reset password - Session:', !!session);
+    console.log('Reset password - Token:', !!token);
+    console.log('Reset password - Type:', type);
+    
+    if (session || (token && type === 'recovery')) {
+      setIsValidSession(true);
+    } else {
       toast({
         title: "Link inválido ou expirado",
         description: "Por favor, solicite um novo link de recuperação de senha.",
         variant: "destructive",
       });
-      navigate('/');
+      setTimeout(() => {
+        navigate('/');
+      }, 3000);
     }
-  }, [session, navigate]);
+  }, [session, searchParams, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,8 +97,23 @@ export const ResetPasswordForm = () => {
     }
   };
 
-  if (!session) {
-    return null; // Componente já redirecionou no useEffect
+  if (!isValidSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="h-16 w-16 bg-destructive/10 rounded-full flex items-center justify-center">
+                <Lock className="h-8 w-8 text-destructive" />
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold">Link Inválido</h1>
+            <p className="text-muted-foreground">O link de recuperação é inválido ou expirou.</p>
+            <p className="text-sm text-muted-foreground mt-2">Você será redirecionado para a página de login...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
