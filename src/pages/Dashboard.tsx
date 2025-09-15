@@ -66,34 +66,6 @@ const Dashboard = () => {
         startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         endDate = new Date(now.getFullYear(), now.getMonth(), 0);
         break;
-      case 'ano_anterior':
-        startDate = new Date(now.getFullYear() - 1, 0, 1);
-        endDate = new Date(now.getFullYear() - 1, 11, 31);
-        break;
-      case 'trimestre_atual':
-        const currentQuarter = Math.floor(now.getMonth() / 3);
-        startDate = new Date(now.getFullYear(), currentQuarter * 3, 1);
-        endDate = new Date(now.getFullYear(), currentQuarter * 3 + 3, 0);
-        break;
-      case 'trimestre_anterior':
-        const prevQuarter = Math.floor(now.getMonth() / 3) - 1;
-        const prevQuarterYear = prevQuarter < 0 ? now.getFullYear() - 1 : now.getFullYear();
-        const adjustedQuarter = prevQuarter < 0 ? 3 : prevQuarter;
-        startDate = new Date(prevQuarterYear, adjustedQuarter * 3, 1);
-        endDate = new Date(prevQuarterYear, adjustedQuarter * 3 + 3, 0);
-        break;
-      case 'semestre_atual':
-        const currentSemester = Math.floor(now.getMonth() / 6);
-        startDate = new Date(now.getFullYear(), currentSemester * 6, 1);
-        endDate = new Date(now.getFullYear(), currentSemester * 6 + 6, 0);
-        break;
-      case 'semestre_anterior':
-        const prevSemester = Math.floor(now.getMonth() / 6) - 1;
-        const prevSemesterYear = prevSemester < 0 ? now.getFullYear() - 1 : now.getFullYear();
-        const adjustedSemester = prevSemester < 0 ? 1 : prevSemester;
-        startDate = new Date(prevSemesterYear, adjustedSemester * 6, 1);
-        endDate = new Date(prevSemesterYear, adjustedSemester * 6 + 6, 0);
-        break;
       case 'personalizado':
         if (!dateRange?.from) return filtered;
         startDate = dateRange.from;
@@ -205,7 +177,7 @@ const Dashboard = () => {
       case 'Negócio fechado':
         return 'default';
       case 'Em cotação':
-        return 'secondary';
+        return 'brand-orange';
       case 'Declinado':
         return 'destructive';
       default:
@@ -266,11 +238,6 @@ const Dashboard = () => {
                   <SelectItem value="90dias">Últimos 90 dias</SelectItem>
                   <SelectItem value="mes_atual">Este mês</SelectItem>
                   <SelectItem value="mes_anterior">Mês passado</SelectItem>
-                  <SelectItem value="ano_anterior">Ano anterior</SelectItem>
-                  <SelectItem value="trimestre_atual">Trimestre atual</SelectItem>
-                  <SelectItem value="trimestre_anterior">Trimestre anterior</SelectItem>
-                  <SelectItem value="semestre_atual">Semestre atual</SelectItem>
-                  <SelectItem value="semestre_anterior">Semestre anterior</SelectItem>
                   <SelectItem value="personalizado">Período personalizado</SelectItem>
                 </SelectContent>
               </Select>
@@ -398,7 +365,7 @@ const Dashboard = () => {
 
       {/* Distribuição por Status */}
       <Card>
-        <CardHeader className="bg-brand-orange text-brand-orange-foreground">
+        <CardHeader>
           <CardTitle>Distribuição por Status (Período Atual)</CardTitle>
         </CardHeader>
         <CardContent>
