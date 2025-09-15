@@ -175,7 +175,7 @@ const Dashboard = () => {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'Negócio fechado':
-        return 'default';
+        return 'success-alt';
       case 'Em cotação':
         return 'brand-orange';
       case 'Declinado':
@@ -410,7 +410,7 @@ const Dashboard = () => {
                     <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
                       {cotacao.status}
                     </Badge>
-                    <span className="text-sm font-bold text-primary">
+                    <span className="text-sm font-bold text-quote-value">
                       {formatCurrency(cotacao.valor_premio)}
                     </span>
                   </div>

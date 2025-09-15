@@ -34,6 +34,14 @@ All colors MUST be HSL.
     /* Custom brand orange */
     --brand-orange: 38 85% 44%;
     --brand-orange-foreground: 0 0% 100%;
+    
+    /* Success green variant for Negócio Fechado */
+    --success-alt: 142 77% 47%;
+    --success-alt-foreground: 0 0% 100%;
+    
+    /* Quote value color */
+    --quote-value: 214 25% 91%;
+    --quote-value-foreground: 215 25% 15%;
 
     /* Marine secondary colors */
     --secondary: 190 30% 95%;
@@ -93,6 +101,12 @@ All colors MUST be HSL.
     
     --brand-orange: 38 85% 54%;
     --brand-orange-foreground: 215 28% 7%;
+    
+    --success-alt: 142 77% 57%;
+    --success-alt-foreground: 215 28% 7%;
+    
+    --quote-value: 214 25% 81%;
+    --quote-value-foreground: 213 31% 91%;
 
     --secondary: 215 28% 15%;
     --secondary-foreground: 213 31% 91%;

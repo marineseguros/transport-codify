@@ -36,6 +36,14 @@ export default {
           DEFAULT: "hsl(var(--brand-orange))",
           foreground: "hsl(var(--brand-orange-foreground))",
         },
+        "success-alt": {
+          DEFAULT: "hsl(var(--success-alt))",
+          foreground: "hsl(var(--success-alt-foreground))",
+        },
+        "quote-value": {
+          DEFAULT: "hsl(var(--quote-value))",
+          foreground: "hsl(var(--quote-value-foreground))",
+        },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
