@@ -304,11 +304,13 @@ export function useCotacoes() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [produtorFilter, setProdutorFilter] = useState('');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     getTotalCount();
     fetchCotacoes();
-  }, [searchTerm, statusFilter, produtorFilter, currentPage, pageSize]);
+  }, [searchTerm, statusFilter, produtorFilter, currentPage, pageSize, sortBy, sortOrder]);
 
   const buildBaseQuery = () => {
     return supabase
@@ -378,7 +380,7 @@ export function useCotacoes() {
     try {
       setLoading(true);
       let query = buildBaseQuery()
-        .order('created_at', { ascending: false })
+        .order(sortBy, { ascending: sortOrder === 'asc' })
         .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
       query = applyFilters(query);
@@ -568,7 +570,11 @@ export function useCotacoes() {
     statusFilter,
     setStatusFilter,
     produtorFilter,
-    setProdutorFilter
+    setProdutorFilter,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder
   };
 }
 

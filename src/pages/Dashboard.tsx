@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCotacoesTotais, useProdutores, type Cotacao } from '@/hooks/useSupabaseData';
-import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, CalendarIcon, Users, Building } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, CalendarIcon, Users, Building, List, Grid3X3 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DatePickerWithRange } from "@/components/ui/date-picker";
@@ -164,6 +164,9 @@ const Dashboard = () => {
       percentage: filteredCotacoes.length > 0 ? (counts[status] || 0) / filteredCotacoes.length * 100 : 0
     }));
   }, [filteredCotacoes]);
+
+  // View mode state for recent quotes
+  const [recentQuotesViewMode, setRecentQuotesViewMode] = useState<'list' | 'cards'>('list');
 
   // Recent quotes for display (last 10)
   const recentQuotes = useMemo(() => {
@@ -601,51 +604,113 @@ const Dashboard = () => {
 
       {/* Cotações Recentes */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Cotações Recentes</CardTitle>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant={recentQuotesViewMode === 'list' ? 'default' : 'outline'}
+              onClick={() => setRecentQuotesViewMode('list')}
+              className="gap-2"
+            >
+              <List className="h-4 w-4" />
+              Lista
+            </Button>
+            <Button
+              size="sm"
+              variant={recentQuotesViewMode === 'cards' ? 'default' : 'outline'}
+              onClick={() => setRecentQuotesViewMode('cards')}
+              className="gap-2"
+            >
+              <Grid3X3 className="h-4 w-4" />
+              Cards
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {recentQuotes.length > 0 ? recentQuotes.map(cotacao => (
-              <div key={cotacao.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                <div className="flex items-center gap-3 flex-1">
-                  <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
-                    {cotacao.status}
-                  </Badge>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{cotacao.segurado}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{cotacao.seguradora?.nome}</span>
-                      {cotacao.ramo?.descricao && (
-                        <>
-                          <span>•</span>
-                          <span>{cotacao.ramo.descricao}</span>
-                        </>
-                      )}
-                      {cotacao.produtor_origem?.nome && (
-                        <>
-                          <span>•</span>
-                          <span>Produtor: {cotacao.produtor_origem.nome}</span>
-                        </>
-                      )}
+          {recentQuotesViewMode === 'list' ? (
+            <div className="space-y-3">
+              {recentQuotes.length > 0 ? (
+                <div className="space-y-2">
+                  {/* Header */}
+                  <div className="grid grid-cols-12 gap-4 pb-2 border-b text-sm font-medium text-muted-foreground">
+                    <div className="col-span-2">Status</div>
+                    <div className="col-span-3">Segurado</div>
+                    <div className="col-span-2">Seguradora</div>
+                    <div className="col-span-2">Ramo</div>
+                    <div className="col-span-2">Produtor</div>
+                    <div className="col-span-1 text-right">Valor</div>
+                  </div>
+                  {/* Rows */}
+                  {recentQuotes.map(cotacao => (
+                    <div key={cotacao.id} className="grid grid-cols-12 gap-4 py-2 rounded-lg hover:bg-accent/50 transition-colors">
+                      <div className="col-span-2">
+                        <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
+                          {cotacao.status}
+                        </Badge>
+                      </div>
+                      <div className="col-span-3">
+                        <p className="font-medium text-sm">{cotacao.segurado}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(cotacao.created_at)}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-sm">{cotacao.seguradora?.nome || '-'}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-sm">{cotacao.ramo?.descricao || '-'}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-sm">{cotacao.produtor_origem?.nome || '-'}</p>
+                      </div>
+                      <div className="col-span-1 text-right">
+                        <span className="text-sm font-bold text-quote-value">
+                          {formatCurrency(cotacao.valor_premio)}
+                        </span>
+                      </div>
                     </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">Nenhuma cotação recente encontrada.</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {recentQuotes.length > 0 ? recentQuotes.map(cotacao => (
+                <div key={cotacao.id} className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                  <div className="flex items-start justify-between mb-2">
+                    <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
+                      {cotacao.status}
+                    </Badge>
+                    <span className="text-sm font-bold text-quote-value">
+                      {formatCurrency(cotacao.valor_premio)}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-medium text-sm">{cotacao.segurado}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {cotacao.seguradora?.nome}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {cotacao.ramo?.descricao}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Produtor: {cotacao.produtor_origem?.nome}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(cotacao.created_at)}
+                    </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-sm font-bold text-quote-value">
-                    {formatCurrency(cotacao.valor_premio)}
-                  </span>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDate(cotacao.created_at)}
-                  </p>
+              )) : (
+                <div className="text-center py-8 col-span-full">
+                  <p className="text-sm text-muted-foreground">Nenhuma cotação recente encontrada.</p>
                 </div>
-              </div>
-            )) : (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">Nenhuma cotação recente encontrada.</p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>;

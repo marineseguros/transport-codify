@@ -34,7 +34,11 @@ const Cotacoes = () => {
     statusFilter,
     setStatusFilter,
     produtorFilter,
-    setProdutorFilter
+    setProdutorFilter,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder
   } = useCotacoes();
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -170,6 +174,25 @@ const Cotacoes = () => {
         </div>
         
         <div className="flex gap-3">
+          <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+            const [field, order] = value.split('-');
+            setSortBy(field);
+            setSortOrder(order as 'asc' | 'desc');
+          }}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_at-desc">Mais recentes</SelectItem>
+              <SelectItem value="created_at-asc">Mais antigos</SelectItem>
+              <SelectItem value="segurado-asc">A-Z (Segurado)</SelectItem>
+              <SelectItem value="segurado-desc">Z-A (Segurado)</SelectItem>
+              <SelectItem value="valor_premio-desc">Maior valor</SelectItem>
+              <SelectItem value="valor_premio-asc">Menor valor</SelectItem>
+              <SelectItem value="status-asc">Status A-Z</SelectItem>
+              <SelectItem value="status-desc">Status Z-A</SelectItem>
+            </SelectContent>
+          </Select>
           <Button variant="outline" onClick={refetch} className="gap-2" disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Atualizar
