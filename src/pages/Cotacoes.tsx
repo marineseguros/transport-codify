@@ -284,7 +284,7 @@ const Cotacoes = () => {
       <Card>
         <CardHeader>
           <CardTitle>
-            {totalCount} cotação{totalCount !== 1 ? 'ões' : ''} encontrada{totalCount !== 1 ? 's' : ''}
+            {totalCount} {totalCount === 1 ? 'cotação encontrada' : 'cotações encontradas'}
           </CardTitle>
         </CardHeader>
         <CardContent>
