@@ -251,6 +251,10 @@ const Dashboard = () => {
     style: 'currency',
     currency: 'BRL'
   }).format(value);
+  
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'Negócio fechado':
@@ -601,31 +605,46 @@ const Dashboard = () => {
           <CardTitle>Cotações Recentes</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {recentQuotes.length > 0 ? recentQuotes.map(cotacao => <div key={cotacao.id} className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                  <div className="flex items-start justify-between mb-2">
-                    <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
-                      {cotacao.status}
-                    </Badge>
-                    <span className="text-sm font-bold text-quote-value">
-                      {formatCurrency(cotacao.valor_premio)}
-                    </span>
-                  </div>
-                  <div className="space-y-1">
+          <div className="space-y-3">
+            {recentQuotes.length > 0 ? recentQuotes.map(cotacao => (
+              <div key={cotacao.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-3 flex-1">
+                  <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
+                    {cotacao.status}
+                  </Badge>
+                  <div className="flex-1">
                     <p className="font-medium text-sm">{cotacao.segurado}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {cotacao.seguradora?.nome}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {cotacao.ramo?.descricao} • {cotacao.tipo}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Produtor: {cotacao.produtor_origem?.nome}
-                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{cotacao.seguradora?.nome}</span>
+                      {cotacao.ramo?.descricao && (
+                        <>
+                          <span>•</span>
+                          <span>{cotacao.ramo.descricao}</span>
+                        </>
+                      )}
+                      {cotacao.produtor_origem?.nome && (
+                        <>
+                          <span>•</span>
+                          <span>Produtor: {cotacao.produtor_origem.nome}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>) : <div className="text-center py-8 col-span-full">
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-bold text-quote-value">
+                    {formatCurrency(cotacao.valor_premio)}
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(cotacao.created_at)}
+                  </p>
+                </div>
+              </div>
+            )) : (
+              <div className="text-center py-8">
                 <p className="text-sm text-muted-foreground">Nenhuma cotação recente encontrada.</p>
-              </div>}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
