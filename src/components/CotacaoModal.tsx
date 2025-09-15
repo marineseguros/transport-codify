@@ -692,7 +692,7 @@ export const CotacaoModal = ({
           <TabsContent value="anexos" className="space-y-6 mt-6">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Anexos</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">Anexos</h3>
                 {!isReadOnly && (
                   <label className="cursor-pointer">
                     <Button variant="outline" className="gap-2" asChild>
@@ -728,7 +728,7 @@ export const CotacaoModal = ({
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-semibold">Comentários</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">Comentários</h3>
               </div>
               <div>
                 <Textarea
@@ -745,7 +745,7 @@ export const CotacaoModal = ({
           <TabsContent value="historico" className="space-y-6 mt-6">
             <div className="text-center py-12">
               <History className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">Histórico</h3>
+              <h3 className="mt-4 text-sm font-medium text-muted-foreground">Histórico</h3>
               <p className="text-muted-foreground">
                 Funcionalidade de histórico será implementada
               </p>
