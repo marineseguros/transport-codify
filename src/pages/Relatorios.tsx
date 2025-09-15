@@ -243,9 +243,9 @@ const Relatorios = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{kpis.taxaFechamento.toFixed(1)}%</div>
-            <Badge variant={kpis.taxaFechamento >= 30 ? 'default' : 'secondary'}>
-              {kpis.taxaFechamento >= 30 ? 'Boa' : 'Pode melhorar'}
-            </Badge>
+             <Badge variant={kpis.taxaFechamento >= 30 ? 'success-alt' : 'secondary'}>
+               {kpis.taxaFechamento >= 30 ? 'Boa' : 'Pode melhorar'}
+             </Badge>
           </CardContent>
         </Card>
 

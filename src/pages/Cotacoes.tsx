@@ -148,8 +148,8 @@ const Cotacoes = () => {
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'Negócio fechado': return 'default';
-      case 'Em cotação': return 'secondary';
+      case 'Negócio fechado': return 'success-alt';
+      case 'Em cotação': return 'brand-orange';
       case 'Declinado': return 'destructive';
       default: return 'secondary';
     }

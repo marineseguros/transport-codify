@@ -56,9 +56,9 @@ const Tarefas = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Aberta': return 'secondary';
+      case 'Aberta': return 'brand-orange';
       case 'Em andamento': return 'default';
-      case 'Concluída': return 'outline';
+      case 'Concluída': return 'success-alt';
       default: return 'secondary';
     }
   };

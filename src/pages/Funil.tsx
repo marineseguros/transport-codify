@@ -36,9 +36,9 @@ const Funil = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Em cotação': return 'border-l-primary bg-background';
-      case 'Negócio fechado': return 'border-l-green-600 bg-background';
-      case 'Declinado': return 'border-l-red-600 bg-background';
+      case 'Em cotação': return 'border-l-brand-orange bg-background';
+      case 'Negócio fechado': return 'border-l-success-alt bg-background';
+      case 'Declinado': return 'border-l-destructive bg-background';
       default: return 'border-l-muted bg-background';
     }
   };

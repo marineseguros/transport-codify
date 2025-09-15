@@ -286,11 +286,11 @@ const Clientes = () => {
                       <Badge variant="secondary">
                         {cliente.totalCotacoes}
                       </Badge>
-                      {cliente.cotacoesFechadas > 0 && (
-                        <Badge variant="default">
-                          {cliente.cotacoesFechadas} fechadas
-                        </Badge>
-                      )}
+                       {cliente.cotacoesFechadas > 0 && (
+                         <Badge variant="success-alt">
+                           {cliente.cotacoesFechadas} fechadas
+                         </Badge>
+                       )}
                     </div>
                   </TableCell>
                   <TableCell>

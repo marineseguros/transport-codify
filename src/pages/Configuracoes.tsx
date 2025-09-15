@@ -74,23 +74,23 @@ const Configuracoes = () => {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <span>Modo de Operação</span>
-            <Badge variant={config.modo_mock ? 'secondary' : 'default'}>
+            <Badge variant={config.modo_mock ? 'secondary' : 'success-alt'}>
               {config.modo_mock ? 'Mock (Desenvolvimento)' : 'Produção (Supabase)'}
             </Badge>
           </div>
           <div className="flex items-center justify-between">
             <span>Conexão com Banco</span>
-            <Badge variant={config.modo_mock ? 'outline' : 'default'}>
+            <Badge variant={config.modo_mock ? 'outline' : 'success-alt'}>
               {config.modo_mock ? 'Local Storage' : 'Conectado'}
             </Badge>
           </div>
           <div className="flex items-center justify-between">
             <span>Autenticação</span>
-            <Badge variant="default">Ativa</Badge>
+            <Badge variant="success-alt">Ativa</Badge>
           </div>
           <div className="flex items-center justify-between">
             <span>Auditoria</span>
-            <Badge variant={config.auditoria_completa ? 'default' : 'outline'}>
+            <Badge variant={config.auditoria_completa ? 'success-alt' : 'outline'}>
               {config.auditoria_completa ? 'Completa' : 'Básica'}
             </Badge>
           </div>
@@ -245,11 +245,11 @@ const Configuracoes = () => {
           </div>
           <div className="flex items-center justify-between">
             <span>Sessão Automática</span>
-            <Badge variant="default">8 horas</Badge>
+            <Badge variant="success-alt">8 horas</Badge>
           </div>
           <div className="flex items-center justify-between">
             <span>Política de Senhas</span>
-            <Badge variant="default">Forte</Badge>
+            <Badge variant="success-alt">Forte</Badge>
           </div>
         </CardContent>
       </Card>

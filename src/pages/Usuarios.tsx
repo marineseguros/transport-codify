@@ -227,9 +227,9 @@ const Usuarios = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="default">
-                      Ativo
-                    </Badge>
+                     <Badge variant="success-alt">
+                       Ativo
+                     </Badge>
                   </TableCell>
                   <TableCell>
                     {new Date().toLocaleDateString('pt-BR')}

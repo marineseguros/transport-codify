@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { DatePickerWithRange } from "@/components/ui/date-picker";
 import { DateRange } from "react-day-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 const Dashboard = () => {
   const {
     cotacoes: allQuotes,
@@ -22,7 +23,7 @@ const Dashboard = () => {
   const [dateFilter, setDateFilter] = useState<string>('mes_atual');
   const [produtorFilter, setProdutorFilter] = useState<string>('todos');
   const [unidadeFilter, setUnidadeFilter] = useState<string>('todas');
-  const [dashboardType, setDashboardType] = useState<string>('geral');
+  
   const handleImportCSV = () => {
     toast.success('Funcionalidade de importar CSV será implementada');
   };
@@ -168,6 +169,84 @@ const Dashboard = () => {
   const recentQuotes = useMemo(() => {
     return [...filteredCotacoes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
   }, [filteredCotacoes]);
+
+  // Monthly trend data for charts (last 6 months)
+  const monthlyTrendData = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
+      const year = date.getFullYear();
+      
+      const monthCotacoes = allQuotes.filter(c => {
+        const cotacaoDate = new Date(c.data_cotacao);
+        return cotacaoDate.getMonth() === date.getMonth() && 
+               cotacaoDate.getFullYear() === date.getFullYear();
+      });
+      
+      months.push({
+        mes: `${monthName}/${year.toString().slice(-2)}`,
+        cotacoes: monthCotacoes.length,
+        fechadas: monthCotacoes.filter(c => c.status === 'Negócio fechado').length,
+      });
+    }
+    
+    return months;
+  }, [allQuotes]);
+
+  // Top seguradoras data
+  const seguradoraData = useMemo(() => {
+    const seguradoraStats = {};
+    
+    filteredCotacoes.forEach(cotacao => {
+      if (cotacao.seguradora && cotacao.status === 'Negócio fechado') {
+        const nome = cotacao.seguradora.nome;
+        if (!seguradoraStats[nome]) {
+          seguradoraStats[nome] = { nome, premio: 0, count: 0 };
+        }
+        seguradoraStats[nome].premio += cotacao.valor_premio;
+        seguradoraStats[nome].count++;
+      }
+    });
+    
+    return Object.values(seguradoraStats)
+      .sort((a: any, b: any) => b.premio - a.premio)
+      .slice(0, 5);
+  }, [filteredCotacoes]);
+
+  // Pie chart data
+  const pieChartData = useMemo(() => {
+    return distribuicaoStatus.map(item => ({
+      name: item.status,
+      value: item.count,
+      color: item.status === 'Em cotação' ? 'hsl(var(--brand-orange))' :
+             item.status === 'Negócio fechado' ? 'hsl(var(--success-alt))' :
+             'hsl(var(--destructive))'
+    }));
+  }, [distribuicaoStatus]);
+
+  // Top produtores
+  const topProdutores = useMemo(() => {
+    const produtorStats: Record<string, { nome: string; total: number; fechadas: number }> = {};
+    
+    filteredCotacoes.forEach(cotacao => {
+      if (cotacao.produtor_origem) {
+        const nome = cotacao.produtor_origem.nome;
+        if (!produtorStats[nome]) {
+          produtorStats[nome] = { nome, total: 0, fechadas: 0 };
+        }
+        produtorStats[nome].total++;
+        if (cotacao.status === 'Negócio fechado') {
+          produtorStats[nome].fechadas++;
+        }
+      }
+    });
+    
+    return Object.values(produtorStats)
+      .sort((a, b) => b.fechadas - a.fechadas);
+  }, [filteredCotacoes]);
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL'
@@ -224,7 +303,7 @@ const Dashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div>
               <label className="text-sm font-medium mb-2 block">Período</label>
               <Select value={dateFilter} onValueChange={setDateFilter}>
@@ -271,21 +350,6 @@ const Dashboard = () => {
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Tipo de Dashboard</label>
-              <Select value={dashboardType} onValueChange={setDashboardType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="geral">Dashboard Geral</SelectItem>
-                  <SelectItem value="vendas">Dashboard de Vendas</SelectItem>
-                  <SelectItem value="performance">Dashboard de Performance</SelectItem>
-                  <SelectItem value="regional">Dashboard Regional</SelectItem>
-                  <SelectItem value="financeiro">Dashboard Financeiro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
             {dateFilter === 'personalizado' && <div className="col-span-full">
                 <label className="text-sm font-medium mb-2 block">Data personalizada</label>
@@ -296,7 +360,6 @@ const Dashboard = () => {
             setDateFilter('mes_atual');
             setProdutorFilter('todos');
             setUnidadeFilter('todas');
-            setDashboardType('geral');
             setDateRange(undefined);
           }} className="col-span-full md:col-span-1">
               Limpar filtros
@@ -397,6 +460,140 @@ const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Gráficos e Análises Avançadas */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Tendência Mensal */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Tendência de Cotações (Últimos 6 Meses)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={monthlyTrendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mes" />
+                <YAxis />
+                <Tooltip formatter={(value, name) => [
+                  value,
+                  name === 'fechadas' ? 'Fechadas' : name === 'cotacoes' ? 'Total' : name
+                ]} />
+                <Line type="monotone" dataKey="cotacoes" stroke="hsl(var(--brand-orange))" strokeWidth={2} name="Total" />
+                <Line type="monotone" dataKey="fechadas" stroke="hsl(var(--success-alt))" strokeWidth={2} name="Fechadas" />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Performance por Seguradora */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top 5 Seguradoras</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={seguradoraData} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="nome" type="category" width={100} />
+                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Prêmio Total']} />
+                <Bar dataKey="premio" fill="hsl(var(--primary))" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Insights Adicionais */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Gráfico de Pizza - Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Distribuição Atual</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={pieChartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="mt-4 space-y-2">
+              {pieChartData.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                  <span className="text-sm">{item.name}: {item.value}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Análise de Produtividade */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Produtores</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {topProdutores.slice(0, 5).map((produtor, index) => (
+                <div key={produtor.nome} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-xs font-medium">
+                      {index + 1}
+                    </div>
+                    <span className="text-sm font-medium">{produtor.nome}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold">{produtor.fechadas}</div>
+                    <div className="text-xs text-muted-foreground">fechadas</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Métricas de Tempo */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Análise Temporal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
+                <span className="text-sm">Tempo médio fechamento</span>
+                <span className="font-bold">{Math.round(monthlyStats.tempoMedioFechamento)} dias</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
+                <span className="text-sm">Taxa conversão</span>
+                <span className="font-bold text-success-alt">
+                  {filteredCotacoes.length > 0 ? 
+                    ((filteredCotacoes.filter(c => c.status === 'Negócio fechado').length / filteredCotacoes.length) * 100).toFixed(1) 
+                    : '0'}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
+                <span className="text-sm">Cotações este mês</span>
+                <span className="font-bold text-brand-orange">{monthlyStats.emCotacao + monthlyStats.fechados + monthlyStats.declinados}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Cotações Recentes */}
       <Card>
