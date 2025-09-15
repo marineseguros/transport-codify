@@ -295,7 +295,7 @@ const Dashboard = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-secondary bg-[D28F0E]">{monthlyStats.emCotacao}</div>
+            <div className="text-2xl font-bold text-secondary bg-transparent bg-[D28F0E]">{monthlyStats.emCotacao}</div>
             {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
           </CardContent>
         </Card>
