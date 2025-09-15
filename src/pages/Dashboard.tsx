@@ -22,6 +22,7 @@ const Dashboard = () => {
   const [dateFilter, setDateFilter] = useState<string>('mes_atual');
   const [produtorFilter, setProdutorFilter] = useState<string>('todos');
   const [unidadeFilter, setUnidadeFilter] = useState<string>('todas');
+  const [dashboardType, setDashboardType] = useState<string>('geral');
   const handleImportCSV = () => {
     toast.success('Funcionalidade de importar CSV será implementada');
   };
@@ -64,6 +65,34 @@ const Dashboard = () => {
       case 'mes_anterior':
         startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case 'ano_anterior':
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        endDate = new Date(now.getFullYear() - 1, 11, 31);
+        break;
+      case 'trimestre_atual':
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        startDate = new Date(now.getFullYear(), currentQuarter * 3, 1);
+        endDate = new Date(now.getFullYear(), currentQuarter * 3 + 3, 0);
+        break;
+      case 'trimestre_anterior':
+        const prevQuarter = Math.floor(now.getMonth() / 3) - 1;
+        const prevQuarterYear = prevQuarter < 0 ? now.getFullYear() - 1 : now.getFullYear();
+        const adjustedQuarter = prevQuarter < 0 ? 3 : prevQuarter;
+        startDate = new Date(prevQuarterYear, adjustedQuarter * 3, 1);
+        endDate = new Date(prevQuarterYear, adjustedQuarter * 3 + 3, 0);
+        break;
+      case 'semestre_atual':
+        const currentSemester = Math.floor(now.getMonth() / 6);
+        startDate = new Date(now.getFullYear(), currentSemester * 6, 1);
+        endDate = new Date(now.getFullYear(), currentSemester * 6 + 6, 0);
+        break;
+      case 'semestre_anterior':
+        const prevSemester = Math.floor(now.getMonth() / 6) - 1;
+        const prevSemesterYear = prevSemester < 0 ? now.getFullYear() - 1 : now.getFullYear();
+        const adjustedSemester = prevSemester < 0 ? 1 : prevSemester;
+        startDate = new Date(prevSemesterYear, adjustedSemester * 6, 1);
+        endDate = new Date(prevSemesterYear, adjustedSemester * 6 + 6, 0);
         break;
       case 'personalizado':
         if (!dateRange?.from) return filtered;
@@ -237,6 +266,11 @@ const Dashboard = () => {
                   <SelectItem value="90dias">Últimos 90 dias</SelectItem>
                   <SelectItem value="mes_atual">Este mês</SelectItem>
                   <SelectItem value="mes_anterior">Mês passado</SelectItem>
+                  <SelectItem value="ano_anterior">Ano anterior</SelectItem>
+                  <SelectItem value="trimestre_atual">Trimestre atual</SelectItem>
+                  <SelectItem value="trimestre_anterior">Trimestre anterior</SelectItem>
+                  <SelectItem value="semestre_atual">Semestre atual</SelectItem>
+                  <SelectItem value="semestre_anterior">Semestre anterior</SelectItem>
                   <SelectItem value="personalizado">Período personalizado</SelectItem>
                 </SelectContent>
               </Select>
@@ -270,6 +304,22 @@ const Dashboard = () => {
               </Select>
             </div>
 
+            <div>
+              <label className="text-sm font-medium mb-2 block">Tipo de Dashboard</label>
+              <Select value={dashboardType} onValueChange={setDashboardType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="geral">Dashboard Geral</SelectItem>
+                  <SelectItem value="vendas">Dashboard de Vendas</SelectItem>
+                  <SelectItem value="performance">Dashboard de Performance</SelectItem>
+                  <SelectItem value="regional">Dashboard Regional</SelectItem>
+                  <SelectItem value="financeiro">Dashboard Financeiro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {dateFilter === 'personalizado' && <div className="col-span-full">
                 <label className="text-sm font-medium mb-2 block">Data personalizada</label>
                 <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
@@ -279,6 +329,7 @@ const Dashboard = () => {
             setDateFilter('mes_atual');
             setProdutorFilter('todos');
             setUnidadeFilter('todas');
+            setDashboardType('geral');
             setDateRange(undefined);
           }} className="col-span-full md:col-span-1">
               Limpar filtros
@@ -295,7 +346,7 @@ const Dashboard = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-secondary bg-transparent bg-[D28F0E]">{monthlyStats.emCotacao}</div>
+            <div className="text-2xl font-bold text-brand-orange">{monthlyStats.emCotacao}</div>
             {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
           </CardContent>
         </Card>
@@ -347,7 +398,7 @@ const Dashboard = () => {
 
       {/* Distribuição por Status */}
       <Card>
-        <CardHeader>
+        <CardHeader className="bg-brand-orange text-brand-orange-foreground">
           <CardTitle>Distribuição por Status (Período Atual)</CardTitle>
         </CardHeader>
         <CardContent>

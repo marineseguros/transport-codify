@@ -30,6 +30,10 @@ All colors MUST be HSL.
     /* Warning amber for pending items */
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
+    
+    /* Custom brand orange */
+    --brand-orange: 38 85% 44%;
+    --brand-orange-foreground: 0 0% 100%;
 
     /* Marine secondary colors */
     --secondary: 190 30% 95%;
@@ -86,6 +90,9 @@ All colors MUST be HSL.
     
     --warning: 38 92% 60%;
     --warning-foreground: 215 28% 7%;
+    
+    --brand-orange: 38 85% 54%;
+    --brand-orange-foreground: 215 28% 7%;
 
     --secondary: 215 28% 15%;
     --secondary-foreground: 213 31% 91%;
