@@ -170,17 +170,14 @@ export const CotacaoModal = ({
   }, [cotacao, mode, produtores, user]);
 
   const handleInputChange = (field: string, value: any) => {
+    console.log('handleInputChange called with field:', field, 'value:', value);
     if (isReadOnly) return;
-
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
 
     // Auto-fill client data when selecting from dropdown
     if (field === 'cliente_id') {
       const cliente = clientes.find(c => c.id === value);
       if (cliente) {
+        console.log('Auto-filling client data:', cliente);
         setFormData(prev => ({
           ...prev,
           cliente_id: value,
@@ -193,12 +190,20 @@ export const CotacaoModal = ({
 
     // Auto-fill segment based on ramo
     if (field === 'ramo_id') {
+      console.log('Processing ramo_id change, value:', value);
       const segmento = getSegmentoByRamo(value);
-      setFormData(prev => ({
-        ...prev,
-        ramo_id: value,
-        segmento: segmento
-      }));
+      console.log('Calculated segmento:', segmento);
+      
+      setFormData(prev => {
+        console.log('Previous formData:', prev);
+        const newData = {
+          ...prev,
+          ramo_id: value,
+          segmento: segmento
+        };
+        console.log('New formData after ramo change:', newData);
+        return newData;
+      });
       return; // Return early since we already set both fields
     }
 
@@ -235,17 +240,26 @@ export const CotacaoModal = ({
 
   // Utility function to get segment based on ramo
   const getSegmentoByRamo = (ramoId: string) => {
+    console.log('getSegmentoByRamo called with ramoId:', ramoId);
     const ramo = ramos.find(r => r.id === ramoId);
-    if (!ramo) return '';
+    console.log('Found ramo:', ramo);
+    if (!ramo) {
+      console.log('No ramo found, returning empty string');
+      return '';
+    }
     
     const ramoDesc = ramo.descricao.toUpperCase();
+    console.log('Ramo description (uppercase):', ramoDesc);
     
     if (['NACIONAL', 'EXPORTAÇÃO', 'IMPORTAÇÃO', 'NACIONAL AVULSA', 'IMPORTAÇÃO AVULSA', 'EXPORTAÇÃO AVULSA'].includes(ramoDesc)) {
+      console.log('Returning Embarcador');
       return 'Embarcador';
     } else if (['RCTR-C', 'RC-DC', 'RCTR-VI', 'GARANTIA', 'RCTA-C', 'AMBIENTAL', 'RC-V'].includes(ramoDesc)) {
+      console.log('Returning Transportador');
       return 'Transportador';
     }
     
+    console.log('No segment match found, returning empty string');
     return '';
   };
 
