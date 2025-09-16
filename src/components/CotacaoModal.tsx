@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Save, X, FileText, MessageSquare, History, Paperclip, Upload } from "lucide-react";
+import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Plus, Trash2 } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -84,6 +84,9 @@ export const CotacaoModal = ({
     motivo_recusa: '',
     comentarios: ''
   });
+
+  // State for extra ramos (up to 3 additional)
+  const [ramosExtras, setRamosExtras] = useState<string[]>([]);
 
   const isReadOnly = mode === 'view';
   const isEditing = mode === 'edit';
@@ -160,6 +163,9 @@ export const CotacaoModal = ({
         motivo_recusa: '',
         comentarios: ''
       });
+      
+      // Reset extra ramos when creating new cotação
+      setRamosExtras([]);
     }
   }, [cotacao, mode, produtores, user]);
 
@@ -233,6 +239,22 @@ export const CotacaoModal = ({
     }
   };
 
+  const handleAddRamoExtra = () => {
+    if (ramosExtras.length < 3) {
+      setRamosExtras([...ramosExtras, '']);
+    }
+  };
+
+  const handleRemoveRamoExtra = (index: number) => {
+    setRamosExtras(ramosExtras.filter((_, i) => i !== index));
+  };
+
+  const handleRamoExtraChange = (index: number, value: string) => {
+    const newRamosExtras = [...ramosExtras];
+    newRamosExtras[index] = value;
+    setRamosExtras(newRamosExtras);
+  };
+
   const handleSave = async () => {
     // Basic validations
     const requiredFields = [
@@ -277,14 +299,13 @@ export const CotacaoModal = ({
     }
 
     try {
-      const cotacaoData = {
+      const baseCotacaoData = {
         segurado: formData.segurado,
         cpf_cnpj: formData.cnpj,
         produtor_origem_id: formData.produtor_origem_id || undefined,
         produtor_negociador_id: formData.produtor_negociador_id || undefined,
         produtor_cotador_id: formData.produtor_cotador_id || undefined,
         seguradora_id: formData.seguradora_id || undefined,
-        ramo_id: formData.ramo_id || undefined,
         captacao_id: formData.captacao_id || undefined,
         status_seguradora_id: formData.status_seguradora_id || undefined,
         segmento: formData.segmento || undefined,
@@ -299,11 +320,34 @@ export const CotacaoModal = ({
       };
 
       if (cotacao && isEditing) {
+        // When editing, just update the single record
+        const cotacaoData = {
+          ...baseCotacaoData,
+          ramo_id: formData.ramo_id || undefined,
+        };
         await updateCotacao(cotacao.id, cotacaoData);
         toast.success('Cotação atualizada com sucesso!');
       } else {
-        await createCotacao(cotacaoData);
-        toast.success('Cotação criada com sucesso!');
+        // When creating, create multiple records if there are extra ramos
+        const ramosToCreate = [formData.ramo_id, ...ramosExtras.filter(r => r)];
+        let createdCount = 0;
+
+        for (const ramoId of ramosToCreate) {
+          if (ramoId) {
+            const cotacaoData = {
+              ...baseCotacaoData,
+              ramo_id: ramoId,
+            };
+            await createCotacao(cotacaoData);
+            createdCount++;
+          }
+        }
+
+        if (createdCount === 1) {
+          toast.success('Cotação criada com sucesso!');
+        } else {
+          toast.success(`${createdCount} cotações criadas com sucesso!`);
+        }
       }
       
       // Call callback if provided
@@ -501,6 +545,72 @@ export const CotacaoModal = ({
                   />
                 </div>
               </div>
+
+              {/* Ramos Extras - Only show when creating new cotação */}
+              {isCreating && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-muted-foreground">Ramos Extras (Opcional)</Label>
+                    {ramosExtras.length < 3 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAddRamoExtra}
+                        className="gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Adicionar Ramo
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {ramosExtras.length > 0 && (
+                    <div className="space-y-3">
+                      {ramosExtras.map((ramoExtra, index) => (
+                        <div key={index} className="flex gap-2 items-end">
+                          <div className="flex-1">
+                            <Label htmlFor={`ramo_extra_${index}`}>Ramo Extra {index + 1}</Label>
+                            <Select 
+                              value={ramoExtra} 
+                              onValueChange={(value) => handleRamoExtraChange(index, value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o ramo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ramos
+                                  .filter(ramo => ramo.id !== formData.ramo_id && !ramosExtras.includes(ramo.id))
+                                  .map(ramo => (
+                                    <SelectItem key={ramo.id} value={ramo.id}>
+                                      {ramo.descricao}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveRamoExtra(index)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      
+                      <div className="bg-muted/50 p-3 rounded-lg">
+                        <p className="text-xs text-muted-foreground">
+                          <strong>Importante:</strong> Ao criar a cotação, será gerado um registro independente 
+                          para cada ramo selecionado (principal + extras), com todos os outros dados idênticos.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Captação e Status Seguradora */}
               <div className="grid gap-4 md:grid-cols-2">
