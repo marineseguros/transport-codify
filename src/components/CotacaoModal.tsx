@@ -192,24 +192,13 @@ export const CotacaoModal = ({
 
     // Auto-fill segment based on ramo
     if (field === 'ramo_id') {
-      const ramo = ramos.find(r => r.id === value);
-      if (ramo) {
-        // Mapping based on the conditional table from image
-        let segmento = '';
-        const ramoDesc = ramo.descricao.toUpperCase();
-        
-        if (['NACIONAL', 'EXPORTAÇÃO', 'IMPORTAÇÃO', 'NACIONAL AVULSA', 'IMPORTAÇÃO AVULSA', 'EXPORTAÇÃO AVULSA'].includes(ramoDesc)) {
-          segmento = 'Embarcador';
-        } else if (['RCTR-C', 'RC-DC', 'RCTR-VI', 'GARANTIA', 'RCTA-C', 'AMBIENTAL', 'RC-V'].includes(ramoDesc)) {
-          segmento = 'Transportador';
-        }
-        
-        setFormData(prev => ({
-          ...prev,
-          ramo_id: value,
-          segmento: segmento
-        }));
-      }
+      const segmento = getSegmentoByRamo(value);
+      setFormData(prev => ({
+        ...prev,
+        ramo_id: value,
+        segmento: segmento
+      }));
+      return; // Return early since we already set both fields
     }
 
     // Validations
@@ -237,6 +226,22 @@ export const CotacaoModal = ({
         toast.error("A data de fim da vigência deve ser posterior ao início.");
       }
     }
+  };
+
+  // Utility function to get segment based on ramo
+  const getSegmentoByRamo = (ramoId: string) => {
+    const ramo = ramos.find(r => r.id === ramoId);
+    if (!ramo) return '';
+    
+    const ramoDesc = ramo.descricao.toUpperCase();
+    
+    if (['NACIONAL', 'EXPORTAÇÃO', 'IMPORTAÇÃO', 'NACIONAL AVULSA', 'IMPORTAÇÃO AVULSA', 'EXPORTAÇÃO AVULSA'].includes(ramoDesc)) {
+      return 'Embarcador';
+    } else if (['RCTR-C', 'RC-DC', 'RCTR-VI', 'GARANTIA', 'RCTA-C', 'AMBIENTAL', 'RC-V'].includes(ramoDesc)) {
+      return 'Transportador';
+    }
+    
+    return '';
   };
 
   const handleAddRamoExtra = () => {
@@ -334,9 +339,11 @@ export const CotacaoModal = ({
 
         for (const ramoId of ramosToCreate) {
           if (ramoId) {
+            const segmento = getSegmentoByRamo(ramoId);
             const cotacaoData = {
               ...baseCotacaoData,
               ramo_id: ramoId,
+              segmento: segmento || baseCotacaoData.segmento, // Use calculated segment or fallback to original
             };
             await createCotacao(cotacaoData);
             createdCount++;
