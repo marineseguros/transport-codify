@@ -188,6 +188,7 @@ export const CotacaoModal = ({
           cnpj: cliente.cpf_cnpj
         }));
       }
+      return; // Return early since we set all needed fields
     }
 
     // Auto-fill segment based on ramo
@@ -201,17 +202,21 @@ export const CotacaoModal = ({
       return; // Return early since we already set both fields
     }
 
+    // For other fields, use the general update
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+
     // Validations
     if (field === 'status' && value === 'Negócio fechado') {
       setFormData(prev => ({
         ...prev,
-        [field]: value,
         data_fechamento: prev.data_fechamento || new Date().toISOString().split('T')[0]
       }));
     } else if (field === 'status' && value !== 'Negócio fechado') {
       setFormData(prev => ({
         ...prev,
-        [field]: value,
         data_fechamento: undefined,
         num_apolice: undefined
       }));
