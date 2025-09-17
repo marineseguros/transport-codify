@@ -607,15 +607,25 @@ export const CotacaoModal = ({
                                <SelectTrigger>
                                  <SelectValue placeholder="Selecione o ramo" />
                                </SelectTrigger>
-                               <SelectContent>
-                                 {ramos
-                                   .filter(ramo => ramo.id !== formData.ramo_id && !ramosExtras.map(r => r.ramo_id).includes(ramo.id))
-                                   .map(ramo => (
-                                     <SelectItem key={ramo.id} value={ramo.id}>
-                                       {ramo.descricao}
-                                     </SelectItem>
-                                   ))}
-                               </SelectContent>
+                                <SelectContent>
+                                  {ramos
+                                    .filter(ramo => {
+                                      // Allow current selection to stay visible
+                                      if (ramo.id === ramoExtra.ramo_id) return true;
+                                      // Exclude main ramo
+                                      if (ramo.id === formData.ramo_id) return false;
+                                      // Exclude other extra ramos (but not current one)
+                                      const otherSelectedRamos = ramosExtras
+                                        .map((r, i) => i !== index ? r.ramo_id : null)
+                                        .filter(Boolean);
+                                      return !otherSelectedRamos.includes(ramo.id);
+                                    })
+                                    .map(ramo => (
+                                      <SelectItem key={ramo.id} value={ramo.id}>
+                                        {ramo.descricao}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
                              </Select>
                            </div>
                            
