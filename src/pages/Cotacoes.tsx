@@ -293,8 +293,11 @@ const Cotacoes = () => {
               <TableRow>
                 <TableHead>Número</TableHead>
                 <TableHead>Segurado</TableHead>
+                <TableHead>Produtor Origem</TableHead>
+                <TableHead>Produtor Negociador</TableHead>
                 <TableHead>Produtor Cotador</TableHead>
                 <TableHead>Seguradora</TableHead>
+                <TableHead>Ramo</TableHead>
                 <TableHead>Segmento</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Status</TableHead>
@@ -316,18 +319,20 @@ const Cotacoes = () => {
                       </div>
                     </div>
                   </TableCell>
+                  <TableCell>
+                    {cotacao.produtor_origem?.nome || 'Não informado'}
+                  </TableCell>
+                  <TableCell>
+                    {cotacao.produtor_negociador?.nome || 'Não informado'}
+                  </TableCell>
                    <TableCell>
                      {cotacao.produtor_cotador?.nome || 'Não informado'}
                    </TableCell>
                   <TableCell>
-                    {cotacao.seguradora ? (
-                      <div>
-                        <div className="font-medium">{cotacao.seguradora.nome}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {cotacao.seguradora.codigo}
-                        </div>
-                      </div>
-                    ) : '-'}
+                    {cotacao.seguradora?.nome || '-'}
+                  </TableCell>
+                  <TableCell>
+                    {cotacao.ramo?.descricao || '-'}
                   </TableCell>
                   <TableCell>
                     {cotacao.segmento ? (
