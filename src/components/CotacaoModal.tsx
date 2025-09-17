@@ -86,7 +86,7 @@ export const CotacaoModal = ({
   });
 
   // State for extra ramos (up to 3 additional)
-  const [ramosExtras, setRamosExtras] = useState<string[]>([]);
+  const [ramosExtras, setRamosExtras] = useState<{ramo_id: string, segmento: string}[]>([]);
 
   const isReadOnly = mode === 'view';
   const isEditing = mode === 'edit';
@@ -265,7 +265,7 @@ export const CotacaoModal = ({
 
   const handleAddRamoExtra = () => {
     if (ramosExtras.length < 3) {
-      setRamosExtras([...ramosExtras, '']);
+      setRamosExtras([...ramosExtras, { ramo_id: '', segmento: '' }]);
     }
   };
 
@@ -274,8 +274,9 @@ export const CotacaoModal = ({
   };
 
   const handleRamoExtraChange = (index: number, value: string) => {
+    const segmento = getSegmentoByRamo(value);
     const newRamosExtras = [...ramosExtras];
-    newRamosExtras[index] = value;
+    newRamosExtras[index] = { ramo_id: value, segmento: segmento };
     setRamosExtras(newRamosExtras);
   };
 
@@ -353,16 +354,18 @@ export const CotacaoModal = ({
         toast.success('Cotação atualizada com sucesso!');
       } else {
         // When creating, create multiple records if there are extra ramos
-        const ramosToCreate = [formData.ramo_id, ...ramosExtras.filter(r => r)];
+        const ramosToCreate = [
+          { ramo_id: formData.ramo_id, segmento: formData.segmento },
+          ...ramosExtras.filter(r => r.ramo_id)
+        ];
         let createdCount = 0;
 
-        for (const ramoId of ramosToCreate) {
-          if (ramoId) {
-            const segmento = getSegmentoByRamo(ramoId);
+        for (const ramoData of ramosToCreate) {
+          if (ramoData.ramo_id) {
             const cotacaoData = {
               ...baseCotacaoData,
-              ramo_id: ramoId,
-              segmento: segmento || baseCotacaoData.segmento, // Use calculated segment or fallback to original
+              ramo_id: ramoData.ramo_id,
+              segmento: ramoData.segmento,
             };
             await createCotacao(cotacaoData);
             createdCount++;
@@ -593,39 +596,51 @@ export const CotacaoModal = ({
                   
                   {ramosExtras.length > 0 && (
                     <div className="space-y-3">
-                      {ramosExtras.map((ramoExtra, index) => (
-                        <div key={index} className="flex gap-2 items-end">
-                          <div className="flex-1">
-                            <Label htmlFor={`ramo_extra_${index}`}>Ramo Extra {index + 1}</Label>
-                            <Select 
-                              value={ramoExtra} 
-                              onValueChange={(value) => handleRamoExtraChange(index, value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o ramo" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {ramos
-                                  .filter(ramo => ramo.id !== formData.ramo_id && !ramosExtras.includes(ramo.id))
-                                  .map(ramo => (
-                                    <SelectItem key={ramo.id} value={ramo.id}>
-                                      {ramo.descricao}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRemoveRamoExtra(index)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
+                       {ramosExtras.map((ramoExtra, index) => (
+                         <div key={index} className="flex gap-2 items-end">
+                           <div className="flex-1">
+                             <Label htmlFor={`ramo_extra_${index}`}>Ramo Extra {index + 1}</Label>
+                             <Select 
+                               value={ramoExtra.ramo_id} 
+                               onValueChange={(value) => handleRamoExtraChange(index, value)}
+                             >
+                               <SelectTrigger>
+                                 <SelectValue placeholder="Selecione o ramo" />
+                               </SelectTrigger>
+                               <SelectContent>
+                                 {ramos
+                                   .filter(ramo => ramo.id !== formData.ramo_id && !ramosExtras.map(r => r.ramo_id).includes(ramo.id))
+                                   .map(ramo => (
+                                     <SelectItem key={ramo.id} value={ramo.id}>
+                                       {ramo.descricao}
+                                     </SelectItem>
+                                   ))}
+                               </SelectContent>
+                             </Select>
+                           </div>
+                           
+                           {ramoExtra.ramo_id && (
+                             <div className="flex-1">
+                               <Label htmlFor={`segmento_extra_${index}`}>Segmento</Label>
+                               <Input
+                                 value={ramoExtra.segmento}
+                                 placeholder="Preenchido automaticamente"
+                                 readOnly
+                               />
+                             </div>
+                           )}
+                           
+                           <Button
+                             type="button"
+                             variant="outline"
+                             size="sm"
+                             onClick={() => handleRemoveRamoExtra(index)}
+                             className="text-red-600 hover:text-red-700"
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                         </div>
+                       ))}
                       
                       <div className="bg-muted/50 p-3 rounded-lg">
                         <p className="text-xs text-muted-foreground">
