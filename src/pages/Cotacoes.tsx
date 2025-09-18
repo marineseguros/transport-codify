@@ -174,37 +174,6 @@ const Cotacoes = () => {
         </div>
         
         <div className="flex gap-3">
-          <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
-            const [field, order] = value.split('-');
-            setSortBy(field);
-            setSortOrder(order as 'asc' | 'desc');
-          }}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Ordenar por" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="created_at-desc">Mais recentes</SelectItem>
-              <SelectItem value="created_at-asc">Mais antigos</SelectItem>
-              <SelectItem value="segurado-asc">A-Z (Segurado)</SelectItem>
-              <SelectItem value="segurado-desc">Z-A (Segurado)</SelectItem>
-              <SelectItem value="valor_premio-desc">Maior valor</SelectItem>
-              <SelectItem value="valor_premio-asc">Menor valor</SelectItem>
-              <SelectItem value="status-asc">Status A-Z</SelectItem>
-              <SelectItem value="status-desc">Status Z-A</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={refetch} className="gap-2" disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
-          <Button variant="outline" onClick={handleExportCSV} className="gap-2">
-            <Download className="h-4 w-4" />
-            Exportar CSV
-          </Button>
-          <Button variant="outline" onClick={handleImportCSV} className="gap-2">
-            <Upload className="h-4 w-4" />
-            Importar CSV
-          </Button>
           {canEdit && (
             <Button onClick={handleNewCotacao} className="gap-2">
               <Plus className="h-4 w-4" />
@@ -215,70 +184,6 @@ const Cotacoes = () => {
       </div>
 
 
-      {/* Filtros */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-64">
-              <label className="text-sm font-medium mb-2 block">Buscar</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por segurado, número, produtor..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="w-48">
-              <label className="text-sm font-medium mb-2 block">Status</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os status</SelectItem>
-                  {validStatuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="w-48">
-              <label className="text-sm font-medium mb-2 block">Produtor</label>
-              <Select value={produtorFilter} onValueChange={setProdutorFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os produtores" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os produtores</SelectItem>
-                  {produtores.map((produtor) => (
-                    <SelectItem key={produtor} value={produtor!}>
-                      {produtor}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('');
-                setProdutorFilter('');
-              }}
-            >
-              Limpar
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Results */}
       <Card>
@@ -291,18 +196,153 @@ const Cotacoes = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Número</TableHead>
-                <TableHead>Segurado</TableHead>
-                <TableHead>Produtor Origem</TableHead>
-                <TableHead>Produtor Negociador</TableHead>
-                <TableHead>Produtor Cotador</TableHead>
-                <TableHead>Seguradora</TableHead>
-                <TableHead>Ramo</TableHead>
-                <TableHead>Segmento</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Data</TableHead>
-                {canEdit && <TableHead className="text-right">Ações</TableHead>}
+                <TableHead>
+                  <div className="space-y-2">
+                    <div>Número</div>
+                    <Input 
+                      placeholder="Filtrar número..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="h-8"
+                    />
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <div>Segurado</div>
+                    <Input 
+                      placeholder="Filtrar segurado..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="h-8"
+                    />
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <div>Produtor Origem</div>
+                    <Select value={produtorFilter} onValueChange={setProdutorFilter}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        {produtores.map((produtor) => (
+                          <SelectItem key={produtor} value={produtor!}>
+                            {produtor}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <div>Produtor Negociador</div>
+                    <Select value={produtorFilter} onValueChange={setProdutorFilter}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        {produtores.map((produtor) => (
+                          <SelectItem key={produtor} value={produtor!}>
+                            {produtor}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <div>Produtor Cotador</div>
+                    <Select value={produtorFilter} onValueChange={setProdutorFilter}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        {produtores.map((produtor) => (
+                          <SelectItem key={produtor} value={produtor!}>
+                            {produtor}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <div>Seguradora</div>
+                    <Input 
+                      placeholder="Filtrar seguradora..."
+                      className="h-8"
+                    />
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <div>Ramo</div>
+                    <Input 
+                      placeholder="Filtrar ramo..."
+                      className="h-8"
+                    />
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <div>Segmento</div>
+                    <Input 
+                      placeholder="Filtrar segmento..."
+                      className="h-8"
+                    />
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <div>Valor</div>
+                    <Input 
+                      placeholder="Filtrar valor..."
+                      className="h-8"
+                    />
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <div>Status</div>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        {validStatuses.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="space-y-2">
+                    <div>Data</div>
+                    <Input 
+                      placeholder="Filtrar data..."
+                      className="h-8"
+                    />
+                  </div>
+                </TableHead>
+                {canEdit && (
+                  <TableHead className="text-right">
+                    <div className="space-y-2">
+                      <div>Ações</div>
+                      <div className="h-8"></div>
+                    </div>
+                  </TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
