@@ -31,6 +31,7 @@ import {
   useRamos,
   useCaptacao,
   useStatusSeguradora,
+  useUnidades,
   type Cotacao 
 } from '@/hooks/useSupabaseData';
 
@@ -56,12 +57,13 @@ export const CotacaoModal = ({
   const { ramos } = useRamos();
   const { captacao } = useCaptacao();
   const { statusSeguradora } = useStatusSeguradora();
+  const { unidades } = useUnidades();
   const { clientes } = useClientes();
   const { createCotacao, updateCotacao } = useCotacoes();
 
   const [formData, setFormData] = useState({
     cliente_id: '',
-    unidade: 'Matriz',
+    unidade_id: '',
     produtor_origem_id: '',
     produtor_negociador_id: '',
     produtor_cotador_id: '',
@@ -76,7 +78,7 @@ export const CotacaoModal = ({
         inicio_vigencia: '',
         fim_vigencia: '',
         valor_premio: 0,
-        status: 'Em análise',
+        status: 'Em cotação',
     observacoes: '',
     segmento: '',
     data_fechamento: undefined as string | undefined,
@@ -103,7 +105,7 @@ export const CotacaoModal = ({
     if (cotacao && (isEditing || mode === 'view')) {
       setFormData({
         cliente_id: cotacao.cliente_id || '',
-        unidade: 'Matriz',
+        unidade_id: cotacao.unidade_id || '',
         produtor_origem_id: cotacao.produtor_origem_id || '',
         produtor_negociador_id: cotacao.produtor_negociador_id || '',
         produtor_cotador_id: cotacao.produtor_cotador_id || '',
@@ -140,7 +142,7 @@ export const CotacaoModal = ({
 
       setFormData({
         cliente_id: '',
-        unidade: 'Matriz',
+        unidade_id: '',
         produtor_origem_id: '',
         produtor_negociador_id: '',
         produtor_cotador_id: currentUserProdutor?.id || '',
@@ -424,16 +426,19 @@ export const CotacaoModal = ({
                 <div>
                   <Label htmlFor="unidade">Unidade *</Label>
                   <Select 
-                    value={formData.unidade} 
-                    onValueChange={(value) => handleInputChange('unidade', value)}
+                    value={formData.unidade_id} 
+                    onValueChange={(value) => handleInputChange('unidade_id', value)}
                     disabled={isReadOnly}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a unidade" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Matriz">Matriz</SelectItem>
-                      <SelectItem value="Filial">Filial</SelectItem>
+                      {unidades.map((unidade) => (
+                        <SelectItem key={unidade.id} value={unidade.id}>
+                          {unidade.descricao}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -753,12 +758,11 @@ export const CotacaoModal = ({
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
-                     <SelectContent>
-                       <SelectItem value="Em análise">Em análise</SelectItem>
-                       <SelectItem value="Em cotação">Em cotação</SelectItem>
-                       <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
-                       <SelectItem value="Declinado">Declinado</SelectItem>
-                     </SelectContent>
+                      <SelectContent>
+                        <SelectItem value="Em cotação">Em cotação</SelectItem>
+                        <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
+                        <SelectItem value="Declinado">Declinado</SelectItem>
+                      </SelectContent>
                   </Select>
                 </div>
 

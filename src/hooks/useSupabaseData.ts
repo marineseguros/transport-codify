@@ -8,6 +8,14 @@ export interface Profile {
   papel: string;
 }
 
+export interface Unidade {
+  id: string;
+  codigo: string;
+  descricao: string;
+  ativo: boolean;
+  created_at: string;
+}
+
 export interface Seguradora {
   id: string;
   nome: string;
@@ -59,6 +67,7 @@ export interface Cotacao {
   id: string;
   numero_cotacao: string;
   cliente_id?: string;
+  unidade_id?: string;
   segurado: string;
   cpf_cnpj: string;
   produtor_origem_id?: string;
@@ -117,6 +126,34 @@ export function useProfiles() {
   };
 
   return { profiles, loading, refetch: fetchProfiles };
+}
+
+export function useUnidades() {
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUnidades();
+  }, []);
+
+  const fetchUnidades = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('unidades')
+        .select('*')
+        .eq('ativo', true)
+        .order('descricao');
+
+      if (error) throw error;
+      setUnidades(data || []);
+    } catch (error) {
+      console.error('Error fetching unidades:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { unidades, loading, refetch: fetchUnidades };
 }
 
 export function useSeguradoras() {
@@ -468,6 +505,8 @@ export function useCotacoes() {
         segurado: cotacaoData.segurado,
         cpf_cnpj: cotacaoData.cpf_cnpj,
         numero_cotacao: numberData,
+        cliente_id: cotacaoData.cliente_id,
+        unidade_id: cotacaoData.unidade_id,
         produtor_origem_id: cotacaoData.produtor_origem_id,
         produtor_negociador_id: cotacaoData.produtor_negociador_id,
         produtor_cotador_id: cotacaoData.produtor_cotador_id,
@@ -478,7 +517,7 @@ export function useCotacoes() {
         segmento: cotacaoData.segmento,
         tipo: cotacaoData.tipo || 'Nova',
         valor_premio: cotacaoData.valor_premio || 0,
-        status: cotacaoData.status || 'Em análise',
+        status: cotacaoData.status || 'Em cotação',
         data_fechamento: cotacaoData.data_fechamento,
         num_apolice: cotacaoData.num_apolice,
         motivo_recusa: cotacaoData.motivo_recusa,

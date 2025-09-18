@@ -104,6 +104,7 @@ export type Database = {
           status: string
           status_seguradora_id: string | null
           tipo: string | null
+          unidade_id: string | null
           updated_at: string
           valor_premio: number | null
         }
@@ -130,6 +131,7 @@ export type Database = {
           status?: string
           status_seguradora_id?: string | null
           tipo?: string | null
+          unidade_id?: string | null
           updated_at?: string
           valor_premio?: number | null
         }
@@ -156,6 +158,7 @@ export type Database = {
           status?: string
           status_seguradora_id?: string | null
           tipo?: string | null
+          unidade_id?: string | null
           updated_at?: string
           valor_premio?: number | null
         }
@@ -216,11 +219,19 @@ export type Database = {
             referencedRelation: "status_seguradora"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cotacoes_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
         ]
       }
       produtores: {
         Row: {
           ativo: boolean
+          codigo_prod: string | null
           created_at: string
           email: string
           id: string
@@ -231,6 +242,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          codigo_prod?: string | null
           created_at?: string
           email: string
           id?: string
@@ -241,6 +253,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          codigo_prod?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -333,6 +346,30 @@ export type Database = {
         Relationships: []
       }
       status_seguradora: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          descricao: string
+          id: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          descricao: string
+          id?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      unidades: {
         Row: {
           ativo: boolean
           codigo: string
