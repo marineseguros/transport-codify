@@ -98,6 +98,7 @@ export interface Cotacao {
   ramo?: Ramo | null;
   captacao?: Captacao | null;
   status_seguradora?: StatusSeguradora | null;
+  unidade?: Unidade | null;
 }
 
 export function useProfiles() {
@@ -361,7 +362,8 @@ export function useCotacoes() {
         cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
         ramo:ramo_id(id, codigo, descricao, ativo),
         captacao:captacao_id(id, descricao, ativo),
-        status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
+         status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
+         unidade:unidade_id(id, codigo, descricao, ativo)
       `);
   };
 
@@ -640,7 +642,8 @@ export function useCotacoesRecentes(limit: number = 10) {
           cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
           ramo:ramo_id(id, codigo, descricao, ativo),
           captacao:captacao_id(id, descricao, ativo),
-          status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
+           status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
+           unidade:unidade_id(id, codigo, descricao, ativo)
         `)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -692,7 +695,8 @@ export function useCotacoesTotais() {
             cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
             ramo:ramo_id(id, codigo, descricao, ativo),
             captacao:captacao_id(id, descricao, ativo),
-            status_seguradora:status_seguradora_id(id, descricao, codigo, ativo)
+             status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
+             unidade:unidade_id(id, codigo, descricao, ativo)
           `)
           .order('created_at', { ascending: false })
           .range(i * batchSize, (i + 1) * batchSize - 1);

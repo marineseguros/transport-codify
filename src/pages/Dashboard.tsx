@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useCotacoesTotais, useProdutores, type Cotacao } from '@/hooks/useSupabaseData';
+import { useCotacoesTotais, useProdutores, useUnidades, type Cotacao } from '@/hooks/useSupabaseData';
 import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, CalendarIcon, Users, Building, List, Grid3X3 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -18,11 +18,16 @@ const Dashboard = () => {
     produtores,
     loading: loadingProdutores
   } = useProdutores();
-  const loading = loadingCotacoes || loadingProdutores;
+  const {
+    unidades,
+    loading: loadingUnidades
+  } = useUnidades();
+  const loading = loadingCotacoes || loadingProdutores || loadingUnidades;
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [dateFilter, setDateFilter] = useState<string>('mes_atual');
   const [produtorFilter, setProdutorFilter] = useState<string>('todos');
   const [unidadeFilter, setUnidadeFilter] = useState<string>('todas');
+  const [compareRange, setCompareRange] = useState<DateRange | undefined>();
   
   const handleImportCSV = () => {
     toast.success('Funcionalidade de importar CSV será implementada');
@@ -37,9 +42,9 @@ const Dashboard = () => {
       filtered = filtered.filter(cotacao => cotacao.produtor_origem?.nome === produtorFilter);
     }
 
-    // Apply unidade filter (placeholder for now)
+    // Apply unidade filter
     if (unidadeFilter !== 'todas') {
-      // TODO: Implement unidade filtering when unidades are available
+      filtered = filtered.filter(cotacao => cotacao.unidade?.descricao === unidadeFilter);
     }
 
     // Apply date filter
@@ -67,7 +72,26 @@ const Dashboard = () => {
         startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         endDate = new Date(now.getFullYear(), now.getMonth(), 0);
         break;
+      case 'trimestre_atual':
+        const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+        startDate = new Date(now.getFullYear(), quarterStart, 1);
+        endDate = new Date(now.getFullYear(), quarterStart + 3, 0);
+        break;
+      case 'semestre_atual':
+        const semesterStart = now.getMonth() < 6 ? 0 : 6;
+        startDate = new Date(now.getFullYear(), semesterStart, 1);
+        endDate = new Date(now.getFullYear(), semesterStart + 6, 0);
+        break;
+      case 'ano_atual':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+        break;
       case 'personalizado':
+        if (!dateRange?.from) return filtered;
+        startDate = dateRange.from;
+        endDate = dateRange.to || dateRange.from;
+        break;
+      case 'personalizado_comparacao':
         if (!dateRange?.from) return filtered;
         startDate = dateRange.from;
         endDate = dateRange.to || dateRange.from;
@@ -136,6 +160,11 @@ const Dashboard = () => {
       return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
     });
     const tempoMedioFechamento = temposFechamento.length > 0 ? temposFechamento.reduce((sum, tempo) => sum + tempo, 0) / temposFechamento.length : 0;
+    
+    // Taxa de conversão
+    const taxaConversao = currentMonthCotacoes.length > 0 ? (fechados / currentMonthCotacoes.length) * 100 : 0;
+    const taxaConversaoAnterior = previousMonthCotacoes.length > 0 ? (fechadosAnterior / previousMonthCotacoes.length) * 100 : 0;
+    const taxaConversaoComp = calculateComparison(taxaConversao, taxaConversaoAnterior);
     return {
       emCotacao,
       fechados,
@@ -145,7 +174,9 @@ const Dashboard = () => {
       declinadosComp,
       ticketMedio,
       tempoMedioFechamento,
-      premioTotal
+      premioTotal,
+      taxaConversao,
+      taxaConversaoComp
     };
   }, [filteredCotacoes, allQuotes]);
 
@@ -324,7 +355,11 @@ const Dashboard = () => {
                   <SelectItem value="90dias">Últimos 90 dias</SelectItem>
                   <SelectItem value="mes_atual">Este mês</SelectItem>
                   <SelectItem value="mes_anterior">Mês passado</SelectItem>
+                  <SelectItem value="trimestre_atual">Trimestre atual</SelectItem>
+                  <SelectItem value="semestre_atual">Semestre atual</SelectItem>
+                  <SelectItem value="ano_atual">Ano atual</SelectItem>
                   <SelectItem value="personalizado">Período personalizado</SelectItem>
+                  <SelectItem value="personalizado_comparacao">Personalizado com comparação</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -352,22 +387,36 @@ const Dashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas as unidades</SelectItem>
-                  {/* TODO: Add unidades when available */}
+                  {unidades.map(unidade => (
+                    <SelectItem key={unidade.id} value={unidade.descricao}>
+                      {unidade.descricao}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
 
-            {dateFilter === 'personalizado' && <div className="col-span-full">
+            {(dateFilter === 'personalizado' || dateFilter === 'personalizado_comparacao') && (
+              <div className="col-span-full">
                 <label className="text-sm font-medium mb-2 block">Data personalizada</label>
                 <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
-              </div>}
+              </div>
+            )}
+
+            {dateFilter === 'personalizado_comparacao' && (
+              <div className="col-span-full">
+                <label className="text-sm font-medium mb-2 block">Período de comparação</label>
+                <DatePickerWithRange date={compareRange} onDateChange={setCompareRange} />
+              </div>
+            )}
 
             <Button variant="outline" onClick={() => {
             setDateFilter('mes_atual');
             setProdutorFilter('todos');
             setUnidadeFilter('todas');
             setDateRange(undefined);
+            setCompareRange(undefined);
           }} className="col-span-full md:col-span-1">
               Limpar filtros
             </Button>
@@ -376,7 +425,7 @@ const Dashboard = () => {
       </Card>
 
       {/* KPIs Mensais com Comparativos */}
-      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Em Cotação</CardTitle>
@@ -429,6 +478,17 @@ const Dashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{Math.round(monthlyStats.tempoMedioFechamento)} dias</div>
             <p className="text-xs text-muted-foreground">Fechamento</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-success-alt">{monthlyStats.taxaConversao.toFixed(1)}%</div>
+            {formatComparison(monthlyStats.taxaConversaoComp.diff, monthlyStats.taxaConversaoComp.percentage)}
           </CardContent>
         </Card>
       </div>
@@ -574,29 +634,30 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Métricas de Tempo */}
+        {/* Análise de Unidades */}
         <Card>
           <CardHeader>
-            <CardTitle>Análise Temporal</CardTitle>
+            <CardTitle>Performance por Unidade</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
-                <span className="text-sm">Tempo médio fechamento</span>
-                <span className="font-bold">{Math.round(monthlyStats.tempoMedioFechamento)} dias</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
-                <span className="text-sm">Taxa conversão</span>
-                <span className="font-bold text-success-alt">
-                  {filteredCotacoes.length > 0 ? 
-                    ((filteredCotacoes.filter(c => c.status === 'Negócio fechado').length / filteredCotacoes.length) * 100).toFixed(1) 
-                    : '0'}%
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
-                <span className="text-sm">Cotações este mês</span>
-                <span className="font-bold text-brand-orange">{monthlyStats.emCotacao + monthlyStats.fechados + monthlyStats.declinados}</span>
-              </div>
+              {Array.from(new Set(filteredCotacoes.map(c => c.unidade?.descricao).filter(Boolean)))
+                .slice(0, 5)
+                .map((unidadeNome) => {
+                  const unidadeCotacoes = filteredCotacoes.filter(c => c.unidade?.descricao === unidadeNome);
+                  const fechadas = unidadeCotacoes.filter(c => c.status === 'Negócio fechado').length;
+                  const taxa = unidadeCotacoes.length > 0 ? (fechadas / unidadeCotacoes.length) * 100 : 0;
+                  
+                  return (
+                    <div key={unidadeNome} className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
+                      <span className="text-sm font-medium">{unidadeNome}</span>
+                      <div className="text-right">
+                        <div className="text-sm font-bold">{fechadas}/{unidadeCotacoes.length}</div>
+                        <div className="text-xs text-muted-foreground">{taxa.toFixed(1)}%</div>
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           </CardContent>
         </Card>
