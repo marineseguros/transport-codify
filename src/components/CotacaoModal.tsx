@@ -285,7 +285,7 @@ export const CotacaoModal = ({
   const handleSave = async () => {
     // Basic validations
     const requiredFields = [
-      { field: 'unidade', message: 'Selecione uma unidade.' },
+      { field: 'unidade_id', message: 'Selecione uma unidade.' },
       { field: 'cnpj', message: 'Informe o CNPJ.' },
       { field: 'segurado', message: 'Informe o segurado.' }
     ];
@@ -329,6 +329,7 @@ export const CotacaoModal = ({
       const baseCotacaoData = {
         segurado: formData.segurado,
         cpf_cnpj: formData.cnpj,
+        unidade_id: formData.unidade_id || undefined,
         produtor_origem_id: formData.produtor_origem_id || undefined,
         produtor_negociador_id: formData.produtor_negociador_id || undefined,
         produtor_cotador_id: formData.produtor_cotador_id || undefined,
