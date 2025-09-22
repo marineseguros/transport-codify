@@ -79,7 +79,7 @@ export const CotacaoModal = ({
     observacoes: '',
     segmento: '',
     data_fechamento: undefined as string | undefined,
-    num_apolice: undefined as string | undefined,
+    num_proposta: undefined as string | undefined,
     motivo_recusa: '',
     comentarios: ''
   });
@@ -127,7 +127,7 @@ export const CotacaoModal = ({
         observacoes: cotacao.observacoes || '',
         segmento: cotacao.segmento || '',
         data_fechamento: cotacao.data_fechamento || undefined,
-        num_apolice: cotacao.num_apolice || undefined,
+        num_proposta: cotacao.num_proposta || undefined,
         motivo_recusa: cotacao.motivo_recusa || '',
         comentarios: cotacao.comentarios || ''
       });
@@ -161,7 +161,7 @@ export const CotacaoModal = ({
         observacoes: '',
         segmento: '',
         data_fechamento: undefined,
-        num_apolice: undefined,
+        num_proposta: undefined,
         motivo_recusa: '',
         comentarios: ''
       });
@@ -224,7 +224,7 @@ export const CotacaoModal = ({
       setFormData(prev => ({
         ...prev,
         data_fechamento: undefined,
-        num_apolice: undefined
+        num_proposta: undefined
       }));
     }
 
@@ -334,8 +334,8 @@ export const CotacaoModal = ({
         toast.error("Data de fechamento é obrigatória para negócios fechados.");
         return;
       }
-      if (!formData.num_apolice) {
-        toast.error("Número da apólice é obrigatório para negócios fechados.");
+      if (!formData.num_proposta) {
+        toast.error("Número da proposta é obrigatório para negócios fechados.");
         return;
       }
     }
@@ -366,7 +366,7 @@ export const CotacaoModal = ({
         motivo_recusa: formData.motivo_recusa || undefined,
         data_cotacao: formData.data_cotacao,
         data_fechamento: formData.status === 'Negócio fechado' ? formData.data_fechamento : undefined,
-        num_apolice: formData.status === 'Negócio fechado' ? formData.num_apolice : undefined
+        num_proposta: formData.status === 'Negócio fechado' ? formData.num_proposta : undefined
       };
       if (cotacao && isEditing) {
         // When editing, just update the single record
@@ -553,6 +553,54 @@ export const CotacaoModal = ({
                 </div>
               </div>
 
+              {/* Seguradoras Extras - Only show when creating new cotação */}
+              {isCreating && <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-muted-foreground">Seguradoras Extras (Opcional)</Label>
+                    {seguradorasExtras.length < 10 && <Button type="button" variant="outline" size="sm" onClick={handleAddSeguradoraExtra} className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Adicionar Seguradora
+                      </Button>}
+                  </div>
+                  
+                  {seguradorasExtras.length > 0 && <div className="space-y-3">
+                       {seguradorasExtras.map((seguradoraExtra, index) => <div key={index} className="flex gap-2 items-end">
+                           <div className="flex-1">
+                             <Label htmlFor={`seguradora_extra_${index}`}>Seguradora Extra {index + 1}</Label>
+                             <Select value={seguradoraExtra.seguradora_id} onValueChange={value => handleSeguradoraExtraChange(index, value)}>
+                               <SelectTrigger>
+                                 <SelectValue placeholder="Selecione a seguradora" />
+                               </SelectTrigger>
+                                <SelectContent>
+                                  {seguradoras.filter(seguradora => {
+                          // Allow current selection to stay visible
+                          if (seguradora.id === seguradoraExtra.seguradora_id) return true;
+                          // Exclude main seguradora
+                          if (seguradora.id === formData.seguradora_id) return false;
+                          // Exclude other extra seguradoras (but not current one)
+                          const otherSelectedSeguradoras = seguradorasExtras.map((s, i) => i !== index ? s.seguradora_id : null).filter(Boolean);
+                          return !otherSelectedSeguradoras.includes(seguradora.id);
+                        }).map(seguradora => <SelectItem key={seguradora.id} value={seguradora.id}>
+                                        {seguradora.nome}
+                                      </SelectItem>)}
+                                </SelectContent>
+                             </Select>
+                           </div>
+                           
+                           <Button type="button" variant="outline" size="sm" onClick={() => handleRemoveSeguradoraExtra(index)} className="text-red-600 hover:text-red-700">
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                         </div>)}
+                      
+                      <div className="bg-muted/50 p-3 rounded-lg">
+                        <p className="text-xs text-muted-foreground">
+                          <strong>Importante:</strong> Ao criar a cotação, será gerado um registro independente 
+                          para cada combinação de ramo e seguradora selecionados, com todos os outros dados idênticos.
+                        </p>
+                      </div>
+                    </div>}
+                </div>}
+
               {/* Ramos Extras - Only show when creating new cotação */}
               {isCreating && <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -601,54 +649,6 @@ export const CotacaoModal = ({
                         <p className="text-xs text-muted-foreground">
                           <strong>Importante:</strong> Ao criar a cotação, será gerado um registro independente 
                           para cada ramo selecionado (principal + extras), com todos os outros dados idênticos.
-                        </p>
-                      </div>
-                    </div>}
-                 </div>}
-
-              {/* Seguradoras Extras - Only show when creating new cotação */}
-              {isCreating && <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium text-muted-foreground">Seguradoras Extras (Opcional)</Label>
-                    {seguradorasExtras.length < 10 && <Button type="button" variant="outline" size="sm" onClick={handleAddSeguradoraExtra} className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Adicionar Seguradora
-                      </Button>}
-                  </div>
-                  
-                  {seguradorasExtras.length > 0 && <div className="space-y-3">
-                       {seguradorasExtras.map((seguradoraExtra, index) => <div key={index} className="flex gap-2 items-end">
-                           <div className="flex-1">
-                             <Label htmlFor={`seguradora_extra_${index}`}>Seguradora Extra {index + 1}</Label>
-                             <Select value={seguradoraExtra.seguradora_id} onValueChange={value => handleSeguradoraExtraChange(index, value)}>
-                               <SelectTrigger>
-                                 <SelectValue placeholder="Selecione a seguradora" />
-                               </SelectTrigger>
-                                <SelectContent>
-                                  {seguradoras.filter(seguradora => {
-                          // Allow current selection to stay visible
-                          if (seguradora.id === seguradoraExtra.seguradora_id) return true;
-                          // Exclude main seguradora
-                          if (seguradora.id === formData.seguradora_id) return false;
-                          // Exclude other extra seguradoras (but not current one)
-                          const otherSelectedSeguradoras = seguradorasExtras.map((s, i) => i !== index ? s.seguradora_id : null).filter(Boolean);
-                          return !otherSelectedSeguradoras.includes(seguradora.id);
-                        }).map(seguradora => <SelectItem key={seguradora.id} value={seguradora.id}>
-                                        {seguradora.nome}
-                                      </SelectItem>)}
-                                </SelectContent>
-                             </Select>
-                           </div>
-                           
-                           <Button type="button" variant="outline" size="sm" onClick={() => handleRemoveSeguradoraExtra(index)} className="text-red-600 hover:text-red-700">
-                             <Trash2 className="h-4 w-4" />
-                           </Button>
-                         </div>)}
-                      
-                      <div className="bg-muted/50 p-3 rounded-lg">
-                        <p className="text-xs text-muted-foreground">
-                          <strong>Importante:</strong> Ao criar a cotação, será gerado um registro independente 
-                          para cada combinação de ramo e seguradora selecionados, com todos os outros dados idênticos.
                         </p>
                       </div>
                     </div>}
@@ -752,9 +752,9 @@ export const CotacaoModal = ({
 
                    {/* Número da Apólice e Valor do Prêmio */}
                    <div className="grid gap-4 md:grid-cols-2">
-                     <div>
-                       <Label htmlFor="num_apolice">Número da Proposta *</Label>
-                       <Input value={formData.num_apolice || ''} onChange={e => handleInputChange('num_apolice', e.target.value)} placeholder="Digite o número da apólice" readOnly={isReadOnly} />
+                      <div>
+                        <Label htmlFor="num_proposta">Número da Proposta *</Label>
+                        <Input value={formData.num_proposta || ''} onChange={e => handleInputChange('num_proposta', e.target.value)} placeholder="Digite o número da proposta" readOnly={isReadOnly} />
                      </div>
                      
                      <div>

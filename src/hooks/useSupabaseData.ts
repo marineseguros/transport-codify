@@ -83,7 +83,7 @@ export interface Cotacao {
   status: string;
   data_cotacao: string;
   data_fechamento?: string;
-  num_apolice?: string;
+  num_proposta?: string;
   motivo_recusa?: string;
   comentarios?: string;
   observacoes?: string;
