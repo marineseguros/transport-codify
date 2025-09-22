@@ -521,7 +521,7 @@ export function useCotacoes() {
         valor_premio: cotacaoData.valor_premio || 0,
         status: cotacaoData.status || 'Em cotação',
         data_fechamento: cotacaoData.data_fechamento,
-        num_apolice: cotacaoData.num_apolice,
+        num_proposta: cotacaoData.num_proposta,
         motivo_recusa: cotacaoData.motivo_recusa,
         comentarios: cotacaoData.comentarios,
         observacoes: cotacaoData.observacoes
@@ -562,7 +562,7 @@ export function useCotacoes() {
         valor_premio: updates.valor_premio || 0,
         status: updates.status,
         data_fechamento: updates.data_fechamento,
-        num_apolice: updates.num_apolice,
+        num_proposta: updates.num_proposta,
         motivo_recusa: updates.motivo_recusa,
         comentarios: updates.comentarios,
         observacoes: updates.observacoes
