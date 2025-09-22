@@ -89,6 +89,11 @@ export const CotacaoModal = ({
     ramo_id: string;
     segmento: string;
   }[]>([]);
+
+  // State for extra seguradoras (up to 10 additional)
+  const [seguradorasExtras, setSeguradorasExtras] = useState<{
+    seguradora_id: string;
+  }[]>([]);
   const isReadOnly = mode === 'view';
   const isEditing = mode === 'edit';
   const isCreating = mode === 'create';
@@ -161,8 +166,9 @@ export const CotacaoModal = ({
         comentarios: ''
       });
 
-      // Reset extra ramos when creating new cotação
+      // Reset extra ramos and seguradoras when creating new cotação
       setRamosExtras([]);
+      setSeguradorasExtras([]);
     }
   }, [cotacao, mode, produtores, user]);
   const handleInputChange = (field: string, value: any) => {
@@ -273,6 +279,26 @@ export const CotacaoModal = ({
     };
     setRamosExtras(newRamosExtras);
   };
+
+  const handleAddSeguradoraExtra = () => {
+    if (seguradorasExtras.length < 10) {
+      setSeguradorasExtras([...seguradorasExtras, {
+        seguradora_id: ''
+      }]);
+    }
+  };
+
+  const handleRemoveSeguradoraExtra = (index: number) => {
+    setSeguradorasExtras(seguradorasExtras.filter((_, i) => i !== index));
+  };
+
+  const handleSeguradoraExtraChange = (index: number, value: string) => {
+    const newSeguradorasExtras = [...seguradorasExtras];
+    newSeguradorasExtras[index] = {
+      seguradora_id: value
+    };
+    setSeguradorasExtras(newSeguradorasExtras);
+  };
   const handleSave = async () => {
     // Basic validations
     const requiredFields = [{
@@ -351,21 +377,31 @@ export const CotacaoModal = ({
         await updateCotacao(cotacao.id, cotacaoData);
         toast.success('Cotação atualizada com sucesso!');
       } else {
-        // When creating, create multiple records if there are extra ramos
+        // When creating, create multiple records for combinations of ramos and seguradoras
         const ramosToCreate = [{
           ramo_id: formData.ramo_id,
           segmento: formData.segmento
         }, ...ramosExtras.filter(r => r.ramo_id)];
+        
+        const seguradorasToCreate = [{
+          seguradora_id: formData.seguradora_id
+        }, ...seguradorasExtras.filter(s => s.seguradora_id)];
+        
         let createdCount = 0;
         for (const ramoData of ramosToCreate) {
           if (ramoData.ramo_id) {
-            const cotacaoData = {
-              ...baseCotacaoData,
-              ramo_id: ramoData.ramo_id,
-              segmento: ramoData.segmento
-            };
-            await createCotacao(cotacaoData);
-            createdCount++;
+            for (const seguradoraData of seguradorasToCreate) {
+              if (seguradoraData.seguradora_id) {
+                const cotacaoData = {
+                  ...baseCotacaoData,
+                  ramo_id: ramoData.ramo_id,
+                  segmento: ramoData.segmento,
+                  seguradora_id: seguradoraData.seguradora_id
+                };
+                await createCotacao(cotacaoData);
+                createdCount++;
+              }
+            }
           }
         }
         if (createdCount === 1) {
@@ -565,6 +601,54 @@ export const CotacaoModal = ({
                         <p className="text-xs text-muted-foreground">
                           <strong>Importante:</strong> Ao criar a cotação, será gerado um registro independente 
                           para cada ramo selecionado (principal + extras), com todos os outros dados idênticos.
+                        </p>
+                      </div>
+                    </div>}
+                 </div>}
+
+              {/* Seguradoras Extras - Only show when creating new cotação */}
+              {isCreating && <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-muted-foreground">Seguradoras Extras (Opcional)</Label>
+                    {seguradorasExtras.length < 10 && <Button type="button" variant="outline" size="sm" onClick={handleAddSeguradoraExtra} className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Adicionar Seguradora
+                      </Button>}
+                  </div>
+                  
+                  {seguradorasExtras.length > 0 && <div className="space-y-3">
+                       {seguradorasExtras.map((seguradoraExtra, index) => <div key={index} className="flex gap-2 items-end">
+                           <div className="flex-1">
+                             <Label htmlFor={`seguradora_extra_${index}`}>Seguradora Extra {index + 1}</Label>
+                             <Select value={seguradoraExtra.seguradora_id} onValueChange={value => handleSeguradoraExtraChange(index, value)}>
+                               <SelectTrigger>
+                                 <SelectValue placeholder="Selecione a seguradora" />
+                               </SelectTrigger>
+                                <SelectContent>
+                                  {seguradoras.filter(seguradora => {
+                          // Allow current selection to stay visible
+                          if (seguradora.id === seguradoraExtra.seguradora_id) return true;
+                          // Exclude main seguradora
+                          if (seguradora.id === formData.seguradora_id) return false;
+                          // Exclude other extra seguradoras (but not current one)
+                          const otherSelectedSeguradoras = seguradorasExtras.map((s, i) => i !== index ? s.seguradora_id : null).filter(Boolean);
+                          return !otherSelectedSeguradoras.includes(seguradora.id);
+                        }).map(seguradora => <SelectItem key={seguradora.id} value={seguradora.id}>
+                                        {seguradora.nome}
+                                      </SelectItem>)}
+                                </SelectContent>
+                             </Select>
+                           </div>
+                           
+                           <Button type="button" variant="outline" size="sm" onClick={() => handleRemoveSeguradoraExtra(index)} className="text-red-600 hover:text-red-700">
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                         </div>)}
+                      
+                      <div className="bg-muted/50 p-3 rounded-lg">
+                        <p className="text-xs text-muted-foreground">
+                          <strong>Importante:</strong> Ao criar a cotação, será gerado um registro independente 
+                          para cada combinação de ramo e seguradora selecionados, com todos os outros dados idênticos.
                         </p>
                       </div>
                     </div>}
