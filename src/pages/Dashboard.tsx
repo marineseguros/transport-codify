@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCotacoesTotais, useProdutores, useUnidades, type Cotacao } from '@/hooks/useSupabaseData';
-import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, CalendarIcon, Users, Building, List, Grid3X3 } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, CalendarIcon, Users, Building, List, Grid3X3, Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DatePickerWithRange } from "@/components/ui/date-picker";
@@ -774,6 +774,211 @@ const Dashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Seção de Análise Avançada - Dados do Relatórios */}
+      <div className="space-y-6 mt-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Análise Avançada</h2>
+            <p className="text-muted-foreground">
+              Relatórios detalhados de performance e métricas de vendas
+            </p>
+          </div>
+          <Button onClick={() => {
+            const csv = filteredCotacoes.map(c => ({
+              numero: c.numero_cotacao,
+              data: formatDate(c.created_at),
+              cliente: c.segurado,
+              produtor: c.produtor_origem?.nome || '',
+              seguradora: c.seguradora?.nome || '',
+              premio: c.valor_premio,
+              status: c.status
+            }));
+            console.log('Exportando CSV:', csv);
+            toast.success('Dados exportados para CSV');
+          }}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar Relatório CSV
+          </Button>
+        </div>
+
+        {/* KPIs Avançados */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tempo Médio Fechamento</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{monthlyStats.tempoMedioFechamento.toFixed(0)} dias</div>
+              <div className="text-xs text-muted-foreground">
+                Média do período filtrado
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Volume de Negócios</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(monthlyStats.premioTotal)}</div>
+              <div className="text-xs text-muted-foreground">
+                Prêmio total acumulado
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ticket Médio Avançado</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(monthlyStats.ticketMedio)}</div>
+              <div className="text-xs text-muted-foreground">
+                Valor médio por negócio fechado
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Eficiência Global</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{monthlyStats.taxaConversao.toFixed(1)}%</div>
+              <div className="text-xs flex items-center gap-1">
+                {formatComparison(monthlyStats.taxaConversaoComp.diff, monthlyStats.taxaConversaoComp.percentage)}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Gráficos Avançados */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Performance Mensal Avançada */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Evolução Mensal Detalhada</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={monthlyTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="mes" />
+                  <YAxis />
+                  <Tooltip formatter={(value, name) => [
+                    value,
+                    name === 'cotacoes' ? 'Total Cotações' : 'Fechadas'
+                  ]} />
+                  <Bar dataKey="cotacoes" fill="hsl(var(--primary))" name="Total" />
+                  <Bar dataKey="fechadas" fill="hsl(var(--success))" name="Fechadas" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Distribuição de Status Avançada */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Análise de Status - Período Filtrado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={350}>
+                <PieChart>
+                  <Pie
+                    data={distribuicaoStatus.map(item => ({
+                      name: item.status,
+                      value: item.count,
+                      color: item.status === 'Em cotação' ? 'hsl(var(--brand-orange))' :
+                             item.status === 'Negócio fechado' ? 'hsl(var(--success))' :
+                             'hsl(var(--destructive))'
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {distribuicaoStatus.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={
+                        entry.status === 'Em cotação' ? 'hsl(var(--brand-orange))' :
+                        entry.status === 'Negócio fechado' ? 'hsl(var(--success))' :
+                        'hsl(var(--destructive))'
+                      } />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="mt-4 space-y-2">
+                {distribuicaoStatus.map(item => (
+                  <div key={item.status} className="flex justify-between items-center text-sm">
+                    <span>{item.status}</span>
+                    <span className="font-medium">{item.count} ({item.percentage.toFixed(1)}%)</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Performance por Produtor - Gráfico Horizontal Detalhado */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ranking Completo de Produtores</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={Math.max(400, topProdutores.length * 40)}>
+              <BarChart data={topProdutores.slice(0, 15)} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="nome" type="category" width={150} />
+                <Tooltip formatter={(value, name) => [
+                  value,
+                  name === 'fechadas' ? 'Cotações Fechadas' : 
+                  name === 'total' ? 'Total Cotações' : name
+                ]} />
+                <Bar dataKey="fechadas" fill="hsl(var(--success))" name="Fechadas" />
+                <Bar dataKey="total" fill="hsl(var(--muted))" name="Total" opacity={0.6} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Análise de Seguradoras */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance por Seguradora</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {seguradoraData.slice(0, 9).map((seguradora: any, index) => (
+                <div key={seguradora.nome} className="p-4 rounded-lg border bg-card">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                      {index + 1}
+                    </div>
+                    <Badge variant="secondary">{seguradora.count} negócios</Badge>
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm mb-1">{seguradora.nome}</div>
+                    <div className="text-lg font-bold text-success">{formatCurrency(seguradora.premio)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Média: {formatCurrency(seguradora.premio / seguradora.count)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>;
 };
 export default Dashboard;
