@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCotacoesTotais, useProdutores, useUnidades, type Cotacao } from '@/hooks/useSupabaseData';
 import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, CalendarIcon, Users, Building, List, Grid3X3 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -180,20 +181,58 @@ const Dashboard = () => {
     };
   }, [filteredCotacoes, allQuotes]);
 
-  // Distribuição por status no período atual
+  // Distribuição por status no período atual com segurados distintos
   const distribuicaoStatus = useMemo(() => {
     const validStatuses = ['Em cotação', 'Negócio fechado', 'Declinado'];
-    const counts = filteredCotacoes.reduce((acc, cotacao) => {
-      if (validStatuses.includes(cotacao.status)) {
-        acc[cotacao.status] = (acc[cotacao.status] || 0) + 1;
+    const statusData = validStatuses.map(status => {
+      const statusCotacoes = filteredCotacoes.filter(cotacao => cotacao.status === status);
+      const totalCotacoes = statusCotacoes.length;
+      const seguradosDistintos = new Set(statusCotacoes.map(cotacao => cotacao.cpf_cnpj)).size;
+      
+      return {
+        status,
+        count: totalCotacoes,
+        seguradosDistintos,
+        percentage: filteredCotacoes.length > 0 ? (totalCotacoes / filteredCotacoes.length * 100) : 0
+      };
+    });
+    
+    return statusData;
+  }, [filteredCotacoes]);
+
+  // Top produtores com métricas detalhadas
+  const topProdutoresDetalhado = useMemo(() => {
+    const produtorStats: Record<string, { nome: string; total: number; fechadas: number; declinadas: number }> = {};
+    
+    filteredCotacoes.forEach(cotacao => {
+      if (cotacao.produtor_origem) {
+        const nome = cotacao.produtor_origem.nome;
+        if (!produtorStats[nome]) {
+          produtorStats[nome] = { nome, total: 0, fechadas: 0, declinadas: 0 };
+        }
+        produtorStats[nome].total++;
+        if (cotacao.status === 'Negócio fechado') {
+          produtorStats[nome].fechadas++;
+        } else if (cotacao.status === 'Declinado') {
+          produtorStats[nome].declinadas++;
+        }
       }
-      return acc;
-    }, {} as Record<string, number>);
-    return validStatuses.map(status => ({
-      status,
-      count: counts[status] || 0,
-      percentage: filteredCotacoes.length > 0 ? (counts[status] || 0) / filteredCotacoes.length * 100 : 0
-    }));
+    });
+    
+    return Object.values(produtorStats)
+      .sort((a, b) => {
+        if (b.fechadas !== a.fechadas) return b.fechadas - a.fechadas;
+        return b.total - a.total;
+      })
+      .slice(0, 5);
+  }, [filteredCotacoes]);
+
+  // Clientes fechados para o tooltip
+  const clientesFechados = useMemo(() => {
+    return filteredCotacoes
+      .filter(cotacao => cotacao.status === 'Negócio fechado')
+      .sort((a, b) => new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime())
+      .slice(0, 10);
   }, [filteredCotacoes]);
 
   // View mode state for recent quotes
@@ -443,8 +482,38 @@ const Dashboard = () => {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">{monthlyStats.fechados}</div>
-            {formatComparison(monthlyStats.fechadosComp.diff, monthlyStats.fechadosComp.percentage)}
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    <div className="text-2xl font-bold text-success">{monthlyStats.fechados}</div>
+                    {formatComparison(monthlyStats.fechadosComp.diff, monthlyStats.fechadosComp.percentage)}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Clientes Fechados no Período</h4>
+                    {clientesFechados.length > 0 ? (
+                      <div className="space-y-1">
+                        {clientesFechados.map((cotacao, index) => (
+                          <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
+                            <div className="font-medium">{cotacao.segurado}</div>
+                            <div className="text-muted-foreground">
+                              Fechamento: {cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : 'N/A'}
+                            </div>
+                            <div className="text-muted-foreground">
+                              Prêmio: {formatCurrency(cotacao.valor_premio)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Nenhum cliente fechado no período</p>
+                    )}
+                  </div>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
           </CardContent>
         </Card>
 
@@ -493,40 +562,87 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Distribuição por Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Distribuição por Status (Período Atual)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {distribuicaoStatus.map(({
-            status,
-            count,
-            percentage
-          }) => <div key={status} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Badge variant={getStatusBadgeVariant(status)}>
-                    {status}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {count} cotações
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-24 bg-secondary rounded-full h-2">
-                    <div className="bg-primary rounded-full h-2" style={{
-                  width: `${percentage}%`
-                }} />
+      {/* Distribuição por Status e Top Produtores */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Distribuição por Status (50% da largura) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Distribuição por Status (Período Atual)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {distribuicaoStatus.map(({
+              status,
+              count,
+              seguradosDistintos,
+              percentage
+            }) => <div key={status} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge variant={getStatusBadgeVariant(status)}>
+                      {status}
+                    </Badge>
+                    <div className="text-sm text-muted-foreground">
+                      <div>{count} cotações</div>
+                      <div>{seguradosDistintos} segurados distintos</div>
+                    </div>
                   </div>
-                  <span className="text-sm font-medium w-12 text-right">
-                    {percentage.toFixed(1)}%
-                  </span>
-                </div>
-              </div>)}
-          </div>
-        </CardContent>
-      </Card>
+                  <div className="flex items-center gap-3">
+                    <div className="w-24 bg-secondary rounded-full h-2">
+                      <div className="bg-primary rounded-full h-2" style={{
+                    width: `${percentage}%`
+                  }} />
+                    </div>
+                    <span className="text-sm font-medium w-12 text-right">
+                      {percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>)}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top Produtores */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Produtores (Período Atual)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {topProdutoresDetalhado.length > 0 ? (
+                topProdutoresDetalhado.map((produtor, index) => (
+                  <div key={produtor.nome} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="font-medium">{produtor.nome}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {produtor.total} cotações
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-4 text-sm">
+                      <div className="text-center">
+                        <div className="font-bold text-success">{produtor.fechadas}</div>
+                        <div className="text-xs text-muted-foreground">Fechados</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-bold text-destructive">{produtor.declinadas}</div>
+                        <div className="text-xs text-muted-foreground">Declinados</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-4">
+                  Nenhum produtor encontrado no período
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Gráficos e Análises Avançadas */}
       <div className="grid gap-6 md:grid-cols-2">
