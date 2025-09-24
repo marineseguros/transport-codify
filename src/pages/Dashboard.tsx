@@ -40,7 +40,7 @@ const Dashboard = () => {
 
     // Apply produtor filter
     if (produtorFilter !== 'todos') {
-      filtered = filtered.filter(cotacao => cotacao.produtor_origem?.nome === produtorFilter);
+      filtered = filtered.filter(cotacao => cotacao.produtor_cotador?.nome === produtorFilter);
     }
 
     // Apply unidade filter
@@ -200,33 +200,6 @@ const Dashboard = () => {
     return statusData;
   }, [filteredCotacoes]);
 
-  // Top produtores com métricas detalhadas
-  const topProdutoresDetalhado = useMemo(() => {
-    const produtorStats: Record<string, { nome: string; total: number; fechadas: number; declinadas: number }> = {};
-    
-    filteredCotacoes.forEach(cotacao => {
-      if (cotacao.produtor_origem) {
-        const nome = cotacao.produtor_origem.nome;
-        if (!produtorStats[nome]) {
-          produtorStats[nome] = { nome, total: 0, fechadas: 0, declinadas: 0 };
-        }
-        produtorStats[nome].total++;
-        if (cotacao.status === 'Negócio fechado') {
-          produtorStats[nome].fechadas++;
-        } else if (cotacao.status === 'Declinado') {
-          produtorStats[nome].declinadas++;
-        }
-      }
-    });
-    
-    return Object.values(produtorStats)
-      .sort((a, b) => {
-        if (b.fechadas !== a.fechadas) return b.fechadas - a.fechadas;
-        return b.total - a.total;
-      })
-      .slice(0, 5);
-  }, [filteredCotacoes]);
-
   // Clientes fechados para o tooltip
   const clientesFechados = useMemo(() => {
     return filteredCotacoes
@@ -305,8 +278,8 @@ const Dashboard = () => {
     const produtorStats: Record<string, { nome: string; total: number; fechadas: number }> = {};
     
     filteredCotacoes.forEach(cotacao => {
-      if (cotacao.produtor_origem) {
-        const nome = cotacao.produtor_origem.nome;
+      if (cotacao.produtor_cotador) {
+        const nome = cotacao.produtor_cotador.nome;
         if (!produtorStats[nome]) {
           produtorStats[nome] = { nome, total: 0, fechadas: 0 };
         }
@@ -562,87 +535,42 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Distribuição por Status e Top Produtores */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Distribuição por Status (50% da largura) */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribuição por Status (Período Atual)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {distribuicaoStatus.map(({
-              status,
-              count,
-              seguradosDistintos,
-              percentage
-            }) => <div key={status} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Badge variant={getStatusBadgeVariant(status)}>
-                      {status}
-                    </Badge>
-                    <div className="text-sm text-muted-foreground">
-                      <div>{count} cotações</div>
-                      <div>{seguradosDistintos} segurados distintos</div>
-                    </div>
+      {/* Distribuição por Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Distribuição por Status (Período Atual)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {distribuicaoStatus.map(({
+            status,
+            count,
+            seguradosDistintos,
+            percentage
+          }) => <div key={status} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Badge variant={getStatusBadgeVariant(status)}>
+                    {status}
+                  </Badge>
+                  <div className="text-sm text-muted-foreground">
+                    <div>{count} cotações</div>
+                    <div>{seguradosDistintos} segurados distintos</div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-24 bg-secondary rounded-full h-2">
-                      <div className="bg-primary rounded-full h-2" style={{
-                    width: `${percentage}%`
-                  }} />
-                    </div>
-                    <span className="text-sm font-medium w-12 text-right">
-                      {percentage.toFixed(1)}%
-                    </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-24 bg-secondary rounded-full h-2">
+                    <div className="bg-primary rounded-full h-2" style={{
+                  width: `${percentage}%`
+                }} />
                   </div>
-                </div>)}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Top Produtores */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Produtores (Período Atual)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {topProdutoresDetalhado.length > 0 ? (
-                topProdutoresDetalhado.map((produtor, index) => (
-                  <div key={produtor.nome} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <div className="font-medium">{produtor.nome}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {produtor.total} cotações
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-4 text-sm">
-                      <div className="text-center">
-                        <div className="font-bold text-success">{produtor.fechadas}</div>
-                        <div className="text-xs text-muted-foreground">Fechados</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-bold text-destructive">{produtor.declinadas}</div>
-                        <div className="text-xs text-muted-foreground">Declinados</div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-muted-foreground py-4">
-                  Nenhum produtor encontrado no período
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  <span className="text-sm font-medium w-12 text-right">
+                    {percentage.toFixed(1)}%
+                  </span>
+                </div>
+              </div>)}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Gráficos e Análises Avançadas */}
       <div className="grid gap-6 md:grid-cols-2">
@@ -836,9 +764,9 @@ const Dashboard = () => {
                       <div className="col-span-2">
                         <p className="text-sm">{cotacao.ramo?.descricao || '-'}</p>
                       </div>
-                      <div className="col-span-2">
-                        <p className="text-sm">{cotacao.produtor_origem?.nome || '-'}</p>
-                      </div>
+                       <div className="col-span-2">
+                         <p className="text-sm">{cotacao.produtor_cotador?.nome || '-'}</p>
+                       </div>
                       <div className="col-span-1 text-right">
                         <span className="text-sm font-bold text-quote-value">
                           {formatCurrency(cotacao.valor_premio)}
@@ -873,9 +801,9 @@ const Dashboard = () => {
                     <p className="text-xs text-muted-foreground">
                       {cotacao.ramo?.descricao}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      Produtor: {cotacao.produtor_origem?.nome}
-                    </p>
+                     <p className="text-xs text-muted-foreground">
+                       Produtor: {cotacao.produtor_cotador?.nome}
+                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(cotacao.created_at)}
                     </p>
