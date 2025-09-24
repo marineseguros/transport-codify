@@ -16,8 +16,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: Home },
@@ -44,7 +42,6 @@ export function AppSidebar() {
   const location = useLocation();
   const { user } = useAuth();
   const currentPath = location.pathname;
-  const isMobile = useIsMobile();
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
@@ -52,48 +49,22 @@ export function AppSidebar() {
 
   const canAccessAdmin = user?.papel === 'Administrador' || user?.papel === 'Gerente';
 
-  // Render menu item with optional tooltip for collapsed state
-  const renderMenuItem = (item: any) => {
-    const menuButton = (
-      <SidebarMenuButton asChild>
-        <NavLink to={item.url} end={item.url === "/"} className={getNavCls}>
-          <item.icon className="h-4 w-4" />
-          {!collapsed && <span>{item.title}</span>}
-        </NavLink>
-      </SidebarMenuButton>
-    );
-
-    if (collapsed && !isMobile) {
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {menuButton}
-          </TooltipTrigger>
-          <TooltipContent side="right" className="font-medium">
-            {item.title}
-          </TooltipContent>
-        </Tooltip>
-      );
-    }
-
-    return menuButton;
-  };
-
   return (
-    <TooltipProvider>
-      <Sidebar 
-        className={`transition-all duration-200 ${collapsed ? "w-[72px]" : "w-[280px]"}`} 
-        collapsible="icon"
-      >
+    <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent>
         {/* Main Navigation */}
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>Principal</SidebarGroupLabel>}
+          <SidebarGroupLabel>Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  {renderMenuItem(item)}
+                  <SidebarMenuButton asChild>
+                    <NavLink to={item.url} end className={getNavCls}>
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -102,12 +73,17 @@ export function AppSidebar() {
 
         {/* Reports */}
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>Análise</SidebarGroupLabel>}
+          <SidebarGroupLabel>Análise</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {reportItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  {renderMenuItem(item)}
+                  <SidebarMenuButton asChild>
+                    <NavLink to={item.url} className={getNavCls}>
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -117,12 +93,17 @@ export function AppSidebar() {
         {/* Admin Section */}
         {canAccessAdmin && (
           <SidebarGroup>
-            {!collapsed && <SidebarGroupLabel>Administração</SidebarGroupLabel>}
+            <SidebarGroupLabel>Administração</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    {renderMenuItem(item)}
+                    <SidebarMenuButton asChild>
+                      <NavLink to={item.url} className={getNavCls}>
+                        <item.icon className="h-4 w-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
@@ -131,6 +112,5 @@ export function AppSidebar() {
         )}
       </SidebarContent>
     </Sidebar>
-    </TooltipProvider>
   );
 }
