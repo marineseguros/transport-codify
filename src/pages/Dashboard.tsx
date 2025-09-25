@@ -40,7 +40,7 @@ const Dashboard = () => {
 
     // Apply produtor filter
     if (produtorFilter !== 'todos') {
-      filtered = filtered.filter(cotacao => cotacao.produtor_origem?.nome === produtorFilter);
+      filtered = filtered.filter(cotacao => cotacao.produtor_cotador?.nome === produtorFilter);
     }
 
     // Apply unidade filter
@@ -205,8 +205,8 @@ const Dashboard = () => {
     const produtorStats: Record<string, { nome: string; total: number; fechadas: number; declinadas: number }> = {};
     
     filteredCotacoes.forEach(cotacao => {
-      if (cotacao.produtor_origem) {
-        const nome = cotacao.produtor_origem.nome;
+      if (cotacao.produtor_cotador) {
+        const nome = cotacao.produtor_cotador.nome;
         if (!produtorStats[nome]) {
           produtorStats[nome] = { nome, total: 0, fechadas: 0, declinadas: 0 };
         }
@@ -305,8 +305,8 @@ const Dashboard = () => {
     const produtorStats: Record<string, { nome: string; total: number; fechadas: number }> = {};
     
     filteredCotacoes.forEach(cotacao => {
-      if (cotacao.produtor_origem) {
-        const nome = cotacao.produtor_origem.nome;
+      if (cotacao.produtor_cotador) {
+        const nome = cotacao.produtor_cotador.nome;
         if (!produtorStats[nome]) {
           produtorStats[nome] = { nome, total: 0, fechadas: 0 };
         }
