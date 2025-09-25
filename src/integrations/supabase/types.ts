@@ -91,7 +91,7 @@ export type Database = {
           data_fechamento: string | null
           id: string
           motivo_recusa: string | null
-          num_apolice: string | null
+          num_proposta: string | null
           numero_cotacao: string
           observacoes: string | null
           produtor_cotador_id: string | null
@@ -118,7 +118,7 @@ export type Database = {
           data_fechamento?: string | null
           id?: string
           motivo_recusa?: string | null
-          num_apolice?: string | null
+          num_proposta?: string | null
           numero_cotacao: string
           observacoes?: string | null
           produtor_cotador_id?: string | null
@@ -145,7 +145,7 @@ export type Database = {
           data_fechamento?: string | null
           id?: string
           motivo_recusa?: string | null
-          num_apolice?: string | null
+          num_proposta?: string | null
           numero_cotacao?: string
           observacoes?: string | null
           produtor_cotador_id?: string | null
