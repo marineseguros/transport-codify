@@ -18,11 +18,13 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Cliente } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ClienteModalProps {
   cliente?: Cliente | null;
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 const ESTADOS = [
@@ -35,6 +37,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
   cliente,
   isOpen,
   onClose,
+  onSuccess,
 }) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
@@ -42,7 +45,6 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
     cpf_cnpj: '',
     email: '',
     telefone: '',
-    inscricao_estadual: '',
     cidade: '',
     uf: '',
   });
@@ -54,7 +56,6 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
         cpf_cnpj: cliente.cpf_cnpj,
         email: cliente.email || '',
         telefone: cliente.telefone || '',
-        inscricao_estadual: cliente.inscricao_estadual || '',
         cidade: cliente.cidade || '',
         uf: cliente.uf || '',
       });
@@ -64,7 +65,6 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
         cpf_cnpj: '',
         email: '',
         telefone: '',
-        inscricao_estadual: '',
         cidade: '',
         uf: '',
       });
@@ -104,7 +104,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
     return numbers.length === 11 || numbers.length === 14;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.segurado.trim()) {
@@ -134,13 +134,52 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
       return;
     }
 
-    // Here you would typically save to your backend or state management
-    toast({
-      title: "Sucesso",
-      description: cliente ? "Cliente atualizado com sucesso" : "Cliente criado com sucesso",
-    });
-    
-    onClose();
+    try {
+      const clienteData = {
+        segurado: formData.segurado.trim(),
+        cpf_cnpj: formData.cpf_cnpj.trim(),
+        email: formData.email.trim() || null,
+        telefone: formData.telefone.trim() || null,
+        cidade: formData.cidade.trim() || null,
+        uf: formData.uf || null,
+      };
+
+      if (cliente) {
+        // Update existing client
+        const { error } = await supabase
+          .from('clientes')
+          .update(clienteData)
+          .eq('id', cliente.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Cliente atualizado com sucesso",
+        });
+      } else {
+        // Create new client
+        const { error } = await supabase
+          .from('clientes')
+          .insert([clienteData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Cliente criado com sucesso",
+        });
+      }
+
+      onSuccess?.();
+    } catch (error) {
+      console.error('Error saving cliente:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar cliente. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -173,16 +212,6 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
                 onChange={(e) => handleInputChange('cpf_cnpj', e.target.value)}
                 placeholder="000.000.000-00 ou 00.000.000/0000-00"
                 required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="inscricao_estadual">Inscrição Estadual</Label>
-              <Input
-                id="inscricao_estadual"
-                value={formData.inscricao_estadual}
-                onChange={(e) => handleInputChange('inscricao_estadual', e.target.value)}
-                placeholder="Número da IE"
               />
             </div>
 

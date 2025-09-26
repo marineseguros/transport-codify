@@ -26,7 +26,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const Clientes = () => {
   const { user } = useAuth();
-  const { clientes, loading: clientesLoading } = useClientes();
+  const { clientes, loading: clientesLoading, refetch: refetchClientes } = useClientes();
   const { cotacoes, loading: cotacoesLoading } = useCotacoes();
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -351,6 +351,11 @@ const Clientes = () => {
         cliente={selectedCliente}
         isOpen={isModalOpen}
         onClose={() => {
+          setIsModalOpen(false);
+          setSelectedCliente(null);
+        }}
+        onSuccess={() => {
+          refetchClientes();
           setIsModalOpen(false);
           setSelectedCliente(null);
         }}
