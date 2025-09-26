@@ -157,7 +157,7 @@ export const CotacaoModal = ({
         inicio_vigencia: inicioVigencia.toISOString().split('T')[0],
         fim_vigencia: fimVigencia.toISOString().split('T')[0],
         valor_premio: 0,
-        status: 'Em análise',
+        status: 'Em cotação',
         observacoes: '',
         segmento: '',
         data_fechamento: undefined,
