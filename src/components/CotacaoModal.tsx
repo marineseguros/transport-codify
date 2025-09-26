@@ -467,8 +467,24 @@ export const CotacaoModal = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="segurado">Segurado *</Label>
-                  <Input value={formData.segurado} onChange={e => handleInputChange('segurado', e.target.value)} placeholder="Digite o nome do segurado" readOnly={isReadOnly} />
+                  <Label htmlFor="cliente_id">Segurado *</Label>
+                  <Select value={formData.cliente_id} onValueChange={value => handleInputChange('cliente_id', value)} disabled={isReadOnly}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o cliente">
+                        {formData.cliente_id ? clientes.find(c => c.id === formData.cliente_id)?.segurado : "Selecione o cliente"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientes.map(cliente => (
+                        <SelectItem key={cliente.id} value={cliente.id}>
+                          <div>
+                            <div className="font-medium">{cliente.segurado}</div>
+                            <div className="text-sm text-muted-foreground">{cliente.cpf_cnpj}</div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
