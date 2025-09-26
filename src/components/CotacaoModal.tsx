@@ -55,6 +55,7 @@ export const CotacaoModal = ({
     clientes
   } = useClientes();
   const {
+    cotacoes,
     createCotacao,
     updateCotacao
   } = useCotacoes();
@@ -829,12 +830,115 @@ export const CotacaoModal = ({
           </TabsContent>
 
           <TabsContent value="historico" className="space-y-6 mt-6">
-            <div className="text-center py-12">
-              <History className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-sm font-medium text-muted-foreground">Histórico</h3>
-              <p className="text-muted-foreground">
-                Funcionalidade de histórico será implementada
-              </p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-muted-foreground" />
+                <h3 className="text-sm font-medium text-muted-foreground">Histórico do Cliente</h3>
+              </div>
+              
+              {formData.cliente_id ? (
+                (() => {
+                  const clienteHistorico = cotacoes
+                    .filter(c => c.cliente_id === formData.cliente_id && (!cotacao || c.id !== cotacao.id))
+                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                  
+                  if (clienteHistorico.length === 0) {
+                    return (
+                      <div className="text-center py-8 border border-dashed border-muted-foreground/25 rounded-lg">
+                        <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
+                        <p className="text-muted-foreground mt-2">
+                          Nenhuma cotação anterior encontrada para este cliente
+                        </p>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        {clienteHistorico.length} cotação(ões) anterior(es) encontrada(s)
+                      </p>
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {clienteHistorico.map((historicoCotacao) => {
+                          const seguradora = seguradoras.find(s => s.id === historicoCotacao.seguradora_id);
+                          const ramo = ramos.find(r => r.id === historicoCotacao.ramo_id);
+                          const statusBadgeColor = {
+                            'Em cotação': 'bg-blue-100 text-blue-800',
+                            'Negócio fechado': 'bg-green-100 text-green-800',
+                            'Declinado': 'bg-red-100 text-red-800',
+                            'Em análise': 'bg-yellow-100 text-yellow-800'
+                          }[historicoCotacao.status] || 'bg-gray-100 text-gray-800';
+                          
+                          return (
+                            <div key={historicoCotacao.id} className="border rounded-lg p-4 space-y-2 bg-muted/20">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium">#{historicoCotacao.numero_cotacao}</span>
+                                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusBadgeColor}`}>
+                                    {historicoCotacao.status}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(historicoCotacao.data_cotacao).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Seguradora:</span>{' '}
+                                  <span className="font-medium">{seguradora?.nome || 'N/A'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Ramo:</span>{' '}
+                                  <span className="font-medium">{ramo?.descricao || 'N/A'}</span>
+                                </div>
+                                {historicoCotacao.segmento && (
+                                  <div>
+                                    <span className="text-muted-foreground">Segmento:</span>{' '}
+                                    <span className="font-medium">{historicoCotacao.segmento}</span>
+                                  </div>
+                                )}
+                                {historicoCotacao.valor_premio > 0 && (
+                                  <div>
+                                    <span className="text-muted-foreground">Valor do Prêmio:</span>{' '}
+                                    <span className="font-medium">
+                                      {new Intl.NumberFormat('pt-BR', {
+                                        style: 'currency',
+                                        currency: 'BRL'
+                                      }).format(historicoCotacao.valor_premio)}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {historicoCotacao.observacoes && (
+                                <div className="text-sm">
+                                  <span className="text-muted-foreground">Observações:</span>{' '}
+                                  <span className="text-muted-foreground">{historicoCotacao.observacoes}</span>
+                                </div>
+                              )}
+                              
+                              {historicoCotacao.motivo_recusa && (
+                                <div className="text-sm">
+                                  <span className="text-muted-foreground">Motivo da Recusa:</span>{' '}
+                                  <span className="text-red-600">{historicoCotacao.motivo_recusa}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="text-center py-8 border border-dashed border-muted-foreground/25 rounded-lg">
+                  <History className="mx-auto h-8 w-8 text-muted-foreground" />
+                  <p className="text-muted-foreground mt-2">
+                    Selecione um cliente para visualizar o histórico de cotações
+                  </p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
