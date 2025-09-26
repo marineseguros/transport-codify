@@ -462,11 +462,6 @@ export const CotacaoModal = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="cnpj">CNPJ *</Label>
-                  <Input value={formData.cnpj} onChange={e => handleInputChange('cnpj', formatCPFCNPJ(e.target.value))} placeholder="00.000.000/0000-00" readOnly={isReadOnly} />
-                </div>
-
-                <div>
                   <Label htmlFor="cliente_id">Segurado *</Label>
                   <Select value={formData.cliente_id} onValueChange={value => handleInputChange('cliente_id', value)} disabled={isReadOnly}>
                     <SelectTrigger>
@@ -485,6 +480,11 @@ export const CotacaoModal = ({
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="cnpj">CNPJ *</Label>
+                  <Input value={formData.cnpj} onChange={e => handleInputChange('cnpj', formatCPFCNPJ(e.target.value))} placeholder="00.000.000/0000-00" readOnly={isReadOnly} />
                 </div>
               </div>
 
