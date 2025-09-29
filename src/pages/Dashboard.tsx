@@ -243,17 +243,30 @@ const Dashboard = () => {
     return [...filteredCotacoes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
   }, [filteredCotacoes]);
 
-  // Monthly trend data for charts (last 6 months)
+  // Monthly trend data for charts (last 6 months) - always shows last 6 months regardless of date filter
   const monthlyTrendData = useMemo(() => {
     const months = [];
     const now = new Date();
+    
+    // Apply only producer and unit filters, not date filter
+    const trendFilteredCotacoes = allQuotes.filter(cotacao => {
+      const produtorMatch = !produtorFilter || produtorFilter === 'todos' || 
+                           cotacao.produtor_origem_id === produtorFilter ||
+                           cotacao.produtor_negociador_id === produtorFilter ||
+                           cotacao.produtor_cotador_id === produtorFilter;
+      
+      const unidadeMatch = !unidadeFilter || unidadeFilter === 'todas' || 
+                          cotacao.unidade_id === unidadeFilter;
+      
+      return produtorMatch && unidadeMatch;
+    });
     
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
       const year = date.getFullYear();
       
-      const monthCotacoes = filteredCotacoes.filter(c => {
+      const monthCotacoes = trendFilteredCotacoes.filter(c => {
         const cotacaoDate = new Date(c.data_cotacao);
         return cotacaoDate.getMonth() === date.getMonth() && 
                cotacaoDate.getFullYear() === date.getFullYear();
@@ -267,7 +280,7 @@ const Dashboard = () => {
     }
     
     return months;
-  }, [filteredCotacoes]);
+  }, [allQuotes, produtorFilter, unidadeFilter]);
 
   // Top seguradoras data
   const seguradoraData = useMemo(() => {
