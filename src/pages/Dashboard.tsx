@@ -253,7 +253,7 @@ const Dashboard = () => {
       const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
       const year = date.getFullYear();
       
-      const monthCotacoes = allQuotes.filter(c => {
+      const monthCotacoes = filteredCotacoes.filter(c => {
         const cotacaoDate = new Date(c.data_cotacao);
         return cotacaoDate.getMonth() === date.getMonth() && 
                cotacaoDate.getFullYear() === date.getFullYear();
@@ -267,7 +267,7 @@ const Dashboard = () => {
     }
     
     return months;
-  }, [allQuotes]);
+  }, [filteredCotacoes]);
 
   // Top seguradoras data
   const seguradoraData = useMemo(() => {
