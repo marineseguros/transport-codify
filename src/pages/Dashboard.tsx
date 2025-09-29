@@ -380,8 +380,8 @@ const Dashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div>
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[200px]">
               <label className="text-sm font-medium mb-2 block">Período</label>
               <Select value={dateFilter} onValueChange={setDateFilter}>
                 <SelectTrigger>
@@ -403,7 +403,7 @@ const Dashboard = () => {
               </Select>
             </div>
 
-            <div>
+            <div className="flex-1 min-w-[200px]">
               <label className="text-sm font-medium mb-2 block">Produtor</label>
               <Select value={produtorFilter} onValueChange={setProdutorFilter}>
                 <SelectTrigger>
@@ -411,14 +411,16 @@ const Dashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os produtores</SelectItem>
-                  {produtores.map(produtor => <SelectItem key={produtor.id} value={produtor.nome}>
+                  {produtores.map(produtor => (
+                    <SelectItem key={produtor.id} value={produtor.nome}>
                       {produtor.nome}
-                    </SelectItem>)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
+            <div className="flex-1 min-w-[200px]">
               <label className="text-sm font-medium mb-2 block">Unidade</label>
               <Select value={unidadeFilter} onValueChange={setUnidadeFilter}>
                 <SelectTrigger>
@@ -434,7 +436,6 @@ const Dashboard = () => {
                 </SelectContent>
               </Select>
             </div>
-
 
             {(dateFilter === 'personalizado' || dateFilter === 'personalizado_comparacao') && (
               <div className="col-span-full">
