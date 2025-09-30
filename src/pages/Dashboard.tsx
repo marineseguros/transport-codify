@@ -289,11 +289,23 @@ const Dashboard = () => {
     return months;
   }, [allQuotes, produtorFilter, unidadeFilter]);
 
-  // Top seguradoras data
+  // Top seguradoras data - últimos 12 meses com filtros de produtor e unidade
   const seguradoraData = useMemo(() => {
     const seguradoraStats: Record<string, { nome: string; premio: number; count: number }> = {};
     
-    filteredCotacoes.forEach(cotacao => {
+    // Calculate date range for last 12 months
+    const now = new Date();
+    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
+    
+    // Apply only producer and unit filters, use fixed 12-month period
+    const seguradoraFilteredCotacoes = allQuotes.filter(cotacao => {
+      const produtorMatch = produtorFilter === 'todos' || cotacao.produtor_cotador?.nome === produtorFilter;
+      const unidadeMatch = unidadeFilter === 'todas' || cotacao.unidade?.descricao === unidadeFilter;
+      const dateMatch = new Date(cotacao.data_cotacao) >= twelveMonthsAgo;
+      return produtorMatch && unidadeMatch && dateMatch;
+    });
+    
+    seguradoraFilteredCotacoes.forEach(cotacao => {
       if (cotacao.seguradora && cotacao.status === 'Negócio fechado' && cotacao.valor_premio > 0) {
         const nome = cotacao.seguradora.nome;
         if (!seguradoraStats[nome]) {
@@ -307,7 +319,7 @@ const Dashboard = () => {
     return Object.values(seguradoraStats)
       .sort((a, b) => b.premio - a.premio)
       .slice(0, 5);
-  }, [filteredCotacoes]);
+  }, [allQuotes, produtorFilter, unidadeFilter]);
 
   // Pie chart data
   const pieChartData = useMemo(() => {
@@ -695,7 +707,10 @@ const Dashboard = () => {
         {/* Performance por Seguradora */}
         <Card>
           <CardHeader>
-            <CardTitle>Top 5 Seguradoras</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Top 5 Seguradoras</CardTitle>
+              <span className="text-xs text-muted-foreground">Últimos 12 meses</span>
+            </div>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
