@@ -117,11 +117,20 @@ const Dashboard = () => {
     // Previous month
     const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-    const currentMonthCotacoes = filteredCotacoes.filter(c => {
+    
+    // Apply produtor and unidade filters consistently for both periods
+    const baseFilteredQuotes = allQuotes.filter(c => {
+      const produtorMatch = produtorFilter === 'todos' || c.produtor_cotador?.nome === produtorFilter;
+      const unidadeMatch = unidadeFilter === 'todas' || c.unidade?.descricao === unidadeFilter;
+      return produtorMatch && unidadeMatch;
+    });
+    
+    const currentMonthCotacoes = baseFilteredQuotes.filter(c => {
       const date = new Date(c.data_cotacao);
       return date >= currentMonthStart && date <= currentMonthEnd;
     });
-    const previousMonthCotacoes = allQuotes.filter(c => {
+    
+    const previousMonthCotacoes = baseFilteredQuotes.filter(c => {
       const date = new Date(c.data_cotacao);
       return date >= previousMonthStart && date <= previousMonthEnd;
     });
@@ -179,7 +188,7 @@ const Dashboard = () => {
       taxaConversao,
       taxaConversaoComp
     };
-  }, [filteredCotacoes, allQuotes]);
+  }, [allQuotes, produtorFilter, unidadeFilter]);
 
   // Distribuição por status no período atual com segurados distintos
   const distribuicaoStatus = useMemo(() => {
@@ -250,14 +259,8 @@ const Dashboard = () => {
     
     // Apply only producer and unit filters, not date filter
     const trendFilteredCotacoes = allQuotes.filter(cotacao => {
-      const produtorMatch = !produtorFilter || produtorFilter === 'todos' || 
-                           cotacao.produtor_origem_id === produtorFilter ||
-                           cotacao.produtor_negociador_id === produtorFilter ||
-                           cotacao.produtor_cotador_id === produtorFilter;
-      
-      const unidadeMatch = !unidadeFilter || unidadeFilter === 'todas' || 
-                          cotacao.unidade_id === unidadeFilter;
-      
+      const produtorMatch = produtorFilter === 'todos' || cotacao.produtor_cotador?.nome === produtorFilter;
+      const unidadeMatch = unidadeFilter === 'todas' || cotacao.unidade?.descricao === unidadeFilter;
       return produtorMatch && unidadeMatch;
     });
     
@@ -272,10 +275,14 @@ const Dashboard = () => {
                cotacaoDate.getFullYear() === date.getFullYear();
       });
       
+      const emCotacao = monthCotacoes.filter(c => c.status === 'Em cotação').length;
+      const fechadas = monthCotacoes.filter(c => c.status === 'Negócio fechado').length;
+      
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
-        cotacoes: monthCotacoes.length,
-        fechadas: monthCotacoes.filter(c => c.status === 'Negócio fechado').length,
+        total: monthCotacoes.length,
+        emCotacao,
+        fechadas,
       });
     }
     
@@ -284,21 +291,21 @@ const Dashboard = () => {
 
   // Top seguradoras data
   const seguradoraData = useMemo(() => {
-    const seguradoraStats = {};
+    const seguradoraStats: Record<string, { nome: string; premio: number; count: number }> = {};
     
     filteredCotacoes.forEach(cotacao => {
-      if (cotacao.seguradora && cotacao.status === 'Negócio fechado') {
+      if (cotacao.seguradora && cotacao.status === 'Negócio fechado' && cotacao.valor_premio > 0) {
         const nome = cotacao.seguradora.nome;
         if (!seguradoraStats[nome]) {
           seguradoraStats[nome] = { nome, premio: 0, count: 0 };
         }
-        seguradoraStats[nome].premio += cotacao.valor_premio;
+        seguradoraStats[nome].premio += Number(cotacao.valor_premio);
         seguradoraStats[nome].count++;
       }
     });
     
     return Object.values(seguradoraStats)
-      .sort((a: any, b: any) => b.premio - a.premio)
+      .sort((a, b) => b.premio - a.premio)
       .slice(0, 5);
   }, [filteredCotacoes]);
 
@@ -673,9 +680,12 @@ const Dashboard = () => {
                 <YAxis />
                 <Tooltip formatter={(value, name) => [
                   value,
-                  name === 'fechadas' ? 'Fechadas' : name === 'cotacoes' ? 'Total' : name
+                  name === 'fechadas' ? 'Negócios Fechados' : 
+                  name === 'emCotacao' ? 'Em Cotação' : 
+                  name === 'total' ? 'Total de Cotações' : name
                 ]} />
-                <Line type="monotone" dataKey="cotacoes" stroke="hsl(var(--brand-orange))" strokeWidth={2} name="Total" />
+                <Line type="monotone" dataKey="total" stroke="hsl(var(--muted-foreground))" strokeWidth={2} name="Total" strokeDasharray="5 5" />
+                <Line type="monotone" dataKey="emCotacao" stroke="hsl(var(--brand-orange))" strokeWidth={2} name="Em Cotação" />
                 <Line type="monotone" dataKey="fechadas" stroke="hsl(var(--success-alt))" strokeWidth={2} name="Fechadas" />
               </LineChart>
             </ResponsiveContainer>
