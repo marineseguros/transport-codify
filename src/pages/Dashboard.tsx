@@ -803,15 +803,25 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={seguradoraData} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="nome" type="category" width={100} />
-                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Prêmio Total']} />
-                <Bar dataKey="premio" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
+            {seguradoraData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={seguradoraData} layout="vertical" margin={{ left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="nome" type="category" width={100} />
+                  <Tooltip 
+                    formatter={(value: number) => formatCurrency(value)}
+                    labelFormatter={(label) => label}
+                    contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))' }}
+                  />
+                  <Bar dataKey="premio" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                Nenhum dado disponível para o período selecionado
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
