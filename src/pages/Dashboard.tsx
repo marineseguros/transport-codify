@@ -379,6 +379,18 @@ const Dashboard = () => {
       return produtorMatch && unidadeMatch && dateMatch;
     });
     
+    console.log('Seguradoras Debug:', {
+      totalFiltered: seguradoraFilteredCotacoes.length,
+      fechadas: seguradoraFilteredCotacoes.filter(c => c.status === 'Negócio fechado').length,
+      comSeguradora: seguradoraFilteredCotacoes.filter(c => c.seguradora).length,
+      comPremio: seguradoraFilteredCotacoes.filter(c => c.status === 'Negócio fechado' && c.valor_premio > 0).length,
+      sample: seguradoraFilteredCotacoes.slice(0, 3).map(c => ({
+        status: c.status,
+        seguradora: c.seguradora?.nome,
+        premio: c.valor_premio
+      }))
+    });
+    
     seguradoraFilteredCotacoes.forEach(cotacao => {
       if (cotacao.seguradora && cotacao.status === 'Negócio fechado' && cotacao.valor_premio > 0) {
         const nome = cotacao.seguradora.nome;
@@ -390,9 +402,13 @@ const Dashboard = () => {
       }
     });
     
-    return Object.values(seguradoraStats)
+    const result = Object.values(seguradoraStats)
       .sort((a, b) => b.premio - a.premio)
       .slice(0, 5);
+    
+    console.log('Seguradoras Result:', result);
+    
+    return result;
   }, [allQuotes, produtorFilter, unidadeFilter]);
 
   // Pie chart data
