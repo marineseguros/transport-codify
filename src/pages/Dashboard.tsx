@@ -106,17 +106,90 @@ const Dashboard = () => {
     });
   }, [allQuotes, dateFilter, dateRange, produtorFilter, unidadeFilter]);
 
-  // Calculate monthly stats with comparisons
+  // Calculate stats with comparisons based on selected period
   const monthlyStats = useMemo(() => {
     const now = new Date();
 
-    // Current month
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-    // Previous month
-    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    // Get date ranges based on selected filter
+    let currentStartDate: Date;
+    let currentEndDate: Date = now;
+    let previousStartDate: Date;
+    let previousEndDate: Date;
+    
+    switch (dateFilter) {
+      case 'hoje':
+        currentStartDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        previousStartDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        previousEndDate = new Date(previousStartDate.getFullYear(), previousStartDate.getMonth(), previousStartDate.getDate(), 23, 59, 59);
+        break;
+      case '7dias':
+        currentStartDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        previousStartDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        previousEndDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30dias':
+        currentStartDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        previousStartDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+        previousEndDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90dias':
+        currentStartDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        previousStartDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+        previousEndDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'mes_atual':
+        currentStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        currentEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        previousStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        previousEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case 'mes_anterior':
+        currentStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        currentEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        previousStartDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        previousEndDate = new Date(now.getFullYear(), now.getMonth() - 1, 0);
+        break;
+      case 'trimestre_atual':
+        const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+        currentStartDate = new Date(now.getFullYear(), quarterStart, 1);
+        currentEndDate = new Date(now.getFullYear(), quarterStart + 3, 0);
+        previousStartDate = new Date(now.getFullYear(), quarterStart - 3, 1);
+        previousEndDate = new Date(now.getFullYear(), quarterStart, 0);
+        break;
+      case 'semestre_atual':
+        const semesterStart = now.getMonth() < 6 ? 0 : 6;
+        currentStartDate = new Date(now.getFullYear(), semesterStart, 1);
+        currentEndDate = new Date(now.getFullYear(), semesterStart + 6, 0);
+        previousStartDate = new Date(now.getFullYear(), semesterStart - 6, 1);
+        previousEndDate = new Date(now.getFullYear(), semesterStart, 0);
+        break;
+      case 'ano_atual':
+        currentStartDate = new Date(now.getFullYear(), 0, 1);
+        currentEndDate = new Date(now.getFullYear(), 11, 31);
+        previousStartDate = new Date(now.getFullYear() - 1, 0, 1);
+        previousEndDate = new Date(now.getFullYear() - 1, 11, 31);
+        break;
+      case 'personalizado':
+      case 'personalizado_comparacao':
+        if (!dateRange?.from) {
+          currentStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          currentEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          previousStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          previousEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        } else {
+          currentStartDate = dateRange.from;
+          currentEndDate = dateRange.to || dateRange.from;
+          const daysDiff = Math.floor((currentEndDate.getTime() - currentStartDate.getTime()) / (1000 * 60 * 60 * 24));
+          previousEndDate = new Date(currentStartDate.getTime() - 24 * 60 * 60 * 1000);
+          previousStartDate = new Date(previousEndDate.getTime() - daysDiff * 24 * 60 * 60 * 1000);
+        }
+        break;
+      default:
+        currentStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        currentEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        previousStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        previousEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
+    }
     
     // Apply produtor and unidade filters consistently for both periods
     const baseFilteredQuotes = allQuotes.filter(c => {
@@ -125,25 +198,25 @@ const Dashboard = () => {
       return produtorMatch && unidadeMatch;
     });
     
-    const currentMonthCotacoes = baseFilteredQuotes.filter(c => {
+    const currentPeriodCotacoes = baseFilteredQuotes.filter(c => {
       const date = new Date(c.data_cotacao);
-      return date >= currentMonthStart && date <= currentMonthEnd;
+      return date >= currentStartDate && date <= currentEndDate;
     });
     
-    const previousMonthCotacoes = baseFilteredQuotes.filter(c => {
+    const previousPeriodCotacoes = baseFilteredQuotes.filter(c => {
       const date = new Date(c.data_cotacao);
-      return date >= previousMonthStart && date <= previousMonthEnd;
+      return date >= previousStartDate && date <= previousEndDate;
     });
 
-    // Current month stats
-    const emCotacao = currentMonthCotacoes.filter(c => c.status === 'Em cotação').length;
-    const fechados = currentMonthCotacoes.filter(c => c.status === 'Negócio fechado').length;
-    const declinados = currentMonthCotacoes.filter(c => c.status === 'Declinado').length;
+    // Current period stats
+    const emCotacao = currentPeriodCotacoes.filter(c => c.status === 'Em cotação').length;
+    const fechados = currentPeriodCotacoes.filter(c => c.status === 'Negócio fechado').length;
+    const declinados = currentPeriodCotacoes.filter(c => c.status === 'Declinado').length;
 
-    // Previous month stats
-    const emCotacaoAnterior = previousMonthCotacoes.filter(c => c.status === 'Em cotação').length;
-    const fechadosAnterior = previousMonthCotacoes.filter(c => c.status === 'Negócio fechado').length;
-    const declinadosAnterior = previousMonthCotacoes.filter(c => c.status === 'Declinado').length;
+    // Previous period stats
+    const emCotacaoAnterior = previousPeriodCotacoes.filter(c => c.status === 'Em cotação').length;
+    const fechadosAnterior = previousPeriodCotacoes.filter(c => c.status === 'Negócio fechado').length;
+    const declinadosAnterior = previousPeriodCotacoes.filter(c => c.status === 'Declinado').length;
 
     // Calculate differences and percentages
     const calculateComparison = (current: number, previous: number) => {
@@ -158,8 +231,8 @@ const Dashboard = () => {
     const fechadosComp = calculateComparison(fechados, fechadosAnterior);
     const declinadosComp = calculateComparison(declinados, declinadosAnterior);
 
-    // KPIs calculations
-    const cotacoesFechadas = currentMonthCotacoes.filter(c => c.status === 'Negócio fechado');
+    // KPIs calculations using current period
+    const cotacoesFechadas = currentPeriodCotacoes.filter(c => c.status === 'Negócio fechado');
     const premioTotal = cotacoesFechadas.reduce((sum, c) => sum + c.valor_premio, 0);
     const ticketMedio = cotacoesFechadas.length > 0 ? premioTotal / cotacoesFechadas.length : 0;
 
@@ -172,9 +245,10 @@ const Dashboard = () => {
     const tempoMedioFechamento = temposFechamento.length > 0 ? temposFechamento.reduce((sum, tempo) => sum + tempo, 0) / temposFechamento.length : 0;
     
     // Taxa de conversão
-    const taxaConversao = currentMonthCotacoes.length > 0 ? (fechados / currentMonthCotacoes.length) * 100 : 0;
-    const taxaConversaoAnterior = previousMonthCotacoes.length > 0 ? (fechadosAnterior / previousMonthCotacoes.length) * 100 : 0;
+    const taxaConversao = currentPeriodCotacoes.length > 0 ? (fechados / currentPeriodCotacoes.length) * 100 : 0;
+    const taxaConversaoAnterior = previousPeriodCotacoes.length > 0 ? (fechadosAnterior / previousPeriodCotacoes.length) * 100 : 0;
     const taxaConversaoComp = calculateComparison(taxaConversao, taxaConversaoAnterior);
+    
     return {
       emCotacao,
       fechados,
@@ -188,7 +262,7 @@ const Dashboard = () => {
       taxaConversao,
       taxaConversaoComp
     };
-  }, [allQuotes, produtorFilter, unidadeFilter]);
+  }, [allQuotes, dateFilter, dateRange, produtorFilter, unidadeFilter]);
 
   // Distribuição por status no período atual com segurados distintos
   const distribuicaoStatus = useMemo(() => {
