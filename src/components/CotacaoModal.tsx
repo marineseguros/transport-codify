@@ -341,6 +341,14 @@ export const CotacaoModal = ({
       }
     }
 
+    // Validate motivo_recusa for "Declinado" status
+    if (formData.status === 'Declinado') {
+      if (!formData.motivo_recusa || formData.motivo_recusa.trim() === '') {
+        toast.error("Selecione pelo menos um motivo da recusa.");
+        return;
+      }
+    }
+
     // Validate dates
     if (formData.inicio_vigencia && formData.fim_vigencia) {
       if (new Date(formData.fim_vigencia) <= new Date(formData.inicio_vigencia)) {
@@ -702,7 +710,7 @@ export const CotacaoModal = ({
                 </div>
               </div>
 
-              {/* Motivo Recusa - Condicional */}
+              {/* Motivo Recusa - Condicional para Status Seguradora */}
               {(() => {
               const selectedStatus = statusSeguradora.find(s => s.id === formData.status_seguradora_id);
               return selectedStatus?.descricao?.toLowerCase().includes('recus') && <div>
@@ -710,6 +718,35 @@ export const CotacaoModal = ({
                     <Textarea value={formData.motivo_recusa} onChange={e => handleInputChange('motivo_recusa', e.target.value)} placeholder="Descreva o motivo da recusa..." className="min-h-[80px]" readOnly={isReadOnly} />
                   </div>;
             })()}
+
+              {/* Motivos de Recusa - Checklist quando Status é "Declinado" */}
+              {formData.status === 'Declinado' && <div className="space-y-3">
+                  <Label>Motivo(s) da Recusa *</Label>
+                  <div className="space-y-2">
+                    {['Relacionamento', 'Condição', 'Taxa', 'Sem proposta'].map(motivo => {
+                      const motivosArray = formData.motivo_recusa ? formData.motivo_recusa.split(',').map(m => m.trim()) : [];
+                      const isChecked = motivosArray.includes(motivo);
+                      
+                      return <div key={motivo} className="flex items-center space-x-2">
+                          <input type="checkbox" id={`motivo_${motivo}`} checked={isChecked} onChange={e => {
+                        const checked = e.target.checked;
+                        let newMotivos = [...motivosArray];
+                        
+                        if (checked) {
+                          newMotivos.push(motivo);
+                        } else {
+                          newMotivos = newMotivos.filter(m => m !== motivo);
+                        }
+                        
+                        handleInputChange('motivo_recusa', newMotivos.join(', '));
+                      }} disabled={isReadOnly} className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2" />
+                          <label htmlFor={`motivo_${motivo}`} className="text-sm cursor-pointer">
+                            {motivo}
+                          </label>
+                        </div>;
+                    })}
+                  </div>
+                </div>}
 
               {/* Tipo, Status e Data */}
               <div className="grid gap-4 md:grid-cols-3">
@@ -737,7 +774,7 @@ export const CotacaoModal = ({
                         <SelectItem value="Em cotação">Em cotação</SelectItem>
                         <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
                         <SelectItem value="Declinado">Declinado</SelectItem>
-                        <SelectItem value="Alocada Outra">Alocada Outra</SelectItem>
+                        {!isCreating && <SelectItem value="Alocada Outra">Alocada Outra</SelectItem>}
                       </SelectContent>
                   </Select>
                 </div>
