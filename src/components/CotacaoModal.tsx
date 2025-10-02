@@ -737,6 +737,7 @@ export const CotacaoModal = ({
                         <SelectItem value="Em cotação">Em cotação</SelectItem>
                         <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
                         <SelectItem value="Declinado">Declinado</SelectItem>
+                        <SelectItem value="Alocada Outra">Alocada Outra</SelectItem>
                       </SelectContent>
                   </Select>
                 </div>

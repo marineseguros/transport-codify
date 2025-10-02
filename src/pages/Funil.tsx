@@ -14,6 +14,7 @@ const Funil = () => {
       'Em cotação': cotacoes.filter(c => c.status === 'Em cotação'),
       'Negócio fechado': cotacoes.filter(c => c.status === 'Negócio fechado'),
       'Declinado': cotacoes.filter(c => c.status === 'Declinado'),
+      'Alocada Outra': cotacoes.filter(c => c.status === 'Alocada Outra'),
     };
   }, [cotacoes]);
 
@@ -39,6 +40,7 @@ const Funil = () => {
       case 'Em cotação': return 'border-l-brand-orange bg-background';
       case 'Negócio fechado': return 'border-l-success-alt bg-background';
       case 'Declinado': return 'border-l-destructive bg-background';
+      case 'Alocada Outra': return 'border-l-secondary bg-background';
       default: return 'border-l-muted bg-background';
     }
   };

@@ -77,7 +77,7 @@ export interface StatusSeguradora {
   descricao: string;
 }
 
-export type CotacaoStatus = 'Em cotação' | 'Negócio fechado' | 'Declinado';
+export type CotacaoStatus = 'Em cotação' | 'Negócio fechado' | 'Declinado' | 'Alocada Outra';
 export type CotacaoTipo = 'Novo' | 'Migração' | 'Renovação';
 
 export interface CotacaoTRN {

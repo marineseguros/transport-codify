@@ -52,7 +52,7 @@ const Cotacoes = () => {
   }, [cotacoes]);
 
   // Valid status options
-  const validStatuses = ['Em cotação', 'Negócio fechado', 'Declinado'];
+  const validStatuses = ['Em cotação', 'Negócio fechado', 'Declinado', 'Alocada Outra'];
 
   const handleEdit = (cotacao: Cotacao) => {
     setSelectedCotacao(cotacao);
@@ -155,6 +155,7 @@ const Cotacoes = () => {
       case 'Negócio fechado': return 'success-alt';
       case 'Em cotação': return 'brand-orange';
       case 'Declinado': return 'destructive';
+      case 'Alocada Outra': return 'secondary';
       default: return 'secondary';
     }
   };

@@ -266,7 +266,7 @@ const Dashboard = () => {
 
   // Distribuição por status no período atual com segurados distintos
   const distribuicaoStatus = useMemo(() => {
-    const validStatuses = ['Em cotação', 'Negócio fechado', 'Declinado'];
+    const validStatuses = ['Em cotação', 'Negócio fechado', 'Declinado', 'Alocada Outra'];
     const statusData = validStatuses.map(status => {
       const statusCotacoes = filteredCotacoes.filter(cotacao => cotacao.status === status);
       const totalCotacoes = statusCotacoes.length;
@@ -458,6 +458,8 @@ const Dashboard = () => {
         return 'brand-orange';
       case 'Declinado':
         return 'destructive';
+      case 'Alocada Outra':
+        return 'secondary';
       default:
         return 'secondary';
     }
