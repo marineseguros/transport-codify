@@ -587,6 +587,40 @@ export function useCotacoes() {
     }
   };
 
+  const deleteCotacao = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('cotacoes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Refresh the list
+      await refetch();
+    } catch (error) {
+      console.error('Error deleting cotacao:', error);
+      throw error;
+    }
+  };
+
+  const deleteCotacoes = async (ids: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('cotacoes')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+      
+      // Refresh the list
+      await refetch();
+    } catch (error) {
+      console.error('Error deleting cotacoes:', error);
+      throw error;
+    }
+  };
+
   return { 
     cotacoes, 
     loading, 
@@ -598,6 +632,8 @@ export function useCotacoes() {
     refetch,
     createCotacao,
     updateCotacao,
+    deleteCotacao,
+    deleteCotacoes,
     getTotalCount,
     getFirstPage,
     getNextPage,

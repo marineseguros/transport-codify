@@ -24,7 +24,9 @@ const Cotacoes = () => {
     pageSize,
     canGoPrev,
     canGoNext,
-    createCotacao, 
+    createCotacao,
+    deleteCotacao,
+    deleteCotacoes,
     refetch,
     getFirstPage,
     getPrevPage,
@@ -61,19 +63,30 @@ const Cotacoes = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    // TODO: Implement delete functionality
-    toast.success('Cotação excluída com sucesso!');
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteCotacao(id);
+      toast.success('Cotação excluída com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir cotação:', error);
+      toast.error('Erro ao excluir cotação');
+    }
   };
 
-  const handleMassDelete = () => {
+  const handleMassDelete = async () => {
     if (selectedIds.size === 0) {
       toast.error('Selecione ao menos uma cotação para excluir');
       return;
     }
-    // TODO: Implement mass delete functionality
-    toast.success(`${selectedIds.size} cotação(ões) excluída(s) com sucesso!`);
-    setSelectedIds(new Set());
+    
+    try {
+      await deleteCotacoes(Array.from(selectedIds));
+      toast.success(`${selectedIds.size} cotação(ões) excluída(s) com sucesso!`);
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error('Erro ao excluir cotações:', error);
+      toast.error('Erro ao excluir cotações');
+    }
   };
 
   const toggleSelectAll = () => {
