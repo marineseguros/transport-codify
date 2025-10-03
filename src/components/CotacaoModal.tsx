@@ -545,7 +545,20 @@ export const CotacaoModal = ({
               {/* Seguradora, Ramo e Segmento */}
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
-                  <Label htmlFor="seguradora_id">Seguradora *</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="seguradora_id">Seguradora *</Label>
+                    {isCreating && seguradorasExtras.length < 10 && (
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={handleAddSeguradoraExtra}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                   <Select value={formData.seguradora_id} onValueChange={value => handleInputChange('seguradora_id', value)} disabled={isReadOnly}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a seguradora" />
@@ -556,10 +569,64 @@ export const CotacaoModal = ({
                         </SelectItem>)}
                     </SelectContent>
                   </Select>
+                  
+                  {/* Seguradoras Extras - Layout expansível (máximo 2 linhas) */}
+                  {isCreating && seguradorasExtras.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2 max-h-[140px] overflow-y-auto">
+                      {seguradorasExtras.map((seguradoraExtra, index) => (
+                        <div key={index} className="flex items-center gap-1 bg-muted/50 rounded-md p-1.5 min-w-[180px] flex-1">
+                          <Select 
+                            value={seguradoraExtra.seguradora_id} 
+                            onValueChange={value => handleSeguradoraExtraChange(index, value)}
+                          >
+                            <SelectTrigger className="h-8 text-xs border-0 bg-transparent">
+                              <SelectValue placeholder="Seguradora" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {seguradoras.filter(seguradora => {
+                                if (seguradora.id === seguradoraExtra.seguradora_id) return true;
+                                if (seguradora.id === formData.seguradora_id) return false;
+                                const otherSelectedSeguradoras = seguradorasExtras
+                                  .map((s, i) => i !== index ? s.seguradora_id : null)
+                                  .filter(Boolean);
+                                return !otherSelectedSeguradoras.includes(seguradora.id);
+                              }).map(seguradora => (
+                                <SelectItem key={seguradora.id} value={seguradora.id}>
+                                  {seguradora.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon"
+                            className="h-6 w-6 text-destructive hover:text-destructive"
+                            onClick={() => handleRemoveSeguradoraExtra(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
-                  <Label htmlFor="ramo_id">Ramo *</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="ramo_id">Ramo *</Label>
+                    {isCreating && ramosExtras.length < 3 && (
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={handleAddRamoExtra}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                   <Select value={formData.ramo_id} onValueChange={value => handleInputChange('ramo_id', value)} disabled={isReadOnly}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o ramo" />
@@ -570,6 +637,47 @@ export const CotacaoModal = ({
                         </SelectItem>)}
                     </SelectContent>
                   </Select>
+                  
+                  {/* Ramos Extras - Layout expansível (máximo 3-4 linhas) */}
+                  {isCreating && ramosExtras.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2 max-h-[210px] overflow-y-auto">
+                      {ramosExtras.map((ramoExtra, index) => (
+                        <div key={index} className="flex items-center gap-1 bg-muted/50 rounded-md p-1.5 min-w-[180px] flex-1">
+                          <Select 
+                            value={ramoExtra.ramo_id} 
+                            onValueChange={value => handleRamoExtraChange(index, value)}
+                          >
+                            <SelectTrigger className="h-8 text-xs border-0 bg-transparent">
+                              <SelectValue placeholder="Ramo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ramos.filter(ramo => {
+                                if (ramo.id === ramoExtra.ramo_id) return true;
+                                if (ramo.id === formData.ramo_id) return false;
+                                const otherSelectedRamos = ramosExtras
+                                  .map((r, i) => i !== index ? r.ramo_id : null)
+                                  .filter(Boolean);
+                                return !otherSelectedRamos.includes(ramo.id);
+                              }).map(ramo => (
+                                <SelectItem key={ramo.id} value={ramo.id}>
+                                  {ramo.descricao}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon"
+                            className="h-6 w-6 text-destructive hover:text-destructive"
+                            onClick={() => handleRemoveRamoExtra(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -578,106 +686,17 @@ export const CotacaoModal = ({
                 </div>
               </div>
 
-              {/* Seguradoras Extras - Only show when creating new cotação */}
-              {isCreating && <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium text-muted-foreground">Seguradoras Extras (Opcional)</Label>
-                    {seguradorasExtras.length < 10 && <Button type="button" variant="outline" size="sm" onClick={handleAddSeguradoraExtra} className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Adicionar Seguradora
-                      </Button>}
-                  </div>
-                  
-                  {seguradorasExtras.length > 0 && <div className="space-y-3">
-                       {seguradorasExtras.map((seguradoraExtra, index) => <div key={index} className="flex gap-2 items-end">
-                           <div className="flex-1">
-                             <Label htmlFor={`seguradora_extra_${index}`}>Seguradora Extra {index + 1}</Label>
-                             <Select value={seguradoraExtra.seguradora_id} onValueChange={value => handleSeguradoraExtraChange(index, value)}>
-                               <SelectTrigger>
-                                 <SelectValue placeholder="Selecione a seguradora" />
-                               </SelectTrigger>
-                                <SelectContent>
-                                  {seguradoras.filter(seguradora => {
-                          // Allow current selection to stay visible
-                          if (seguradora.id === seguradoraExtra.seguradora_id) return true;
-                          // Exclude main seguradora
-                          if (seguradora.id === formData.seguradora_id) return false;
-                          // Exclude other extra seguradoras (but not current one)
-                          const otherSelectedSeguradoras = seguradorasExtras.map((s, i) => i !== index ? s.seguradora_id : null).filter(Boolean);
-                          return !otherSelectedSeguradoras.includes(seguradora.id);
-                        }).map(seguradora => <SelectItem key={seguradora.id} value={seguradora.id}>
-                                        {seguradora.nome}
-                                      </SelectItem>)}
-                                </SelectContent>
-                             </Select>
-                           </div>
-                           
-                           <Button type="button" variant="outline" size="sm" onClick={() => handleRemoveSeguradoraExtra(index)} className="text-red-600 hover:text-red-700">
-                             <Trash2 className="h-4 w-4" />
-                           </Button>
-                         </div>)}
-                      
-                      <div className="bg-muted/50 p-3 rounded-lg">
-                        <p className="text-xs text-muted-foreground">
-                          <strong>Importante:</strong> Ao criar a cotação, será gerado um registro independente 
-                          para cada combinação de ramo e seguradora selecionados, com todos os outros dados idênticos.
-                        </p>
-                      </div>
-                    </div>}
-                </div>}
 
-              {/* Ramos Extras - Only show when creating new cotação */}
-              {isCreating && <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium text-muted-foreground">Ramos Extras (Opcional)</Label>
-                    {ramosExtras.length < 3 && <Button type="button" variant="outline" size="sm" onClick={handleAddRamoExtra} className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Adicionar Ramo
-                      </Button>}
-                  </div>
-                  
-                  {ramosExtras.length > 0 && <div className="space-y-3">
-                       {ramosExtras.map((ramoExtra, index) => <div key={index} className="flex gap-2 items-end">
-                           <div className="flex-1">
-                             <Label htmlFor={`ramo_extra_${index}`}>Ramo Extra {index + 1}</Label>
-                             <Select value={ramoExtra.ramo_id} onValueChange={value => handleRamoExtraChange(index, value)}>
-                               <SelectTrigger>
-                                 <SelectValue placeholder="Selecione o ramo" />
-                               </SelectTrigger>
-                                <SelectContent>
-                                  {ramos.filter(ramo => {
-                          // Allow current selection to stay visible
-                          if (ramo.id === ramoExtra.ramo_id) return true;
-                          // Exclude main ramo
-                          if (ramo.id === formData.ramo_id) return false;
-                          // Exclude other extra ramos (but not current one)
-                          const otherSelectedRamos = ramosExtras.map((r, i) => i !== index ? r.ramo_id : null).filter(Boolean);
-                          return !otherSelectedRamos.includes(ramo.id);
-                        }).map(ramo => <SelectItem key={ramo.id} value={ramo.id}>
-                                        {ramo.descricao}
-                                      </SelectItem>)}
-                                </SelectContent>
-                             </Select>
-                           </div>
-                           
-                           {ramoExtra.ramo_id && <div className="flex-1">
-                               <Label htmlFor={`segmento_extra_${index}`}>Segmento</Label>
-                               <Input value={ramoExtra.segmento} placeholder="Preenchido automaticamente" readOnly />
-                             </div>}
-                           
-                           <Button type="button" variant="outline" size="sm" onClick={() => handleRemoveRamoExtra(index)} className="text-red-600 hover:text-red-700">
-                             <Trash2 className="h-4 w-4" />
-                           </Button>
-                         </div>)}
-                      
-                      <div className="bg-muted/50 p-3 rounded-lg">
-                        <p className="text-xs text-muted-foreground">
-                          <strong>Importante:</strong> Ao criar a cotação, será gerado um registro independente 
-                          para cada ramo selecionado (principal + extras), com todos os outros dados idênticos.
-                        </p>
-                      </div>
-                    </div>}
-                </div>}
+              {/* Info box about multiple cotações creation */}
+              {isCreating && (seguradorasExtras.length > 0 || ramosExtras.length > 0) && (
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Importante:</strong> Ao criar a cotação, será gerado um registro independente 
+                    para cada combinação de ramo e seguradora selecionados, com todos os outros dados idênticos.
+                  </p>
+                </div>
+              )}
+
 
               {/* Captação e Status Seguradora */}
               <div className="grid gap-4 md:grid-cols-2">
