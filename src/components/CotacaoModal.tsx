@@ -759,7 +759,7 @@ export const CotacaoModal = ({
               {/* Motivos de Recusa - Checklist quando Status é "Declinado" */}
               {formData.status === 'Declinado' && <div className="space-y-3">
                   <Label>Motivo(s) da Recusa *</Label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-4 gap-3">
                     {['Relacionamento', 'Condição', 'Taxa', 'Sem proposta'].map(motivo => {
                       const motivosArray = formData.motivo_recusa ? formData.motivo_recusa.split(',').map(m => m.trim()) : [];
                       const isChecked = motivosArray.includes(motivo);

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Search, Download, Upload, Edit, Trash2, RefreshCw, FileText } from 'lucide-react';
 import { CotacaoModal } from '@/components/CotacaoModal';
 import { PaginationControls } from '@/components/ui/pagination-controls';
@@ -42,6 +43,7 @@ const Cotacoes = () => {
   } = useCotacoes();
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Get unique produtores for filter from all loaded cotacoes
   const produtores = useMemo(() => {
@@ -62,6 +64,34 @@ const Cotacoes = () => {
   const handleDelete = (id: string) => {
     // TODO: Implement delete functionality
     toast.success('Cotação excluída com sucesso!');
+  };
+
+  const handleMassDelete = () => {
+    if (selectedIds.size === 0) {
+      toast.error('Selecione ao menos uma cotação para excluir');
+      return;
+    }
+    // TODO: Implement mass delete functionality
+    toast.success(`${selectedIds.size} cotação(ões) excluída(s) com sucesso!`);
+    setSelectedIds(new Set());
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === cotacoes.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(cotacoes.map(c => c.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
   };
 
   const handleNewCotacao = () => {
@@ -175,6 +205,16 @@ const Cotacoes = () => {
         </div>
         
         <div className="flex gap-3">
+          {canDelete && selectedIds.size > 0 && (
+            <Button 
+              onClick={handleMassDelete} 
+              variant="destructive" 
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Excluir Selecionadas ({selectedIds.size})
+            </Button>
+          )}
           {canEdit && (
             <Button onClick={handleNewCotacao} className="gap-2">
               <Plus className="h-4 w-4" />
@@ -197,10 +237,21 @@ const Cotacoes = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                {canDelete && (
+                  <TableHead className="w-12">
+                    <div className="space-y-2">
+                      <Checkbox 
+                        checked={selectedIds.size === cotacoes.length && cotacoes.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                      <div className="h-8"></div>
+                    </div>
+                  </TableHead>
+                )}
                 <TableHead>
                   <div className="space-y-2">
                     <div>Número</div>
-                    <Input 
+                    <Input
                       placeholder="Filtrar número..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -349,6 +400,14 @@ const Cotacoes = () => {
             <TableBody>
               {cotacoes.map((cotacao) => (
                 <TableRow key={cotacao.id}>
+                  {canDelete && (
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedIds.has(cotacao.id)}
+                        onCheckedChange={() => toggleSelect(cotacao.id)}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell className="font-mono">
                     {cotacao.numero_cotacao}
                   </TableCell>
