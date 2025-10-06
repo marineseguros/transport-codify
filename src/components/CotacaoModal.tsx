@@ -542,8 +542,9 @@ export const CotacaoModal = ({
                 </div>
               </div>
 
-              {/* Seguradora, Ramo e Segmento */}
-              <div className="grid gap-4 md:grid-cols-3">
+              {/* Seguradora, Ramo e Segmento - Agora em 2 colunas */}
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Coluna 1: Seguradora */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label htmlFor="seguradora_id">Seguradora *</Label>
@@ -570,7 +571,7 @@ export const CotacaoModal = ({
                     </SelectContent>
                   </Select>
                   
-                  {/* Seguradoras Extras - Layout expansível (máximo 2 linhas) */}
+                  {/* Seguradoras Extras */}
                   {isCreating && seguradorasExtras.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {seguradorasExtras.map((seguradoraExtra, index) => (
@@ -612,9 +613,10 @@ export const CotacaoModal = ({
                   )}
                 </div>
 
+                {/* Coluna 2: Ramo + Segmento */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="ramo_id">Ramo *</Label>
+                    <Label>Ramo * / Segmento</Label>
                     {isCreating && ramosExtras.length < 3 && (
                       <Button 
                         type="button" 
@@ -627,16 +629,26 @@ export const CotacaoModal = ({
                       </Button>
                     )}
                   </div>
-                  <Select value={formData.ramo_id} onValueChange={value => handleInputChange('ramo_id', value)} disabled={isReadOnly}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o ramo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ramos.map(ramo => <SelectItem key={ramo.id} value={ramo.id}>
-                          {ramo.descricao}
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  
+                  {/* Ramo e Segmento principal em grid */}
+                  <div className="grid grid-cols-[1fr_auto] gap-2">
+                    <Select value={formData.ramo_id} onValueChange={value => handleInputChange('ramo_id', value)} disabled={isReadOnly}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o ramo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ramos.map(ramo => <SelectItem key={ramo.id} value={ramo.id}>
+                            {ramo.descricao}
+                          </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    
+                    <div className="flex items-center bg-muted/30 rounded-md px-3 min-w-[140px]">
+                      <span className="text-sm text-muted-foreground">
+                        {formData.segmento || '-'}
+                      </span>
+                    </div>
+                  </div>
                   
                   {/* Ramos Extras - Layout responsivo */}
                   {isCreating && ramosExtras.length > 0 && (
@@ -685,11 +697,6 @@ export const CotacaoModal = ({
                       ))}
                     </div>
                   )}
-                </div>
-
-                <div>
-                  <Label htmlFor="segmento">Segmento</Label>
-                  <Input value={formData.segmento} onChange={e => handleInputChange('segmento', e.target.value)} placeholder="Preenchido automaticamente" readOnly />
                 </div>
               </div>
 
