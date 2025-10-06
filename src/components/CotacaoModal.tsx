@@ -638,43 +638,50 @@ export const CotacaoModal = ({
                     </SelectContent>
                   </Select>
                   
-                  {/* Ramos Extras - Layout expansível (máximo 3-4 linhas) */}
+                  {/* Ramos Extras - Layout responsivo */}
                   {isCreating && ramosExtras.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
+                    <div className="grid grid-cols-[1fr_auto] gap-2 mt-2">
                       {ramosExtras.map((ramoExtra, index) => (
-                        <div key={index} className="flex items-center gap-1 bg-muted/50 rounded-md p-1.5 min-w-[180px] flex-1 h-10">
-                          <Select 
-                            value={ramoExtra.ramo_id} 
-                            onValueChange={value => handleRamoExtraChange(index, value)}
-                          >
-                            <SelectTrigger className="h-7 text-xs border-0 bg-transparent">
-                              <SelectValue placeholder="Ramo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ramos.filter(ramo => {
-                                if (ramo.id === ramoExtra.ramo_id) return true;
-                                if (ramo.id === formData.ramo_id) return false;
-                                const otherSelectedRamos = ramosExtras
-                                  .map((r, i) => i !== index ? r.ramo_id : null)
-                                  .filter(Boolean);
-                                return !otherSelectedRamos.includes(ramo.id);
-                              }).map(ramo => (
-                                <SelectItem key={ramo.id} value={ramo.id}>
-                                  {ramo.descricao}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon"
-                            className="h-6 w-6 flex-shrink-0 text-destructive hover:text-destructive"
-                            onClick={() => handleRemoveRamoExtra(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
+                        <>
+                          <div key={`ramo-${index}`} className="flex items-center gap-1 bg-muted/50 rounded-md p-1.5">
+                            <Select 
+                              value={ramoExtra.ramo_id} 
+                              onValueChange={value => handleRamoExtraChange(index, value)}
+                            >
+                              <SelectTrigger className="h-7 text-xs border-0 bg-transparent">
+                                <SelectValue placeholder="Ramo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ramos.filter(ramo => {
+                                  if (ramo.id === ramoExtra.ramo_id) return true;
+                                  if (ramo.id === formData.ramo_id) return false;
+                                  const otherSelectedRamos = ramosExtras
+                                    .map((r, i) => i !== index ? r.ramo_id : null)
+                                    .filter(Boolean);
+                                  return !otherSelectedRamos.includes(ramo.id);
+                                }).map(ramo => (
+                                  <SelectItem key={ramo.id} value={ramo.id}>
+                                    {ramo.descricao}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-6 w-6 flex-shrink-0 text-destructive hover:text-destructive"
+                              onClick={() => handleRemoveRamoExtra(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div key={`segmento-${index}`} className="flex items-center bg-muted/30 rounded-md px-3 h-10">
+                            <span className="text-xs text-muted-foreground">
+                              {ramoExtra.segmento || '-'}
+                            </span>
+                          </div>
+                        </>
                       ))}
                     </div>
                   )}
