@@ -572,7 +572,7 @@ export const CotacaoModal = ({
                   
                   {/* Seguradoras Extras - Layout expansível (máximo 2 linhas) */}
                   {isCreating && seguradorasExtras.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2 max-h-[140px] overflow-y-auto">
+                    <div className="flex flex-wrap gap-2 mt-2 max-h-[200px] overflow-y-auto">
                       {seguradorasExtras.map((seguradoraExtra, index) => (
                         <div key={index} className="flex items-center gap-1 bg-muted/50 rounded-md p-1.5 min-w-[180px] flex-1">
                           <Select 
@@ -640,40 +640,47 @@ export const CotacaoModal = ({
                   
                   {/* Ramos Extras - Layout expansível (máximo 3-4 linhas) */}
                   {isCreating && ramosExtras.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2 max-h-[210px] overflow-y-auto">
+                    <div className="flex flex-wrap gap-2 mt-2 max-h-[200px] overflow-y-auto">
                       {ramosExtras.map((ramoExtra, index) => (
-                        <div key={index} className="flex items-center gap-1 bg-muted/50 rounded-md p-1.5 min-w-[180px] flex-1">
-                          <Select 
-                            value={ramoExtra.ramo_id} 
-                            onValueChange={value => handleRamoExtraChange(index, value)}
-                          >
-                            <SelectTrigger className="h-8 text-xs border-0 bg-transparent">
-                              <SelectValue placeholder="Ramo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ramos.filter(ramo => {
-                                if (ramo.id === ramoExtra.ramo_id) return true;
-                                if (ramo.id === formData.ramo_id) return false;
-                                const otherSelectedRamos = ramosExtras
-                                  .map((r, i) => i !== index ? r.ramo_id : null)
-                                  .filter(Boolean);
-                                return !otherSelectedRamos.includes(ramo.id);
-                              }).map(ramo => (
-                                <SelectItem key={ramo.id} value={ramo.id}>
-                                  {ramo.descricao}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon"
-                            className="h-6 w-6 text-destructive hover:text-destructive"
-                            onClick={() => handleRemoveRamoExtra(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
+                        <div key={index} className="flex flex-col gap-1 bg-muted/50 rounded-md p-1.5 min-w-[180px] flex-1">
+                          <div className="flex items-center gap-1">
+                            <Select 
+                              value={ramoExtra.ramo_id} 
+                              onValueChange={value => handleRamoExtraChange(index, value)}
+                            >
+                              <SelectTrigger className="h-8 text-xs border-0 bg-transparent">
+                                <SelectValue placeholder="Ramo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ramos.filter(ramo => {
+                                  if (ramo.id === ramoExtra.ramo_id) return true;
+                                  if (ramo.id === formData.ramo_id) return false;
+                                  const otherSelectedRamos = ramosExtras
+                                    .map((r, i) => i !== index ? r.ramo_id : null)
+                                    .filter(Boolean);
+                                  return !otherSelectedRamos.includes(ramo.id);
+                                }).map(ramo => (
+                                  <SelectItem key={ramo.id} value={ramo.id}>
+                                    {ramo.descricao}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-6 w-6 text-destructive hover:text-destructive"
+                              onClick={() => handleRemoveRamoExtra(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          {ramoExtra.segmento && (
+                            <div className="text-[10px] text-muted-foreground px-1">
+                              {ramoExtra.segmento}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
