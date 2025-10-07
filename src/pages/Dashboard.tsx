@@ -318,6 +318,14 @@ const Dashboard = () => {
       .slice(0, 10);
   }, [filteredCotacoes]);
 
+  // Clientes em cotação para o tooltip
+  const clientesEmCotacao = useMemo(() => {
+    return filteredCotacoes
+      .filter(cotacao => cotacao.status === 'Em cotação')
+      .sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime())
+      .slice(0, 10);
+  }, [filteredCotacoes]);
+
   // View mode state for recent quotes
   const [recentQuotesViewMode, setRecentQuotesViewMode] = useState<'list' | 'cards'>('list');
 
@@ -596,8 +604,38 @@ const Dashboard = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-brand-orange">{monthlyStats.emCotacao}</div>
-            {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    <div className="text-2xl font-bold text-brand-orange">{monthlyStats.emCotacao}</div>
+                    {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Clientes em Cotação no Período</h4>
+                    {clientesEmCotacao.length > 0 ? (
+                      <div className="space-y-1">
+                        {clientesEmCotacao.map((cotacao) => (
+                          <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
+                            <div className="font-medium">{cotacao.segurado}</div>
+                            <div className="text-muted-foreground">
+                              Data Cotação: {formatDate(cotacao.data_cotacao)}
+                            </div>
+                            <div className="text-muted-foreground">
+                              Prêmio: {formatCurrency(cotacao.valor_premio)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Nenhum cliente em cotação no período</p>
+                    )}
+                  </div>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
           </CardContent>
         </Card>
 
