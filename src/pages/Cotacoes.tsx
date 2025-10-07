@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Plus, Search, Download, Upload, Edit, Trash2, RefreshCw, FileText } from 'lucide-react';
 import { CotacaoModal } from '@/components/CotacaoModal';
 import { PaginationControls } from '@/components/ui/pagination-controls';
@@ -46,6 +47,9 @@ const Cotacoes = () => {
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cotacaoToDelete, setCotacaoToDelete] = useState<string | null>(null);
+  const [massDeleteDialogOpen, setMassDeleteDialogOpen] = useState(false);
 
   // Get unique produtores for filter from all loaded cotacoes
   const produtores = useMemo(() => {
@@ -63,22 +67,35 @@ const Cotacoes = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteClick = (id: string) => {
+    setCotacaoToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!cotacaoToDelete) return;
+    
     try {
-      await deleteCotacao(id);
+      await deleteCotacao(cotacaoToDelete);
       toast.success('Cotação excluída com sucesso!');
     } catch (error) {
       console.error('Erro ao excluir cotação:', error);
       toast.error('Erro ao excluir cotação');
+    } finally {
+      setDeleteDialogOpen(false);
+      setCotacaoToDelete(null);
     }
   };
 
-  const handleMassDelete = async () => {
+  const handleMassDeleteClick = () => {
     if (selectedIds.size === 0) {
       toast.error('Selecione ao menos uma cotação para excluir');
       return;
     }
-    
+    setMassDeleteDialogOpen(true);
+  };
+
+  const handleConfirmMassDelete = async () => {
     try {
       await deleteCotacoes(Array.from(selectedIds));
       toast.success(`${selectedIds.size} cotação(ões) excluída(s) com sucesso!`);
@@ -86,6 +103,8 @@ const Cotacoes = () => {
     } catch (error) {
       console.error('Erro ao excluir cotações:', error);
       toast.error('Erro ao excluir cotações');
+    } finally {
+      setMassDeleteDialogOpen(false);
     }
   };
 
@@ -220,7 +239,7 @@ const Cotacoes = () => {
         <div className="flex gap-3">
           {canDelete && selectedIds.size > 0 && (
             <Button 
-              onClick={handleMassDelete} 
+              onClick={handleMassDeleteClick} 
               variant="destructive" 
               className="gap-2"
             >
@@ -391,7 +410,7 @@ const Cotacoes = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDelete(cotacao.id)}
+                            onClick={() => handleDeleteClick(cotacao.id)}
                             className="text-red-600 hover:text-red-700"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -454,6 +473,42 @@ const Cotacoes = () => {
         mode={selectedCotacao ? 'edit' : 'create'}
         onSaved={() => refetch()}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta cotação? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Mass Delete Confirmation Dialog */}
+      <AlertDialog open={massDeleteDialogOpen} onOpenChange={setMassDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão em massa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir {selectedIds.size} cotação(ões) selecionada(s)? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmMassDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir Todas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
