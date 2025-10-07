@@ -360,6 +360,7 @@ export const CotacaoModal = ({
       const baseCotacaoData = {
         segurado: formData.segurado,
         cpf_cnpj: formData.cnpj,
+        cliente_id: formData.cliente_id || undefined,
         unidade_id: formData.unidade_id || undefined,
         produtor_origem_id: formData.produtor_origem_id || undefined,
         produtor_negociador_id: formData.produtor_negociador_id || undefined,
