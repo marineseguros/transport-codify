@@ -498,36 +498,8 @@ export const CotacaoModal = ({
                 </div>
               </div>
 
-              {/* Produtores */}
+              {/* Produtor */}
               <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <Label htmlFor="produtor_origem_id">Produtor Origem *</Label>
-                  <Select value={formData.produtor_origem_id} onValueChange={value => handleInputChange('produtor_origem_id', value)} disabled={isReadOnly}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o produtor origem" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {produtores.map(produtor => <SelectItem key={produtor.id} value={produtor.id}>
-                          {produtor.nome}
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="produtor_negociador_id">Produtor Negociador *</Label>
-                  <Select value={formData.produtor_negociador_id} onValueChange={value => handleInputChange('produtor_negociador_id', value)} disabled={isReadOnly}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o produtor negociador" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {produtores.map(produtor => <SelectItem key={produtor.id} value={produtor.id}>
-                          {produtor.nome}
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div>
                   <Label htmlFor="produtor_cotador_id">Produtor Cotador *</Label>
                   <Select value={formData.produtor_cotador_id} onValueChange={value => handleInputChange('produtor_cotador_id', value)} disabled={isReadOnly}>
@@ -779,7 +751,7 @@ export const CotacaoModal = ({
                         <SelectItem value="Em cotação">Em cotação</SelectItem>
                         <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
                         <SelectItem value="Declinado">Declinado</SelectItem>
-                        {!isCreating && <SelectItem value="Alocada Outra">Alocada Outra</SelectItem>}
+                        {mode === 'view' && <SelectItem value="Alocada Outra">Alocada Outra</SelectItem>}
                       </SelectContent>
                   </Select>
                 </div>
