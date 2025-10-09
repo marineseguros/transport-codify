@@ -450,6 +450,72 @@ const Dashboard = () => {
     return Object.values(produtorStats)
       .sort((a, b) => b.fechadas - a.fechadas);
   }, [filteredCotacoes]);
+
+  // Análise por segmento - cotações em aberto (clientes distintos)
+  const cotacoesPorSegmento = useMemo(() => {
+    const segmentoStats: Record<string, Set<string>> = {};
+    
+    filteredCotacoes
+      .filter(c => c.status === 'Em cotação' || c.status === 'Em análise')
+      .forEach(cotacao => {
+        const segmento = cotacao.segmento || 'Não informado';
+        if (!segmentoStats[segmento]) {
+          segmentoStats[segmento] = new Set();
+        }
+        segmentoStats[segmento].add(cotacao.cpf_cnpj);
+      });
+    
+    return Object.entries(segmentoStats)
+      .map(([segmento, clientes]) => ({
+        segmento,
+        count: clientes.size
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [filteredCotacoes]);
+
+  // Análise por segmento - negócios fechados (clientes distintos)
+  const fechamentosPorSegmento = useMemo(() => {
+    const segmentoStats: Record<string, Set<string>> = {};
+    
+    filteredCotacoes
+      .filter(c => c.status === 'Negócio fechado')
+      .forEach(cotacao => {
+        const segmento = cotacao.segmento || 'Não informado';
+        if (!segmentoStats[segmento]) {
+          segmentoStats[segmento] = new Set();
+        }
+        segmentoStats[segmento].add(cotacao.cpf_cnpj);
+      });
+    
+    return Object.entries(segmentoStats)
+      .map(([segmento, clientes]) => ({
+        segmento,
+        count: clientes.size
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [filteredCotacoes]);
+
+  // Análise por segmento - declinados (clientes distintos)
+  const declinadosPorSegmento = useMemo(() => {
+    const segmentoStats: Record<string, Set<string>> = {};
+    
+    filteredCotacoes
+      .filter(c => c.status === 'Declinado')
+      .forEach(cotacao => {
+        const segmento = cotacao.segmento || 'Não informado';
+        if (!segmentoStats[segmento]) {
+          segmentoStats[segmento] = new Set();
+        }
+        segmentoStats[segmento].add(cotacao.cpf_cnpj);
+      });
+    
+    return Object.entries(segmentoStats)
+      .map(([segmento, clientes]) => ({
+        segmento,
+        count: clientes.size
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [filteredCotacoes]);
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL'
@@ -860,6 +926,111 @@ const Dashboard = () => {
             ) : (
               <div className="flex items-center justify-center h-[300px] text-muted-foreground">
                 Nenhum dado disponível para o período selecionado
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Análises por Segmento */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Cotações em Aberto por Segmento */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Cotações em Aberto por Segmento</CardTitle>
+            <p className="text-xs text-muted-foreground">Clientes distintos</p>
+          </CardHeader>
+          <CardContent>
+            {cotacoesPorSegmento.length > 0 ? (
+              <div className="space-y-3">
+                {cotacoesPorSegmento.map((item) => (
+                  <div key={item.segmento} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{item.segmento}</span>
+                      <span className="font-bold text-brand-orange">{item.count}</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-8 flex items-center">
+                      <div 
+                        className="bg-brand-orange rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
+                        style={{ width: `${Math.max((item.count / Math.max(...cotacoesPorSegmento.map(s => s.count))) * 100, 10)}%` }}
+                      >
+                        {item.count}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+                Nenhuma cotação em aberto no período
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Fechamentos por Segmento */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Quantidade de Fechamentos Por Segmento</CardTitle>
+            <p className="text-xs text-muted-foreground">Clientes distintos</p>
+          </CardHeader>
+          <CardContent>
+            {fechamentosPorSegmento.length > 0 ? (
+              <div className="space-y-3">
+                {fechamentosPorSegmento.map((item) => (
+                  <div key={item.segmento} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{item.segmento}</span>
+                      <span className="font-bold text-success-alt">{item.count}</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-8 flex items-center">
+                      <div 
+                        className="bg-success-alt rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
+                        style={{ width: `${Math.max((item.count / Math.max(...fechamentosPorSegmento.map(s => s.count))) * 100, 10)}%` }}
+                      >
+                        {item.count}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+                Nenhum fechamento no período
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Declinados por Segmento */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Cotações Declinadas por Segmento</CardTitle>
+            <p className="text-xs text-muted-foreground">Clientes distintos</p>
+          </CardHeader>
+          <CardContent>
+            {declinadosPorSegmento.length > 0 ? (
+              <div className="space-y-3">
+                {declinadosPorSegmento.map((item) => (
+                  <div key={item.segmento} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{item.segmento}</span>
+                      <span className="font-bold text-destructive">{item.count}</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-8 flex items-center">
+                      <div 
+                        className="bg-destructive rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
+                        style={{ width: `${Math.max((item.count / Math.max(...declinadosPorSegmento.map(s => s.count))) * 100, 10)}%` }}
+                      >
+                        {item.count}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+                Nenhuma cotação declinada no período
               </div>
             )}
           </CardContent>
