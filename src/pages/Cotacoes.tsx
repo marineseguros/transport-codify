@@ -329,8 +329,6 @@ const Cotacoes = () => {
                 )}
                 <TableHead>Número</TableHead>
                 <TableHead>Segurado</TableHead>
-                <TableHead>Produtor Origem</TableHead>
-                <TableHead>Produtor Negociador</TableHead>
                 <TableHead>Produtor Cotador</TableHead>
                 <TableHead>Seguradora</TableHead>
                 <TableHead>Ramo</TableHead>
@@ -364,12 +362,6 @@ const Cotacoes = () => {
                         {cotacao.cpf_cnpj}
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {cotacao.produtor_origem?.nome || 'Não informado'}
-                  </TableCell>
-                  <TableCell>
-                    {cotacao.produtor_negociador?.nome || 'Não informado'}
                   </TableCell>
                    <TableCell>
                      {cotacao.produtor_cotador?.nome || 'Não informado'}
