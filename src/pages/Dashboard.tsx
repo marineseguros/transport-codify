@@ -453,66 +453,72 @@ const Dashboard = () => {
 
   // Análise por segmento - cotações em aberto (clientes distintos)
   const cotacoesPorSegmento = useMemo(() => {
-    const segmentoStats: Record<string, Set<string>> = {};
+    const segmentoStats: Record<string, { clientes: Set<string>; cotacoes: Cotacao[] }> = {};
     
     filteredCotacoes
       .filter(c => c.status === 'Em cotação' || c.status === 'Em análise')
       .forEach(cotacao => {
         const segmento = cotacao.segmento || 'Não informado';
         if (!segmentoStats[segmento]) {
-          segmentoStats[segmento] = new Set();
+          segmentoStats[segmento] = { clientes: new Set(), cotacoes: [] };
         }
-        segmentoStats[segmento].add(cotacao.cpf_cnpj);
+        segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
+        segmentoStats[segmento].cotacoes.push(cotacao);
       });
     
     return Object.entries(segmentoStats)
-      .map(([segmento, clientes]) => ({
+      .map(([segmento, data]) => ({
         segmento,
-        count: clientes.size
+        count: data.clientes.size,
+        cotacoes: data.cotacoes
       }))
       .sort((a, b) => b.count - a.count);
   }, [filteredCotacoes]);
 
   // Análise por segmento - negócios fechados (clientes distintos)
   const fechamentosPorSegmento = useMemo(() => {
-    const segmentoStats: Record<string, Set<string>> = {};
+    const segmentoStats: Record<string, { clientes: Set<string>; cotacoes: Cotacao[] }> = {};
     
     filteredCotacoes
       .filter(c => c.status === 'Negócio fechado')
       .forEach(cotacao => {
         const segmento = cotacao.segmento || 'Não informado';
         if (!segmentoStats[segmento]) {
-          segmentoStats[segmento] = new Set();
+          segmentoStats[segmento] = { clientes: new Set(), cotacoes: [] };
         }
-        segmentoStats[segmento].add(cotacao.cpf_cnpj);
+        segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
+        segmentoStats[segmento].cotacoes.push(cotacao);
       });
     
     return Object.entries(segmentoStats)
-      .map(([segmento, clientes]) => ({
+      .map(([segmento, data]) => ({
         segmento,
-        count: clientes.size
+        count: data.clientes.size,
+        cotacoes: data.cotacoes
       }))
       .sort((a, b) => b.count - a.count);
   }, [filteredCotacoes]);
 
   // Análise por segmento - declinados (clientes distintos)
   const declinadosPorSegmento = useMemo(() => {
-    const segmentoStats: Record<string, Set<string>> = {};
+    const segmentoStats: Record<string, { clientes: Set<string>; cotacoes: Cotacao[] }> = {};
     
     filteredCotacoes
       .filter(c => c.status === 'Declinado')
       .forEach(cotacao => {
         const segmento = cotacao.segmento || 'Não informado';
         if (!segmentoStats[segmento]) {
-          segmentoStats[segmento] = new Set();
+          segmentoStats[segmento] = { clientes: new Set(), cotacoes: [] };
         }
-        segmentoStats[segmento].add(cotacao.cpf_cnpj);
+        segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
+        segmentoStats[segmento].cotacoes.push(cotacao);
       });
     
     return Object.entries(segmentoStats)
-      .map(([segmento, clientes]) => ({
+      .map(([segmento, data]) => ({
         segmento,
-        count: clientes.size
+        count: data.clientes.size,
+        cotacoes: data.cotacoes
       }))
       .sort((a, b) => b.count - a.count);
   }, [filteredCotacoes]);
@@ -942,24 +948,50 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             {cotacoesPorSegmento.length > 0 ? (
-              <div className="space-y-3">
-                {cotacoesPorSegmento.map((item) => (
-                  <div key={item.segmento} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{item.segmento}</span>
-                      <span className="font-bold text-brand-orange">{item.count}</span>
-                    </div>
-                    <div className="w-full bg-secondary rounded-full h-8 flex items-center">
-                      <div 
-                        className="bg-brand-orange rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
-                        style={{ width: `${Math.max((item.count / Math.max(...cotacoesPorSegmento.map(s => s.count))) * 100, 10)}%` }}
-                      >
-                        {item.count}
+              <TooltipProvider>
+                <div className="space-y-3">
+                  {cotacoesPorSegmento.map((item) => (
+                    <div key={item.segmento} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{item.segmento}</span>
+                        <span className="font-bold text-brand-orange">{item.count}</span>
                       </div>
+                      <UITooltip>
+                        <TooltipTrigger asChild>
+                          <div className="w-full bg-secondary rounded-full h-8 flex items-center cursor-help">
+                            <div 
+                              className="bg-brand-orange rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
+                              style={{ width: `${Math.max((item.count / Math.max(...cotacoesPorSegmento.map(s => s.count))) * 100, 10)}%` }}
+                            >
+                              {item.count}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-md max-h-96 overflow-y-auto">
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-sm mb-2">Detalhes - {item.segmento}</h4>
+                            {item.cotacoes.slice(0, 10).map((cotacao) => (
+                              <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
+                                <div className="font-medium">{cotacao.segurado}</div>
+                                <div className="text-muted-foreground mt-1">
+                                  <div>Produtor: {cotacao.produtor_cotador?.nome || 'Não informado'}</div>
+                                  <div>Ramo: {cotacao.ramo?.descricao || 'Não informado'}</div>
+                                  <div>Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
+                                </div>
+                              </div>
+                            ))}
+                            {item.cotacoes.length > 10 && (
+                              <p className="text-xs text-muted-foreground italic">
+                                E mais {item.cotacoes.length - 10} cotações...
+                              </p>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </UITooltip>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </TooltipProvider>
             ) : (
               <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
                 Nenhuma cotação em aberto no período
@@ -976,24 +1008,53 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             {fechamentosPorSegmento.length > 0 ? (
-              <div className="space-y-3">
-                {fechamentosPorSegmento.map((item) => (
-                  <div key={item.segmento} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{item.segmento}</span>
-                      <span className="font-bold text-success-alt">{item.count}</span>
-                    </div>
-                    <div className="w-full bg-secondary rounded-full h-8 flex items-center">
-                      <div 
-                        className="bg-success-alt rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
-                        style={{ width: `${Math.max((item.count / Math.max(...fechamentosPorSegmento.map(s => s.count))) * 100, 10)}%` }}
-                      >
-                        {item.count}
+              <TooltipProvider>
+                <div className="space-y-3">
+                  {fechamentosPorSegmento.map((item) => (
+                    <div key={item.segmento} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{item.segmento}</span>
+                        <span className="font-bold text-success-alt">{item.count}</span>
                       </div>
+                      <UITooltip>
+                        <TooltipTrigger asChild>
+                          <div className="w-full bg-secondary rounded-full h-8 flex items-center cursor-help">
+                            <div 
+                              className="bg-success-alt rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
+                              style={{ width: `${Math.max((item.count / Math.max(...fechamentosPorSegmento.map(s => s.count))) * 100, 10)}%` }}
+                            >
+                              {item.count}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-md max-h-96 overflow-y-auto">
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-sm mb-2">Detalhes - {item.segmento}</h4>
+                            {item.cotacoes.slice(0, 10).map((cotacao) => (
+                              <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
+                                <div className="font-medium">{cotacao.segurado}</div>
+                                <div className="text-muted-foreground mt-1">
+                                  <div>Produtor: {cotacao.produtor_cotador?.nome || 'Não informado'}</div>
+                                  <div>Ramo: {cotacao.ramo?.descricao || 'Não informado'}</div>
+                                  <div>Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
+                                  {cotacao.data_fechamento && (
+                                    <div>Fechamento: {formatDate(cotacao.data_fechamento)}</div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                            {item.cotacoes.length > 10 && (
+                              <p className="text-xs text-muted-foreground italic">
+                                E mais {item.cotacoes.length - 10} cotações...
+                              </p>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </UITooltip>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </TooltipProvider>
             ) : (
               <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
                 Nenhum fechamento no período
@@ -1010,24 +1071,50 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             {declinadosPorSegmento.length > 0 ? (
-              <div className="space-y-3">
-                {declinadosPorSegmento.map((item) => (
-                  <div key={item.segmento} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{item.segmento}</span>
-                      <span className="font-bold text-destructive">{item.count}</span>
-                    </div>
-                    <div className="w-full bg-secondary rounded-full h-8 flex items-center">
-                      <div 
-                        className="bg-destructive rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
-                        style={{ width: `${Math.max((item.count / Math.max(...declinadosPorSegmento.map(s => s.count))) * 100, 10)}%` }}
-                      >
-                        {item.count}
+              <TooltipProvider>
+                <div className="space-y-3">
+                  {declinadosPorSegmento.map((item) => (
+                    <div key={item.segmento} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{item.segmento}</span>
+                        <span className="font-bold text-destructive">{item.count}</span>
                       </div>
+                      <UITooltip>
+                        <TooltipTrigger asChild>
+                          <div className="w-full bg-secondary rounded-full h-8 flex items-center cursor-help">
+                            <div 
+                              className="bg-destructive rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
+                              style={{ width: `${Math.max((item.count / Math.max(...declinadosPorSegmento.map(s => s.count))) * 100, 10)}%` }}
+                            >
+                              {item.count}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-md max-h-96 overflow-y-auto">
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-sm mb-2">Detalhes - {item.segmento}</h4>
+                            {item.cotacoes.slice(0, 10).map((cotacao) => (
+                              <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
+                                <div className="font-medium">{cotacao.segurado}</div>
+                                <div className="text-muted-foreground mt-1">
+                                  <div>Produtor: {cotacao.produtor_cotador?.nome || 'Não informado'}</div>
+                                  <div>Ramo: {cotacao.ramo?.descricao || 'Não informado'}</div>
+                                  <div>Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
+                                </div>
+                              </div>
+                            ))}
+                            {item.cotacoes.length > 10 && (
+                              <p className="text-xs text-muted-foreground italic">
+                                E mais {item.cotacoes.length - 10} cotações...
+                              </p>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </UITooltip>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </TooltipProvider>
             ) : (
               <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
                 Nenhuma cotação declinada no período
