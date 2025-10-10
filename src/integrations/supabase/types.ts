@@ -106,6 +106,7 @@ export type Database = {
           tipo: string | null
           unidade_id: string | null
           updated_at: string
+          updated_by: string | null
           valor_premio: number | null
         }
         Insert: {
@@ -133,6 +134,7 @@ export type Database = {
           tipo?: string | null
           unidade_id?: string | null
           updated_at?: string
+          updated_by?: string | null
           valor_premio?: number | null
         }
         Update: {
@@ -160,6 +162,7 @@ export type Database = {
           tipo?: string | null
           unidade_id?: string | null
           updated_at?: string
+          updated_by?: string | null
           valor_premio?: number | null
         }
         Relationships: [

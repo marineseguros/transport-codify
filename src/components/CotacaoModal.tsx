@@ -905,21 +905,21 @@ export const CotacaoModal = ({
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <History className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-sm font-medium text-muted-foreground">Histórico do Cliente</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">Histórico da Cotação</h3>
               </div>
               
-              {formData.cliente_id ? (
+              {cotacao?.numero_cotacao ? (
                 (() => {
-                  const clienteHistorico = cotacoes
-                    .filter(c => c.cliente_id === formData.cliente_id && (!cotacao || c.id !== cotacao.id))
-                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                  const cotacaoHistorico = cotacoes
+                    .filter(c => c.numero_cotacao === cotacao.numero_cotacao && c.id !== cotacao.id)
+                    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
                   
-                  if (clienteHistorico.length === 0) {
+                  if (cotacaoHistorico.length === 0) {
                     return (
                       <div className="text-center py-8 border border-dashed border-muted-foreground/25 rounded-lg">
                         <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
                         <p className="text-muted-foreground mt-2">
-                          Nenhuma cotação anterior encontrada para este cliente
+                          Nenhuma versão anterior encontrada para esta cotação
                         </p>
                       </div>
                     );
@@ -928,12 +928,13 @@ export const CotacaoModal = ({
                   return (
                     <div className="space-y-3">
                       <p className="text-sm text-muted-foreground">
-                        {clienteHistorico.length} cotação(ões) anterior(es) encontrada(s)
+                        {cotacaoHistorico.length} versão(ões) anterior(es) encontrada(s)
                       </p>
                       <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {clienteHistorico.map((historicoCotacao) => {
+                        {cotacaoHistorico.map((historicoCotacao) => {
                           const seguradora = seguradoras.find(s => s.id === historicoCotacao.seguradora_id);
                           const ramo = ramos.find(r => r.id === historicoCotacao.ramo_id);
+                          const editor = historicoCotacao.editor || produtores.find(p => p.id === historicoCotacao.produtor_cotador_id);
                           const statusBadgeColor = {
                             'Em cotação': 'bg-blue-100 text-blue-800',
                             'Negócio fechado': 'bg-green-100 text-green-800',
@@ -950,9 +951,16 @@ export const CotacaoModal = ({
                                     {historicoCotacao.status}
                                   </span>
                                 </div>
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(historicoCotacao.data_cotacao).toLocaleDateString('pt-BR')}
-                                </span>
+                                <div className="flex flex-col items-end gap-1">
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(historicoCotacao.updated_at).toLocaleDateString('pt-BR')} às {new Date(historicoCotacao.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                  {editor && (
+                                    <span className="text-xs text-muted-foreground">
+                                      Editado por: <span className="font-medium">{editor.nome}</span>
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
@@ -1007,7 +1015,7 @@ export const CotacaoModal = ({
                 <div className="text-center py-8 border border-dashed border-muted-foreground/25 rounded-lg">
                   <History className="mx-auto h-8 w-8 text-muted-foreground" />
                   <p className="text-muted-foreground mt-2">
-                    Selecione um cliente para visualizar o histórico de cotações
+                    O número da cotação será gerado após salvar
                   </p>
                 </div>
               )}

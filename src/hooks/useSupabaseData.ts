@@ -89,6 +89,7 @@ export interface Cotacao {
   observacoes?: string;
   created_at: string;
   updated_at: string;
+  updated_by?: string;
   // Related data - these come from joins
   produtor_origem?: Produtor | null;
   produtor_negociador?: Produtor | null;
@@ -99,6 +100,7 @@ export interface Cotacao {
   captacao?: Captacao | null;
   status_seguradora?: StatusSeguradora | null;
   unidade?: Unidade | null;
+  editor?: Profile | null;
 }
 
 export function useProfiles() {
@@ -363,7 +365,8 @@ export function useCotacoes() {
         ramo:ramo_id(id, codigo, descricao, ativo),
         captacao:captacao_id(id, descricao, ativo),
          status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
-         unidade:unidade_id(id, codigo, descricao, ativo)
+         unidade:unidade_id(id, codigo, descricao, ativo),
+         editor:profiles!cotacoes_updated_by_fkey(id, nome, email)
       `);
   };
 
