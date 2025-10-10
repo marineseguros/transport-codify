@@ -908,7 +908,7 @@ export const CotacaoModal = ({
                 <h3 className="text-sm font-medium text-muted-foreground">Histórico da Cotação</h3>
               </div>
               
-              {cotacao?.numero_cotacao ? (
+              {mode !== 'create' && cotacao?.numero_cotacao ? (
                 (() => {
                   const cotacaoHistorico = cotacoes
                     .filter(c => c.numero_cotacao === cotacao.numero_cotacao && c.id !== cotacao.id)
