@@ -231,6 +231,96 @@ export type Database = {
           },
         ]
       }
+      cotacoes_historico: {
+        Row: {
+          captacao_id: string | null
+          change_type: string
+          changed_at: string
+          changed_by: string | null
+          cliente_id: string | null
+          comentarios: string | null
+          cotacao_id: string
+          cpf_cnpj: string
+          data_cotacao: string
+          data_fechamento: string | null
+          id: string
+          motivo_recusa: string | null
+          num_proposta: string | null
+          numero_cotacao: string
+          observacoes: string | null
+          produtor_cotador_id: string | null
+          produtor_negociador_id: string | null
+          produtor_origem_id: string | null
+          ramo_id: string | null
+          segmento: string | null
+          segurado: string
+          seguradora_id: string | null
+          status: string
+          status_seguradora_id: string | null
+          tipo: string | null
+          unidade_id: string | null
+          valor_premio: number | null
+        }
+        Insert: {
+          captacao_id?: string | null
+          change_type?: string
+          changed_at?: string
+          changed_by?: string | null
+          cliente_id?: string | null
+          comentarios?: string | null
+          cotacao_id: string
+          cpf_cnpj: string
+          data_cotacao: string
+          data_fechamento?: string | null
+          id?: string
+          motivo_recusa?: string | null
+          num_proposta?: string | null
+          numero_cotacao: string
+          observacoes?: string | null
+          produtor_cotador_id?: string | null
+          produtor_negociador_id?: string | null
+          produtor_origem_id?: string | null
+          ramo_id?: string | null
+          segmento?: string | null
+          segurado: string
+          seguradora_id?: string | null
+          status: string
+          status_seguradora_id?: string | null
+          tipo?: string | null
+          unidade_id?: string | null
+          valor_premio?: number | null
+        }
+        Update: {
+          captacao_id?: string | null
+          change_type?: string
+          changed_at?: string
+          changed_by?: string | null
+          cliente_id?: string | null
+          comentarios?: string | null
+          cotacao_id?: string
+          cpf_cnpj?: string
+          data_cotacao?: string
+          data_fechamento?: string | null
+          id?: string
+          motivo_recusa?: string | null
+          num_proposta?: string | null
+          numero_cotacao?: string
+          observacoes?: string | null
+          produtor_cotador_id?: string | null
+          produtor_negociador_id?: string | null
+          produtor_origem_id?: string | null
+          ramo_id?: string | null
+          segmento?: string | null
+          segurado?: string
+          seguradora_id?: string | null
+          status?: string
+          status_seguradora_id?: string | null
+          tipo?: string | null
+          unidade_id?: string | null
+          valor_premio?: number | null
+        }
+        Relationships: []
+      }
       produtores: {
         Row: {
           ativo: boolean

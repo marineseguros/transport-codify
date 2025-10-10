@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Plus, Trash2 } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfiles, useSeguradoras, useClientes, useCotacoes, useProdutores, useRamos, useCaptacao, useStatusSeguradora, useUnidades, type Cotacao } from '@/hooks/useSupabaseData';
+import { useProfiles, useSeguradoras, useClientes, useCotacoes, useProdutores, useRamos, useCaptacao, useStatusSeguradora, useUnidades, useCotacaoHistorico, type Cotacao } from '@/hooks/useSupabaseData';
 interface CotacaoModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -59,6 +59,7 @@ export const CotacaoModal = ({
     createCotacao,
     updateCotacao
   } = useCotacoes();
+  const { historico, loading: historicoLoading } = useCotacaoHistorico(cotacao?.id);
   const [formData, setFormData] = useState({
     cliente_id: '',
     unidade_id: '',
@@ -908,115 +909,101 @@ export const CotacaoModal = ({
                 <h3 className="text-sm font-medium text-muted-foreground">Histórico da Cotação</h3>
               </div>
               
-              {mode !== 'create' && cotacao?.numero_cotacao ? (
-                (() => {
-                  const cotacaoHistorico = cotacoes
-                    .filter(c => c.numero_cotacao === cotacao.numero_cotacao && c.id !== cotacao.id)
-                    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-                  
-                  if (cotacaoHistorico.length === 0) {
-                    return (
-                      <div className="text-center py-8 border border-dashed border-muted-foreground/25 rounded-lg">
-                        <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
-                        <p className="text-muted-foreground mt-2">
-                          Nenhuma versão anterior encontrada para esta cotação
-                        </p>
-                      </div>
-                    );
-                  }
-                  
-                  return (
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        {cotacaoHistorico.length} versão(ões) anterior(es) encontrada(s)
-                      </p>
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {cotacaoHistorico.map((historicoCotacao) => {
-                          const seguradora = seguradoras.find(s => s.id === historicoCotacao.seguradora_id);
-                          const ramo = ramos.find(r => r.id === historicoCotacao.ramo_id);
-                          const editor = produtores.find(p => p.id === historicoCotacao.produtor_cotador_id);
-                          const statusBadgeColor = {
-                            'Em cotação': 'bg-blue-100 text-blue-800',
-                            'Negócio fechado': 'bg-green-100 text-green-800',
-                            'Declinado': 'bg-red-100 text-red-800',
-                            'Em análise': 'bg-yellow-100 text-yellow-800'
-                          }[historicoCotacao.status] || 'bg-gray-100 text-gray-800';
-                          
-                          return (
-                            <div key={historicoCotacao.id} className="border rounded-lg p-4 space-y-2 bg-muted/20">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium">#{historicoCotacao.numero_cotacao}</span>
-                                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusBadgeColor}`}>
-                                    {historicoCotacao.status}
-                                  </span>
-                                </div>
-                                <div className="flex flex-col items-end gap-1">
-                                  <span className="text-xs text-muted-foreground">
-                                    {new Date(historicoCotacao.updated_at).toLocaleDateString('pt-BR')} às {new Date(historicoCotacao.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
-                                  {editor && (
-                                    <span className="text-xs text-muted-foreground">
-                                      Editado por: <span className="font-medium">{editor.nome}</span>
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                <div>
-                                  <span className="text-muted-foreground">Seguradora:</span>{' '}
-                                  <span className="font-medium">{seguradora?.nome || 'N/A'}</span>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Ramo:</span>{' '}
-                                  <span className="font-medium">{ramo?.descricao || 'N/A'}</span>
-                                </div>
-                                {historicoCotacao.segmento && (
-                                  <div>
-                                    <span className="text-muted-foreground">Segmento:</span>{' '}
-                                    <span className="font-medium">{historicoCotacao.segmento}</span>
-                                  </div>
-                                )}
-                                {historicoCotacao.valor_premio > 0 && (
-                                  <div>
-                                    <span className="text-muted-foreground">Valor do Prêmio:</span>{' '}
-                                    <span className="font-medium">
-                                      {new Intl.NumberFormat('pt-BR', {
-                                        style: 'currency',
-                                        currency: 'BRL'
-                                      }).format(historicoCotacao.valor_premio)}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {historicoCotacao.observacoes && (
-                                <div className="text-sm">
-                                  <span className="text-muted-foreground">Observações:</span>{' '}
-                                  <span className="text-muted-foreground">{historicoCotacao.observacoes}</span>
-                                </div>
-                              )}
-                              
-                              {historicoCotacao.motivo_recusa && (
-                                <div className="text-sm">
-                                  <span className="text-muted-foreground">Motivo da Recusa:</span>{' '}
-                                  <span className="text-red-600">{historicoCotacao.motivo_recusa}</span>
-                                </div>
+              {historicoLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Carregando histórico...</p>
+                </div>
+              ) : historico.length === 0 ? (
+                <div className="text-center py-8 border border-dashed border-muted-foreground/25 rounded-lg">
+                  <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
+                  <p className="text-muted-foreground mt-2">
+                    {mode === 'create' ? 'O histórico estará disponível após salvar a cotação' : 'Nenhuma versão anterior encontrada para esta cotação'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    {historico.length} versão(ões) anterior(es) encontrada(s)
+                  </p>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {historico.map((versao) => {
+                      const seguradora = seguradoras.find(s => s.id === versao.seguradora_id);
+                      const ramo = ramos.find(r => r.id === versao.ramo_id);
+                      const editor = versao.changed_by_profile || produtores.find(p => p.id === versao.produtor_cotador_id);
+                      const statusBadgeColor = {
+                        'Em cotação': 'bg-blue-100 text-blue-800',
+                        'Negócio fechado': 'bg-green-100 text-green-800',
+                        'Declinado': 'bg-red-100 text-red-800',
+                        'Em análise': 'bg-yellow-100 text-yellow-800',
+                        'Alocada Outra': 'bg-gray-100 text-gray-800'
+                      }[versao.status] || 'bg-gray-100 text-gray-800';
+                      
+                      return (
+                        <div key={versao.id} className="border rounded-lg p-4 space-y-2 bg-muted/20">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">#{versao.numero_cotacao}</span>
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusBadgeColor}`}>
+                                {versao.status}
+                              </span>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(versao.changed_at).toLocaleDateString('pt-BR')} às {new Date(versao.changed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              {editor && (
+                                <span className="text-xs text-muted-foreground">
+                                  Editado por: <span className="font-medium">{editor.nome}</span>
+                                </span>
                               )}
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()
-              ) : (
-                <div className="text-center py-8 border border-dashed border-muted-foreground/25 rounded-lg">
-                  <History className="mx-auto h-8 w-8 text-muted-foreground" />
-                  <p className="text-muted-foreground mt-2">
-                    O número da cotação será gerado após salvar
-                  </p>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Seguradora:</span>{' '}
+                              <span className="font-medium">{seguradora?.nome || 'N/A'}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Ramo:</span>{' '}
+                              <span className="font-medium">{ramo?.descricao || 'N/A'}</span>
+                            </div>
+                            {versao.segmento && (
+                              <div>
+                                <span className="text-muted-foreground">Segmento:</span>{' '}
+                                <span className="font-medium">{versao.segmento}</span>
+                              </div>
+                            )}
+                            {versao.valor_premio > 0 && (
+                              <div>
+                                <span className="text-muted-foreground">Valor do Prêmio:</span>{' '}
+                                <span className="font-medium">
+                                  {new Intl.NumberFormat('pt-BR', {
+                                    style: 'currency',
+                                    currency: 'BRL'
+                                  }).format(versao.valor_premio)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {versao.observacoes && (
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Observações:</span>{' '}
+                              <span className="text-muted-foreground">{versao.observacoes}</span>
+                            </div>
+                          )}
+                          
+                          {versao.motivo_recusa && (
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Motivo da Recusa:</span>{' '}
+                              <span className="text-red-600">{versao.motivo_recusa}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

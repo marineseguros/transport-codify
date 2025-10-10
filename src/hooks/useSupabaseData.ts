@@ -753,3 +753,48 @@ export function useCotacoesTotais() {
 
   return { cotacoes, loading, refetch: fetchAllCotacoes };
 }
+
+// Hook para buscar histórico de uma cotação específica
+export function useCotacaoHistorico(cotacaoId?: string) {
+  const [historico, setHistorico] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (cotacaoId) {
+      fetchHistorico();
+    } else {
+      setHistorico([]);
+    }
+  }, [cotacaoId]);
+
+  const fetchHistorico = async () => {
+    if (!cotacaoId) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('cotacoes_historico')
+        .select(`
+          *,
+          produtor_origem:produtor_origem_id(id, nome, email),
+          produtor_negociador:produtor_negociador_id(id, nome, email),
+          produtor_cotador:produtor_cotador_id(id, nome, email),
+          seguradora:seguradora_id(id, nome, codigo),
+          ramo:ramo_id(id, codigo, descricao),
+          changed_by_profile:profiles!cotacoes_historico_changed_by_fkey(id, nome, email)
+        `)
+        .eq('cotacao_id', cotacaoId)
+        .order('changed_at', { ascending: false });
+
+      if (error) throw error;
+      setHistorico(data || []);
+    } catch (error) {
+      console.error('Error fetching cotacao historico:', error);
+      setHistorico([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { historico, loading, refetch: fetchHistorico };
+}
