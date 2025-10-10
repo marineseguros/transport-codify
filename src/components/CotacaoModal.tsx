@@ -934,7 +934,7 @@ export const CotacaoModal = ({
                         {cotacaoHistorico.map((historicoCotacao) => {
                           const seguradora = seguradoras.find(s => s.id === historicoCotacao.seguradora_id);
                           const ramo = ramos.find(r => r.id === historicoCotacao.ramo_id);
-                          const editor = historicoCotacao.editor || produtores.find(p => p.id === historicoCotacao.produtor_cotador_id);
+                          const editor = produtores.find(p => p.id === historicoCotacao.produtor_cotador_id);
                           const statusBadgeColor = {
                             'Em cotação': 'bg-blue-100 text-blue-800',
                             'Negócio fechado': 'bg-green-100 text-green-800',

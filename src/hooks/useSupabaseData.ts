@@ -365,8 +365,7 @@ export function useCotacoes() {
         ramo:ramo_id(id, codigo, descricao, ativo),
         captacao:captacao_id(id, descricao, ativo),
          status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
-         unidade:unidade_id(id, codigo, descricao, ativo),
-         editor:profiles!cotacoes_updated_by_fkey(id, nome, email)
+         unidade:unidade_id(id, codigo, descricao, ativo)
       `);
   };
 
