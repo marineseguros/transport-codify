@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCotacoes, type Cotacao } from '@/hooks/useSupabaseData';
 import { parseCsvFile } from '@/utils/csvUtils';
 import { toast } from 'sonner';
+import { csvRowSchema } from '@/lib/validations';
 
 const Cotacoes = () => {
   const { user } = useAuth();
@@ -149,22 +150,35 @@ const Cotacoes = () => {
         
         let successCount = 0;
         let errorCount = 0;
+        const errors: string[] = [];
 
-        for (const row of csvData) {
+        for (let i = 0; i < csvData.length; i++) {
+          const row = csvData[i];
+          
+          // Validate row data using zod schema
+          const validation = csvRowSchema.safeParse(row);
+          
+          if (!validation.success) {
+            errorCount++;
+            const errorMessages = validation.error.errors.map(e => e.message).join(', ');
+            errors.push(`Linha ${i + 2}: ${errorMessages}`);
+            continue;
+          }
+
           try {
             const cotacaoData = {
-              segurado: row['Segurado'] || '',
-              cpf_cnpj: row['CNPJ'] || '',
-              segmento: row['Tipo'] || '',
-              data_cotacao: row['Data Cotação'] || new Date().toISOString().split('T')[0],
-              data_fechamento: row['Data Fechamento'] || null,
-              inicio_vigencia: row['Início Vigência'] || '',
-              fim_vigencia: row['Fim Vigência'] || '',
-              valor_premio: parseFloat(row['Valor Prêmio']) || 0,
-              status: row['Status'] || 'Em cotação',
-              observacoes: row['Observações'] || '',
-              num_apolice: row['Número Apólice'] || '',
-              motivo_recusa: row['Motivo Recusa'] || '',
+              segurado: validation.data.Segurado,
+              cpf_cnpj: validation.data.CNPJ,
+              segmento: validation.data.Tipo || '',
+              data_cotacao: validation.data['Data Cotação'] || new Date().toISOString().split('T')[0],
+              data_fechamento: validation.data['Data Fechamento'] || null,
+              inicio_vigencia: validation.data['Início Vigência'] || '',
+              fim_vigencia: validation.data['Fim Vigência'] || '',
+              valor_premio: parseFloat(validation.data['Valor Prêmio'] || '0') || 0,
+              status: validation.data.Status || 'Em cotação',
+              observacoes: validation.data.Observações || '',
+              num_apolice: validation.data['Número Apólice'] || '',
+              motivo_recusa: validation.data['Motivo Recusa'] || '',
               // Campos opcionais que podem precisar de lookup
               produtor_origem_id: null,
               produtor_negociador_id: null,
@@ -178,8 +192,8 @@ const Cotacoes = () => {
             await createCotacao(cotacaoData);
             successCount++;
           } catch (error) {
-            console.error('Erro ao criar cotação:', error);
             errorCount++;
+            errors.push(`Linha ${i + 2}: Erro ao salvar no banco de dados`);
           }
         }
 
@@ -190,6 +204,11 @@ const Cotacoes = () => {
         
         if (errorCount > 0) {
           toast.error(`${errorCount} cotação(ões) falharam na importação.`);
+          
+          // Show first few errors in console for debugging
+          if (errors.length > 0) {
+            console.warn('Erros de importação CSV:', errors.slice(0, 5));
+          }
         }
 
       } catch (error) {
