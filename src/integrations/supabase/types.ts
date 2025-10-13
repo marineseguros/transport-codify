@@ -181,6 +181,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cotacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_restricted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cotacoes_produtor_cotador_id_fkey"
             columns: ["produtor_cotador_id"]
             isOneToOne: false
@@ -516,6 +523,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
@@ -536,7 +564,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      clientes_restricted: {
+        Row: {
+          ativo: boolean | null
+          cidade: string | null
+          cpf_cnpj: string | null
+          id: string | null
+          segurado: string | null
+          uf: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          cidade?: string | null
+          cpf_cnpj?: string | null
+          id?: string | null
+          segurado?: string | null
+          uf?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          cidade?: string | null
+          cpf_cnpj?: string | null
+          id?: string | null
+          segurado?: string | null
+          uf?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_cotacao_number: {
@@ -547,12 +601,20 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }
     Enums: {
+      app_role: "admin" | "produtor" | "faturamento"
       user_role: "admin" | "faturamento" | "produtor" | "viewer"
     }
     CompositeTypes: {
@@ -681,6 +743,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "produtor", "faturamento"],
       user_role: ["admin", "faturamento", "produtor", "viewer"],
     },
   },

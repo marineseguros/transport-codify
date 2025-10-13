@@ -43,7 +43,7 @@ const Configuracoes = () => {
     });
   };
 
-  const canEdit = user?.papel === 'Administrador' || user?.papel === 'Gerente';
+  const canEdit = user?.papel === 'Administrador';
 
   return (
     <div className="space-y-6">

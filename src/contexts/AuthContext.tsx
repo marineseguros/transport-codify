@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types';
+import { loginSchema, signUpSchema } from '@/lib/validations';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -37,9 +38,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               .single();
             
             if (profile) {
+              // Fetch user roles from user_roles table
+              const { data: roles } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', session.user.id);
+              
+              // Determine primary role (admin > faturamento > produtor)
+              let primaryRole: UserRole = 'Produtor';
+              if (roles && roles.length > 0) {
+                if (roles.some(r => r.role === 'admin')) {
+                  primaryRole = 'Administrador';
+                } else if (roles.some(r => r.role === 'faturamento')) {
+                  primaryRole = 'Faturamento';
+                }
+              }
+              
               setUser({
                 ...profile,
-                papel: profile.papel as UserRole
+                papel: primaryRole
               });
             }
             setIsLoading(false);
@@ -66,13 +83,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(true);
     
     try {
+      // Validate input
+      const validationResult = loginSchema.safeParse({ email, password });
+      if (!validationResult.success) {
+        setIsLoading(false);
+        return false;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+        email: validationResult.data.email,
+        password: validationResult.data.password
       });
 
       if (error) {
-        console.error('Login error:', error.message);
         setIsLoading(false);
         return false;
       }
@@ -85,7 +108,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(false);
       return false;
     } catch (error) {
-      console.error('Login error:', error);
       setIsLoading(false);
       return false;
     }
@@ -95,15 +117,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(true);
     
     try {
+      // Validate input
+      const validationResult = signUpSchema.safeParse({ email, password, nome });
+      if (!validationResult.success) {
+        setIsLoading(false);
+        return { success: false, error: 'Dados inválidos' };
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: validationResult.data.email,
+        password: validationResult.data.password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            nome,
+            nome: validationResult.data.nome,
             papel
           }
         }
@@ -121,24 +150,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .insert([
             {
               user_id: data.user.id,
-              nome,
-              email,
+              nome: validationResult.data.nome,
+              email: validationResult.data.email,
               papel,
               ativo: true
             }
           ]);
 
         if (profileError) {
-          console.error('Profile creation error:', profileError);
           setIsLoading(false);
           return { success: false, error: 'Erro ao criar perfil do usuário' };
+        }
+
+        // Create role in user_roles table
+        const appRole = papel === 'Administrador' ? 'admin' : papel === 'Faturamento' ? 'faturamento' : 'produtor';
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([
+            {
+              user_id: data.user.id,
+              role: appRole
+            }
+          ]);
+
+        if (roleError) {
+          setIsLoading(false);
+          return { success: false, error: 'Erro ao atribuir papel ao usuário' };
         }
       }
 
       setIsLoading(false);
       return { success: true };
     } catch (error) {
-      console.error('SignUp error:', error);
       setIsLoading(false);
       return { success: false, error: 'Erro inesperado ao criar usuário' };
     }
@@ -146,13 +189,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const resetPassword = async (email: string) => {
     try {
-      // Use a URL do ambiente atual (produção ou desenvolvimento)
+      // Validate email
+      const validationResult = loginSchema.pick({ email: true }).safeParse({ email });
+      if (!validationResult.success) {
+        return { success: false, error: 'Email inválido' };
+      }
+
       const currentUrl = window.location.origin;
       const redirectUrl = `${currentUrl}/reset-password`;
       
-      console.log('Reset password redirect URL:', redirectUrl);
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(validationResult.data.email, {
         redirectTo: redirectUrl
       });
 
@@ -162,15 +208,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       return { success: true };
     } catch (error) {
-      console.error('Reset password error:', error);
       return { success: false, error: 'Erro inesperado ao solicitar redefinição de senha' };
     }
   };
 
   const updatePassword = async (password: string) => {
     try {
+      // Validate password
+      const validationResult = loginSchema.pick({ password: true }).safeParse({ password });
+      if (!validationResult.success) {
+        return { success: false, error: 'Senha deve ter no mínimo 6 caracteres' };
+      }
+
       const { error } = await supabase.auth.updateUser({
-        password: password
+        password: validationResult.data.password
       });
 
       if (error) {
@@ -179,7 +230,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       return { success: true };
     } catch (error) {
-      console.error('Update password error:', error);
       return { success: false, error: 'Erro inesperado ao atualizar senha' };
     }
   };

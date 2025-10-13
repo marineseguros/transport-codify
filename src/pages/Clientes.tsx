@@ -75,7 +75,7 @@ const Clientes = () => {
 
   const ufs = [...new Set(clientes.map(c => c.uf).filter(Boolean))].sort();
 
-  const canEdit = user?.papel !== 'Somente-Leitura';
+  const canEdit = true; // All authenticated users can edit
   const canDelete = user?.papel === 'Administrador';
 
   const handleEdit = (cliente: Cliente) => {

@@ -222,7 +222,7 @@ const Cotacoes = () => {
     }
   };
 
-  const canEdit = user?.papel !== 'Somente-Leitura';
+  const canEdit = true; // All authenticated users can edit
   const canDelete = user?.papel === 'Administrador';
 
   return (

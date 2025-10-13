@@ -55,18 +55,16 @@ const Usuarios = () => {
     const inativoUsers = 0; // No inactive users from Supabase by default
     const adminUsers = users.filter(u => u.papel === 'Administrador').length;
     const produtorUsers = users.filter(u => u.papel === 'Produtor').length;
-    const operadorUsers = users.filter(u => u.papel === 'Operador').length;
-    const leituraUsers = users.filter(u => u.papel === 'Somente-Leitura').length;
+    const faturamentoUsers = users.filter(u => u.papel === 'Faturamento').length;
     
-    return { total, ativoUsers, inativoUsers, adminUsers, produtorUsers, operadorUsers, leituraUsers };
+    return { total, ativoUsers, inativoUsers, adminUsers, produtorUsers, faturamentoUsers };
   }, [users]);
 
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'Administrador': return 'destructive';
       case 'Produtor': return 'default';
-      case 'Operador': return 'secondary';
-      case 'Somente-Leitura': return 'outline';
+      case 'Faturamento': return 'secondary';
       default: return 'secondary';
     }
   };
@@ -132,11 +130,11 @@ const Usuarios = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Operadores</CardTitle>
+            <CardTitle className="text-sm font-medium">Faturamento</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.operadorUsers}</div>
-            <p className="text-xs text-muted-foreground">Operações gerais</p>
+            <div className="text-2xl font-bold">{stats.faturamentoUsers}</div>
+            <p className="text-xs text-muted-foreground">Operações de faturamento</p>
           </CardContent>
         </Card>
       </div>
@@ -164,8 +162,7 @@ const Usuarios = () => {
                   <SelectItem value="todos">Todos os papéis</SelectItem>
                   <SelectItem value="Administrador">Administrador</SelectItem>
                   <SelectItem value="Produtor">Produtor</SelectItem>
-                  <SelectItem value="Operador">Operador</SelectItem>
-                  <SelectItem value="Somente-Leitura">Somente-Leitura</SelectItem>
+                  <SelectItem value="Faturamento">Faturamento</SelectItem>
                 </SelectContent>
               </Select>
             </div>

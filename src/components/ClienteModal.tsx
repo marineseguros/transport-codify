@@ -19,6 +19,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Cliente } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { clienteSchema } from '@/lib/validations';
 
 interface ClienteModalProps {
   cliente?: Cliente | null;
@@ -107,28 +108,14 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.segurado.trim()) {
+    // Validate with zod schema
+    const validationResult = clienteSchema.safeParse(formData);
+    
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
       toast({
-        title: "Erro",
-        description: "Nome do segurado é obrigatório",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.cpf_cnpj.trim()) {
-      toast({
-        title: "Erro",
-        description: "CPF/CNPJ é obrigatório",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!validateCpfCnpj(formData.cpf_cnpj)) {
-      toast({
-        title: "Erro",
-        description: "CPF/CNPJ inválido",
+        title: "Erro de validação",
+        description: firstError.message,
         variant: "destructive",
       });
       return;
@@ -136,12 +123,12 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
 
     try {
       const clienteData = {
-        segurado: formData.segurado.trim(),
-        cpf_cnpj: formData.cpf_cnpj.trim(),
-        email: formData.email.trim() || null,
-        telefone: formData.telefone.trim() || null,
-        cidade: formData.cidade.trim() || null,
-        uf: formData.uf || null,
+        segurado: validationResult.data.segurado,
+        cpf_cnpj: validationResult.data.cpf_cnpj,
+        email: validationResult.data.email || null,
+        telefone: validationResult.data.telefone || null,
+        cidade: validationResult.data.cidade || null,
+        uf: validationResult.data.uf || null,
       };
 
       if (cliente) {
@@ -173,7 +160,6 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
 
       onSuccess?.();
     } catch (error) {
-      console.error('Error saving cliente:', error);
       toast({
         title: "Erro",
         description: "Erro ao salvar cliente. Tente novamente.",

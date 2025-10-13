@@ -47,7 +47,7 @@ export function AppSidebar() {
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-accent-foreground";
 
-  const canAccessAdmin = user?.papel === 'Administrador' || user?.papel === 'Gerente';
+  const canAccessAdmin = user?.papel === 'Administrador';
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
