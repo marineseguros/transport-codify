@@ -770,9 +770,32 @@ export const CotacaoModal = ({
               {/* Motivo Recusa - Condicional para Status Seguradora */}
               {(() => {
               const selectedStatus = statusSeguradora.find(s => s.id === formData.status_seguradora_id);
-              return selectedStatus?.descricao?.toLowerCase().includes('recus') && <div>
-                    <Label htmlFor="motivo_recusa">Motivo da Recusa</Label>
-                    <Textarea value={formData.motivo_recusa} onChange={e => handleInputChange('motivo_recusa', e.target.value)} placeholder="Descreva o motivo da recusa..." className="min-h-[80px]" readOnly={isReadOnly} />
+              return selectedStatus?.descricao?.toLowerCase().includes('recus') && <div className="space-y-3">
+                    <Label>Motivo(s) da Recusa *</Label>
+                    <div className="flex flex-wrap gap-4">
+                      {['Sinistralidade', 'Já em cotação', 'Blacklist', 'Fora de perfil', 'Condição'].map(motivo => {
+                        const motivosArray = formData.motivo_recusa ? formData.motivo_recusa.split(',').map(m => m.trim()) : [];
+                        const isChecked = motivosArray.includes(motivo);
+                        
+                        return <div key={motivo} className="flex items-center space-x-2">
+                            <input type="checkbox" id={`motivo_recusa_${motivo}`} checked={isChecked} onChange={e => {
+                          const checked = e.target.checked;
+                          let newMotivos = [...motivosArray];
+                          
+                          if (checked) {
+                            newMotivos.push(motivo);
+                          } else {
+                            newMotivos = newMotivos.filter(m => m !== motivo);
+                          }
+                          
+                          handleInputChange('motivo_recusa', newMotivos.join(', '));
+                        }} disabled={isReadOnly} className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2" />
+                            <label htmlFor={`motivo_recusa_${motivo}`} className="text-sm cursor-pointer">
+                              {motivo}
+                            </label>
+                          </div>;
+                      })}
+                    </div>
                   </div>;
             })()}
 
