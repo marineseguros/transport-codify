@@ -84,6 +84,7 @@ export const CotacaoModal = ({
     data_fechamento: undefined as string | undefined,
     num_proposta: undefined as string | undefined,
     motivo_recusa: '',
+    motivo_declinado: '',
     comentarios: ''
   });
 
@@ -132,6 +133,7 @@ export const CotacaoModal = ({
         data_fechamento: cotacao.data_fechamento || undefined,
         num_proposta: cotacao.num_proposta || undefined,
         motivo_recusa: cotacao.motivo_recusa || '',
+        motivo_declinado: cotacao.motivo_recusa || '',
         comentarios: cotacao.comentarios || ''
       });
     } else if (isCreating) {
@@ -166,6 +168,7 @@ export const CotacaoModal = ({
         data_fechamento: undefined,
         num_proposta: undefined,
         motivo_recusa: '',
+        motivo_declinado: '',
         comentarios: ''
       });
 
@@ -343,10 +346,10 @@ export const CotacaoModal = ({
       }
     }
 
-    // Validate motivo_recusa for "Declinado" status
+    // Validate motivo_declinado for "Declinado" status
     if (formData.status === 'Declinado') {
-      if (!formData.motivo_recusa || formData.motivo_recusa.trim() === '') {
-        toast.error("Selecione pelo menos um motivo da recusa.");
+      if (!formData.motivo_declinado || formData.motivo_declinado.trim() === '') {
+        toast.error("Selecione pelo menos um motivo do declinado.");
         return;
       }
     }
@@ -396,7 +399,7 @@ export const CotacaoModal = ({
         status: formData.status,
         observacoes: validatedData.observacoes || undefined,
         comentarios: validatedData.comentarios || undefined,
-        motivo_recusa: validatedData.motivo_recusa || undefined,
+        motivo_recusa: formData.status === 'Declinado' ? formData.motivo_declinado : formData.motivo_recusa || undefined,
         data_cotacao: formData.data_cotacao,
         data_fechamento: formData.status === 'Negócio fechado' ? formData.data_fechamento : undefined,
         num_proposta: formData.status === 'Negócio fechado' ? validatedData.num_proposta : undefined
@@ -841,7 +844,7 @@ export const CotacaoModal = ({
                   <Label>Motivo(s) do Declinado *</Label>
                   <div className="flex flex-wrap gap-6 justify-between px-4">
                     {['Relacionamento', 'Condição', 'Taxa', 'Sem proposta'].map(motivo => {
-                      const motivosArray = formData.motivo_recusa ? formData.motivo_recusa.split(',').map(m => m.trim()) : [];
+                      const motivosArray = formData.motivo_declinado ? formData.motivo_declinado.split(',').map(m => m.trim()) : [];
                       const isChecked = motivosArray.includes(motivo);
                       
                       return <div key={motivo} className="flex items-center space-x-2">
@@ -855,7 +858,7 @@ export const CotacaoModal = ({
                           newMotivos = newMotivos.filter(m => m !== motivo);
                         }
                         
-                        handleInputChange('motivo_recusa', newMotivos.join(', '));
+                        handleInputChange('motivo_declinado', newMotivos.join(', '));
                       }} disabled={isReadOnly} className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2" />
                           <label htmlFor={`motivo_${motivo}`} className="text-sm cursor-pointer">
                             {motivo}
