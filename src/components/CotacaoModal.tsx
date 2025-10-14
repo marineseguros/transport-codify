@@ -772,7 +772,7 @@ export const CotacaoModal = ({
               const selectedStatus = statusSeguradora.find(s => s.id === formData.status_seguradora_id);
               return selectedStatus?.descricao?.toLowerCase().includes('recus') && <div className="space-y-3">
                     <Label>Motivo(s) da Recusa *</Label>
-                    <div className="flex flex-wrap gap-4 justify-center">
+                    <div className="flex flex-wrap gap-6 justify-between px-4">
                       {['Sinistralidade', 'Já em cotação', 'Blacklist', 'Fora de perfil', 'Condição'].map(motivo => {
                         const motivosArray = formData.motivo_recusa ? formData.motivo_recusa.split(',').map(m => m.trim()) : [];
                         const isChecked = motivosArray.includes(motivo);
@@ -839,7 +839,7 @@ export const CotacaoModal = ({
               {/* Motivos de Recusa - Checklist quando Status é "Declinado" */}
               {formData.status === 'Declinado' && <div className="space-y-3">
                   <Label>Motivo(s) do Declinado *</Label>
-                  <div className="flex flex-wrap gap-4 justify-center">
+                  <div className="flex flex-wrap gap-6 justify-between px-4">
                     {['Relacionamento', 'Condição', 'Taxa', 'Sem proposta'].map(motivo => {
                       const motivosArray = formData.motivo_recusa ? formData.motivo_recusa.split(',').map(m => m.trim()) : [];
                       const isChecked = motivosArray.includes(motivo);
