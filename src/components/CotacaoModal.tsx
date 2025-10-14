@@ -11,6 +11,7 @@ import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Plus, Tra
 import { formatCPFCNPJ } from "@/utils/csvUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfiles, useSeguradoras, useClientes, useCotacoes, useProdutores, useRamos, useCaptacao, useStatusSeguradora, useUnidades, useCotacaoHistorico, type Cotacao } from '@/hooks/useSupabaseData';
+import { cotacaoSchema } from "@/lib/validations";
 interface CotacaoModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -357,10 +358,31 @@ export const CotacaoModal = ({
         return;
       }
     }
+
+    // Validate form data with zod schema
+    const validationResult = cotacaoSchema.safeParse({
+      segurado: formData.segurado,
+      cpf_cnpj: formData.cnpj,
+      valor_premio: formData.valor_premio,
+      num_proposta: formData.num_proposta,
+      observacoes: formData.observacoes,
+      comentarios: formData.comentarios,
+      motivo_recusa: formData.motivo_recusa
+    });
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors;
+      toast.error(errors[0]?.message || 'Dados inválidos');
+      return;
+    }
+
+    // Use validated data
+    const validatedData = validationResult.data;
+
     try {
       const baseCotacaoData = {
-        segurado: formData.segurado,
-        cpf_cnpj: formData.cnpj,
+        segurado: validatedData.segurado,
+        cpf_cnpj: validatedData.cpf_cnpj,
         cliente_id: formData.cliente_id || undefined,
         unidade_id: formData.unidade_id || undefined,
         produtor_origem_id: formData.produtor_origem_id || undefined,
@@ -370,14 +392,14 @@ export const CotacaoModal = ({
         captacao_id: formData.captacao_id || undefined,
         status_seguradora_id: formData.status_seguradora_id || undefined,
         segmento: formData.segmento || undefined,
-        valor_premio: formData.valor_premio,
+        valor_premio: validatedData.valor_premio,
         status: formData.status,
-        observacoes: formData.observacoes || undefined,
-        comentarios: formData.comentarios || undefined,
-        motivo_recusa: formData.motivo_recusa || undefined,
+        observacoes: validatedData.observacoes || undefined,
+        comentarios: validatedData.comentarios || undefined,
+        motivo_recusa: validatedData.motivo_recusa || undefined,
         data_cotacao: formData.data_cotacao,
         data_fechamento: formData.status === 'Negócio fechado' ? formData.data_fechamento : undefined,
-        num_proposta: formData.status === 'Negócio fechado' ? formData.num_proposta : undefined
+        num_proposta: formData.status === 'Negócio fechado' ? validatedData.num_proposta : undefined
       };
       if (cotacao && isEditing) {
         // When editing, just update the single record
