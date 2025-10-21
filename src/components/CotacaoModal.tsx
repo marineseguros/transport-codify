@@ -675,6 +675,14 @@ export const CotacaoModal = ({
                         {formData.segmento || '-'}
                       </span>
                     </div>
+                    
+                    {formData.ramo_id && ramos.find(r => r.id === formData.ramo_id)?.ramo_agrupado && (
+                      <div className="flex items-center bg-destructive/10 rounded-md px-3 min-w-[140px] border border-destructive/20">
+                        <span className="text-sm text-destructive font-medium">
+                          {ramos.find(r => r.id === formData.ramo_id)?.ramo_agrupado}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Ramos Extras - Layout responsivo */}

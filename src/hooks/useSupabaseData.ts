@@ -47,6 +47,7 @@ export interface Ramo {
   id: string;
   codigo: string;
   descricao: string;
+  ramo_agrupado?: string;
   ativo: boolean;
 }
 
