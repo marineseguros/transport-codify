@@ -80,66 +80,66 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Dark theme - Premium modern corporate */
-    --background: 222 47% 4%;
+    /* Dark theme - Soft elegant corporate */
+    --background: 220 20% 12%;
     --foreground: 210 20% 98%;
 
-    --card: 222 47% 6%;
+    --card: 220 18% 16%;
     --card-foreground: 210 20% 98%;
 
-    --popover: 222 47% 6%;
+    --popover: 220 18% 16%;
     --popover-foreground: 210 20% 98%;
 
     /* Dark mode - Luminous professional blue */
     --primary: 205 95% 62%;
-    --primary-foreground: 222 47% 4%;
+    --primary-foreground: 220 20% 12%;
     --primary-hover: 205 95% 58%;
 
     /* Dark mode - Vibrant emerald */
     --success: 156 72% 52%;
-    --success-foreground: 222 47% 4%;
+    --success-foreground: 220 20% 12%;
     
     /* Dark mode - Warm amber */
     --warning: 35 95% 62%;
-    --warning-foreground: 222 47% 4%;
+    --warning-foreground: 220 20% 12%;
     
     /* Dark mode - Bright orange */
     --brand-orange: 28 88% 58%;
-    --brand-orange-foreground: 222 47% 4%;
+    --brand-orange-foreground: 220 20% 12%;
     
     /* Dark mode - Bright teal */
     --success-alt: 168 76% 54%;
-    --success-alt-foreground: 222 47% 4%;
+    --success-alt-foreground: 220 20% 12%;
     
     /* Dark mode - Subtle slate */
-    --quote-value: 210 17% 20%;
+    --quote-value: 220 18% 22%;
     --quote-value-foreground: 210 20% 98%;
 
     /* Dark mode - Elevated slate */
-    --secondary: 222 47% 11%;
+    --secondary: 220 18% 20%;
     --secondary-foreground: 210 20% 98%;
 
-    --muted: 222 47% 11%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 220 18% 20%;
+    --muted-foreground: 215 20% 70%;
 
-    --accent: 222 47% 11%;
+    --accent: 220 18% 20%;
     --accent-foreground: 205 95% 62%;
 
     --destructive: 0 72% 60%;
     --destructive-foreground: 210 20% 98%;
 
-    --border: 222 47% 13%;
-    --input: 222 47% 13%;
+    --border: 220 18% 24%;
+    --input: 220 18% 24%;
     --ring: 205 95% 62%;
 
-    /* Sidebar - Premium dark */
-    --sidebar-background: 222 47% 5%;
+    /* Sidebar - Soft premium dark */
+    --sidebar-background: 220 20% 14%;
     --sidebar-foreground: 210 20% 98%;
     --sidebar-primary: 205 95% 62%;
-    --sidebar-primary-foreground: 222 47% 4%;
-    --sidebar-accent: 222 47% 10%;
+    --sidebar-primary-foreground: 220 20% 12%;
+    --sidebar-accent: 220 18% 18%;
     --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 222 47% 13%;
+    --sidebar-border: 220 18% 24%;
     --sidebar-ring: 205 95% 62%;
 
     /* Dark gradients - Luminous */
