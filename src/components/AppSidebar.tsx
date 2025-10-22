@@ -20,7 +20,6 @@ import { useAuth } from "@/contexts/AuthContext";
 const menuItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Cotações", url: "/cotacoes", icon: FileText },
-  { title: "Funil", url: "/funil", icon: Kanban },
   { title: "Clientes", url: "/clientes", icon: Users },
 ];
 

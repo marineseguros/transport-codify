@@ -9,7 +9,6 @@ import { ResetPasswordForm } from "@/components/ResetPasswordForm";
 import { Layout } from "@/components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Cotacoes from "./pages/Cotacoes";
-import Funil from "./pages/Funil";
 import Clientes from "./pages/Clientes";
 import Tarefas from "./pages/Tarefas";
 import Usuarios from "./pages/Usuarios";
@@ -40,7 +39,6 @@ const AppContent = () => {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/cotacoes" element={<Cotacoes />} />
-              <Route path="/funil" element={<Funil />} />
               <Route path="/clientes" element={<Clientes />} />
               <Route path="/tarefas" element={<Tarefas />} />
               <Route path="/usuarios" element={<Usuarios />} />
