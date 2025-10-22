@@ -805,3 +805,43 @@ export function useCotacaoHistorico(cotacaoId?: string) {
 
   return { historico, loading, refetch: fetchHistorico };
 }
+
+// Hook para buscar audit log de uma cotação (histórico campo a campo)
+export function useCotacaoAuditLog(cotacaoId?: string) {
+  const [auditLog, setAuditLog] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (cotacaoId) {
+      fetchAuditLog();
+    } else {
+      setAuditLog([]);
+    }
+  }, [cotacaoId]);
+
+  const fetchAuditLog = async () => {
+    if (!cotacaoId) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('cotacoes_audit_log')
+        .select(`
+          *,
+          changed_by_profile:profiles!cotacoes_audit_log_changed_by_fkey(id, nome, email)
+        `)
+        .eq('cotacao_id', cotacaoId)
+        .order('changed_at', { ascending: false });
+
+      if (error) throw error;
+      setAuditLog(data || []);
+    } catch (error) {
+      console.error('Error fetching cotacao audit log:', error);
+      setAuditLog([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { auditLog, loading, refetch: fetchAuditLog };
+}

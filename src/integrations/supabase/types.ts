@@ -238,6 +238,42 @@ export type Database = {
           },
         ]
       }
+      cotacoes_audit_log: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          cotacao_id: string
+          created_at: string
+          field_name: string
+          id: string
+          new_value: string | null
+          numero_cotacao: string
+          old_value: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          cotacao_id: string
+          created_at?: string
+          field_name: string
+          id?: string
+          new_value?: string | null
+          numero_cotacao: string
+          old_value?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          cotacao_id?: string
+          created_at?: string
+          field_name?: string
+          id?: string
+          new_value?: string | null
+          numero_cotacao?: string
+          old_value?: string | null
+        }
+        Relationships: []
+      }
       cotacoes_historico: {
         Row: {
           captacao_id: string | null

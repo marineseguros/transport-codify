@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Plus, Trash2 } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfiles, useSeguradoras, useClientes, useCotacoes, useProdutores, useRamos, useCaptacao, useStatusSeguradora, useUnidades, useCotacaoHistorico, type Cotacao } from '@/hooks/useSupabaseData';
+import { useProfiles, useSeguradoras, useClientes, useCotacoes, useProdutores, useRamos, useCaptacao, useStatusSeguradora, useUnidades, useCotacaoHistorico, useCotacaoAuditLog, type Cotacao } from '@/hooks/useSupabaseData';
 import { cotacaoSchema } from "@/lib/validations";
 interface CotacaoModalProps {
   isOpen: boolean;
@@ -66,6 +66,7 @@ export const CotacaoModal = ({
     updateCotacao
   } = useCotacoes();
   const { historico, loading: historicoLoading } = useCotacaoHistorico(cotacao?.id);
+  const { auditLog, loading: auditLogLoading } = useCotacaoAuditLog(cotacao?.id);
   const [formData, setFormData] = useState({
     cliente_id: '',
     unidade_id: '',
@@ -953,103 +954,74 @@ export const CotacaoModal = ({
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <History className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-sm font-medium text-muted-foreground">Histórico da Cotação</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">Histórico de Alterações</h3>
               </div>
               
-              {historicoLoading ? (
+              {auditLogLoading ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">Carregando histórico...</p>
                 </div>
-              ) : historico.length === 0 ? (
+              ) : auditLog.length === 0 ? (
                 <div className="text-center py-8 border border-dashed border-muted-foreground/25 rounded-lg">
                   <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
                   <p className="text-muted-foreground mt-2">
-                    {mode === 'create' ? 'O histórico estará disponível após salvar a cotação' : 'Nenhuma versão anterior encontrada para esta cotação'}
+                    {mode === 'create' ? 'O histórico estará disponível após salvar a cotação' : 'Nenhuma alteração registrada para esta cotação'}
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    {historico.length} versão(ões) anterior(es) encontrada(s)
+                    {auditLog.length} alteração(ões) registrada(s)
                   </p>
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {historico.map((versao) => {
-                      const seguradora = seguradoras.find(s => s.id === versao.seguradora_id);
-                      const ramo = ramos.find(r => r.id === versao.ramo_id);
-                      const editor = versao.changed_by_profile || produtores.find(p => p.id === versao.produtor_cotador_id);
-                      const statusBadgeColor = {
-                        'Em cotação': 'bg-blue-100 text-blue-800',
-                        'Negócio fechado': 'bg-green-100 text-green-800',
-                        'Declinado': 'bg-red-100 text-red-800',
-                        'Em análise': 'bg-yellow-100 text-yellow-800',
-                        'Alocada Outra': 'bg-gray-100 text-gray-800'
-                      }[versao.status] || 'bg-gray-100 text-gray-800';
-                      
-                      return (
-                        <div key={versao.id} className="border rounded-lg p-4 space-y-2 bg-muted/20">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">#{versao.numero_cotacao}</span>
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusBadgeColor}`}>
-                                {versao.status}
-                              </span>
-                            </div>
-                            <div className="flex flex-col items-end gap-1">
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(versao.changed_at).toLocaleDateString('pt-BR')} às {new Date(versao.changed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                              {editor && (
-                                <span className="text-xs text-muted-foreground">
-                                  Editado por: <span className="font-medium">{editor.nome}</span>
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">Seguradora:</span>{' '}
-                              <span className="font-medium">{seguradora?.nome || 'N/A'}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Ramo:</span>{' '}
-                              <span className="font-medium">{ramo?.descricao || 'N/A'}</span>
-                            </div>
-                            {versao.segmento && (
-                              <div>
-                                <span className="text-muted-foreground">Segmento:</span>{' '}
-                                <span className="font-medium">{versao.segmento}</span>
-                              </div>
-                            )}
-                            {versao.valor_premio > 0 && (
-                              <div>
-                                <span className="text-muted-foreground">Valor do Prêmio:</span>{' '}
-                                <span className="font-medium">
-                                  {new Intl.NumberFormat('pt-BR', {
-                                    style: 'currency',
-                                    currency: 'BRL'
-                                  }).format(versao.valor_premio)}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {versao.observacoes && (
-                            <div className="text-sm">
-                              <span className="text-muted-foreground">Observações:</span>{' '}
-                              <span className="text-muted-foreground">{versao.observacoes}</span>
-                            </div>
-                          )}
-                          
-                          {versao.motivo_recusa && (
-                            <div className="text-sm">
-                              <span className="text-muted-foreground">Motivo da Recusa:</span>{' '}
-                              <span className="text-red-600">{versao.motivo_recusa}</span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                  
+                  {/* Tabela de auditoria */}
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted">
+                          <tr>
+                            <th className="px-4 py-3 text-left font-medium">Data/Hora</th>
+                            <th className="px-4 py-3 text-left font-medium">Usuário</th>
+                            <th className="px-4 py-3 text-left font-medium">Campo</th>
+                            <th className="px-4 py-3 text-left font-medium">Antes</th>
+                            <th className="px-4 py-3 text-left font-medium">Depois</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {auditLog.map((log) => {
+                            const editor = log.changed_by_profile;
+                            
+                            return (
+                              <tr key={log.id} className="hover:bg-muted/50">
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  {new Date(log.changed_at).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  })}{' '}
+                                  {new Date(log.changed_at).toLocaleTimeString('pt-BR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </td>
+                                <td className="px-4 py-3">
+                                  {editor ? editor.nome : 'Sistema'}
+                                </td>
+                                <td className="px-4 py-3 font-medium">
+                                  {log.field_name}
+                                </td>
+                                <td className="px-4 py-3 text-muted-foreground max-w-xs truncate">
+                                  {log.old_value || '—'}
+                                </td>
+                                <td className="px-4 py-3 font-medium max-w-xs truncate">
+                                  {log.new_value || '—'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
