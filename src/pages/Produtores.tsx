@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Edit, Trash2, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,12 +21,18 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProdutores } from '@/hooks/useSupabaseData';
+import { ProdutorModal } from '@/components/ProdutorModal';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Produtor } from '@/types';
 
 const Produtores = () => {
   const { user } = useAuth();
-  const { produtores, loading } = useProdutores();
+  const { produtores, loading, refetch } = useProdutores();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [selectedProdutor, setSelectedProdutor] = useState<Produtor | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Only Administrators can access this page
   if (user?.papel !== 'Administrador') {
@@ -41,6 +47,46 @@ const Produtores = () => {
       </div>
     );
   }
+
+  const handleEdit = (produtor: Produtor) => {
+    setSelectedProdutor(produtor);
+    setIsModalOpen(true);
+  };
+
+  const handleNew = () => {
+    setSelectedProdutor(null);
+    setIsModalOpen(true);
+  };
+
+  const handleMoveUp = async (produtor: Produtor, currentIndex: number) => {
+    if (currentIndex === 0) return;
+    
+    const prevProdutor = filteredProdutores[currentIndex - 1];
+    
+    try {
+      await supabase.from('produtores').update({ ordem: prevProdutor.ordem }).eq('id', produtor.id);
+      await supabase.from('produtores').update({ ordem: produtor.ordem }).eq('id', prevProdutor.id);
+      toast.success('Ordem atualizada!');
+      refetch();
+    } catch (error: any) {
+      toast.error('Erro ao atualizar ordem');
+    }
+  };
+
+  const handleMoveDown = async (produtor: Produtor, currentIndex: number) => {
+    if (currentIndex === filteredProdutores.length - 1) return;
+    
+    const nextProdutor = filteredProdutores[currentIndex + 1];
+    
+    try {
+      await supabase.from('produtores').update({ ordem: nextProdutor.ordem }).eq('id', produtor.id);
+      await supabase.from('produtores').update({ ordem: produtor.ordem }).eq('id', nextProdutor.id);
+      toast.success('Ordem atualizada!');
+      refetch();
+    } catch (error: any) {
+      toast.error('Erro ao atualizar ordem');
+    }
+  };
 
   // Filter produtores based on search and filters
   const filteredProdutores = useMemo(() => {
@@ -88,7 +134,7 @@ const Produtores = () => {
           </p>
         </div>
         
-        <Button>
+        <Button onClick={handleNew}>
           <Plus className="mr-2 h-4 w-4" />
           Novo Produtor
         </Button>
@@ -191,7 +237,7 @@ const Produtores = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProdutores.map((produtor) => (
+              {filteredProdutores.map((produtor, index) => (
                 <TableRow key={produtor.id}>
                   <TableCell>
                     <code className="text-sm">-</code>
@@ -208,8 +254,24 @@ const Produtores = () => {
                     -
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex gap-2 justify-end">
-                      <Button size="sm" variant="ghost">
+                    <div className="flex gap-1 justify-end">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleMoveUp(produtor, index)}
+                        disabled={index === 0}
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleMoveDown(produtor, index)}
+                        disabled={index === filteredProdutores.length - 1}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(produtor)}>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
@@ -235,6 +297,20 @@ const Produtores = () => {
           )}
         </CardContent>
       </Card>
+
+      <ProdutorModal
+        produtor={selectedProdutor}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedProdutor(null);
+        }}
+        onSuccess={() => {
+          refetch();
+          setIsModalOpen(false);
+          setSelectedProdutor(null);
+        }}
+      />
     </div>
   );
 };

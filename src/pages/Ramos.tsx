@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Edit, Trash2, Tags } from 'lucide-react';
+import { Plus, Edit, Trash2, Tags, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,12 +21,18 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRamos } from '@/hooks/useSupabaseData';
+import { RamoModal } from '@/components/RamoModal';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Ramo } from '@/types';
 
 const Ramos = () => {
   const { user } = useAuth();
-  const { ramos, loading } = useRamos();
+  const { ramos, loading, refetch } = useRamos();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [selectedRamo, setSelectedRamo] = useState<Ramo | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Only Administrators can access this page
   if (user?.papel !== 'Administrador') {
@@ -41,6 +47,46 @@ const Ramos = () => {
       </div>
     );
   }
+
+  const handleEdit = (ramo: Ramo) => {
+    setSelectedRamo(ramo);
+    setIsModalOpen(true);
+  };
+
+  const handleNew = () => {
+    setSelectedRamo(null);
+    setIsModalOpen(true);
+  };
+
+  const handleMoveUp = async (ramo: Ramo, currentIndex: number) => {
+    if (currentIndex === 0) return;
+    
+    const prevRamo = filteredRamos[currentIndex - 1];
+    
+    try {
+      await supabase.from('ramos').update({ ordem: prevRamo.ordem }).eq('id', ramo.id);
+      await supabase.from('ramos').update({ ordem: ramo.ordem }).eq('id', prevRamo.id);
+      toast.success('Ordem atualizada!');
+      refetch();
+    } catch (error: any) {
+      toast.error('Erro ao atualizar ordem');
+    }
+  };
+
+  const handleMoveDown = async (ramo: Ramo, currentIndex: number) => {
+    if (currentIndex === filteredRamos.length - 1) return;
+    
+    const nextRamo = filteredRamos[currentIndex + 1];
+    
+    try {
+      await supabase.from('ramos').update({ ordem: nextRamo.ordem }).eq('id', ramo.id);
+      await supabase.from('ramos').update({ ordem: ramo.ordem }).eq('id', nextRamo.id);
+      toast.success('Ordem atualizada!');
+      refetch();
+    } catch (error: any) {
+      toast.error('Erro ao atualizar ordem');
+    }
+  };
 
   // Filter ramos based on search and filters
   const filteredRamos = useMemo(() => {
@@ -88,7 +134,7 @@ const Ramos = () => {
           </p>
         </div>
         
-        <Button>
+        <Button onClick={handleNew}>
           <Plus className="mr-2 h-4 w-4" />
           Novo Ramo
         </Button>
@@ -189,7 +235,7 @@ const Ramos = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRamos.map((ramo) => (
+              {filteredRamos.map((ramo, index) => (
                 <TableRow key={ramo.id}>
                   <TableCell>
                     <code className="text-sm">{ramo.codigo}</code>
@@ -204,8 +250,24 @@ const Ramos = () => {
                     -
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex gap-2 justify-end">
-                      <Button size="sm" variant="ghost">
+                    <div className="flex gap-1 justify-end">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleMoveUp(ramo, index)}
+                        disabled={index === 0}
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleMoveDown(ramo, index)}
+                        disabled={index === filteredRamos.length - 1}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(ramo)}>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
@@ -231,6 +293,20 @@ const Ramos = () => {
           )}
         </CardContent>
       </Card>
+
+      <RamoModal
+        ramo={selectedRamo}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedRamo(null);
+        }}
+        onSuccess={() => {
+          refetch();
+          setIsModalOpen(false);
+          setSelectedRamo(null);
+        }}
+      />
     </div>
   );
 };

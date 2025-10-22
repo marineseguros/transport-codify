@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Edit, Trash2, Building2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Building2, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,12 +21,18 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSeguradoras } from '@/hooks/useSupabaseData';
+import { SeguradoraModal } from '@/components/SeguradoraModal';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Seguradora } from '@/types';
 
 const Seguradoras = () => {
   const { user } = useAuth();
-  const { seguradoras, loading } = useSeguradoras();
+  const { seguradoras, loading, refetch } = useSeguradoras();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [selectedSeguradora, setSelectedSeguradora] = useState<Seguradora | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Only Administrators can access this page
   if (user?.papel !== 'Administrador') {
@@ -41,6 +47,46 @@ const Seguradoras = () => {
       </div>
     );
   }
+
+  const handleEdit = (seguradora: Seguradora) => {
+    setSelectedSeguradora(seguradora);
+    setIsModalOpen(true);
+  };
+
+  const handleNew = () => {
+    setSelectedSeguradora(null);
+    setIsModalOpen(true);
+  };
+
+  const handleMoveUp = async (seguradora: Seguradora, currentIndex: number) => {
+    if (currentIndex === 0) return;
+    
+    const prevSeguradora = filteredSeguradoras[currentIndex - 1];
+    
+    try {
+      await supabase.from('seguradoras').update({ ordem: prevSeguradora.ordem }).eq('id', seguradora.id);
+      await supabase.from('seguradoras').update({ ordem: seguradora.ordem }).eq('id', prevSeguradora.id);
+      toast.success('Ordem atualizada!');
+      refetch();
+    } catch (error: any) {
+      toast.error('Erro ao atualizar ordem');
+    }
+  };
+
+  const handleMoveDown = async (seguradora: Seguradora, currentIndex: number) => {
+    if (currentIndex === filteredSeguradoras.length - 1) return;
+    
+    const nextSeguradora = filteredSeguradoras[currentIndex + 1];
+    
+    try {
+      await supabase.from('seguradoras').update({ ordem: nextSeguradora.ordem }).eq('id', seguradora.id);
+      await supabase.from('seguradoras').update({ ordem: seguradora.ordem }).eq('id', nextSeguradora.id);
+      toast.success('Ordem atualizada!');
+      refetch();
+    } catch (error: any) {
+      toast.error('Erro ao atualizar ordem');
+    }
+  };
 
   // Filter seguradoras based on search and filters
   const filteredSeguradoras = useMemo(() => {
@@ -86,7 +132,7 @@ const Seguradoras = () => {
           </p>
         </div>
         
-        <Button>
+        <Button onClick={handleNew}>
           <Plus className="mr-2 h-4 w-4" />
           Nova Seguradora
         </Button>
@@ -187,7 +233,7 @@ const Seguradoras = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSeguradoras.map((seguradora) => (
+              {filteredSeguradoras.map((seguradora, index) => (
                 <TableRow key={seguradora.id}>
                   <TableCell>
                     <code className="text-sm">{seguradora.codigo}</code>
@@ -198,8 +244,24 @@ const Seguradoras = () => {
                   </TableCell>
                   <TableCell>-</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex gap-2 justify-end">
-                      <Button size="sm" variant="ghost">
+                    <div className="flex gap-1 justify-end">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleMoveUp(seguradora, index)}
+                        disabled={index === 0}
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleMoveDown(seguradora, index)}
+                        disabled={index === filteredSeguradoras.length - 1}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(seguradora)}>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
@@ -225,6 +287,20 @@ const Seguradoras = () => {
           )}
         </CardContent>
       </Card>
+
+      <SeguradoraModal
+        seguradora={selectedSeguradora}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedSeguradora(null);
+        }}
+        onSuccess={() => {
+          refetch();
+          setIsModalOpen(false);
+          setSelectedSeguradora(null);
+        }}
+      />
     </div>
   );
 };

@@ -18,6 +18,7 @@ export interface Produtor {
   codigo_prod?: string;
   papel: string;
   ativo: boolean;
+  ordem: number;
   created_at: string;
   updated_at: string;
 }
@@ -49,6 +50,7 @@ export interface Ramo {
   descricao: string;
   ramo_agrupado?: string;
   ativo: boolean;
+  ordem: number;
   created_at: string;
 }
 
@@ -57,6 +59,7 @@ export interface Seguradora {
   nome: string;
   codigo: string;
   ativo: boolean;
+  ordem: number;
   created_at: string;
 }
 

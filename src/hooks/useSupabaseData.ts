@@ -20,6 +20,9 @@ export interface Seguradora {
   id: string;
   nome: string;
   codigo: string;
+  ativo: boolean;
+  ordem: number;
+  created_at: string;
 }
 
 export interface Cliente {
@@ -39,8 +42,12 @@ export interface Produtor {
   nome: string;
   email: string;
   telefone?: string;
+  codigo_prod?: string;
   papel: string;
   ativo: boolean;
+  ordem: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Ramo {
@@ -49,6 +56,8 @@ export interface Ramo {
   descricao: string;
   ramo_agrupado?: string;
   ativo: boolean;
+  ordem: number;
+  created_at: string;
 }
 
 export interface Captacao {
@@ -174,7 +183,7 @@ export function useSeguradoras() {
         .from('seguradoras')
         .select('*')
         .eq('ativo', true)
-        .order('nome');
+        .order('ordem');
 
       if (error) throw error;
       setSeguradoras(data || []);
@@ -227,7 +236,7 @@ export function useProdutores() {
         .from('produtores')
         .select('*')
         .eq('ativo', true)
-        .order('nome');
+        .order('ordem');
 
       if (error) {
         console.error('Error fetching produtores:', error);
@@ -264,7 +273,7 @@ export function useRamos() {
         .from('ramos')
         .select('*')
         .eq('ativo', true)
-        .order('descricao');
+        .order('ordem');
 
       if (error) throw error;
       setRamos(data || []);

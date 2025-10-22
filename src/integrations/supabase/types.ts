@@ -336,6 +336,7 @@ export type Database = {
           email: string
           id: string
           nome: string
+          ordem: number | null
           papel: string
           telefone: string | null
           updated_at: string
@@ -347,6 +348,7 @@ export type Database = {
           email: string
           id?: string
           nome: string
+          ordem?: number | null
           papel?: string
           telefone?: string | null
           updated_at?: string
@@ -358,6 +360,7 @@ export type Database = {
           email?: string
           id?: string
           nome?: string
+          ordem?: number | null
           papel?: string
           telefone?: string | null
           updated_at?: string
@@ -404,6 +407,7 @@ export type Database = {
           created_at: string
           descricao: string
           id: string
+          ordem: number | null
           ramo_agrupado: string | null
         }
         Insert: {
@@ -412,6 +416,7 @@ export type Database = {
           created_at?: string
           descricao: string
           id?: string
+          ordem?: number | null
           ramo_agrupado?: string | null
         }
         Update: {
@@ -420,6 +425,7 @@ export type Database = {
           created_at?: string
           descricao?: string
           id?: string
+          ordem?: number | null
           ramo_agrupado?: string | null
         }
         Relationships: []
@@ -431,6 +437,7 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          ordem: number | null
         }
         Insert: {
           ativo?: boolean
@@ -438,6 +445,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome: string
+          ordem?: number | null
         }
         Update: {
           ativo?: boolean
@@ -445,6 +453,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+          ordem?: number | null
         }
         Relationships: []
       }
@@ -596,14 +605,8 @@ export type Database = {
       }
     }
     Functions: {
-      generate_cotacao_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_cotacao_number: { Args: never; Returns: string }
+      get_current_user_role: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -611,10 +614,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin_user: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "produtor" | "faturamento"
