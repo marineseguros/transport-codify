@@ -18,9 +18,9 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
-  { title: "Dashboard", url: "/", icon: Home },
-  { title: "Cotações", url: "/cotacoes", icon: FileText },
   { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Cotações", url: "/cotacoes", icon: FileText },
+  { title: "Dashboard", url: "/", icon: Home },
 ];
 
 const adminItems = [
