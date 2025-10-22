@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Produtor } from '@/types';
+import { Switch } from '@/components/ui/switch';
 
 interface ProdutorModalProps {
   produtor: Produtor | null;
@@ -21,6 +22,7 @@ export function ProdutorModal({ produtor, isOpen, onClose, onSuccess }: Produtor
     email: '',
     telefone: '',
     codigo_prod: '',
+    ativo: true,
   });
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export function ProdutorModal({ produtor, isOpen, onClose, onSuccess }: Produtor
         email: produtor.email || '',
         telefone: produtor.telefone || '',
         codigo_prod: produtor.codigo_prod || '',
+        ativo: produtor.ativo ?? true,
       });
     } else {
       setFormData({
@@ -37,6 +40,7 @@ export function ProdutorModal({ produtor, isOpen, onClose, onSuccess }: Produtor
         email: '',
         telefone: '',
         codigo_prod: '',
+        ativo: true,
       });
     }
   }, [produtor]);
@@ -55,6 +59,7 @@ export function ProdutorModal({ produtor, isOpen, onClose, onSuccess }: Produtor
             email: formData.email,
             telefone: formData.telefone,
             codigo_prod: formData.codigo_prod,
+            ativo: formData.ativo,
           })
           .eq('id', produtor.id);
 
@@ -131,6 +136,15 @@ export function ProdutorModal({ produtor, isOpen, onClose, onSuccess }: Produtor
               id="codigo_prod"
               value={formData.codigo_prod}
               onChange={(e) => setFormData({ ...formData, codigo_prod: e.target.value })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="ativo">Ativo</Label>
+            <Switch
+              id="ativo"
+              checked={formData.ativo}
+              onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
             />
           </div>
 

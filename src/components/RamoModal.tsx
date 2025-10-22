@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Ramo } from '@/types';
+import { Switch } from '@/components/ui/switch';
 
 interface RamoModalProps {
   ramo: Ramo | null;
@@ -19,6 +20,7 @@ export function RamoModal({ ramo, isOpen, onClose, onSuccess }: RamoModalProps) 
   const [formData, setFormData] = useState({
     codigo: '',
     descricao: '',
+    ativo: true,
   });
 
   useEffect(() => {
@@ -26,11 +28,13 @@ export function RamoModal({ ramo, isOpen, onClose, onSuccess }: RamoModalProps) 
       setFormData({
         codigo: ramo.codigo || '',
         descricao: ramo.descricao || '',
+        ativo: ramo.ativo ?? true,
       });
     } else {
       setFormData({
         codigo: '',
         descricao: '',
+        ativo: true,
       });
     }
   }, [ramo]);
@@ -47,6 +51,7 @@ export function RamoModal({ ramo, isOpen, onClose, onSuccess }: RamoModalProps) 
           .update({
             codigo: formData.codigo,
             descricao: formData.descricao,
+            ativo: formData.ativo,
           })
           .eq('id', ramo.id);
 
@@ -101,6 +106,15 @@ export function RamoModal({ ramo, isOpen, onClose, onSuccess }: RamoModalProps) 
               value={formData.descricao}
               onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
               required
+            />
+          </div>
+
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="ativo">Ativo</Label>
+            <Switch
+              id="ativo"
+              checked={formData.ativo}
+              onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
             />
           </div>
 

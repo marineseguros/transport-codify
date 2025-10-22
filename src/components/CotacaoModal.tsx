@@ -43,6 +43,11 @@ export const CotacaoModal = ({
   const {
     ramos
   } = useRamos();
+
+  // Filter only active items for dropdowns
+  const activeProdutores = produtores.filter(p => p.ativo);
+  const activeSeguradoras = seguradoras.filter(s => s.ativo);
+  const activeRamos = ramos.filter(r => r.ativo);
   const {
     captacao
   } = useCaptacao();
@@ -143,7 +148,7 @@ export const CotacaoModal = ({
 
       // Find current user in produtores list to set as default cotador
       // Try to match by email first, then by name if available
-      const currentUserProdutor = produtores.find(p => p.email && user?.email && p.email.toLowerCase() === user.email.toLowerCase() || p.nome && user?.nome && p.nome.toLowerCase().includes(user.nome.toLowerCase())) || produtores[0]; // Fallback to first produtor if no match
+      const currentUserProdutor = activeProdutores.find(p => p.email && user?.email && p.email.toLowerCase() === user.email.toLowerCase() || p.nome && user?.nome && p.nome.toLowerCase().includes(user.nome.toLowerCase())) || activeProdutores[0]; // Fallback to first produtor if no match
 
       setFormData({
         cliente_id: '',
@@ -533,7 +538,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o produtor origem" />
                     </SelectTrigger>
                     <SelectContent>
-                      {produtores.map(produtor => <SelectItem key={produtor.id} value={produtor.id}>
+                      {activeProdutores.map(produtor => <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
                         </SelectItem>)}
                     </SelectContent>
@@ -547,7 +552,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o produtor negociador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {produtores.map(produtor => <SelectItem key={produtor.id} value={produtor.id}>
+                      {activeProdutores.map(produtor => <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
                         </SelectItem>)}
                     </SelectContent>
@@ -561,7 +566,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione o produtor cotador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {produtores.map(produtor => <SelectItem key={produtor.id} value={produtor.id}>
+                      {activeProdutores.map(produtor => <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
                         </SelectItem>)}
                     </SelectContent>
@@ -592,7 +597,7 @@ export const CotacaoModal = ({
                       <SelectValue placeholder="Selecione a seguradora" />
                     </SelectTrigger>
                     <SelectContent>
-                      {seguradoras.map(seguradora => <SelectItem key={seguradora.id} value={seguradora.id}>
+                      {activeSeguradoras.map(seguradora => <SelectItem key={seguradora.id} value={seguradora.id}>
                           {seguradora.nome}
                         </SelectItem>)}
                     </SelectContent>
@@ -611,7 +616,7 @@ export const CotacaoModal = ({
                               <SelectValue placeholder="Seguradora" />
                             </SelectTrigger>
                             <SelectContent>
-                              {seguradoras.filter(seguradora => {
+                              {activeSeguradoras.filter(seguradora => {
                                 if (seguradora.id === seguradoraExtra.seguradora_id) return true;
                                 if (seguradora.id === formData.seguradora_id) return false;
                                 const otherSelectedSeguradoras = seguradorasExtras
@@ -664,7 +669,7 @@ export const CotacaoModal = ({
                         <SelectValue placeholder="Selecione o ramo" />
                       </SelectTrigger>
                       <SelectContent>
-                        {ramos.map(ramo => <SelectItem key={ramo.id} value={ramo.id}>
+                        {activeRamos.map(ramo => <SelectItem key={ramo.id} value={ramo.id}>
                             {ramo.descricao}
                           </SelectItem>)}
                       </SelectContent>
@@ -685,7 +690,7 @@ export const CotacaoModal = ({
                                 <SelectValue placeholder="Ramo" />
                               </SelectTrigger>
                               <SelectContent>
-                                {ramos.filter(ramo => {
+                                {activeRamos.filter(ramo => {
                                   if (ramo.id === ramoExtra.ramo_id) return true;
                                   if (ramo.id === formData.ramo_id) return false;
                                   const otherSelectedRamos = ramosExtras

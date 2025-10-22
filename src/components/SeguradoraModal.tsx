@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Seguradora } from '@/types';
+import { Switch } from '@/components/ui/switch';
 
 interface SeguradoraModalProps {
   seguradora: Seguradora | null;
@@ -19,6 +20,7 @@ export function SeguradoraModal({ seguradora, isOpen, onClose, onSuccess }: Segu
   const [formData, setFormData] = useState({
     nome: '',
     codigo: '',
+    ativo: true,
   });
 
   useEffect(() => {
@@ -26,11 +28,13 @@ export function SeguradoraModal({ seguradora, isOpen, onClose, onSuccess }: Segu
       setFormData({
         nome: seguradora.nome || '',
         codigo: seguradora.codigo || '',
+        ativo: seguradora.ativo ?? true,
       });
     } else {
       setFormData({
         nome: '',
         codigo: '',
+        ativo: true,
       });
     }
   }, [seguradora]);
@@ -47,6 +51,7 @@ export function SeguradoraModal({ seguradora, isOpen, onClose, onSuccess }: Segu
           .update({
             nome: formData.nome,
             codigo: formData.codigo,
+            ativo: formData.ativo,
           })
           .eq('id', seguradora.id);
 
@@ -101,6 +106,15 @@ export function SeguradoraModal({ seguradora, isOpen, onClose, onSuccess }: Segu
               value={formData.nome}
               onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
               required
+            />
+          </div>
+
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="ativo">Ativo</Label>
+            <Switch
+              id="ativo"
+              checked={formData.ativo}
+              onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
             />
           </div>
 
