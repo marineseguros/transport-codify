@@ -12,6 +12,9 @@ import Cotacoes from "./pages/Cotacoes";
 import Clientes from "./pages/Clientes";
 import Tarefas from "./pages/Tarefas";
 import Usuarios from "./pages/Usuarios";
+import Produtores from "./pages/Produtores";
+import Seguradoras from "./pages/Seguradoras";
+import Ramos from "./pages/Ramos";
 import Configuracoes from "./pages/Configuracoes";
 import Relatorios from "./pages/Relatorios";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -42,9 +45,9 @@ const AppContent = () => {
               <Route path="/clientes" element={<Clientes />} />
               <Route path="/tarefas" element={<Tarefas />} />
               <Route path="/usuarios" element={<Usuarios />} />
-              <Route path="/produtores" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-              <Route path="/seguradoras" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
-              <Route path="/ramos" element={<div className="p-8 text-center text-muted-foreground">Página em desenvolvimento</div>} />
+              <Route path="/produtores" element={<Produtores />} />
+              <Route path="/seguradoras" element={<Seguradoras />} />
+              <Route path="/ramos" element={<Ramos />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
               <Route path="/relatorios" element={<Relatorios />} />
               <Route path="*" element={<NotFoundPage />} />

@@ -15,9 +15,8 @@ export interface Produtor {
   nome: string;
   email?: string;
   telefone?: string;
-  regional?: string;
-  status: 'Ativo' | 'Inativo';
-  user_id?: string;
+  codigo_prod?: string;
+  papel: string;
   ativo: boolean;
   created_at: string;
   updated_at: string;
@@ -48,21 +47,17 @@ export interface Ramo {
   id: string;
   codigo: string;
   descricao: string;
-  segmento: 'EMBARCADOR' | 'TRANSPORTADOR';
+  ramo_agrupado?: string;
+  ativo: boolean;
   created_at: string;
-  updated_at: string;
 }
 
 export interface Seguradora {
   id: string;
   nome: string;
   codigo: string;
-  cnpj?: string;
-  telefone?: string;
-  email?: string;
-  status: 'Ativa' | 'Inativa';
+  ativo: boolean;
   created_at: string;
-  updated_at: string;
 }
 
 export interface Captacao {
