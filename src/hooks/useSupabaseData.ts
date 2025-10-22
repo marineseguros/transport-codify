@@ -845,3 +845,37 @@ export function useCotacaoAuditLog(cotacaoId?: string) {
 
   return { auditLog, loading, refetch: fetchAuditLog };
 }
+
+// Hook para buscar TODO o audit log (de todas as cotações)
+export function useAllCotacoesAuditLog() {
+  const [auditLog, setAuditLog] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchAllAuditLog();
+  }, []);
+
+  const fetchAllAuditLog = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('cotacoes_audit_log')
+        .select(`
+          *,
+          changed_by_profile:profiles!cotacoes_audit_log_changed_by_fkey(id, nome, email)
+        `)
+        .order('changed_at', { ascending: false })
+        .limit(1000); // Limitar a 1000 registros mais recentes
+
+      if (error) throw error;
+      setAuditLog(data || []);
+    } catch (error) {
+      console.error('Error fetching all audit logs:', error);
+      setAuditLog([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { auditLog, loading, refetch: fetchAllAuditLog };
+}

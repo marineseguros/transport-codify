@@ -7,11 +7,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, Download, Upload, Edit, Trash2, RefreshCw, FileText } from 'lucide-react';
+import { Plus, Search, Download, Upload, Edit, Trash2, RefreshCw, FileText, History } from 'lucide-react';
 import { CotacaoModal } from '@/components/CotacaoModal';
+import { HistoricoGeralModal } from '@/components/HistoricoGeralModal';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCotacoes, type Cotacao } from '@/hooks/useSupabaseData';
+import { useCotacoes, useAllCotacoesAuditLog, type Cotacao } from '@/hooks/useSupabaseData';
 import { parseCsvFile } from '@/utils/csvUtils';
 import { toast } from 'sonner';
 import { csvRowSchema } from '@/lib/validations';
@@ -51,6 +52,10 @@ const Cotacoes = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [cotacaoToDelete, setCotacaoToDelete] = useState<string | null>(null);
   const [massDeleteDialogOpen, setMassDeleteDialogOpen] = useState(false);
+  const [historicoGeralOpen, setHistoricoGeralOpen] = useState(false);
+  
+  // Hook para buscar todo o histórico de alterações
+  const { auditLog, loading: auditLogLoading } = useAllCotacoesAuditLog();
 
   // Get unique produtores for filter from all loaded cotacoes
   const produtores = useMemo(() => {
@@ -282,6 +287,14 @@ const Cotacoes = () => {
               Excluir Selecionadas ({selectedIds.size})
             </Button>
           )}
+          <Button 
+            onClick={() => setHistoricoGeralOpen(true)} 
+            variant="outline"
+            className="gap-2"
+          >
+            <History className="h-4 w-4" />
+            Histórico Geral
+          </Button>
           <Button onClick={handleNewCotacao} className="gap-2">
             <Plus className="h-4 w-4" />
             Nova Cotação
@@ -497,6 +510,14 @@ const Cotacoes = () => {
         cotacao={selectedCotacao || undefined}
         mode={selectedCotacao ? 'edit' : 'create'}
         onSaved={() => refetch()}
+      />
+
+      {/* Histórico Geral Modal */}
+      <HistoricoGeralModal
+        open={historicoGeralOpen}
+        onOpenChange={setHistoricoGeralOpen}
+        auditLog={auditLog}
+        loading={auditLogLoading}
       />
 
       {/* Delete Confirmation Dialog */}
