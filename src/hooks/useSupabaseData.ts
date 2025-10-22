@@ -182,7 +182,6 @@ export function useSeguradoras() {
       const { data, error } = await supabase
         .from('seguradoras')
         .select('*')
-        .eq('ativo', true)
         .order('ordem');
 
       if (error) throw error;
@@ -235,7 +234,6 @@ export function useProdutores() {
       const { data, error } = await supabase
         .from('produtores')
         .select('*')
-        .eq('ativo', true)
         .order('ordem');
 
       if (error) {
@@ -272,7 +270,6 @@ export function useRamos() {
       const { data, error } = await supabase
         .from('ramos')
         .select('*')
-        .eq('ativo', true)
         .order('ordem');
 
       if (error) throw error;
