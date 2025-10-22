@@ -9,132 +9,142 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 220 23% 97%;
-    --foreground: 215 25% 15%;
+    /* Light theme - Modern elegant corporate */
+    --background: 210 20% 98%;
+    --foreground: 220 13% 13%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 220 13% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 220 13% 13%;
 
-    /* Marine Seguros corporate colors */
-    --primary: 190 80% 45%; /* Marine turquoise */
+    /* Marine Seguros - Refined corporate blue */
+    --primary: 205 87% 48%; /* Deep professional blue */
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 190 80% 40%;
+    --primary-hover: 205 87% 43%;
 
-    /* Success green for positive metrics */
-    --success: 142 76% 36%;
+    /* Success - Modern emerald green */
+    --success: 156 72% 40%;
     --success-foreground: 0 0% 100%;
     
-    /* Warning amber for pending items */
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    /* Warning - Sophisticated amber */
+    --warning: 35 95% 55%;
+    --warning-foreground: 220 13% 13%;
     
-    /* Custom brand orange */
-    --brand-orange: 38 85% 44%;
+    /* Brand orange - Refined */
+    --brand-orange: 28 88% 52%;
     --brand-orange-foreground: 0 0% 100%;
     
-    /* Success green variant for Negócio Fechado */
-    --success-alt: 142 77% 47%;
+    /* Success variant - Fresh teal */
+    --success-alt: 168 76% 42%;
     --success-alt-foreground: 0 0% 100%;
     
-    /* Quote value color */
-    --quote-value: 214 25% 91%;
-    --quote-value-foreground: 215 25% 15%;
+    /* Quote value - Subtle slate */
+    --quote-value: 210 17% 93%;
+    --quote-value-foreground: 220 13% 13%;
 
-    /* Marine secondary colors */
-    --secondary: 190 30% 95%;
-    --secondary-foreground: 190 80% 25%;
+    /* Secondary - Light elegant slate */
+    --secondary: 210 17% 95%;
+    --secondary-foreground: 220 13% 13%;
 
-    --muted: 190 30% 95%;
-    --muted-foreground: 190 20% 47%;
+    --muted: 210 17% 95%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 190 30% 95%;
-    --accent-foreground: 190 80% 25%;
+    --accent: 205 50% 95%;
+    --accent-foreground: 205 87% 35%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 190 30% 88%;
-    --input: 190 30% 88%;
-    --ring: 190 80% 45%;
+    --border: 214 20% 90%;
+    --input: 214 20% 90%;
+    --ring: 205 87% 48%;
 
     --radius: 0.75rem;
 
-    /* Marine sidebar colors */
-    --sidebar-background: 190 30% 95%;
-    --sidebar-foreground: 190 80% 25%;
-    --sidebar-primary: 190 80% 45%;
+    /* Sidebar - Clean modern */
+    --sidebar-background: 210 20% 98%;
+    --sidebar-foreground: 220 13% 13%;
+    --sidebar-primary: 205 87% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 190 30% 88%;
-    --sidebar-accent-foreground: 190 80% 25%;
-    --sidebar-border: 190 30% 85%;
-    --sidebar-ring: 190 80% 45%;
+    --sidebar-accent: 210 17% 95%;
+    --sidebar-accent-foreground: 220 13% 13%;
+    --sidebar-border: 214 20% 90%;
+    --sidebar-ring: 205 87% 48%;
 
-    /* Marine gradients and effects */
-    --gradient-primary: linear-gradient(135deg, hsl(190, 80%, 45%), hsl(180, 70%, 55%));
-    --shadow-elegant: 0 10px 30px -10px hsl(190 80% 45% / 0.15);
+    /* Gradients and effects - Refined */
+    --gradient-primary: linear-gradient(135deg, hsl(205, 87%, 48%), hsl(195, 82%, 52%));
+    --shadow-elegant: 0 4px 24px -4px hsl(205 87% 48% / 0.1), 0 8px 16px -8px hsl(205 87% 48% / 0.08);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    --background: 215 28% 7%;
-    --foreground: 213 31% 91%;
+    /* Dark theme - Premium modern corporate */
+    --background: 222 47% 4%;
+    --foreground: 210 20% 98%;
 
-    --card: 215 28% 9%;
-    --card-foreground: 213 31% 91%;
+    --card: 222 47% 6%;
+    --card-foreground: 210 20% 98%;
 
-    --popover: 215 28% 9%;
-    --popover-foreground: 213 31% 91%;
+    --popover: 222 47% 6%;
+    --popover-foreground: 210 20% 98%;
 
-    /* Dark mode Marine colors */
-    --primary: 190 70% 55%;
-    --primary-foreground: 215 28% 7%;
-    --primary-hover: 190 70% 50%;
+    /* Dark mode - Luminous professional blue */
+    --primary: 205 95% 62%;
+    --primary-foreground: 222 47% 4%;
+    --primary-hover: 205 95% 58%;
 
-    --success: 142 76% 46%;
-    --success-foreground: 215 28% 7%;
+    /* Dark mode - Vibrant emerald */
+    --success: 156 72% 52%;
+    --success-foreground: 222 47% 4%;
     
-    --warning: 38 92% 60%;
-    --warning-foreground: 215 28% 7%;
+    /* Dark mode - Warm amber */
+    --warning: 35 95% 62%;
+    --warning-foreground: 222 47% 4%;
     
-    --brand-orange: 38 85% 54%;
-    --brand-orange-foreground: 215 28% 7%;
+    /* Dark mode - Bright orange */
+    --brand-orange: 28 88% 58%;
+    --brand-orange-foreground: 222 47% 4%;
     
-    --success-alt: 142 77% 57%;
-    --success-alt-foreground: 215 28% 7%;
+    /* Dark mode - Bright teal */
+    --success-alt: 168 76% 54%;
+    --success-alt-foreground: 222 47% 4%;
     
-    --quote-value: 214 25% 81%;
-    --quote-value-foreground: 213 31% 91%;
+    /* Dark mode - Subtle slate */
+    --quote-value: 210 17% 20%;
+    --quote-value-foreground: 210 20% 98%;
 
-    --secondary: 215 28% 15%;
-    --secondary-foreground: 213 31% 91%;
+    /* Dark mode - Elevated slate */
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 210 20% 98%;
 
-    --muted: 215 28% 15%;
-    --muted-foreground: 217 19% 55%;
+    --muted: 222 47% 11%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 215 28% 15%;
-    --accent-foreground: 213 31% 91%;
+    --accent: 222 47% 11%;
+    --accent-foreground: 205 95% 62%;
 
-    --destructive: 0 84% 65%;
-    --destructive-foreground: 213 31% 91%;
+    --destructive: 0 72% 60%;
+    --destructive-foreground: 210 20% 98%;
 
-    --border: 215 28% 18%;
-    --input: 215 28% 18%;
-    --ring: 214 84% 55%;
+    --border: 222 47% 13%;
+    --input: 222 47% 13%;
+    --ring: 205 95% 62%;
 
-    --sidebar-background: 215 28% 8%;
-    --sidebar-foreground: 213 31% 88%;
-    --sidebar-primary: 190 70% 55%;
-    --sidebar-primary-foreground: 215 28% 7%;
-    --sidebar-accent: 215 28% 12%;
-    --sidebar-accent-foreground: 213 31% 88%;
-    --sidebar-border: 215 28% 15%;
-    --sidebar-ring: 190 70% 55%;
+    /* Sidebar - Premium dark */
+    --sidebar-background: 222 47% 5%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 205 95% 62%;
+    --sidebar-primary-foreground: 222 47% 4%;
+    --sidebar-accent: 222 47% 10%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 222 47% 13%;
+    --sidebar-ring: 205 95% 62%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(190, 70%, 55%), hsl(180, 60%, 65%));
-    --shadow-elegant: 0 10px 30px -10px hsl(190 70% 55% / 0.25);
+    /* Dark gradients - Luminous */
+    --gradient-primary: linear-gradient(135deg, hsl(205, 95%, 62%), hsl(195, 90%, 65%));
+    --shadow-elegant: 0 4px 24px -4px hsl(205 95% 62% / 0.25), 0 8px 16px -8px hsl(205 95% 62% / 0.15);
   }
 }
 
