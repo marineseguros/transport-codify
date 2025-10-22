@@ -93,7 +93,9 @@ const Seguradoras = () => {
     return seguradoras.filter(seguradora => {
       const matchesSearch = seguradora.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            seguradora.codigo.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === '' || statusFilter === 'todos' || statusFilter === 'ativo';
+      const matchesStatus = statusFilter === '' || statusFilter === 'todos' || 
+                           (statusFilter === 'ativo' && seguradora.ativo) ||
+                           (statusFilter === 'inativo' && !seguradora.ativo);
       
       return matchesSearch && matchesStatus;
     });
