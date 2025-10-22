@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, UserRole } from '@/types';
 import { loginSchema, signUpSchema } from '@/lib/validations';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -21,6 +22,52 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastActivity, setLastActivity] = useState<number>(Date.now());
+
+  const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutos em milissegundos
+
+  const updateActivity = useCallback(() => {
+    setLastActivity(Date.now());
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+  }, []);
+
+  // Monitorar inatividade
+  useEffect(() => {
+    if (!session) return;
+
+    const checkInactivity = setInterval(() => {
+      const inactiveTime = Date.now() - lastActivity;
+      
+      if (inactiveTime >= INACTIVITY_TIMEOUT) {
+        toast.error('Sessão expirada por inatividade');
+        logout();
+      }
+    }, 60000); // Verifica a cada minuto
+
+    return () => clearInterval(checkInactivity);
+  }, [session, lastActivity, logout, INACTIVITY_TIMEOUT]);
+
+  // Monitorar atividade do usuário
+  useEffect(() => {
+    if (!session) return;
+
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
+    
+    events.forEach(event => {
+      window.addEventListener(event, updateActivity);
+    });
+
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, updateActivity);
+      });
+    };
+  }, [session, updateActivity]);
 
   useEffect(() => {
     // Set up auth state listener
@@ -29,6 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         
         if (session?.user) {
+          updateActivity(); // Reset activity on auth change
           // Defer profile fetching to avoid conflicts
           setTimeout(async () => {
             const { data: profile } = await supabase
@@ -77,7 +125,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [updateActivity]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
@@ -234,11 +282,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-  };
 
   return (
     <AuthContext.Provider value={{ user, session, login, signUp, logout, resetPassword, updatePassword, isLoading }}>
