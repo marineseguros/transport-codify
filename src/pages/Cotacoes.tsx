@@ -241,8 +241,24 @@ const Cotacoes = () => {
     }
   };
 
-  const canEdit = true; // All authenticated users can edit
-  const canDelete = user?.papel === 'Administrador';
+  // Todos os usuários autenticados podem editar
+  const canEdit = true;
+  
+  // Verifica se o usuário pode excluir qualquer cotação
+  const canDeleteAny = ['Administrador', 'Gerente', 'CEO', 'Faturamento'].includes(user?.papel || '');
+  
+  // Função para verificar se o produtor pode excluir uma cotação específica
+  const canProducerDeleteCotacao = (cotacao: Cotacao) => {
+    if (user?.papel !== 'Produtor') return false;
+    
+    // Verifica se o produtor é o criador da cotação
+    const userEmail = user?.email;
+    return (
+      cotacao.produtor_origem?.email === userEmail ||
+      cotacao.produtor_negociador?.email === userEmail ||
+      cotacao.produtor_cotador?.email === userEmail
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -256,7 +272,7 @@ const Cotacoes = () => {
         </div>
         
         <div className="flex gap-3">
-          {canDelete && selectedIds.size > 0 && (
+          {canDeleteAny && selectedIds.size > 0 && (
             <Button 
               onClick={handleMassDeleteClick} 
               variant="destructive" 
@@ -266,12 +282,10 @@ const Cotacoes = () => {
               Excluir Selecionadas ({selectedIds.size})
             </Button>
           )}
-          {canEdit && (
-            <Button onClick={handleNewCotacao} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Nova Cotação
-            </Button>
-          )}
+          <Button onClick={handleNewCotacao} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nova Cotação
+          </Button>
         </div>
       </div>
 
@@ -338,7 +352,7 @@ const Cotacoes = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                {canDelete && (
+                {canDeleteAny && (
                   <TableHead className="w-12">
                     <Checkbox 
                       checked={selectedIds.size === cotacoes.length && cotacoes.length > 0}
@@ -355,59 +369,59 @@ const Cotacoes = () => {
                 <TableHead>Valor</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Data</TableHead>
-                {canEdit && (
-                  <TableHead className="text-right">Ações</TableHead>
-                )}
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cotacoes.map((cotacao) => (
-                <TableRow key={cotacao.id}>
-                  {canDelete && (
-                    <TableCell>
-                      <Checkbox 
-                        checked={selectedIds.has(cotacao.id)}
-                        onCheckedChange={() => toggleSelect(cotacao.id)}
-                      />
+              {cotacoes.map((cotacao) => {
+                const canDeleteThisCotacao = canDeleteAny || canProducerDeleteCotacao(cotacao);
+                
+                return (
+                  <TableRow key={cotacao.id}>
+                    {canDeleteAny && (
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedIds.has(cotacao.id)}
+                          onCheckedChange={() => toggleSelect(cotacao.id)}
+                        />
+                      </TableCell>
+                    )}
+                    <TableCell className="font-mono">
+                      {cotacao.numero_cotacao}
                     </TableCell>
-                  )}
-                  <TableCell className="font-mono">
-                    {cotacao.numero_cotacao}
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{cotacao.segurado}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {cotacao.cpf_cnpj}
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{cotacao.segurado}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {cotacao.cpf_cnpj}
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                   <TableCell>
-                     {cotacao.produtor_cotador?.nome || 'Não informado'}
-                   </TableCell>
-                  <TableCell>
-                    {cotacao.seguradora?.nome || '-'}
-                  </TableCell>
-                  <TableCell>
-                    {cotacao.ramo?.descricao || '-'}
-                  </TableCell>
-                  <TableCell>
-                    {cotacao.segmento ? (
-                      <Badge variant="outline">{cotacao.segmento}</Badge>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell className="font-mono">
-                    {formatCurrency(cotacao.valor_premio)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(cotacao.status)}>
-                      {cotacao.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {formatDate(cotacao.data_cotacao)}
-                  </TableCell>
-                  {canEdit && (
+                    </TableCell>
+                    <TableCell>
+                      {cotacao.produtor_cotador?.nome || 'Não informado'}
+                    </TableCell>
+                    <TableCell>
+                      {cotacao.seguradora?.nome || '-'}
+                    </TableCell>
+                    <TableCell>
+                      {cotacao.ramo?.descricao || '-'}
+                    </TableCell>
+                    <TableCell>
+                      {cotacao.segmento ? (
+                        <Badge variant="outline">{cotacao.segmento}</Badge>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      {formatCurrency(cotacao.valor_premio)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(cotacao.status)}>
+                        {cotacao.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {formatDate(cotacao.data_cotacao)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
                         <Button
@@ -417,7 +431,7 @@ const Cotacoes = () => {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        {canDelete && (
+                        {canDeleteThisCotacao && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -429,9 +443,9 @@ const Cotacoes = () => {
                         )}
                       </div>
                     </TableCell>
-                  )}
-                </TableRow>
-              ))}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
 
