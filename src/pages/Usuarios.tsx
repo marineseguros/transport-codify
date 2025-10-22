@@ -21,8 +21,9 @@ const Usuarios = () => {
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // Only Administrators can access this page
-  if (user?.papel !== 'Administrador') {
+  // Only Administrators, Managers and CEOs can access this page
+  const isAdminRole = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
+  if (!isAdminRole) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -53,16 +54,20 @@ const Usuarios = () => {
     const total = users.length;
     const ativoUsers = users.length; // All users are considered active
     const inativoUsers = 0; // No inactive users from Supabase by default
-    const adminUsers = users.filter(u => u.papel === 'Administrador').length;
+    const adminUsers = users.filter(u => ['Administrador', 'Gerente', 'CEO'].includes(u.papel)).length;
     const produtorUsers = users.filter(u => u.papel === 'Produtor').length;
+    const operacionalUsers = users.filter(u => u.papel === 'Operacional').length;
     const faturamentoUsers = users.filter(u => u.papel === 'Faturamento').length;
     
-    return { total, ativoUsers, inativoUsers, adminUsers, produtorUsers, faturamentoUsers };
+    return { total, ativoUsers, inativoUsers, adminUsers, produtorUsers, operacionalUsers, faturamentoUsers };
   }, [users]);
 
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'Administrador': return 'destructive';
+      case 'Gerente': return 'destructive';
+      case 'CEO': return 'destructive';
+      case 'Operacional': return 'default';
       case 'Produtor': return 'default';
       case 'Faturamento': return 'secondary';
       default: return 'secondary';
@@ -97,7 +102,7 @@ const Usuarios = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
@@ -110,11 +115,11 @@ const Usuarios = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Administradores</CardTitle>
+            <CardTitle className="text-sm font-medium">Gestão</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.adminUsers}</div>
-            <p className="text-xs text-muted-foreground">Acesso total</p>
+            <p className="text-xs text-muted-foreground">Admin/Gerente/CEO</p>
           </CardContent>
         </Card>
 
@@ -130,11 +135,21 @@ const Usuarios = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Operacional</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.operacionalUsers}</div>
+            <p className="text-xs text-muted-foreground">Suporte operacional</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Faturamento</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.faturamentoUsers}</div>
-            <p className="text-xs text-muted-foreground">Operações de faturamento</p>
+            <p className="text-xs text-muted-foreground">Operações financeiras</p>
           </CardContent>
         </Card>
       </div>
@@ -161,6 +176,9 @@ const Usuarios = () => {
                 <SelectContent>
                   <SelectItem value="todos">Todos os papéis</SelectItem>
                   <SelectItem value="Administrador">Administrador</SelectItem>
+                  <SelectItem value="Gerente">Gerente</SelectItem>
+                  <SelectItem value="CEO">CEO</SelectItem>
+                  <SelectItem value="Operacional">Operacional</SelectItem>
                   <SelectItem value="Produtor">Produtor</SelectItem>
                   <SelectItem value="Faturamento">Faturamento</SelectItem>
                 </SelectContent>
