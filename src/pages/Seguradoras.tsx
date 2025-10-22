@@ -30,7 +30,7 @@ const Seguradoras = () => {
   const { user } = useAuth();
   const { seguradoras, loading, refetch } = useSeguradoras();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('todos');
   const [selectedSeguradora, setSelectedSeguradora] = useState<Seguradora | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -104,8 +104,8 @@ const Seguradoras = () => {
   // Calculate stats
   const stats = useMemo(() => {
     const total = seguradoras.length;
-    const ativas = seguradoras.length; // All are active from Supabase
-    const inativas = 0;
+    const ativas = seguradoras.filter(s => s.ativo).length;
+    const inativas = seguradoras.filter(s => !s.ativo).length;
     
     return { total, ativas, inativas };
   }, [seguradoras]);
@@ -242,7 +242,9 @@ const Seguradoras = () => {
                   </TableCell>
                   <TableCell className="font-medium">{seguradora.nome}</TableCell>
                   <TableCell>
-                    <Badge variant="success-alt">Ativa</Badge>
+                    <Badge variant={seguradora.ativo ? "success-alt" : "secondary"}>
+                      {seguradora.ativo ? 'Ativa' : 'Inativa'}
+                    </Badge>
                   </TableCell>
                   <TableCell>-</TableCell>
                   <TableCell className="text-right">

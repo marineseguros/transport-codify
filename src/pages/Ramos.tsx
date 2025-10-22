@@ -30,7 +30,7 @@ const Ramos = () => {
   const { user } = useAuth();
   const { ramos, loading, refetch } = useRamos();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('todos');
   const [selectedRamo, setSelectedRamo] = useState<Ramo | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 

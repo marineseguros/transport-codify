@@ -30,7 +30,7 @@ const Produtores = () => {
   const { user } = useAuth();
   const { produtores, loading, refetch } = useProdutores();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('todos');
   const [selectedProdutor, setSelectedProdutor] = useState<Produtor | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
