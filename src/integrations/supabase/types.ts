@@ -272,7 +272,15 @@ export type Database = {
           numero_cotacao?: string
           old_value?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cotacoes_audit_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       cotacoes_historico: {
         Row: {
