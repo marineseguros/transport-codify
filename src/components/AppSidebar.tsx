@@ -18,9 +18,9 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
-  { title: "Dashboard", url: "/", icon: Home },
-  { title: "Cotações", url: "/cotacoes", icon: FileText },
   { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Cotações", url: "/cotacoes", icon: FileText },
+  { title: "Dashboard", url: "/", icon: Home },
 ];
 
 const adminItems = [
@@ -44,7 +44,7 @@ export function AppSidebar() {
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-accent-foreground";
+    isActive ? "bg-primary text-primary-foreground h-11 px-4" : "hover:bg-accent hover:text-accent-foreground h-11 px-4";
 
   const canAccessAdmin = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
 
