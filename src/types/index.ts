@@ -40,6 +40,8 @@ export interface Cliente {
   inscricao_estadual?: string;
   cidade?: string;
   uf?: string;
+  observacoes?: string;
+  captacao_id?: string;
   created_at: string;
   updated_at: string;
 }

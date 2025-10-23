@@ -20,6 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Cliente } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { clienteSchema } from '@/lib/validations';
+import { Textarea } from '@/components/ui/textarea';
+import { useCaptacao } from '@/hooks/useSupabaseData';
 
 interface ClienteModalProps {
   cliente?: Cliente | null;
@@ -41,6 +43,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
   onSuccess,
 }) => {
   const { toast } = useToast();
+  const { captacao, loading: loadingCaptacao } = useCaptacao();
   const [formData, setFormData] = useState({
     segurado: '',
     cpf_cnpj: '',
@@ -48,6 +51,8 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
     telefone: '',
     cidade: '',
     uf: '',
+    observacoes: '',
+    captacao_id: '',
   });
 
   useEffect(() => {
@@ -59,6 +64,8 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
         telefone: cliente.telefone || '',
         cidade: cliente.cidade || '',
         uf: cliente.uf || '',
+        observacoes: cliente.observacoes || '',
+        captacao_id: cliente.captacao_id || '',
       });
     } else {
       setFormData({
@@ -68,6 +75,8 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
         telefone: '',
         cidade: '',
         uf: '',
+        observacoes: '',
+        captacao_id: '',
       });
     }
   }, [cliente, isOpen]);
@@ -129,6 +138,8 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
         telefone: validationResult.data.telefone || null,
         cidade: validationResult.data.cidade || null,
         uf: validationResult.data.uf || null,
+        observacoes: validationResult.data.observacoes || null,
+        captacao_id: validationResult.data.captacao_id || null,
       };
 
       if (cliente) {
@@ -244,6 +255,39 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="captacao_id">Captação</Label>
+              <Select 
+                value={formData.captacao_id} 
+                onValueChange={(value) => handleInputChange('captacao_id', value)}
+                disabled={loadingCaptacao}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a captação" />
+                </SelectTrigger>
+                <SelectContent>
+                  {captacao
+                    .filter(c => c.ativo)
+                    .map(cap => (
+                      <SelectItem key={cap.id} value={cap.id}>
+                        {cap.descricao}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="md:col-span-2">
+              <Label htmlFor="observacoes">Informações Adicionais / Observações</Label>
+              <Textarea
+                id="observacoes"
+                value={formData.observacoes}
+                onChange={(e) => handleInputChange('observacoes', e.target.value)}
+                placeholder="Lembretes ou observações sobre o cliente..."
+                rows={3}
+              />
             </div>
           </div>
 

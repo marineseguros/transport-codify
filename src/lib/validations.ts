@@ -62,6 +62,17 @@ export const clienteSchema = z.object({
     .length(2, { message: 'UF deve ter 2 caracteres' })
     .optional()
     .or(z.literal('')),
+  observacoes: z
+    .string()
+    .trim()
+    .max(1000, { message: 'Observações devem ter no máximo 1000 caracteres' })
+    .optional()
+    .or(z.literal('')),
+  captacao_id: z
+    .string()
+    .uuid({ message: 'ID de captação inválido' })
+    .optional()
+    .or(z.literal('')),
 });
 
 // Cotação validation schema
