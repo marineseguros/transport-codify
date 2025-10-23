@@ -196,7 +196,8 @@ export const CotacaoModal = ({
           ...prev,
           cliente_id: value,
           segurado: cliente.segurado,
-          cnpj: cliente.cpf_cnpj
+          cnpj: cliente.cpf_cnpj,
+          captacao_id: cliente.captacao_id || ''
         }));
       }
       return; // Return early since we set all needed fields

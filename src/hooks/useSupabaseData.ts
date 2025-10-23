@@ -35,6 +35,8 @@ export interface Cliente {
   cidade?: string;
   uf?: string;
   cep?: string;
+  observacoes?: string;
+  captacao_id?: string;
 }
 
 export interface Produtor {
