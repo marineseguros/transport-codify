@@ -353,7 +353,7 @@ export function useCotacoes() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [produtorFilter, setProdutorFilter] = useState('');
-  const [sortBy, setSortBy] = useState('created_at');
+  const [sortBy, setSortBy] = useState('data_cotacao');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
@@ -464,13 +464,22 @@ export function useCotacoes() {
       
       let cotacoesData = (data as any[]) || [];
       
-      // Apply search filter for joined fields (seguradora and produtor names)
+      // Apply search filter for joined fields (seguradora, produtor, ramo names)
       if (searchTerm && cotacoesData.length > 0) {
         const searchLower = searchTerm.toLowerCase();
         cotacoesData = cotacoesData.filter(cotacao => {
+          // Campos já buscados no banco (segurado, numero_cotacao, cpf_cnpj)
+          const basicMatch = 
+            cotacao.segurado?.toLowerCase().includes(searchLower) ||
+            cotacao.numero_cotacao?.toLowerCase().includes(searchLower) ||
+            cotacao.cpf_cnpj?.toLowerCase().includes(searchLower);
+          
+          // Campos relacionados (joined)
           const seguradoraMatch = cotacao.seguradora?.nome?.toLowerCase().includes(searchLower);
           const produtorMatch = cotacao.produtor_cotador?.nome?.toLowerCase().includes(searchLower);
-          return seguradoraMatch || produtorMatch;
+          const ramoMatch = cotacao.ramo?.descricao?.toLowerCase().includes(searchLower);
+          
+          return basicMatch || seguradoraMatch || produtorMatch || ramoMatch;
         });
       }
       
