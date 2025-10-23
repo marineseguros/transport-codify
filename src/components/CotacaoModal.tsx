@@ -347,10 +347,7 @@ export const CotacaoModal = ({
         toast.error("Data de fechamento é obrigatória para negócios fechados.");
         return;
       }
-      if (!formData.num_proposta) {
-        toast.error("Número da proposta é obrigatório para negócios fechados.");
-        return;
-      }
+      // Número da proposta não é mais obrigatório
     }
 
     // Validate motivo_declinado for "Declinado" status
@@ -361,11 +358,13 @@ export const CotacaoModal = ({
       }
     }
 
-    // Validate dates
-    if (formData.inicio_vigencia && formData.fim_vigencia) {
-      if (new Date(formData.fim_vigencia) <= new Date(formData.inicio_vigencia)) {
-        toast.error("A data de fim da vigência deve ser posterior ao início.");
-        return;
+    // Validate dates - only required for "Negócio fechado"
+    if (formData.status === 'Negócio fechado') {
+      if (formData.inicio_vigencia && formData.fim_vigencia) {
+        if (new Date(formData.fim_vigencia) <= new Date(formData.inicio_vigencia)) {
+          toast.error("A data de fim da vigência deve ser posterior ao início.");
+          return;
+        }
       }
     }
 
