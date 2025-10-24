@@ -393,10 +393,8 @@ export function useCotacoes() {
       
       query = applyFilters(query);
       
-      // Apply search filter separately for text fields only
-      if (searchTerm) {
-        query = query.or(`segurado.ilike.%${searchTerm}%,numero_cotacao.ilike.%${searchTerm}%,cpf_cnpj.ilike.%${searchTerm}%`);
-      }
+      // Note: Search filtering is done in JavaScript after fetching data
+      // to allow searching in joined fields (seguradora, produtor, ramo)
       
       // If filtering by produtor, we need to do a more complex query
       if (produtorFilter && produtorFilter !== 'todos') {
@@ -426,6 +424,57 @@ export function useCotacoes() {
     }
   };
 
+  const getTotalCountWithSearch = async () => {
+    try {
+      let query = buildBaseQuery();
+      query = applyFilters(query);
+      
+      // Handle produtor filter
+      if (produtorFilter && produtorFilter !== 'todos') {
+        const { data: produtorData } = await supabase
+          .from('produtores')
+          .select('id')
+          .eq('nome', produtorFilter);
+        
+        if (produtorData && produtorData.length > 0) {
+          const produtorIds = produtorData.map(p => p.id);
+          query = query.in('produtor_cotador_id', produtorIds);
+        } else {
+          setTotalCount(0);
+          return;
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      
+      let cotacoesData = (data as any[]) || [];
+      
+      // Apply same search filter as main query
+      if (searchTerm && cotacoesData.length > 0) {
+        const searchLower = searchTerm.toLowerCase();
+        cotacoesData = cotacoesData.filter(cotacao => {
+          const basicMatch = 
+            cotacao.segurado?.toLowerCase().includes(searchLower) ||
+            cotacao.numero_cotacao?.toLowerCase().includes(searchLower) ||
+            cotacao.cpf_cnpj?.toLowerCase().includes(searchLower);
+          
+          const seguradoraMatch = cotacao.seguradora?.nome?.toLowerCase().includes(searchLower);
+          const produtorMatch = cotacao.produtor_cotador?.nome?.toLowerCase().includes(searchLower);
+          const ramoMatch = cotacao.ramo?.descricao?.toLowerCase().includes(searchLower);
+          
+          return basicMatch || seguradoraMatch || produtorMatch || ramoMatch;
+        });
+      }
+      
+      setTotalCount(cotacoesData.length);
+    } catch (error) {
+      console.error('Error getting total count with search:', error);
+      setTotalCount(0);
+    }
+  };
+
   const fetchCotacoes = async () => {
     try {
       setLoading(true);
@@ -435,10 +484,8 @@ export function useCotacoes() {
 
       query = applyFilters(query);
       
-      // Apply search filter for basic text fields
-      if (searchTerm) {
-        query = query.or(`segurado.ilike.%${searchTerm}%,numero_cotacao.ilike.%${searchTerm}%,cpf_cnpj.ilike.%${searchTerm}%`);
-      }
+      // Note: Search filtering is done in JavaScript after fetching data
+      // to allow searching in joined fields (seguradora, produtor, ramo)
       
       // Handle produtor filter
       if (produtorFilter && produtorFilter !== 'todos') {
@@ -468,7 +515,7 @@ export function useCotacoes() {
       if (searchTerm && cotacoesData.length > 0) {
         const searchLower = searchTerm.toLowerCase();
         cotacoesData = cotacoesData.filter(cotacao => {
-          // Campos já buscados no banco (segurado, numero_cotacao, cpf_cnpj)
+          // Campos diretos
           const basicMatch = 
             cotacao.segurado?.toLowerCase().includes(searchLower) ||
             cotacao.numero_cotacao?.toLowerCase().includes(searchLower) ||
@@ -484,6 +531,11 @@ export function useCotacoes() {
       }
       
       setCotacoes(cotacoesData);
+      
+      // Recalculate total count with search filter applied
+      if (searchTerm) {
+        await getTotalCountWithSearch();
+      }
     } catch (error) {
       console.error('Error fetching cotacoes:', error);
       setCotacoes([]);
