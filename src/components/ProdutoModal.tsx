@@ -53,16 +53,29 @@ const formSchema = z.object({
   // Campos condicionais - Indicação
   tipo_indicacao: z.enum(["Cliente", "Externa"]).optional(),
   clientes_indicados: z.array(z.object({
-    nome: z.string().min(1, "Nome é obrigatório"),
+    nome: z.string(),
   })).optional(),
   // Campos condicionais - Visita/Video
   subtipo: z.enum(["Visita", "Vídeo"]).optional(),
   cidades: z.array(z.object({
-    nome: z.string().min(1, "Nome da cidade é obrigatório"),
+    nome: z.string(),
   })).optional(),
   datas_realizadas: z.array(z.object({
     data: z.date(),
   })).optional(),
+}).refine((data) => {
+  // Se tipo é Indicação, tipo_indicacao é obrigatório
+  if (data.tipo === "Indicação" && !data.tipo_indicacao) {
+    return false;
+  }
+  // Se tipo é Visita/Video, subtipo é obrigatório
+  if (data.tipo === "Visita/Video" && !data.subtipo) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Preencha todos os campos obrigatórios",
+  path: ["tipo"],
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -460,7 +473,11 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
                           render={({ field }) => (
                             <FormItem className="flex-1">
                               <FormControl>
-                                <Input placeholder="Nome do cliente indicado" {...field} />
+                                <Input 
+                                  placeholder="Nome do cliente indicado" 
+                                  {...field}
+                                  value={field.value || ""}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -543,7 +560,11 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
                           render={({ field }) => (
                             <FormItem className="flex-1">
                               <FormControl>
-                                <Input placeholder="Nome da cidade" {...field} />
+                                <Input 
+                                  placeholder="Nome da cidade" 
+                                  {...field}
+                                  value={field.value || ""}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
