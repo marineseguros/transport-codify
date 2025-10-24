@@ -98,10 +98,10 @@ const Home = () => {
         className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 border-2 hover:border-primary"
         onClick={() => handleCardClick(item.url)}
       >
-        <CardContent className="flex flex-col items-center justify-center p-8 min-h-[180px]">
-          <Icon className="h-12 w-12 mb-4 text-primary" />
-          <h3 className="text-xl font-semibold mb-2 text-center">{item.title}</h3>
-          <p className="text-sm text-muted-foreground text-center">{item.description}</p>
+        <CardContent className="flex flex-col items-center justify-center p-6 min-h-[140px]">
+          <Icon className="h-10 w-10 mb-3 text-primary" />
+          <h3 className="text-lg font-semibold mb-1 text-center">{item.title}</h3>
+          <p className="text-xs text-muted-foreground text-center">{item.description}</p>
         </CardContent>
       </Card>
     );
@@ -139,7 +139,7 @@ const Home = () => {
         {canAccessAdmin && (
           <section>
             <h2 className="text-2xl font-semibold mb-6 text-foreground">Administração</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               {adminItems.map((item) => (
                 <MenuCard key={item.title} item={item} />
               ))}

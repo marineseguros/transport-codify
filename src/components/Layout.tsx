@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, KeyRound } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
+import { useLocation } from "react-router-dom";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,61 @@ interface LayoutProps {
 
 export const Layout = ({ children }: LayoutProps) => {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+
+  if (isHomePage) {
+    return (
+      <div className="min-h-screen flex flex-col w-full bg-background">
+        {/* Header sem sidebar */}
+        <header className="h-16 border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 flex items-center justify-between px-6">
+          <div className="flex items-center gap-4">
+            <img 
+              src="/marine-logo.png" 
+              alt="Marine Seguros Logo" 
+              className="h-8 w-auto"
+            />
+            <div>
+              <h1 className="text-lg font-semibold text-primary">Sistema de Cotações Transportes</h1>
+              <p className="text-sm text-muted-foreground">Gestão de Cotações de Transportes</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <div className="text-right">
+              <p className="text-sm font-medium">{user?.nome}</p>
+              <p className="text-xs text-muted-foreground">{user?.papel}</p>
+            </div>
+            <ChangePasswordModal>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="gap-2"
+              >
+                <KeyRound className="h-4 w-4" />
+                Alterar Senha
+              </Button>
+            </ChangePasswordModal>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={logout}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sair
+            </Button>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
