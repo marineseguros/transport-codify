@@ -2,8 +2,9 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, KeyRound } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -28,7 +29,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 className="h-8 w-auto"
               />
               <div>
-                <h1 className="text-lg font-semibold text-primary">Sistema de Cotações TRN</h1>
+                <h1 className="text-lg font-semibold text-primary">Sistema de Cotações Transportes</h1>
                 <p className="text-sm text-muted-foreground">Gestão de Cotações de Transportes</p>
               </div>
             </div>
@@ -39,6 +40,16 @@ export const Layout = ({ children }: LayoutProps) => {
                 <p className="text-sm font-medium">{user?.nome}</p>
                 <p className="text-xs text-muted-foreground">{user?.papel}</p>
               </div>
+              <ChangePasswordModal>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="gap-2"
+                >
+                  <KeyRound className="h-4 w-4" />
+                  Alterar Senha
+                </Button>
+              </ChangePasswordModal>
               <Button 
                 variant="outline" 
                 size="sm" 
