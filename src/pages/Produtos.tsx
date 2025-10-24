@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Search, Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -62,6 +63,9 @@ export default function Produtos() {
   const [searchConsultor, setSearchConsultor] = useState("");
   const [searchCidade, setSearchCidade] = useState("");
   const [filterTipo, setFilterTipo] = useState<string>("todos");
+  
+  // Seleção múltipla
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchProdutos();
@@ -154,6 +158,50 @@ export default function Produtos() {
     setFilterTipo("todos");
   };
 
+  // Seleção múltipla
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(filteredProdutos.map(p => p.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedIds([...selectedIds, id]);
+    } else {
+      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      const { error } = await supabase
+        .from("produtos")
+        .delete()
+        .in("id", selectedIds);
+
+      if (error) throw error;
+
+      toast({
+        title: `${selectedIds.length} produto(s) excluído(s) com sucesso`,
+      });
+
+      setSelectedIds([]);
+      fetchProdutos();
+    } catch (error: any) {
+      console.error("Error deleting produtos:", error);
+      toast({
+        title: "Erro ao excluir produtos",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   // Exportar para Excel
   const handleExportToExcel = () => {
     try {
@@ -225,6 +273,15 @@ export default function Produtos() {
           </p>
         </div>
         <div className="flex gap-2">
+          {selectedIds.length > 0 && (
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteSelected}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Excluir {selectedIds.length} selecionado(s)
+            </Button>
+          )}
           <Button 
             variant="outline" 
             onClick={handleExportToExcel}
@@ -241,8 +298,8 @@ export default function Produtos() {
       </div>
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 rounded-md border bg-card">
-        <div className="space-y-2">
+      <div className="flex flex-wrap items-end gap-4 p-4 rounded-md border bg-card">
+        <div className="flex-1 min-w-[200px] space-y-2">
           <label className="text-sm font-medium">Segurado</label>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -255,7 +312,7 @@ export default function Produtos() {
           </div>
         </div>
         
-        <div className="space-y-2">
+        <div className="flex-1 min-w-[200px] space-y-2">
           <label className="text-sm font-medium">Consultor</label>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -268,7 +325,7 @@ export default function Produtos() {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="flex-1 min-w-[200px] space-y-2">
           <label className="text-sm font-medium">Cidade</label>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -281,7 +338,7 @@ export default function Produtos() {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="w-[180px] space-y-2">
           <label className="text-sm font-medium">Tipo</label>
           <Select value={filterTipo} onValueChange={setFilterTipo}>
             <SelectTrigger>
@@ -297,24 +354,19 @@ export default function Produtos() {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Ações</label>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center h-10 px-3 rounded-md border bg-muted">
-              <span className="text-sm font-medium">
-                {filteredProdutos.length} de {produtos.length}
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearFilters}
-              className="w-full"
-            >
-              <X className="mr-2 h-4 w-4" />
-              Limpar Filtros
-            </Button>
+        <div className="flex items-center gap-2">
+          <div className="h-10 px-3 rounded-md border bg-muted flex items-center">
+            <span className="text-sm font-medium whitespace-nowrap">
+              {filteredProdutos.length} de {produtos.length}
+            </span>
           </div>
+          <Button
+            variant="outline"
+            onClick={handleClearFilters}
+          >
+            <X className="mr-2 h-4 w-4" />
+            Limpar
+          </Button>
         </div>
       </div>
 
@@ -322,6 +374,12 @@ export default function Produtos() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={selectedIds.length === filteredProdutos.length && filteredProdutos.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
               <TableHead className="w-12">#</TableHead>
               <TableHead>Segurado</TableHead>
               <TableHead>Consultor</TableHead>
@@ -336,7 +394,7 @@ export default function Produtos() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
+                <TableCell colSpan={10} className="text-center py-8">
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
@@ -344,13 +402,19 @@ export default function Produtos() {
               </TableRow>
             ) : filteredProdutos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   {produtos.length === 0 ? "Nenhum produto cadastrado" : "Nenhum produto encontrado com os filtros aplicados"}
                 </TableCell>
               </TableRow>
             ) : (
               filteredProdutos.map((produto, index) => (
                 <TableRow key={produto.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.includes(produto.id)}
+                      onCheckedChange={(checked) => handleSelectOne(produto.id, checked as boolean)}
+                    />
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {index + 1}
                   </TableCell>
