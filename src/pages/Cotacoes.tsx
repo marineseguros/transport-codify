@@ -354,11 +354,12 @@ const Cotacoes = () => {
         </div>
       </div>
 
-      {/* Search and Sort Controls */}
+      {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex gap-4 mb-4">
-            <div className="flex-1 relative">
+          {/* Primeira linha: Pesquisa, Ordenação e Status */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+            <div className="md:col-span-6 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Pesquisar por número, segurado, CPF/CNPJ, seguradora, ramo..."
@@ -367,44 +368,48 @@ const Cotacoes = () => {
                 className="pl-10"
               />
             </div>
-            <Select
-              value={`${sortBy}-${sortOrder}`}
-              onValueChange={(value) => {
-                const [field, order] = value.split('-');
-                setSortBy(field);
-                setSortOrder(order as 'asc' | 'desc');
-              }}
-            >
-              <SelectTrigger className="w-[220px]">
-                <SelectValue placeholder="Classificar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="segurado-asc">Nome A-Z</SelectItem>
-                <SelectItem value="segurado-desc">Nome Z-A</SelectItem>
-                <SelectItem value="valor_premio-desc">Maior Valor</SelectItem>
-                <SelectItem value="valor_premio-asc">Menor Valor</SelectItem>
-                <SelectItem value="data_cotacao-desc">Data Mais Recente</SelectItem>
-                <SelectItem value="data_cotacao-asc">Data Mais Antiga</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os Status</SelectItem>
-                {validStatuses.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="md:col-span-3">
+              <Select
+                value={`${sortBy}-${sortOrder}`}
+                onValueChange={(value) => {
+                  const [field, order] = value.split('-');
+                  setSortBy(field);
+                  setSortOrder(order as 'asc' | 'desc');
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Classificar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="segurado-asc">Nome A-Z</SelectItem>
+                  <SelectItem value="segurado-desc">Nome Z-A</SelectItem>
+                  <SelectItem value="valor_premio-desc">Maior Valor</SelectItem>
+                  <SelectItem value="valor_premio-asc">Menor Valor</SelectItem>
+                  <SelectItem value="data_cotacao-desc">Data Mais Recente</SelectItem>
+                  <SelectItem value="data_cotacao-asc">Data Mais Antiga</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-3">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Status</SelectItem>
+                  {validStatuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Filtros de Período e Produtor */}
-          <div className="flex flex-wrap gap-4 items-end border-t pt-4">
-            <div className="flex-1 min-w-[200px]">
+          {/* Segunda linha: Período, Produtor e Limpar */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 border-t pt-4">
+            <div className="md:col-span-3">
               <label className="text-sm font-medium mb-2 block">Período</label>
               <Select value={dateFilter} onValueChange={setDateFilter}>
                 <SelectTrigger>
@@ -425,35 +430,41 @@ const Cotacoes = () => {
             </div>
 
             {dateFilter === 'personalizado' && (
-              <div className="flex-1 min-w-[280px]">
+              <div className="md:col-span-4">
                 <label className="text-sm font-medium mb-2 block">Data personalizada</label>
                 <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
               </div>
             )}
 
-            <Select value={produtorFilter} onValueChange={setProdutorFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Produtor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os produtores</SelectItem>
-                {produtores.map((produtor) => (
-                  <SelectItem key={produtor} value={produtor}>
-                    {produtor}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className={dateFilter === 'personalizado' ? 'md:col-span-3' : 'md:col-span-7'}>
+              <label className="text-sm font-medium mb-2 block">Produtor</label>
+              <Select value={produtorFilter} onValueChange={setProdutorFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os produtores" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os produtores</SelectItem>
+                  {produtores.map((produtor) => (
+                    <SelectItem key={produtor} value={produtor}>
+                      {produtor}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setDateFilter('todos');
-                setDateRange(undefined);
-              }}
-            >
-              Limpar filtros
-            </Button>
+            <div className="md:col-span-2 flex items-end">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setDateFilter('todos');
+                  setDateRange(undefined);
+                }}
+                className="w-full"
+              >
+                Limpar filtros
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
