@@ -5,6 +5,7 @@ import * as z from "zod";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useProdutores } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -69,6 +70,9 @@ interface ProdutoModalProps {
 export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { produtores } = useProdutores();
+
+  const produtoresAtivos = produtores.filter(p => p.ativo);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -85,42 +89,48 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
   const tipoIndicacaoValue = form.watch("tipo_indicacao");
 
   useEffect(() => {
-    if (produto) {
-      form.reset({
-        segurado: produto.segurado || "",
-        consultor: produto.consultor || "",
-        data_registro: produto.data_registro ? new Date(produto.data_registro) : new Date(),
-        tipo: produto.tipo,
-        observacao: produto.observacao || "",
-        tipo_indicacao: produto.tipo_indicacao || undefined,
-        cliente_indicado: produto.cliente_indicado || "",
-        subtipo: produto.subtipo || undefined,
-        cidade: produto.cidade || "",
-        data_realizada: produto.data_realizada ? new Date(produto.data_realizada) : undefined,
-      });
-    } else {
-      form.reset({
-        segurado: "",
-        consultor: "",
-        data_registro: new Date(),
-        tipo: undefined,
-        observacao: "",
-        tipo_indicacao: undefined,
-        cliente_indicado: "",
-        subtipo: undefined,
-        cidade: "",
-        data_realizada: undefined,
-      });
+    if (isOpen) {
+      if (produto) {
+        form.reset({
+          segurado: produto.segurado || "",
+          consultor: produto.consultor || "",
+          data_registro: produto.data_registro ? new Date(produto.data_registro) : new Date(),
+          tipo: produto.tipo,
+          observacao: produto.observacao || "",
+          tipo_indicacao: produto.tipo_indicacao || undefined,
+          cliente_indicado: produto.cliente_indicado || "",
+          subtipo: produto.subtipo || undefined,
+          cidade: produto.cidade || "",
+          data_realizada: produto.data_realizada ? new Date(produto.data_realizada) : undefined,
+        });
+      } else {
+        form.reset({
+          segurado: "",
+          consultor: "",
+          data_registro: new Date(),
+          tipo: undefined,
+          observacao: "",
+          tipo_indicacao: undefined,
+          cliente_indicado: "",
+          subtipo: undefined,
+          cidade: "",
+          data_realizada: undefined,
+        });
+      }
     }
-  }, [produto, form]);
+  }, [isOpen, produto, form]);
 
   const onSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
 
+      // Find produtor name from ID
+      const produtorSelecionado = produtoresAtivos.find(p => p.id === data.consultor);
+      const consultorNome = produtorSelecionado?.nome || data.consultor;
+
       const produtoData: any = {
         segurado: data.segurado,
-        consultor: data.consultor,
+        consultor: consultorNome,
         data_registro: data.data_registro.toISOString(),
         tipo: data.tipo,
         observacao: data.observacao || null,
@@ -176,6 +186,7 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
         });
       }
 
+      form.reset();
       onClose(true);
     } catch (error: any) {
       console.error("Error saving produto:", error);
@@ -222,9 +233,23 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Consultor *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nome do consultor" {...field} />
-                  </FormControl>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um consultor" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {produtoresAtivos.map((produtor) => (
+                        <SelectItem key={produtor.id} value={produtor.id}>
+                          {produtor.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

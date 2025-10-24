@@ -144,6 +144,8 @@ export default function Produtos() {
               <TableHead>Consultor</TableHead>
               <TableHead>Data do Registro</TableHead>
               <TableHead>Tipo</TableHead>
+              <TableHead>Subtipo/Indicação</TableHead>
+              <TableHead>Detalhes</TableHead>
               <TableHead>Observação</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -151,7 +153,7 @@ export default function Produtos() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-8">
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
@@ -159,7 +161,7 @@ export default function Produtos() {
               </TableRow>
             ) : produtos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   Nenhum produto cadastrado
                 </TableCell>
               </TableRow>
@@ -172,6 +174,22 @@ export default function Produtos() {
                     {format(new Date(produto.data_registro), "dd/MM/yyyy", { locale: ptBR })}
                   </TableCell>
                   <TableCell>{produto.tipo}</TableCell>
+                  <TableCell>
+                    {produto.tipo === "Indicação" && produto.tipo_indicacao
+                      ? produto.tipo_indicacao
+                      : produto.tipo === "Visita/Video" && produto.subtipo
+                      ? produto.subtipo
+                      : "-"}
+                  </TableCell>
+                  <TableCell>
+                    {produto.tipo === "Indicação" && produto.cliente_indicado
+                      ? produto.cliente_indicado
+                      : produto.tipo === "Visita/Video" && produto.subtipo === "Visita" && produto.cidade
+                      ? produto.cidade
+                      : produto.tipo === "Visita/Video" && produto.subtipo === "Vídeo" && produto.data_realizada
+                      ? format(new Date(produto.data_realizada), "dd/MM/yyyy", { locale: ptBR })
+                      : "-"}
+                  </TableCell>
                   <TableCell className="max-w-xs truncate">
                     {produto.observacao || "-"}
                   </TableCell>
