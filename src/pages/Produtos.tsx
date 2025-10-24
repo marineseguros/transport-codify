@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Search, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -60,6 +60,7 @@ export default function Produtos() {
   // Filtros
   const [searchSegurado, setSearchSegurado] = useState("");
   const [searchConsultor, setSearchConsultor] = useState("");
+  const [searchCidade, setSearchCidade] = useState("");
   const [filterTipo, setFilterTipo] = useState<string>("todos");
 
   useEffect(() => {
@@ -139,10 +140,19 @@ export default function Produtos() {
   const filteredProdutos = produtos.filter((produto) => {
     const matchSegurado = produto.segurado.toLowerCase().includes(searchSegurado.toLowerCase());
     const matchConsultor = produto.consultor.toLowerCase().includes(searchConsultor.toLowerCase());
+    const matchCidade = !searchCidade || (produto.cidade && produto.cidade.toLowerCase().includes(searchCidade.toLowerCase()));
     const matchTipo = filterTipo === "todos" || produto.tipo === filterTipo;
     
-    return matchSegurado && matchConsultor && matchTipo;
+    return matchSegurado && matchConsultor && matchCidade && matchTipo;
   });
+
+  // Limpar filtros
+  const handleClearFilters = () => {
+    setSearchSegurado("");
+    setSearchConsultor("");
+    setSearchCidade("");
+    setFilterTipo("todos");
+  };
 
   // Exportar para Excel
   const handleExportToExcel = () => {
@@ -231,7 +241,7 @@ export default function Produtos() {
       </div>
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-md border bg-card">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 rounded-md border bg-card">
         <div className="space-y-2">
           <label className="text-sm font-medium">Segurado</label>
           <div className="relative">
@@ -259,6 +269,19 @@ export default function Produtos() {
         </div>
 
         <div className="space-y-2">
+          <label className="text-sm font-medium">Cidade</label>
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por cidade..."
+              value={searchCidade}
+              onChange={(e) => setSearchCidade(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
           <label className="text-sm font-medium">Tipo</label>
           <Select value={filterTipo} onValueChange={setFilterTipo}>
             <SelectTrigger>
@@ -275,11 +298,22 @@ export default function Produtos() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Resultados</label>
-          <div className="flex items-center h-10 px-3 rounded-md border bg-muted">
-            <span className="text-sm font-medium">
-              {filteredProdutos.length} de {produtos.length}
-            </span>
+          <label className="text-sm font-medium">Ações</label>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center h-10 px-3 rounded-md border bg-muted">
+              <span className="text-sm font-medium">
+                {filteredProdutos.length} de {produtos.length}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearFilters}
+              className="w-full"
+            >
+              <X className="mr-2 h-4 w-4" />
+              Limpar Filtros
+            </Button>
           </div>
         </div>
       </div>
