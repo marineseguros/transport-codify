@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, Download, Upload, Edit, Trash2, RefreshCw, FileText, History } from 'lucide-react';
+import { Plus, Search, Download, Upload, Edit, Trash2, RefreshCw, FileText, History, CalendarIcon } from 'lucide-react';
 import { CotacaoModal } from '@/components/CotacaoModal';
 import { HistoricoGeralModal } from '@/components/HistoricoGeralModal';
 import { PaginationControls } from '@/components/ui/pagination-controls';
@@ -16,6 +16,8 @@ import { useCotacoes, useAllCotacoesAuditLog, type Cotacao } from '@/hooks/useSu
 import { parseCsvFile } from '@/utils/csvUtils';
 import { toast } from 'sonner';
 import { csvRowSchema } from '@/lib/validations';
+import { DatePickerWithRange } from '@/components/ui/date-picker';
+import { DateRange } from 'react-day-picker';
 
 const Cotacoes = () => {
   const { user } = useAuth();
@@ -53,6 +55,8 @@ const Cotacoes = () => {
   const [cotacaoToDelete, setCotacaoToDelete] = useState<string | null>(null);
   const [massDeleteDialogOpen, setMassDeleteDialogOpen] = useState(false);
   const [historicoGeralOpen, setHistoricoGeralOpen] = useState(false);
+  const [dateFilter, setDateFilter] = useState<string>('todos');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
   // Hook para buscar todo o histórico de alterações
   const { auditLog, loading: auditLogLoading } = useAllCotacoesAuditLog();
@@ -64,6 +68,54 @@ const Cotacoes = () => {
       .filter(Boolean)
     )] as string[];
   }, [cotacoes]);
+
+  // Filter cotacoes by date
+  const dateFilteredCotacoes = useMemo(() => {
+    if (dateFilter === 'todos') return cotacoes;
+
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date = now;
+
+    switch (dateFilter) {
+      case 'hoje':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case '7dias':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30dias':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90dias':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'mes_atual':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'mes_anterior':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case 'ano_atual':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+        break;
+      case 'personalizado':
+        if (!dateRange?.from) return cotacoes;
+        startDate = dateRange.from;
+        endDate = dateRange.to || dateRange.from;
+        break;
+      default:
+        return cotacoes;
+    }
+
+    return cotacoes.filter(cotacao => {
+      const cotacaoDate = new Date(cotacao.data_cotacao);
+      return cotacaoDate >= startDate && cotacaoDate <= endDate;
+    });
+  }, [cotacoes, dateFilter, dateRange]);
 
   // Valid status options
   const validStatuses = ['Em cotação', 'Negócio fechado', 'Declinado', 'Alocada Outra'];
@@ -305,7 +357,7 @@ const Cotacoes = () => {
       {/* Search and Sort Controls */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex gap-4">
+          <div className="flex gap-4 mb-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -349,6 +401,60 @@ const Cotacoes = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Filtros de Período e Produtor */}
+          <div className="flex flex-wrap gap-4 items-end border-t pt-4">
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-sm font-medium mb-2 block">Período</label>
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os períodos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os períodos</SelectItem>
+                  <SelectItem value="hoje">Hoje</SelectItem>
+                  <SelectItem value="7dias">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30dias">Últimos 30 dias</SelectItem>
+                  <SelectItem value="90dias">Últimos 90 dias</SelectItem>
+                  <SelectItem value="mes_atual">Este mês</SelectItem>
+                  <SelectItem value="mes_anterior">Mês passado</SelectItem>
+                  <SelectItem value="ano_atual">Ano atual</SelectItem>
+                  <SelectItem value="personalizado">Período personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {dateFilter === 'personalizado' && (
+              <div className="flex-1 min-w-[280px]">
+                <label className="text-sm font-medium mb-2 block">Data personalizada</label>
+                <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
+              </div>
+            )}
+
+            <Select value={produtorFilter} onValueChange={setProdutorFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Produtor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os produtores</SelectItem>
+                {produtores.map((produtor) => (
+                  <SelectItem key={produtor} value={produtor}>
+                    {produtor}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDateFilter('todos');
+                setDateRange(undefined);
+              }}
+            >
+              Limpar filtros
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -358,7 +464,7 @@ const Cotacoes = () => {
       <Card>
         <CardHeader>
           <CardTitle>
-            {totalCount} {totalCount === 1 ? 'cotação encontrada' : 'cotações encontradas'}
+            {dateFilteredCotacoes.length} {dateFilteredCotacoes.length === 1 ? 'cotação encontrada' : 'cotações encontradas'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -368,7 +474,7 @@ const Cotacoes = () => {
                 {canDeleteAny && (
                   <TableHead className="w-12">
                     <Checkbox 
-                      checked={selectedIds.size === cotacoes.length && cotacoes.length > 0}
+                      checked={selectedIds.size === dateFilteredCotacoes.length && dateFilteredCotacoes.length > 0}
                       onCheckedChange={toggleSelectAll}
                     />
                   </TableHead>
@@ -386,7 +492,7 @@ const Cotacoes = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cotacoes.map((cotacao) => {
+              {dateFilteredCotacoes.map((cotacao) => {
                 const canDeleteThisCotacao = canDeleteAny || canProducerDeleteCotacao(cotacao);
                 
                 return (
@@ -468,12 +574,12 @@ const Cotacoes = () => {
             </div>
           )}
 
-          {!loading && cotacoes.length === 0 && (
+          {!loading && dateFilteredCotacoes.length === 0 && (
             <div className="text-center py-8">
               <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-sm font-semibold">Nenhuma cotação encontrada</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                {searchTerm || statusFilter || produtorFilter
+                {searchTerm || statusFilter || produtorFilter || dateFilter !== 'todos'
                   ? 'Tente ajustar os filtros para encontrar cotações.'
                   : 'Comece criando sua primeira cotação.'}
               </p>
@@ -481,7 +587,7 @@ const Cotacoes = () => {
           )}
           
           {/* Pagination Controls */}
-          {totalCount > 0 && (
+          {dateFilteredCotacoes.length > 0 && (
             <div className="mt-4 border-t pt-4">
               <PaginationControls
                 currentPage={currentPage}

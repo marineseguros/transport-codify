@@ -79,16 +79,6 @@ const Dashboard = () => {
         startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         endDate = new Date(now.getFullYear(), now.getMonth(), 0);
         break;
-      case 'trimestre_atual':
-        const quarterStart = Math.floor(now.getMonth() / 3) * 3;
-        startDate = new Date(now.getFullYear(), quarterStart, 1);
-        endDate = new Date(now.getFullYear(), quarterStart + 3, 0);
-        break;
-      case 'semestre_atual':
-        const semesterStart = now.getMonth() < 6 ? 0 : 6;
-        startDate = new Date(now.getFullYear(), semesterStart, 1);
-        endDate = new Date(now.getFullYear(), semesterStart + 6, 0);
-        break;
       case 'ano_atual':
         startDate = new Date(now.getFullYear(), 0, 1);
         endDate = new Date(now.getFullYear(), 11, 31);
@@ -574,12 +564,12 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Filtros Globais */}
+      {/* Filtros */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
-            Filtros Globais
+            Filtros
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -597,14 +587,19 @@ const Dashboard = () => {
                   <SelectItem value="90dias">Últimos 90 dias</SelectItem>
                   <SelectItem value="mes_atual">Este mês</SelectItem>
                   <SelectItem value="mes_anterior">Mês passado</SelectItem>
-                  <SelectItem value="trimestre_atual">Trimestre atual</SelectItem>
-                  <SelectItem value="semestre_atual">Semestre atual</SelectItem>
                   <SelectItem value="ano_atual">Ano atual</SelectItem>
                   <SelectItem value="personalizado">Período personalizado</SelectItem>
                   <SelectItem value="personalizado_comparacao">Personalizado com comparação</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {(dateFilter === 'personalizado' || dateFilter === 'personalizado_comparacao') && (
+              <div className="flex-1 min-w-[280px]">
+                <label className="text-sm font-medium mb-2 block">Data personalizada</label>
+                <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
+              </div>
+            )}
 
             <div className="flex-1 min-w-[200px]">
               <label className="text-sm font-medium mb-2 block">Produtor</label>
@@ -636,15 +631,12 @@ const Dashboard = () => {
               </Select>
             </div>
 
-            {(dateFilter === 'personalizado' || dateFilter === 'personalizado_comparacao') && <div className="col-span-full">
-                <label className="text-sm font-medium mb-2 block">Data personalizada</label>
-                <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
-              </div>}
-
-            {dateFilter === 'personalizado_comparacao' && <div className="col-span-full">
+            {dateFilter === 'personalizado_comparacao' && (
+              <div className="flex-1 min-w-[280px]">
                 <label className="text-sm font-medium mb-2 block">Período de comparação</label>
                 <DatePickerWithRange date={compareRange} onDateChange={setCompareRange} />
-              </div>}
+              </div>
+            )}
 
             <Button variant="outline" onClick={() => {
             setDateFilter('mes_atual');
