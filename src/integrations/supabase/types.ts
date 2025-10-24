@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      _stg_cotacoes: {
+        Row: {
+          _raw_line: number
+          captacao_id: string | null
+          cliente_id: string | null
+          comentarios: string | null
+          cpf_cnpj: string | null
+          created_at: string | null
+          data_cotacao: string | null
+          data_fechamento: string | null
+          motivo_recusa: string | null
+          num_proposta: string | null
+          numero_cotacao: string | null
+          observacoes: string | null
+          produtor_cotador_id: string | null
+          produtor_negociador_id: string | null
+          produtor_origem_id: string | null
+          ramo_id: string | null
+          segmento: string | null
+          segurado: string | null
+          seguradora_id: string | null
+          status: string | null
+          status_seguradora_id: string | null
+          tipo: string | null
+          unidade_id: string | null
+          updated_at: string | null
+          updated_by: string | null
+          valor_premio: string | null
+        }
+        Insert: {
+          _raw_line?: number
+          captacao_id?: string | null
+          cliente_id?: string | null
+          comentarios?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string | null
+          data_cotacao?: string | null
+          data_fechamento?: string | null
+          motivo_recusa?: string | null
+          num_proposta?: string | null
+          numero_cotacao?: string | null
+          observacoes?: string | null
+          produtor_cotador_id?: string | null
+          produtor_negociador_id?: string | null
+          produtor_origem_id?: string | null
+          ramo_id?: string | null
+          segmento?: string | null
+          segurado?: string | null
+          seguradora_id?: string | null
+          status?: string | null
+          status_seguradora_id?: string | null
+          tipo?: string | null
+          unidade_id?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          valor_premio?: string | null
+        }
+        Update: {
+          _raw_line?: number
+          captacao_id?: string | null
+          cliente_id?: string | null
+          comentarios?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string | null
+          data_cotacao?: string | null
+          data_fechamento?: string | null
+          motivo_recusa?: string | null
+          num_proposta?: string | null
+          numero_cotacao?: string | null
+          observacoes?: string | null
+          produtor_cotador_id?: string | null
+          produtor_negociador_id?: string | null
+          produtor_origem_id?: string | null
+          ramo_id?: string | null
+          segmento?: string | null
+          segurado?: string | null
+          seguradora_id?: string | null
+          status?: string | null
+          status_seguradora_id?: string | null
+          tipo?: string | null
+          unidade_id?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          valor_premio?: string | null
+        }
+        Relationships: []
+      }
       captacao: {
         Row: {
           ativo: boolean
@@ -296,164 +383,6 @@ export type Database = {
           },
         ]
       }
-      cotacoes_duplicate: {
-        Row: {
-          captacao_id: string | null
-          cliente_id: string | null
-          comentarios: string | null
-          cpf_cnpj: string
-          created_at: string
-          data_cotacao: string
-          data_fechamento: string | null
-          id: string
-          motivo_recusa: string | null
-          num_proposta: string | null
-          numero_cotacao: string
-          observacoes: string | null
-          produtor_cotador_id: string | null
-          produtor_negociador_id: string | null
-          produtor_origem_id: string | null
-          ramo_id: string | null
-          segmento: string | null
-          segurado: string
-          seguradora_id: string | null
-          status: string
-          status_seguradora_id: string | null
-          tipo: string | null
-          unidade_id: string | null
-          updated_at: string
-          updated_by: string | null
-          valor_premio: number | null
-        }
-        Insert: {
-          captacao_id?: string | null
-          cliente_id?: string | null
-          comentarios?: string | null
-          cpf_cnpj: string
-          created_at?: string
-          data_cotacao?: string
-          data_fechamento?: string | null
-          id?: string
-          motivo_recusa?: string | null
-          num_proposta?: string | null
-          numero_cotacao: string
-          observacoes?: string | null
-          produtor_cotador_id?: string | null
-          produtor_negociador_id?: string | null
-          produtor_origem_id?: string | null
-          ramo_id?: string | null
-          segmento?: string | null
-          segurado: string
-          seguradora_id?: string | null
-          status?: string
-          status_seguradora_id?: string | null
-          tipo?: string | null
-          unidade_id?: string | null
-          updated_at?: string
-          updated_by?: string | null
-          valor_premio?: number | null
-        }
-        Update: {
-          captacao_id?: string | null
-          cliente_id?: string | null
-          comentarios?: string | null
-          cpf_cnpj?: string
-          created_at?: string
-          data_cotacao?: string
-          data_fechamento?: string | null
-          id?: string
-          motivo_recusa?: string | null
-          num_proposta?: string | null
-          numero_cotacao?: string
-          observacoes?: string | null
-          produtor_cotador_id?: string | null
-          produtor_negociador_id?: string | null
-          produtor_origem_id?: string | null
-          ramo_id?: string | null
-          segmento?: string | null
-          segurado?: string
-          seguradora_id?: string | null
-          status?: string
-          status_seguradora_id?: string | null
-          tipo?: string | null
-          unidade_id?: string | null
-          updated_at?: string
-          updated_by?: string | null
-          valor_premio?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cotacoes_duplicate_captacao_id_fkey"
-            columns: ["captacao_id"]
-            isOneToOne: false
-            referencedRelation: "captacao"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cotacoes_duplicate_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cotacoes_duplicate_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes_restricted"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cotacoes_duplicate_produtor_cotador_id_fkey"
-            columns: ["produtor_cotador_id"]
-            isOneToOne: false
-            referencedRelation: "produtores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cotacoes_duplicate_produtor_negociador_id_fkey"
-            columns: ["produtor_negociador_id"]
-            isOneToOne: false
-            referencedRelation: "produtores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cotacoes_duplicate_produtor_origem_id_fkey"
-            columns: ["produtor_origem_id"]
-            isOneToOne: false
-            referencedRelation: "produtores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cotacoes_duplicate_ramo_id_fkey"
-            columns: ["ramo_id"]
-            isOneToOne: false
-            referencedRelation: "ramos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cotacoes_duplicate_seguradora_id_fkey"
-            columns: ["seguradora_id"]
-            isOneToOne: false
-            referencedRelation: "seguradoras"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cotacoes_duplicate_status_seguradora_id_fkey"
-            columns: ["status_seguradora_id"]
-            isOneToOne: false
-            referencedRelation: "status_seguradora"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cotacoes_duplicate_unidade_id_fkey"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       cotacoes_historico: {
         Row: {
           captacao_id: string | null
@@ -544,36 +473,6 @@ export type Database = {
         }
         Relationships: []
       }
-      cotacoes_stage_backup_20251022_195408: {
-        Row: {
-          cliente_id: string | null
-          cpf_cnpj: string | null
-          data_cotacao: string | null
-          fim_vigencia: string | null
-          inicio_vigencia: string | null
-          numero_cotacao: string | null
-          segurado: string | null
-        }
-        Insert: {
-          cliente_id?: string | null
-          cpf_cnpj?: string | null
-          data_cotacao?: string | null
-          fim_vigencia?: string | null
-          inicio_vigencia?: string | null
-          numero_cotacao?: string | null
-          segurado?: string | null
-        }
-        Update: {
-          cliente_id?: string | null
-          cpf_cnpj?: string | null
-          data_cotacao?: string | null
-          fim_vigencia?: string | null
-          inicio_vigencia?: string | null
-          numero_cotacao?: string | null
-          segurado?: string | null
-        }
-        Relationships: []
-      }
       produtores: {
         Row: {
           ativo: boolean
@@ -609,6 +508,57 @@ export type Database = {
           ordem?: number | null
           papel?: string
           telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      produtos: {
+        Row: {
+          cidade: string | null
+          cliente_indicado: string | null
+          consultor: string
+          created_at: string
+          created_by: string | null
+          data_realizada: string | null
+          data_registro: string
+          id: string
+          observacao: string | null
+          segurado: string
+          subtipo: string | null
+          tipo: string
+          tipo_indicacao: string | null
+          updated_at: string
+        }
+        Insert: {
+          cidade?: string | null
+          cliente_indicado?: string | null
+          consultor: string
+          created_at?: string
+          created_by?: string | null
+          data_realizada?: string | null
+          data_registro?: string
+          id?: string
+          observacao?: string | null
+          segurado: string
+          subtipo?: string | null
+          tipo: string
+          tipo_indicacao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cidade?: string | null
+          cliente_indicado?: string | null
+          consultor?: string
+          created_at?: string
+          created_by?: string | null
+          data_realizada?: string | null
+          data_registro?: string
+          id?: string
+          observacao?: string | null
+          segurado?: string
+          subtipo?: string | null
+          tipo?: string
+          tipo_indicacao?: string | null
           updated_at?: string
         }
         Relationships: []

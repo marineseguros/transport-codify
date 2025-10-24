@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   BarChart3, FileText, Users, Settings, Kanban, 
-  Building2, Tags, Home
+  Building2, Tags, Home, Package
 } from "lucide-react";
 
 import {
@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const menuItems = [
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Cotações", url: "/cotacoes", icon: FileText },
+  { title: "Produtos", url: "/produtos", icon: Package },
   { title: "Dashboard", url: "/", icon: Home },
 ];
 

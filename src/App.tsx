@@ -17,6 +17,7 @@ import Seguradoras from "./pages/Seguradoras";
 import Ramos from "./pages/Ramos";
 import Configuracoes from "./pages/Configuracoes";
 import Relatorios from "./pages/Relatorios";
+import Produtos from "./pages/Produtos";
 import NotFoundPage from "./pages/NotFoundPage";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const AppContent = () => {
               <Route path="/ramos" element={<Ramos />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
               <Route path="/relatorios" element={<Relatorios />} />
+              <Route path="/produtos" element={<Produtos />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Layout>
