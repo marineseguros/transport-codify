@@ -86,25 +86,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               .single();
             
             if (profile) {
-              // Fetch user roles from user_roles table
-              const { data: roles } = await supabase
-                .from('user_roles')
-                .select('role')
-                .eq('user_id', session.user.id);
-              
-              // Determine primary role (admin > faturamento > produtor)
-              let primaryRole: UserRole = 'Produtor';
-              if (roles && roles.length > 0) {
-                if (roles.some(r => r.role === 'admin')) {
-                  primaryRole = 'Administrador';
-                } else if (roles.some(r => r.role === 'faturamento')) {
-                  primaryRole = 'Faturamento';
-                }
-              }
-              
+              // Use the papel from profiles table for display
               setUser({
                 ...profile,
-                papel: primaryRole
+                papel: profile.papel
               });
             }
             setIsLoading(false);
