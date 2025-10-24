@@ -10,6 +10,7 @@ import { DatePickerWithRange } from "@/components/ui/date-picker";
 import { DateRange } from "react-day-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { CotacaoModal } from '@/components/CotacaoModal';
 const Dashboard = () => {
   const {
     cotacoes: allQuotes,
@@ -29,9 +30,16 @@ const Dashboard = () => {
   const [produtorFilter, setProdutorFilter] = useState<string>('todos');
   const [unidadeFilter, setUnidadeFilter] = useState<string>('todas');
   const [compareRange, setCompareRange] = useState<DateRange | undefined>();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   
   const handleImportCSV = () => {
     toast.success('Funcionalidade de importar CSV será implementada');
+  };
+
+  const handleNewCotacao = () => {
+    setSelectedCotacao(null);
+    setIsModalOpen(true);
   };
 
   // Filter cotacoes by date, produtor and unidade
@@ -568,7 +576,7 @@ const Dashboard = () => {
             <Upload className="h-4 w-4" />
             Importar CSV
           </Button>
-          <Button className="gap-2">
+          <Button onClick={handleNewCotacao} className="gap-2">
             <Plus className="h-4 w-4" />
             Nova Cotação
           </Button>
@@ -1327,6 +1335,15 @@ const Dashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      <CotacaoModal
+        cotacao={selectedCotacao}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedCotacao(null);
+        }}
+      />
     </div>;
 };
 export default Dashboard;
