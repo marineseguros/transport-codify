@@ -140,6 +140,7 @@ export default function Produtos() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">#</TableHead>
               <TableHead>Segurado</TableHead>
               <TableHead>Consultor</TableHead>
               <TableHead>Data do Registro</TableHead>
@@ -153,7 +154,7 @@ export default function Produtos() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
@@ -161,13 +162,16 @@ export default function Produtos() {
               </TableRow>
             ) : produtos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   Nenhum produto cadastrado
                 </TableCell>
               </TableRow>
             ) : (
-              produtos.map((produto) => (
+              produtos.map((produto, index) => (
                 <TableRow key={produto.id}>
+                  <TableCell className="text-muted-foreground">
+                    {index + 1}
+                  </TableCell>
                   <TableCell className="font-medium">{produto.segurado}</TableCell>
                   <TableCell>{produto.consultor}</TableCell>
                   <TableCell>

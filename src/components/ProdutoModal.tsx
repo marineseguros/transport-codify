@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProdutores } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
@@ -52,11 +52,17 @@ const formSchema = z.object({
   observacao: z.string().optional(),
   // Campos condicionais - Indicação
   tipo_indicacao: z.enum(["Cliente", "Externa"]).optional(),
-  cliente_indicado: z.string().optional(),
+  clientes_indicados: z.array(z.object({
+    nome: z.string().min(1, "Nome é obrigatório"),
+  })).optional(),
   // Campos condicionais - Visita/Video
   subtipo: z.enum(["Visita", "Vídeo"]).optional(),
-  cidade: z.string().optional(),
-  data_realizada: z.date().optional(),
+  cidades: z.array(z.object({
+    nome: z.string().min(1, "Nome da cidade é obrigatório"),
+  })).optional(),
+  datas_realizadas: z.array(z.object({
+    data: z.date(),
+  })).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -81,7 +87,25 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
       consultor: "",
       tipo: undefined,
       observacao: "",
+      clientes_indicados: [{ nome: "" }],
+      cidades: [{ nome: "" }],
+      datas_realizadas: [{ data: new Date() }],
     },
+  });
+
+  const { fields: clientesFields, append: appendCliente, remove: removeCliente } = useFieldArray({
+    control: form.control,
+    name: "clientes_indicados",
+  });
+
+  const { fields: cidadesFields, append: appendCidade, remove: removeCidade } = useFieldArray({
+    control: form.control,
+    name: "cidades",
+  });
+
+  const { fields: datasFields, append: appendData, remove: removeData } = useFieldArray({
+    control: form.control,
+    name: "datas_realizadas",
   });
 
   const tipoValue = form.watch("tipo");
@@ -98,10 +122,10 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
           tipo: produto.tipo,
           observacao: produto.observacao || "",
           tipo_indicacao: produto.tipo_indicacao || undefined,
-          cliente_indicado: produto.cliente_indicado || "",
+          clientes_indicados: produto.cliente_indicado ? [{ nome: produto.cliente_indicado }] : [{ nome: "" }],
           subtipo: produto.subtipo || undefined,
-          cidade: produto.cidade || "",
-          data_realizada: produto.data_realizada ? new Date(produto.data_realizada) : undefined,
+          cidades: produto.cidade ? [{ nome: produto.cidade }] : [{ nome: "" }],
+          datas_realizadas: produto.data_realizada ? [{ data: new Date(produto.data_realizada) }] : [{ data: new Date() }],
         });
       } else {
         form.reset({
@@ -111,10 +135,10 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
           tipo: undefined,
           observacao: "",
           tipo_indicacao: undefined,
-          cliente_indicado: "",
+          clientes_indicados: [{ nome: "" }],
           subtipo: undefined,
-          cidade: "",
-          data_realizada: undefined,
+          cidades: [{ nome: "" }],
+          datas_realizadas: [{ data: new Date() }],
         });
       }
     }
@@ -128,41 +152,85 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
       const produtorSelecionado = produtoresAtivos.find(p => p.id === data.consultor);
       const consultorNome = produtorSelecionado?.nome || data.consultor;
 
-      const produtoData: any = {
-        segurado: data.segurado,
-        consultor: consultorNome,
-        data_registro: data.data_registro.toISOString(),
-        tipo: data.tipo,
-        observacao: data.observacao || null,
-      };
+      const produtosParaSalvar: any[] = [];
 
       // Campos condicionais - Indicação
-      if (data.tipo === "Indicação") {
-        produtoData.tipo_indicacao = data.tipo_indicacao || null;
-        produtoData.cliente_indicado = data.cliente_indicado || null;
-      } else {
-        produtoData.tipo_indicacao = null;
-        produtoData.cliente_indicado = null;
+      if (data.tipo === "Indicação" && data.clientes_indicados) {
+        // Criar um registro para cada cliente indicado
+        data.clientes_indicados.forEach(cliente => {
+          if (cliente.nome.trim()) {
+            produtosParaSalvar.push({
+              segurado: data.segurado,
+              consultor: consultorNome,
+              data_registro: data.data_registro.toISOString(),
+              tipo: data.tipo,
+              observacao: data.observacao || null,
+              tipo_indicacao: data.tipo_indicacao || null,
+              cliente_indicado: cliente.nome,
+              subtipo: null,
+              cidade: null,
+              data_realizada: null,
+            });
+          }
+        });
       }
-
       // Campos condicionais - Visita/Video
-      if (data.tipo === "Visita/Video") {
-        produtoData.subtipo = data.subtipo || null;
-        if (data.subtipo === "Visita") {
-          produtoData.cidade = data.cidade || null;
-          produtoData.data_realizada = null;
-        } else if (data.subtipo === "Vídeo") {
-          produtoData.data_realizada = data.data_realizada?.toISOString() || null;
-          produtoData.cidade = null;
+      else if (data.tipo === "Visita/Video") {
+        if (data.subtipo === "Visita" && data.cidades) {
+          // Criar um registro para cada cidade
+          data.cidades.forEach(cidade => {
+            if (cidade.nome.trim()) {
+              produtosParaSalvar.push({
+                segurado: data.segurado,
+                consultor: consultorNome,
+                data_registro: data.data_registro.toISOString(),
+                tipo: data.tipo,
+                observacao: data.observacao || null,
+                tipo_indicacao: null,
+                cliente_indicado: null,
+                subtipo: data.subtipo,
+                cidade: cidade.nome,
+                data_realizada: null,
+              });
+            }
+          });
+        } else if (data.subtipo === "Vídeo" && data.datas_realizadas) {
+          // Criar um registro para cada data
+          data.datas_realizadas.forEach(dataItem => {
+            produtosParaSalvar.push({
+              segurado: data.segurado,
+              consultor: consultorNome,
+              data_registro: data.data_registro.toISOString(),
+              tipo: data.tipo,
+              observacao: data.observacao || null,
+              tipo_indicacao: null,
+              cliente_indicado: null,
+              subtipo: data.subtipo,
+              cidade: null,
+              data_realizada: dataItem.data.toISOString(),
+            });
+          });
         }
-      } else {
-        produtoData.subtipo = null;
-        produtoData.cidade = null;
-        produtoData.data_realizada = null;
+      }
+      // Tipos sem campos múltiplos (Coleta, Novos CRM)
+      else {
+        produtosParaSalvar.push({
+          segurado: data.segurado,
+          consultor: consultorNome,
+          data_registro: data.data_registro.toISOString(),
+          tipo: data.tipo,
+          observacao: data.observacao || null,
+          tipo_indicacao: null,
+          cliente_indicado: null,
+          subtipo: null,
+          cidade: null,
+          data_realizada: null,
+        });
       }
 
       if (produto) {
-        // Update
+        // Update - mantém lógica antiga para edição
+        const produtoData = produtosParaSalvar[0] || {};
         const { error } = await supabase
           .from("produtos")
           .update(produtoData)
@@ -174,16 +242,24 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
           title: "Produto atualizado com sucesso",
         });
       } else {
-        // Insert
-        const { error } = await supabase
-          .from("produtos")
-          .insert([produtoData]);
+        // Insert múltiplos registros
+        if (produtosParaSalvar.length > 0) {
+          const { error } = await supabase
+            .from("produtos")
+            .insert(produtosParaSalvar);
 
-        if (error) throw error;
+          if (error) throw error;
 
-        toast({
-          title: "Produto criado com sucesso",
-        });
+          toast({
+            title: `${produtosParaSalvar.length} produto(s) criado(s) com sucesso`,
+          });
+        } else {
+          toast({
+            title: "Nenhum dado válido para salvar",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       form.reset();
@@ -363,19 +439,46 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
                 />
 
                 {tipoIndicacaoValue && (
-                  <FormField
-                    control={form.control}
-                    name="cliente_indicado"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cliente Indicado</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome do cliente indicado" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Clientes Indicados</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => appendCliente({ nome: "" })}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    </div>
+                    {clientesFields.map((field, index) => (
+                      <div key={field.id} className="flex gap-2">
+                        <FormField
+                          control={form.control}
+                          name={`clientes_indicados.${index}.nome`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormControl>
+                                <Input placeholder="Nome do cliente indicado" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {clientesFields.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => removeCliente(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
@@ -419,61 +522,115 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
                 />
 
                 {subtipoValue === "Visita" && (
-                  <FormField
-                    control={form.control}
-                    name="cidade"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cidade</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome da cidade" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Cidades</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => appendCidade({ nome: "" })}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    </div>
+                    {cidadesFields.map((field, index) => (
+                      <div key={field.id} className="flex gap-2">
+                        <FormField
+                          control={form.control}
+                          name={`cidades.${index}.nome`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormControl>
+                                <Input placeholder="Nome da cidade" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {cidadesFields.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => removeCidade(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
 
                 {subtipoValue === "Vídeo" && (
-                  <FormField
-                    control={form.control}
-                    name="data_realizada"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Data Realizada</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "dd/MM/yyyy")
-                                ) : (
-                                  <span>Selecione uma data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                              className="pointer-events-auto"
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Datas Realizadas</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => appendData({ data: new Date() })}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    </div>
+                    {datasFields.map((field, index) => (
+                      <div key={field.id} className="flex gap-2">
+                        <FormField
+                          control={form.control}
+                          name={`datas_realizadas.${index}.data`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant="outline"
+                                      className={cn(
+                                        "w-full pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
+                                      )}
+                                    >
+                                      {field.value ? (
+                                        format(field.value, "dd/MM/yyyy")
+                                      ) : (
+                                        <span>Selecione uma data</span>
+                                      )}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    initialFocus
+                                    className="pointer-events-auto"
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {datasFields.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => removeData(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
