@@ -32,11 +32,9 @@ const Dashboard = () => {
   const [compareRange, setCompareRange] = useState<DateRange | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
-  
   const handleImportCSV = () => {
     toast.success('Funcionalidade de importar CSV será implementada');
   };
-
   const handleNewCotacao = () => {
     setSelectedCotacao(null);
     setIsModalOpen(true);
@@ -123,7 +121,6 @@ const Dashboard = () => {
     let currentEndDate: Date = now;
     let previousStartDate: Date;
     let previousEndDate: Date;
-    
     switch (dateFilter) {
       case 'hoje':
         currentStartDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -198,19 +195,17 @@ const Dashboard = () => {
         previousStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         previousEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
     }
-    
+
     // Apply produtor and unidade filters consistently for both periods
     const baseFilteredQuotes = allQuotes.filter(c => {
       const produtorMatch = produtorFilter === 'todos' || c.produtor_cotador?.nome === produtorFilter;
       const unidadeMatch = unidadeFilter === 'todas' || c.unidade?.descricao === unidadeFilter;
       return produtorMatch && unidadeMatch;
     });
-    
     const currentPeriodCotacoes = baseFilteredQuotes.filter(c => {
       const date = new Date(c.data_cotacao);
       return date >= currentStartDate && date <= currentEndDate;
     });
-    
     const previousPeriodCotacoes = baseFilteredQuotes.filter(c => {
       const date = new Date(c.data_cotacao);
       return date >= previousStartDate && date <= previousEndDate;
@@ -251,12 +246,11 @@ const Dashboard = () => {
       return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
     });
     const tempoMedioFechamento = temposFechamento.length > 0 ? temposFechamento.reduce((sum, tempo) => sum + tempo, 0) / temposFechamento.length : 0;
-    
+
     // Taxa de conversão
-    const taxaConversao = currentPeriodCotacoes.length > 0 ? (fechados / currentPeriodCotacoes.length) * 100 : 0;
-    const taxaConversaoAnterior = previousPeriodCotacoes.length > 0 ? (fechadosAnterior / previousPeriodCotacoes.length) * 100 : 0;
+    const taxaConversao = currentPeriodCotacoes.length > 0 ? fechados / currentPeriodCotacoes.length * 100 : 0;
+    const taxaConversaoAnterior = previousPeriodCotacoes.length > 0 ? fechadosAnterior / previousPeriodCotacoes.length * 100 : 0;
     const taxaConversaoComp = calculateComparison(taxaConversao, taxaConversaoAnterior);
-    
     return {
       emCotacao,
       fechados,
@@ -279,27 +273,34 @@ const Dashboard = () => {
       const statusCotacoes = filteredCotacoes.filter(cotacao => cotacao.status === status);
       const totalCotacoes = statusCotacoes.length;
       const seguradosDistintos = new Set(statusCotacoes.map(cotacao => cotacao.cpf_cnpj)).size;
-      
       return {
         status,
         count: totalCotacoes,
         seguradosDistintos,
-        percentage: filteredCotacoes.length > 0 ? (totalCotacoes / filteredCotacoes.length * 100) : 0
+        percentage: filteredCotacoes.length > 0 ? totalCotacoes / filteredCotacoes.length * 100 : 0
       };
     });
-    
     return statusData;
   }, [filteredCotacoes]);
 
   // Top produtores com métricas detalhadas
   const topProdutoresDetalhado = useMemo(() => {
-    const produtorStats: Record<string, { nome: string; total: number; fechadas: number; declinadas: number }> = {};
-    
+    const produtorStats: Record<string, {
+      nome: string;
+      total: number;
+      fechadas: number;
+      declinadas: number;
+    }> = {};
     filteredCotacoes.forEach(cotacao => {
       if (cotacao.produtor_cotador) {
         const nome = cotacao.produtor_cotador.nome;
         if (!produtorStats[nome]) {
-          produtorStats[nome] = { nome, total: 0, fechadas: 0, declinadas: 0 };
+          produtorStats[nome] = {
+            nome,
+            total: 0,
+            fechadas: 0,
+            declinadas: 0
+          };
         }
         produtorStats[nome].total++;
         if (cotacao.status === 'Negócio fechado') {
@@ -309,29 +310,20 @@ const Dashboard = () => {
         }
       }
     });
-    
-    return Object.values(produtorStats)
-      .sort((a, b) => {
-        if (b.fechadas !== a.fechadas) return b.fechadas - a.fechadas;
-        return b.total - a.total;
-      })
-      .slice(0, 5);
+    return Object.values(produtorStats).sort((a, b) => {
+      if (b.fechadas !== a.fechadas) return b.fechadas - a.fechadas;
+      return b.total - a.total;
+    }).slice(0, 5);
   }, [filteredCotacoes]);
 
   // Clientes fechados para o tooltip
   const clientesFechados = useMemo(() => {
-    return filteredCotacoes
-      .filter(cotacao => cotacao.status === 'Negócio fechado')
-      .sort((a, b) => new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime())
-      .slice(0, 10);
+    return filteredCotacoes.filter(cotacao => cotacao.status === 'Negócio fechado').sort((a, b) => new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime()).slice(0, 10);
   }, [filteredCotacoes]);
 
   // Clientes em cotação para o tooltip
   const clientesEmCotacao = useMemo(() => {
-    return filteredCotacoes
-      .filter(cotacao => cotacao.status === 'Em cotação')
-      .sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime())
-      .slice(0, 10);
+    return filteredCotacoes.filter(cotacao => cotacao.status === 'Em cotação').sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime()).slice(0, 10);
   }, [filteredCotacoes]);
 
   // View mode state for recent quotes
@@ -346,47 +338,47 @@ const Dashboard = () => {
   const monthlyTrendData = useMemo(() => {
     const months = [];
     const now = new Date();
-    
+
     // Apply only producer and unit filters, not date filter
     const trendFilteredCotacoes = allQuotes.filter(cotacao => {
       const produtorMatch = produtorFilter === 'todos' || cotacao.produtor_cotador?.nome === produtorFilter;
       const unidadeMatch = unidadeFilter === 'todas' || cotacao.unidade?.descricao === unidadeFilter;
       return produtorMatch && unidadeMatch;
     });
-    
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
+      const monthName = date.toLocaleDateString('pt-BR', {
+        month: 'short'
+      });
       const year = date.getFullYear();
-      
       const monthCotacoes = trendFilteredCotacoes.filter(c => {
         const cotacaoDate = new Date(c.data_cotacao);
-        return cotacaoDate.getMonth() === date.getMonth() && 
-               cotacaoDate.getFullYear() === date.getFullYear();
+        return cotacaoDate.getMonth() === date.getMonth() && cotacaoDate.getFullYear() === date.getFullYear();
       });
-      
       const emCotacao = monthCotacoes.filter(c => c.status === 'Em cotação').length;
       const fechadas = monthCotacoes.filter(c => c.status === 'Negócio fechado').length;
-      
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
         total: monthCotacoes.length,
         emCotacao,
-        fechadas,
+        fechadas
       });
     }
-    
     return months;
   }, [allQuotes, produtorFilter, unidadeFilter]);
 
   // Top seguradoras data - últimos 12 meses com filtros de produtor e unidade
   const seguradoraData = useMemo(() => {
-    const seguradoraStats: Record<string, { nome: string; premio: number; count: number }> = {};
-    
+    const seguradoraStats: Record<string, {
+      nome: string;
+      premio: number;
+      count: number;
+    }> = {};
+
     // Calculate date range for last 12 months
     const now = new Date();
     const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
-    
+
     // Apply only producer and unit filters, use fixed 12-month period
     const seguradoraFilteredCotacoes = allQuotes.filter(cotacao => {
       const produtorMatch = produtorFilter === 'todos' || cotacao.produtor_cotador?.nome === produtorFilter;
@@ -394,7 +386,6 @@ const Dashboard = () => {
       const dateMatch = new Date(cotacao.data_cotacao) >= twelveMonthsAgo;
       return produtorMatch && unidadeMatch && dateMatch;
     });
-    
     console.log('Seguradoras Debug:', {
       totalFiltered: seguradoraFilteredCotacoes.length,
       fechadas: seguradoraFilteredCotacoes.filter(c => c.status === 'Negócio fechado').length,
@@ -406,24 +397,22 @@ const Dashboard = () => {
         premio: c.valor_premio
       }))
     });
-    
     seguradoraFilteredCotacoes.forEach(cotacao => {
       if (cotacao.seguradora && cotacao.status === 'Negócio fechado' && cotacao.valor_premio > 0) {
         const nome = cotacao.seguradora.nome;
         if (!seguradoraStats[nome]) {
-          seguradoraStats[nome] = { nome, premio: 0, count: 0 };
+          seguradoraStats[nome] = {
+            nome,
+            premio: 0,
+            count: 0
+          };
         }
         seguradoraStats[nome].premio += Number(cotacao.valor_premio);
         seguradoraStats[nome].count++;
       }
     });
-    
-    const result = Object.values(seguradoraStats)
-      .sort((a, b) => b.premio - a.premio)
-      .slice(0, 5);
-    
+    const result = Object.values(seguradoraStats).sort((a, b) => b.premio - a.premio).slice(0, 5);
     console.log('Seguradoras Result:', result);
-    
     return result;
   }, [allQuotes, produtorFilter, unidadeFilter]);
 
@@ -432,21 +421,26 @@ const Dashboard = () => {
     return distribuicaoStatus.map(item => ({
       name: item.status,
       value: item.count,
-      color: item.status === 'Em cotação' ? 'hsl(var(--brand-orange))' :
-             item.status === 'Negócio fechado' ? 'hsl(var(--success-alt))' :
-             'hsl(var(--destructive))'
+      color: item.status === 'Em cotação' ? 'hsl(var(--brand-orange))' : item.status === 'Negócio fechado' ? 'hsl(var(--success-alt))' : 'hsl(var(--destructive))'
     }));
   }, [distribuicaoStatus]);
 
   // Top produtores
   const topProdutores = useMemo(() => {
-    const produtorStats: Record<string, { nome: string; total: number; fechadas: number }> = {};
-    
+    const produtorStats: Record<string, {
+      nome: string;
+      total: number;
+      fechadas: number;
+    }> = {};
     filteredCotacoes.forEach(cotacao => {
       if (cotacao.produtor_cotador) {
         const nome = cotacao.produtor_cotador.nome;
         if (!produtorStats[nome]) {
-          produtorStats[nome] = { nome, total: 0, fechadas: 0 };
+          produtorStats[nome] = {
+            nome,
+            total: 0,
+            fechadas: 0
+          };
         }
         produtorStats[nome].total++;
         if (cotacao.status === 'Negócio fechado') {
@@ -454,87 +448,84 @@ const Dashboard = () => {
         }
       }
     });
-    
-    return Object.values(produtorStats)
-      .sort((a, b) => b.fechadas - a.fechadas);
+    return Object.values(produtorStats).sort((a, b) => b.fechadas - a.fechadas);
   }, [filteredCotacoes]);
 
   // Análise por segmento - cotações em aberto (clientes distintos)
   const cotacoesPorSegmento = useMemo(() => {
-    const segmentoStats: Record<string, { clientes: Set<string>; cotacoes: Cotacao[] }> = {};
-    
-    filteredCotacoes
-      .filter(c => c.status === 'Em cotação' || c.status === 'Em análise')
-      .forEach(cotacao => {
-        const segmento = cotacao.segmento || 'Não informado';
-        if (!segmentoStats[segmento]) {
-          segmentoStats[segmento] = { clientes: new Set(), cotacoes: [] };
-        }
-        segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
-        segmentoStats[segmento].cotacoes.push(cotacao);
-      });
-    
-    return Object.entries(segmentoStats)
-      .map(([segmento, data]) => ({
-        segmento,
-        count: data.clientes.size,
-        cotacoes: data.cotacoes
-      }))
-      .sort((a, b) => b.count - a.count);
+    const segmentoStats: Record<string, {
+      clientes: Set<string>;
+      cotacoes: Cotacao[];
+    }> = {};
+    filteredCotacoes.filter(c => c.status === 'Em cotação' || c.status === 'Em análise').forEach(cotacao => {
+      const segmento = cotacao.segmento || 'Não informado';
+      if (!segmentoStats[segmento]) {
+        segmentoStats[segmento] = {
+          clientes: new Set(),
+          cotacoes: []
+        };
+      }
+      segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
+      segmentoStats[segmento].cotacoes.push(cotacao);
+    });
+    return Object.entries(segmentoStats).map(([segmento, data]) => ({
+      segmento,
+      count: data.clientes.size,
+      cotacoes: data.cotacoes
+    })).sort((a, b) => b.count - a.count);
   }, [filteredCotacoes]);
 
   // Análise por segmento - negócios fechados (clientes distintos)
   const fechamentosPorSegmento = useMemo(() => {
-    const segmentoStats: Record<string, { clientes: Set<string>; cotacoes: Cotacao[] }> = {};
-    
-    filteredCotacoes
-      .filter(c => c.status === 'Negócio fechado')
-      .forEach(cotacao => {
-        const segmento = cotacao.segmento || 'Não informado';
-        if (!segmentoStats[segmento]) {
-          segmentoStats[segmento] = { clientes: new Set(), cotacoes: [] };
-        }
-        segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
-        segmentoStats[segmento].cotacoes.push(cotacao);
-      });
-    
-    return Object.entries(segmentoStats)
-      .map(([segmento, data]) => ({
-        segmento,
-        count: data.clientes.size,
-        cotacoes: data.cotacoes
-      }))
-      .sort((a, b) => b.count - a.count);
+    const segmentoStats: Record<string, {
+      clientes: Set<string>;
+      cotacoes: Cotacao[];
+    }> = {};
+    filteredCotacoes.filter(c => c.status === 'Negócio fechado').forEach(cotacao => {
+      const segmento = cotacao.segmento || 'Não informado';
+      if (!segmentoStats[segmento]) {
+        segmentoStats[segmento] = {
+          clientes: new Set(),
+          cotacoes: []
+        };
+      }
+      segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
+      segmentoStats[segmento].cotacoes.push(cotacao);
+    });
+    return Object.entries(segmentoStats).map(([segmento, data]) => ({
+      segmento,
+      count: data.clientes.size,
+      cotacoes: data.cotacoes
+    })).sort((a, b) => b.count - a.count);
   }, [filteredCotacoes]);
 
   // Análise por segmento - declinados (clientes distintos)
   const declinadosPorSegmento = useMemo(() => {
-    const segmentoStats: Record<string, { clientes: Set<string>; cotacoes: Cotacao[] }> = {};
-    
-    filteredCotacoes
-      .filter(c => c.status === 'Declinado')
-      .forEach(cotacao => {
-        const segmento = cotacao.segmento || 'Não informado';
-        if (!segmentoStats[segmento]) {
-          segmentoStats[segmento] = { clientes: new Set(), cotacoes: [] };
-        }
-        segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
-        segmentoStats[segmento].cotacoes.push(cotacao);
-      });
-    
-    return Object.entries(segmentoStats)
-      .map(([segmento, data]) => ({
-        segmento,
-        count: data.clientes.size,
-        cotacoes: data.cotacoes
-      }))
-      .sort((a, b) => b.count - a.count);
+    const segmentoStats: Record<string, {
+      clientes: Set<string>;
+      cotacoes: Cotacao[];
+    }> = {};
+    filteredCotacoes.filter(c => c.status === 'Declinado').forEach(cotacao => {
+      const segmento = cotacao.segmento || 'Não informado';
+      if (!segmentoStats[segmento]) {
+        segmentoStats[segmento] = {
+          clientes: new Set(),
+          cotacoes: []
+        };
+      }
+      segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
+      segmentoStats[segmento].cotacoes.push(cotacao);
+    });
+    return Object.entries(segmentoStats).map(([segmento, data]) => ({
+      segmento,
+      count: data.clientes.size,
+      cotacoes: data.cotacoes
+    })).sort((a, b) => b.count - a.count);
   }, [filteredCotacoes]);
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL'
   }).format(value);
-  
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
@@ -623,11 +614,9 @@ const Dashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os produtores</SelectItem>
-                  {produtores.map(produtor => (
-                    <SelectItem key={produtor.id} value={produtor.nome}>
+                  {produtores.map(produtor => <SelectItem key={produtor.id} value={produtor.nome}>
                       {produtor.nome}
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -640,28 +629,22 @@ const Dashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas as unidades</SelectItem>
-                  {unidades.map(unidade => (
-                    <SelectItem key={unidade.id} value={unidade.descricao}>
+                  {unidades.map(unidade => <SelectItem key={unidade.id} value={unidade.descricao}>
                       {unidade.descricao}
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
-            {(dateFilter === 'personalizado' || dateFilter === 'personalizado_comparacao') && (
-              <div className="col-span-full">
+            {(dateFilter === 'personalizado' || dateFilter === 'personalizado_comparacao') && <div className="col-span-full">
                 <label className="text-sm font-medium mb-2 block">Data personalizada</label>
                 <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
-              </div>
-            )}
+              </div>}
 
-            {dateFilter === 'personalizado_comparacao' && (
-              <div className="col-span-full">
+            {dateFilter === 'personalizado_comparacao' && <div className="col-span-full">
                 <label className="text-sm font-medium mb-2 block">Período de comparação</label>
                 <DatePickerWithRange date={compareRange} onDateChange={setCompareRange} />
-              </div>
-            )}
+              </div>}
 
             <Button variant="outline" onClick={() => {
             setDateFilter('mes_atual');
@@ -695,10 +678,8 @@ const Dashboard = () => {
                 <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
                   <div className="space-y-2">
                     <h4 className="font-semibold">Clientes em Cotação no Período</h4>
-                    {clientesEmCotacao.length > 0 ? (
-                      <div className="space-y-1">
-                        {clientesEmCotacao.map((cotacao) => (
-                          <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
+                    {clientesEmCotacao.length > 0 ? <div className="space-y-1">
+                        {clientesEmCotacao.map(cotacao => <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
                             <div className="font-medium">{cotacao.segurado}</div>
                             <div className="text-muted-foreground">
                               Data Cotação: {formatDate(cotacao.data_cotacao)}
@@ -706,12 +687,8 @@ const Dashboard = () => {
                             <div className="text-muted-foreground">
                               Prêmio: {formatCurrency(cotacao.valor_premio)}
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">Nenhum cliente em cotação no período</p>
-                    )}
+                          </div>)}
+                      </div> : <p className="text-xs text-muted-foreground">Nenhum cliente em cotação no período</p>}
                   </div>
                 </TooltipContent>
               </UITooltip>
@@ -736,10 +713,8 @@ const Dashboard = () => {
                 <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
                   <div className="space-y-2">
                     <h4 className="font-semibold">Clientes Fechados no Período</h4>
-                    {clientesFechados.length > 0 ? (
-                      <div className="space-y-1">
-                        {clientesFechados.map((cotacao, index) => (
-                          <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
+                    {clientesFechados.length > 0 ? <div className="space-y-1">
+                        {clientesFechados.map((cotacao, index) => <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
                             <div className="font-medium">{cotacao.segurado}</div>
                             <div className="text-muted-foreground">
                               Fechamento: {cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : 'N/A'}
@@ -747,12 +722,8 @@ const Dashboard = () => {
                             <div className="text-muted-foreground">
                               Prêmio: {formatCurrency(cotacao.valor_premio)}
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">Nenhum cliente fechado no período</p>
-                    )}
+                          </div>)}
+                      </div> : <p className="text-xs text-muted-foreground">Nenhum cliente fechado no período</p>}
                   </div>
                 </TooltipContent>
               </UITooltip>
@@ -810,7 +781,7 @@ const Dashboard = () => {
         {/* Distribuição por Status (50% da largura) */}
         <Card>
           <CardHeader>
-            <CardTitle>Distribuição por Status (Período Atual)</CardTitle>
+            <CardTitle>Distribuição por Status</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -847,13 +818,11 @@ const Dashboard = () => {
         {/* Top Produtores */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Produtores (Período Atual)</CardTitle>
+            <CardTitle>Top Produtores</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {topProdutoresDetalhado.length > 0 ? (
-                topProdutoresDetalhado.map((produtor, index) => (
-                  <div key={produtor.nome} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              {topProdutoresDetalhado.length > 0 ? topProdutoresDetalhado.map((produtor, index) => <div key={produtor.nome} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
                         {index + 1}
@@ -875,13 +844,9 @@ const Dashboard = () => {
                         <div className="text-xs text-muted-foreground">Declinados</div>
                       </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-muted-foreground py-4">
+                  </div>) : <p className="text-center text-muted-foreground py-4">
                   Nenhum produtor encontrado no período
-                </p>
-              )}
+                </p>}
             </div>
           </CardContent>
         </Card>
@@ -900,12 +865,7 @@ const Dashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" />
                 <YAxis />
-                <Tooltip formatter={(value, name) => [
-                  value,
-                  name === 'fechadas' ? 'Negócios Fechados' : 
-                  name === 'emCotacao' ? 'Em Cotação' : 
-                  name === 'total' ? 'Total de Cotações' : name
-                ]} />
+                <Tooltip formatter={(value, name) => [value, name === 'fechadas' ? 'Negócios Fechados' : name === 'emCotacao' ? 'Em Cotação' : name === 'total' ? 'Total de Cotações' : name]} />
                 <Line type="monotone" dataKey="total" stroke="hsl(var(--muted-foreground))" strokeWidth={2} name="Total" strokeDasharray="5 5" />
                 <Line type="monotone" dataKey="emCotacao" stroke="hsl(var(--brand-orange))" strokeWidth={2} name="Em Cotação" />
                 <Line type="monotone" dataKey="fechadas" stroke="hsl(var(--success-alt))" strokeWidth={2} name="Fechadas" />
@@ -923,25 +883,22 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {seguradoraData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={seguradoraData} layout="vertical" margin={{ left: 20 }}>
+            {seguradoraData.length > 0 ? <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={seguradoraData} layout="vertical" margin={{
+              left: 20
+            }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis dataKey="nome" type="category" width={100} />
-                  <Tooltip 
-                    formatter={(value: number) => formatCurrency(value)}
-                    labelFormatter={(label) => label}
-                    contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))' }}
-                  />
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} labelFormatter={label => label} contentStyle={{
+                backgroundColor: 'hsl(var(--popover))',
+                border: '1px solid hsl(var(--border))'
+              }} />
                   <Bar dataKey="premio" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                 </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+              </ResponsiveContainer> : <div className="flex items-center justify-center h-[300px] text-muted-foreground">
                 Nenhum dado disponível para o período selecionado
-              </div>
-            )}
+              </div>}
           </CardContent>
         </Card>
       </div>
@@ -955,11 +912,9 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground">Clientes distintos</p>
           </CardHeader>
           <CardContent>
-            {cotacoesPorSegmento.length > 0 ? (
-              <TooltipProvider>
+            {cotacoesPorSegmento.length > 0 ? <TooltipProvider>
                 <div className="space-y-3">
-                  {cotacoesPorSegmento.map((item) => (
-                    <div key={item.segmento} className="space-y-1">
+                  {cotacoesPorSegmento.map(item => <div key={item.segmento} className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium">{item.segmento}</span>
                         <span className="font-bold text-brand-orange">{item.count}</span>
@@ -967,10 +922,9 @@ const Dashboard = () => {
                       <UITooltip>
                         <TooltipTrigger asChild>
                           <div className="w-full bg-secondary rounded-full h-8 flex items-center cursor-help">
-                            <div 
-                              className="bg-brand-orange rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
-                              style={{ width: `${Math.max((item.count / Math.max(...cotacoesPorSegmento.map(s => s.count))) * 100, 10)}%` }}
-                            >
+                            <div className="bg-brand-orange rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all" style={{
+                        width: `${Math.max(item.count / Math.max(...cotacoesPorSegmento.map(s => s.count)) * 100, 10)}%`
+                      }}>
                               {item.count}
                             </div>
                           </div>
@@ -978,33 +932,25 @@ const Dashboard = () => {
                         <TooltipContent side="right" className="max-w-md max-h-96 overflow-y-auto">
                           <div className="space-y-2">
                             <h4 className="font-semibold text-sm mb-2">Detalhes - {item.segmento}</h4>
-                            {item.cotacoes.slice(0, 10).map((cotacao) => (
-                              <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
+                            {item.cotacoes.slice(0, 10).map(cotacao => <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
                                 <div className="font-medium">{cotacao.segurado}</div>
                                 <div className="text-muted-foreground mt-1">
                                   <div>Produtor: {cotacao.produtor_cotador?.nome || 'Não informado'}</div>
                                   <div>Ramo: {cotacao.ramo?.descricao || 'Não informado'}</div>
                                   <div>Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
                                 </div>
-                              </div>
-                            ))}
-                            {item.cotacoes.length > 10 && (
-                              <p className="text-xs text-muted-foreground italic">
+                              </div>)}
+                            {item.cotacoes.length > 10 && <p className="text-xs text-muted-foreground italic">
                                 E mais {item.cotacoes.length - 10} cotações...
-                              </p>
-                            )}
+                              </p>}
                           </div>
                         </TooltipContent>
                       </UITooltip>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
-              </TooltipProvider>
-            ) : (
-              <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+              </TooltipProvider> : <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
                 Nenhuma cotação em aberto no período
-              </div>
-            )}
+              </div>}
           </CardContent>
         </Card>
 
@@ -1015,11 +961,9 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground">Clientes distintos</p>
           </CardHeader>
           <CardContent>
-            {fechamentosPorSegmento.length > 0 ? (
-              <TooltipProvider>
+            {fechamentosPorSegmento.length > 0 ? <TooltipProvider>
                 <div className="space-y-3">
-                  {fechamentosPorSegmento.map((item) => (
-                    <div key={item.segmento} className="space-y-1">
+                  {fechamentosPorSegmento.map(item => <div key={item.segmento} className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium">{item.segmento}</span>
                         <span className="font-bold text-success-alt">{item.count}</span>
@@ -1027,10 +971,9 @@ const Dashboard = () => {
                       <UITooltip>
                         <TooltipTrigger asChild>
                           <div className="w-full bg-secondary rounded-full h-8 flex items-center cursor-help">
-                            <div 
-                              className="bg-success-alt rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
-                              style={{ width: `${Math.max((item.count / Math.max(...fechamentosPorSegmento.map(s => s.count))) * 100, 10)}%` }}
-                            >
+                            <div className="bg-success-alt rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all" style={{
+                        width: `${Math.max(item.count / Math.max(...fechamentosPorSegmento.map(s => s.count)) * 100, 10)}%`
+                      }}>
                               {item.count}
                             </div>
                           </div>
@@ -1038,36 +981,26 @@ const Dashboard = () => {
                         <TooltipContent side="right" className="max-w-md max-h-96 overflow-y-auto">
                           <div className="space-y-2">
                             <h4 className="font-semibold text-sm mb-2">Detalhes - {item.segmento}</h4>
-                            {item.cotacoes.slice(0, 10).map((cotacao) => (
-                              <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
+                            {item.cotacoes.slice(0, 10).map(cotacao => <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
                                 <div className="font-medium">{cotacao.segurado}</div>
                                 <div className="text-muted-foreground mt-1">
                                   <div>Produtor: {cotacao.produtor_cotador?.nome || 'Não informado'}</div>
                                   <div>Ramo: {cotacao.ramo?.descricao || 'Não informado'}</div>
                                   <div>Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
-                                  {cotacao.data_fechamento && (
-                                    <div>Fechamento: {formatDate(cotacao.data_fechamento)}</div>
-                                  )}
+                                  {cotacao.data_fechamento && <div>Fechamento: {formatDate(cotacao.data_fechamento)}</div>}
                                 </div>
-                              </div>
-                            ))}
-                            {item.cotacoes.length > 10 && (
-                              <p className="text-xs text-muted-foreground italic">
+                              </div>)}
+                            {item.cotacoes.length > 10 && <p className="text-xs text-muted-foreground italic">
                                 E mais {item.cotacoes.length - 10} cotações...
-                              </p>
-                            )}
+                              </p>}
                           </div>
                         </TooltipContent>
                       </UITooltip>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
-              </TooltipProvider>
-            ) : (
-              <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+              </TooltipProvider> : <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
                 Nenhum fechamento no período
-              </div>
-            )}
+              </div>}
           </CardContent>
         </Card>
 
@@ -1078,11 +1011,9 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground">Clientes distintos</p>
           </CardHeader>
           <CardContent>
-            {declinadosPorSegmento.length > 0 ? (
-              <TooltipProvider>
+            {declinadosPorSegmento.length > 0 ? <TooltipProvider>
                 <div className="space-y-3">
-                  {declinadosPorSegmento.map((item) => (
-                    <div key={item.segmento} className="space-y-1">
+                  {declinadosPorSegmento.map(item => <div key={item.segmento} className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium">{item.segmento}</span>
                         <span className="font-bold text-destructive">{item.count}</span>
@@ -1090,10 +1021,9 @@ const Dashboard = () => {
                       <UITooltip>
                         <TooltipTrigger asChild>
                           <div className="w-full bg-secondary rounded-full h-8 flex items-center cursor-help">
-                            <div 
-                              className="bg-destructive rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
-                              style={{ width: `${Math.max((item.count / Math.max(...declinadosPorSegmento.map(s => s.count))) * 100, 10)}%` }}
-                            >
+                            <div className="bg-destructive rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all" style={{
+                        width: `${Math.max(item.count / Math.max(...declinadosPorSegmento.map(s => s.count)) * 100, 10)}%`
+                      }}>
                               {item.count}
                             </div>
                           </div>
@@ -1101,33 +1031,25 @@ const Dashboard = () => {
                         <TooltipContent side="right" className="max-w-md max-h-96 overflow-y-auto">
                           <div className="space-y-2">
                             <h4 className="font-semibold text-sm mb-2">Detalhes - {item.segmento}</h4>
-                            {item.cotacoes.slice(0, 10).map((cotacao) => (
-                              <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
+                            {item.cotacoes.slice(0, 10).map(cotacao => <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
                                 <div className="font-medium">{cotacao.segurado}</div>
                                 <div className="text-muted-foreground mt-1">
                                   <div>Produtor: {cotacao.produtor_cotador?.nome || 'Não informado'}</div>
                                   <div>Ramo: {cotacao.ramo?.descricao || 'Não informado'}</div>
                                   <div>Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
                                 </div>
-                              </div>
-                            ))}
-                            {item.cotacoes.length > 10 && (
-                              <p className="text-xs text-muted-foreground italic">
+                              </div>)}
+                            {item.cotacoes.length > 10 && <p className="text-xs text-muted-foreground italic">
                                 E mais {item.cotacoes.length - 10} cotações...
-                              </p>
-                            )}
+                              </p>}
                           </div>
                         </TooltipContent>
                       </UITooltip>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
-              </TooltipProvider>
-            ) : (
-              <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+              </TooltipProvider> : <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
                 Nenhuma cotação declinada no período
-              </div>
-            )}
+              </div>}
           </CardContent>
         </Card>
       </div>
@@ -1142,30 +1064,22 @@ const Dashboard = () => {
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie
-                  data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                <Pie data={pieChartData} cx="50%" cy="50%" labelLine={false} label={({
+                name,
+                percent
+              }) => `${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
+                  {pieChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
             <div className="mt-4 space-y-2">
-              {pieChartData.map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+              {pieChartData.map(item => <div key={item.name} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{
+                backgroundColor: item.color
+              }}></div>
                   <span className="text-sm">{item.name}: {item.value}</span>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
         </Card>
@@ -1177,8 +1091,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topProdutores.slice(0, 5).map((produtor, index) => (
-                <div key={produtor.nome} className="flex items-center justify-between">
+              {topProdutores.slice(0, 5).map((produtor, index) => <div key={produtor.nome} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-xs font-medium">
                       {index + 1}
@@ -1189,8 +1102,7 @@ const Dashboard = () => {
                     <div className="text-sm font-bold">{produtor.fechadas}</div>
                     <div className="text-xs text-muted-foreground">fechadas</div>
                   </div>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
         </Card>
@@ -1202,23 +1114,18 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Array.from(new Set(filteredCotacoes.map(c => c.unidade?.descricao).filter(Boolean)))
-                .slice(0, 5)
-                .map((unidadeNome) => {
-                  const unidadeCotacoes = filteredCotacoes.filter(c => c.unidade?.descricao === unidadeNome);
-                  const fechadas = unidadeCotacoes.filter(c => c.status === 'Negócio fechado').length;
-                  const taxa = unidadeCotacoes.length > 0 ? (fechadas / unidadeCotacoes.length) * 100 : 0;
-                  
-                  return (
-                    <div key={unidadeNome} className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
+              {Array.from(new Set(filteredCotacoes.map(c => c.unidade?.descricao).filter(Boolean))).slice(0, 5).map(unidadeNome => {
+              const unidadeCotacoes = filteredCotacoes.filter(c => c.unidade?.descricao === unidadeNome);
+              const fechadas = unidadeCotacoes.filter(c => c.status === 'Negócio fechado').length;
+              const taxa = unidadeCotacoes.length > 0 ? fechadas / unidadeCotacoes.length * 100 : 0;
+              return <div key={unidadeNome} className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
                       <span className="text-sm font-medium">{unidadeNome}</span>
                       <div className="text-right">
                         <div className="text-sm font-bold">{fechadas}/{unidadeCotacoes.length}</div>
                         <div className="text-xs text-muted-foreground">{taxa.toFixed(1)}%</div>
                       </div>
-                    </div>
-                  );
-                })}
+                    </div>;
+            })}
             </div>
           </CardContent>
         </Card>
@@ -1229,31 +1136,19 @@ const Dashboard = () => {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Cotações Recentes</CardTitle>
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant={recentQuotesViewMode === 'list' ? 'default' : 'outline'}
-              onClick={() => setRecentQuotesViewMode('list')}
-              className="gap-2"
-            >
+            <Button size="sm" variant={recentQuotesViewMode === 'list' ? 'default' : 'outline'} onClick={() => setRecentQuotesViewMode('list')} className="gap-2">
               <List className="h-4 w-4" />
               Lista
             </Button>
-            <Button
-              size="sm"
-              variant={recentQuotesViewMode === 'cards' ? 'default' : 'outline'}
-              onClick={() => setRecentQuotesViewMode('cards')}
-              className="gap-2"
-            >
+            <Button size="sm" variant={recentQuotesViewMode === 'cards' ? 'default' : 'outline'} onClick={() => setRecentQuotesViewMode('cards')} className="gap-2">
               <Grid3X3 className="h-4 w-4" />
               Cards
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {recentQuotesViewMode === 'list' ? (
-            <div className="space-y-3">
-              {recentQuotes.length > 0 ? (
-                <div className="space-y-2">
+          {recentQuotesViewMode === 'list' ? <div className="space-y-3">
+              {recentQuotes.length > 0 ? <div className="space-y-2">
                   {/* Header */}
                   <div className="grid grid-cols-12 gap-4 pb-2 border-b text-sm font-medium text-muted-foreground">
                     <div className="col-span-2">Status</div>
@@ -1264,8 +1159,7 @@ const Dashboard = () => {
                     <div className="col-span-1 text-right">Valor</div>
                   </div>
                   {/* Rows */}
-                  {recentQuotes.map(cotacao => (
-                    <div key={cotacao.id} className="grid grid-cols-12 gap-4 py-2 rounded-lg hover:bg-accent/50 transition-colors">
+                  {recentQuotes.map(cotacao => <div key={cotacao.id} className="grid grid-cols-12 gap-4 py-2 rounded-lg hover:bg-accent/50 transition-colors">
                       <div className="col-span-2">
                         <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
                           {cotacao.status}
@@ -1289,19 +1183,12 @@ const Dashboard = () => {
                           {formatCurrency(cotacao.valor_premio)}
                         </span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
+                    </div>)}
+                </div> : <div className="text-center py-8">
                   <p className="text-sm text-muted-foreground">Nenhuma cotação recente encontrada.</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {recentQuotes.length > 0 ? recentQuotes.map(cotacao => (
-                <div key={cotacao.id} className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                </div>}
+            </div> : <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {recentQuotes.length > 0 ? recentQuotes.map(cotacao => <div key={cotacao.id} className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                   <div className="flex items-start justify-between mb-2">
                     <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
                       {cotacao.status}
@@ -1325,25 +1212,17 @@ const Dashboard = () => {
                       {formatDate(cotacao.created_at)}
                     </p>
                   </div>
-                </div>
-              )) : (
-                <div className="text-center py-8 col-span-full">
+                </div>) : <div className="text-center py-8 col-span-full">
                   <p className="text-sm text-muted-foreground">Nenhuma cotação recente encontrada.</p>
-                </div>
-              )}
-            </div>
-          )}
+                </div>}
+            </div>}
         </CardContent>
       </Card>
 
-      <CotacaoModal
-        cotacao={selectedCotacao}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedCotacao(null);
-        }}
-      />
+      <CotacaoModal cotacao={selectedCotacao} isOpen={isModalOpen} onClose={() => {
+      setIsModalOpen(false);
+      setSelectedCotacao(null);
+    }} />
     </div>;
 };
 export default Dashboard;
