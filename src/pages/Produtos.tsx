@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import * as XLSX from 'xlsx';
 import {
   Table,
   TableBody,
@@ -47,6 +56,11 @@ export default function Produtos() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [produtoToDelete, setProdutoToDelete] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Filtros
+  const [searchSegurado, setSearchSegurado] = useState("");
+  const [searchConsultor, setSearchConsultor] = useState("");
+  const [filterTipo, setFilterTipo] = useState<string>("todos");
 
   useEffect(() => {
     fetchProdutos();
@@ -121,6 +135,76 @@ export default function Produtos() {
     }
   };
 
+  // Filtrar produtos
+  const filteredProdutos = produtos.filter((produto) => {
+    const matchSegurado = produto.segurado.toLowerCase().includes(searchSegurado.toLowerCase());
+    const matchConsultor = produto.consultor.toLowerCase().includes(searchConsultor.toLowerCase());
+    const matchTipo = filterTipo === "todos" || produto.tipo === filterTipo;
+    
+    return matchSegurado && matchConsultor && matchTipo;
+  });
+
+  // Exportar para Excel
+  const handleExportToExcel = () => {
+    try {
+      // Preparar dados para exportação
+      const dataToExport = filteredProdutos.map((produto, index) => ({
+        "#": index + 1,
+        "Segurado": produto.segurado,
+        "Consultor": produto.consultor,
+        "Data do Registro": format(new Date(produto.data_registro), "dd/MM/yyyy", { locale: ptBR }),
+        "Tipo": produto.tipo,
+        "Subtipo/Indicação": produto.tipo === "Indicação" && produto.tipo_indicacao
+          ? produto.tipo_indicacao
+          : produto.tipo === "Visita/Video" && produto.subtipo
+          ? produto.subtipo
+          : "-",
+        "Detalhes": produto.tipo === "Indicação" && produto.cliente_indicado
+          ? produto.cliente_indicado
+          : produto.tipo === "Visita/Video" && produto.subtipo === "Visita" && produto.cidade
+          ? produto.cidade
+          : produto.tipo === "Visita/Video" && produto.subtipo === "Vídeo" && produto.data_realizada
+          ? format(new Date(produto.data_realizada), "dd/MM/yyyy", { locale: ptBR })
+          : "-",
+        "Observação": produto.observacao || "-",
+      }));
+
+      // Criar workbook e worksheet
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Produtos");
+
+      // Ajustar largura das colunas
+      const colWidths = [
+        { wch: 5 },  // #
+        { wch: 30 }, // Segurado
+        { wch: 20 }, // Consultor
+        { wch: 15 }, // Data
+        { wch: 15 }, // Tipo
+        { wch: 20 }, // Subtipo/Indicação
+        { wch: 25 }, // Detalhes
+        { wch: 30 }, // Observação
+      ];
+      ws['!cols'] = colWidths;
+
+      // Gerar arquivo
+      const fileName = `produtos_${format(new Date(), "dd-MM-yyyy_HH-mm")}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      toast({
+        title: "Exportação concluída",
+        description: `${filteredProdutos.length} registro(s) exportado(s)`,
+      });
+    } catch (error: any) {
+      console.error("Error exporting to Excel:", error);
+      toast({
+        title: "Erro ao exportar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -130,10 +214,74 @@ export default function Produtos() {
             Gerencie os registros de produtos
           </p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Criar Registro
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleExportToExcel}
+            disabled={filteredProdutos.length === 0}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Exportar Excel
+          </Button>
+          <Button onClick={() => setIsModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Criar Registro
+          </Button>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-md border bg-card">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Segurado</label>
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por segurado..."
+              value={searchSegurado}
+              onChange={(e) => setSearchSegurado(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Consultor</label>
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por consultor..."
+              value={searchConsultor}
+              onChange={(e) => setSearchConsultor(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Tipo</label>
+          <Select value={filterTipo} onValueChange={setFilterTipo}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todos os tipos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="Coleta">Coleta</SelectItem>
+              <SelectItem value="Indicação">Indicação</SelectItem>
+              <SelectItem value="Novos CRM">Novos CRM</SelectItem>
+              <SelectItem value="Visita/Video">Visita/Video</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Resultados</label>
+          <div className="flex items-center h-10 px-3 rounded-md border bg-muted">
+            <span className="text-sm font-medium">
+              {filteredProdutos.length} de {produtos.length}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="rounded-md border">
@@ -160,14 +308,14 @@ export default function Produtos() {
                   </div>
                 </TableCell>
               </TableRow>
-            ) : produtos.length === 0 ? (
+            ) : filteredProdutos.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                  Nenhum produto cadastrado
+                  {produtos.length === 0 ? "Nenhum produto cadastrado" : "Nenhum produto encontrado com os filtros aplicados"}
                 </TableCell>
               </TableRow>
             ) : (
-              produtos.map((produto, index) => (
+              filteredProdutos.map((produto, index) => (
                 <TableRow key={produto.id}>
                   <TableCell className="text-muted-foreground">
                     {index + 1}
