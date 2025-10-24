@@ -21,7 +21,7 @@ const menuItems = [
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Cotações", url: "/cotacoes", icon: FileText },
   { title: "Produtos", url: "/produtos", icon: Package },
-  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Dashboard", url: "/dashboard", icon: Home },
 ];
 
 const adminItems = [
