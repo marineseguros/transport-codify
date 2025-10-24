@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               // Use the papel from profiles table for display
               setUser({
                 ...profile,
-                papel: profile.papel
+                papel: profile.papel as UserRole
               });
             }
             setIsLoading(false);
