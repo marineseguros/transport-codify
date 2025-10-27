@@ -43,10 +43,9 @@ export function AppSidebar() {
   const { user } = useAuth();
   const currentPath = location.pathname;
 
+  const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? "bg-primary text-primary-foreground hover:bg-primary/90 font-medium" 
-      : "hover:bg-accent/50";
+    isActive ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-accent-foreground";
 
   const canAccessAdmin = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
 
@@ -63,7 +62,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -82,7 +81,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} className={getNavCls}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -102,7 +101,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink to={item.url} className={getNavCls}>
                         <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                        {!collapsed && <span>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
