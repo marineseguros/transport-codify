@@ -64,7 +64,7 @@ export function AppSidebar() {
                         "flex w-full items-center gap-2 rounded-lg p-2 text-sm transition-colors",
                         isActive
                           ? "bg-primary text-white font-semibold"
-                          : "text-gray-400 bg-transparent hover:bg-primary/20 hover:text-white"
+                          : "text-gray-400 bg-transparent hover:bg-primary/30 dark:hover:bg-white/10 hover:text-white"
                       )}
                       aria-current={isActive ? "page" : undefined}
                     >
@@ -93,7 +93,7 @@ export function AppSidebar() {
                         "flex w-full items-center gap-2 rounded-lg p-2 text-sm transition-colors",
                         isActive
                           ? "bg-primary text-white font-semibold"
-                          : "text-gray-400 bg-transparent hover:bg-primary/20 hover:text-white"
+                          : "text-gray-400 bg-transparent hover:bg-primary/30 dark:hover:bg-white/10 hover:text-white"
                       )}
                       aria-current={isActive ? "page" : undefined}
                     >
@@ -123,7 +123,7 @@ export function AppSidebar() {
                           "flex w-full items-center gap-2 rounded-lg p-2 text-sm transition-colors",
                           isActive
                             ? "bg-primary text-white font-semibold"
-                            : "text-gray-400 bg-transparent hover:bg-primary/20 hover:text-white"
+                            : "text-gray-400 bg-transparent hover:bg-primary/30 dark:hover:bg-white/10 hover:text-white"
                         )}
                         aria-current={isActive ? "page" : undefined}
                       >
