@@ -45,7 +45,7 @@ export function AppSidebar() {
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
-      ? "bg-accent font-medium" 
+      ? "bg-primary text-primary-foreground hover:bg-primary/90 font-medium" 
       : "hover:bg-accent/50";
 
   const canAccessAdmin = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
