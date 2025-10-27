@@ -7,7 +7,6 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LoginForm } from "@/components/LoginForm";
 import { ResetPasswordForm } from "@/components/ResetPasswordForm";
 import { Layout } from "@/components/Layout";
-import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Cotacoes from "./pages/Cotacoes";
 import Clientes from "./pages/Clientes";
@@ -42,8 +41,7 @@ const AppContent = () => {
         <Route path="/*" element={
           <Layout>
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/" element={<Dashboard />} />
               <Route path="/cotacoes" element={<Cotacoes />} />
               <Route path="/clientes" element={<Clientes />} />
               <Route path="/tarefas" element={<Tarefas />} />
