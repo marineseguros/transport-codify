@@ -5,6 +5,13 @@ import { UserProfile, UserRole } from '@/types';
 import { loginSchema, signUpSchema } from '@/lib/validations';
 import { toast } from 'sonner';
 
+// Helper para gerenciar redirecionamento
+let navigateToHome: (() => void) | null = null;
+
+export const setNavigateToHome = (fn: () => void) => {
+  navigateToHome = fn;
+};
+
 interface AuthContextType {
   user: UserProfile | null;
   session: Session | null;
@@ -34,6 +41,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
+    // Redirecionar para home (login) após logout
+    if (navigateToHome) {
+      navigateToHome();
+    }
   }, []);
 
   // Monitorar inatividade

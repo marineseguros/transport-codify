@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 import { ForgotPasswordModal } from '@/components/ForgotPasswordModal';
 export const LoginForm = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,6 +26,9 @@ export const LoginForm = () => {
         description: "Email ou senha inválidos. Verifique suas credenciais.",
         variant: "destructive"
       });
+    } else {
+      // Redirecionar para o Dashboard após login bem-sucedido
+      navigate('/');
     }
   };
   return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">

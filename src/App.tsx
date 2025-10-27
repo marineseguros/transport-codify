@@ -2,11 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { AuthProvider, useAuth, setNavigateToHome } from "@/contexts/AuthContext";
 import { LoginForm } from "@/components/LoginForm";
 import { ResetPasswordForm } from "@/components/ResetPasswordForm";
 import { Layout } from "@/components/Layout";
+import { useEffect } from "react";
 import Dashboard from "./pages/Dashboard";
 import Cotacoes from "./pages/Cotacoes";
 import Clientes from "./pages/Clientes";
@@ -24,6 +25,21 @@ const queryClient = new QueryClient();
 
 const AppContent = () => {
   const { user, session, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Configurar navegação para o AuthContext
+  useEffect(() => {
+    setNavigateToHome(() => navigate('/'));
+  }, [navigate]);
+
+  // Redirecionar para Dashboard após login ou quando usuário já está autenticado
+  useEffect(() => {
+    if (!isLoading && user && location.pathname === '/') {
+      // Garantir que sempre vai para o Dashboard após login
+      navigate('/', { replace: true });
+    }
+  }, [user, isLoading, navigate, location.pathname]);
 
   if (isLoading) {
     return (
