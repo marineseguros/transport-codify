@@ -11,11 +11,11 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
   { title: "Clientes", url: "/clientes", icon: Users },
@@ -43,11 +43,6 @@ export function AppSidebar() {
   const { user } = useAuth();
   const currentPath = location.pathname;
 
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? "bg-white/10 text-white font-semibold rounded-lg" 
-      : "text-gray-400 bg-transparent hover:bg-white/5 hover:text-white";
-
   const canAccessAdmin = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
 
   return (
@@ -58,21 +53,27 @@ export function AppSidebar() {
           <SidebarGroupLabel>Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+              {menuItems.map((item) => {
+                const isActive = currentPath === item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
                     <NavLink 
                       to={item.url} 
                       end 
-                      className={getNavCls}
-                      aria-current={currentPath === item.url ? "page" : undefined}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm transition-colors",
+                        isActive
+                          ? "bg-white/10 text-white font-semibold"
+                          : "text-gray-400 bg-transparent hover:bg-white/5 hover:text-white"
+                      )}
+                      aria-current={isActive ? "page" : undefined}
                     >
                       <item.icon className="h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -82,20 +83,26 @@ export function AppSidebar() {
           <SidebarGroupLabel>Análise</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {reportItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+              {reportItems.map((item) => {
+                const isActive = currentPath === item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
                     <NavLink 
                       to={item.url} 
-                      className={getNavCls}
-                      aria-current={currentPath === item.url ? "page" : undefined}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm transition-colors",
+                        isActive
+                          ? "bg-white/10 text-white font-semibold"
+                          : "text-gray-400 bg-transparent hover:bg-white/5 hover:text-white"
+                      )}
+                      aria-current={isActive ? "page" : undefined}
                     >
                       <item.icon className="h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -106,20 +113,26 @@ export function AppSidebar() {
             <SidebarGroupLabel>Administração</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {adminItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                {adminItems.map((item) => {
+                  const isActive = currentPath === item.url;
+                  return (
+                    <SidebarMenuItem key={item.title}>
                       <NavLink 
                         to={item.url} 
-                        className={getNavCls}
-                        aria-current={currentPath === item.url ? "page" : undefined}
+                        className={cn(
+                          "flex w-full items-center gap-2 rounded-lg p-2 text-sm transition-colors",
+                          isActive
+                            ? "bg-white/10 text-white font-semibold"
+                            : "text-gray-400 bg-transparent hover:bg-white/5 hover:text-white"
+                        )}
+                        aria-current={isActive ? "page" : undefined}
                       >
                         <item.icon className="h-4 w-4" />
                         {!collapsed && <span>{item.title}</span>}
                       </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
