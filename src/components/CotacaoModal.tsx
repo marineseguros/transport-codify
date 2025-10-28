@@ -675,6 +675,11 @@ export const CotacaoModal = ({
                           </SelectItem>)}
                       </SelectContent>
                     </Select>
+                    <div className="flex items-center bg-muted/30 rounded-md px-3 h-10 min-w-[120px]">
+                      <span className="text-xs text-muted-foreground">
+                        {formData.segmento || '-'}
+                      </span>
+                    </div>
                   </div>
                   
                   {/* Ramos Extras - Layout responsivo */}
