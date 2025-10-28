@@ -609,7 +609,7 @@ const Dashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os produtores</SelectItem>
-                  {produtores.map(produtor => <SelectItem key={produtor.id} value={produtor.nome}>
+                  {produtores.filter(p => p.ativo).map(produtor => <SelectItem key={produtor.id} value={produtor.nome}>
                       {produtor.nome}
                     </SelectItem>)}
                 </SelectContent>
