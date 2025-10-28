@@ -357,9 +357,9 @@ const Cotacoes = () => {
       {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
-          {/* Primeira linha: Pesquisa, Ordenação e Status */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
-            <div className="md:col-span-6 relative">
+          {/* Linha única com todos os filtros */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-4 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Pesquisar por número, segurado, CPF/CNPJ, seguradora, ramo..."
@@ -368,7 +368,8 @@ const Cotacoes = () => {
                 className="pl-10"
               />
             </div>
-            <div className="md:col-span-3">
+            
+            <div className="lg:col-span-2">
               <Select
                 value={`${sortBy}-${sortOrder}`}
                 onValueChange={(value) => {
@@ -390,7 +391,8 @@ const Cotacoes = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-3">
+            
+            <div className="lg:col-span-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Status" />
@@ -405,42 +407,11 @@ const Cotacoes = () => {
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Segunda linha: Período, Produtor e Limpar */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 border-t pt-4">
-            <div className="md:col-span-3">
-              <label className="text-sm font-medium mb-2 block">Período</label>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os períodos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os períodos</SelectItem>
-                  <SelectItem value="hoje">Hoje</SelectItem>
-                  <SelectItem value="7dias">Últimos 7 dias</SelectItem>
-                  <SelectItem value="30dias">Últimos 30 dias</SelectItem>
-                  <SelectItem value="90dias">Últimos 90 dias</SelectItem>
-                  <SelectItem value="mes_atual">Este mês</SelectItem>
-                  <SelectItem value="mes_anterior">Mês passado</SelectItem>
-                  <SelectItem value="ano_atual">Ano atual</SelectItem>
-                  <SelectItem value="personalizado">Período personalizado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {dateFilter === 'personalizado' && (
-              <div className="md:col-span-4">
-                <label className="text-sm font-medium mb-2 block">Data personalizada</label>
-                <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
-              </div>
-            )}
-
-            <div className={dateFilter === 'personalizado' ? 'md:col-span-3' : 'md:col-span-7'}>
-              <label className="text-sm font-medium mb-2 block">Produtor</label>
+            <div className="lg:col-span-2">
               <Select value={produtorFilter} onValueChange={setProdutorFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Todos os produtores" />
+                  <SelectValue placeholder="Produtor" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os produtores</SelectItem>
@@ -453,10 +424,15 @@ const Cotacoes = () => {
               </Select>
             </div>
 
-            <div className="md:col-span-2 flex items-end">
+            <div className="lg:col-span-2">
               <Button 
                 variant="outline" 
                 onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('todos');
+                  setProdutorFilter('todos');
+                  setSortBy('data_cotacao');
+                  setSortOrder('desc');
                   setDateFilter('todos');
                   setDateRange(undefined);
                 }}

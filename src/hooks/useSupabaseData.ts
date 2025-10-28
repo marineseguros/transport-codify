@@ -347,7 +347,7 @@ export function useCotacoes() {
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(50);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -478,63 +478,90 @@ export function useCotacoes() {
   const fetchCotacoes = async () => {
     try {
       setLoading(true);
-      let query = buildBaseQuery()
-        .order(sortBy, { ascending: sortOrder === 'asc' })
-        .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
+      
+      // Se há termo de busca, buscar TODOS os registros primeiro e filtrar
+      if (searchTerm) {
+        let query = buildBaseQuery()
+          .order(sortBy, { ascending: sortOrder === 'asc' });
 
-      query = applyFilters(query);
-      
-      // Note: Search filtering is done in JavaScript after fetching data
-      // to allow searching in joined fields (seguradora, produtor, ramo)
-      
-      // Handle produtor filter
-      if (produtorFilter && produtorFilter !== 'todos') {
-        const { data: produtorData } = await supabase
-          .from('produtores')
-          .select('id')
-          .eq('nome', produtorFilter);
+        query = applyFilters(query);
         
-        if (produtorData && produtorData.length > 0) {
-          const produtorIds = produtorData.map(p => p.id);
-          query = query.in('produtor_cotador_id', produtorIds);
-        } else {
-          // No matching produtor found
-          setCotacoes([]);
-          setLoading(false);
-          return;
+        // Handle produtor filter
+        if (produtorFilter && produtorFilter !== 'todos') {
+          const { data: produtorData } = await supabase
+            .from('produtores')
+            .select('id')
+            .eq('nome', produtorFilter);
+          
+          if (produtorData && produtorData.length > 0) {
+            const produtorIds = produtorData.map(p => p.id);
+            query = query.in('produtor_cotador_id', produtorIds);
+          } else {
+            setCotacoes([]);
+            setTotalCount(0);
+            setLoading(false);
+            return;
+          }
         }
-      }
 
-      const { data, error } = await query;
+        const { data, error } = await query;
 
-      if (error) throw error;
-      
-      let cotacoesData = (data as any[]) || [];
-      
-      // Apply search filter for joined fields (seguradora, produtor, ramo names)
-      if (searchTerm && cotacoesData.length > 0) {
+        if (error) throw error;
+        
+        let cotacoesData = (data as any[]) || [];
+        
+        // Apply search filter for joined fields
         const searchLower = searchTerm.toLowerCase();
         cotacoesData = cotacoesData.filter(cotacao => {
-          // Campos diretos
           const basicMatch = 
             cotacao.segurado?.toLowerCase().includes(searchLower) ||
             cotacao.numero_cotacao?.toLowerCase().includes(searchLower) ||
             cotacao.cpf_cnpj?.toLowerCase().includes(searchLower);
           
-          // Campos relacionados (joined)
           const seguradoraMatch = cotacao.seguradora?.nome?.toLowerCase().includes(searchLower);
           const produtorMatch = cotacao.produtor_cotador?.nome?.toLowerCase().includes(searchLower);
           const ramoMatch = cotacao.ramo?.descricao?.toLowerCase().includes(searchLower);
           
           return basicMatch || seguradoraMatch || produtorMatch || ramoMatch;
         });
-      }
-      
-      setCotacoes(cotacoesData);
-      
-      // Recalculate total count with search filter applied
-      if (searchTerm) {
-        await getTotalCountWithSearch();
+        
+        // Update total count with filtered results
+        setTotalCount(cotacoesData.length);
+        
+        // Apply pagination to filtered results
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        setCotacoes(cotacoesData.slice(start, end));
+      } else {
+        // Sem busca, fazer paginação normal no banco
+        let query = buildBaseQuery()
+          .order(sortBy, { ascending: sortOrder === 'asc' })
+          .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
+
+        query = applyFilters(query);
+        
+        // Handle produtor filter
+        if (produtorFilter && produtorFilter !== 'todos') {
+          const { data: produtorData } = await supabase
+            .from('produtores')
+            .select('id')
+            .eq('nome', produtorFilter);
+          
+          if (produtorData && produtorData.length > 0) {
+            const produtorIds = produtorData.map(p => p.id);
+            query = query.in('produtor_cotador_id', produtorIds);
+          } else {
+            setCotacoes([]);
+            setLoading(false);
+            return;
+          }
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+        
+        setCotacoes((data as any[]) || []);
       }
     } catch (error) {
       console.error('Error fetching cotacoes:', error);
