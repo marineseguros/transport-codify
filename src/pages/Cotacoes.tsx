@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, Download, Upload, Edit, Trash2, RefreshCw, FileText, History, CalendarIcon } from 'lucide-react';
+import { Plus, Search, Download, Upload, Edit, Trash2, RefreshCw, FileText, History, CalendarIcon, Eye } from 'lucide-react';
 import { CotacaoModal } from '@/components/CotacaoModal';
 import { HistoricoGeralModal } from '@/components/HistoricoGeralModal';
 import { PaginationControls } from '@/components/ui/pagination-controls';
@@ -50,6 +50,7 @@ const Cotacoes = () => {
   } = useCotacoes();
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [cotacaoToDelete, setCotacaoToDelete] = useState<string | null>(null);
@@ -122,6 +123,7 @@ const Cotacoes = () => {
 
   const handleEdit = (cotacao: Cotacao) => {
     setSelectedCotacao(cotacao);
+    setIsViewMode(false);
     setIsModalOpen(true);
   };
 
@@ -186,6 +188,7 @@ const Cotacoes = () => {
 
   const handleNewCotacao = () => {
     setSelectedCotacao(null);
+    setIsViewMode(false);
     setIsModalOpen(true);
   };
 
@@ -533,6 +536,17 @@ const Cotacoes = () => {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => {
+                            setSelectedCotacao(cotacao);
+                            setIsViewMode(true);
+                            setIsModalOpen(true);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => handleEdit(cotacao)}
                         >
                           <Edit className="h-4 w-4" />
@@ -599,9 +613,10 @@ const Cotacoes = () => {
         onClose={() => {
           setIsModalOpen(false);
           setSelectedCotacao(null);
+          setIsViewMode(false);
         }}
         cotacao={selectedCotacao || undefined}
-        mode={selectedCotacao ? 'edit' : 'create'}
+        mode={isViewMode ? 'view' : (selectedCotacao ? 'edit' : 'create')}
         onSaved={() => refetch()}
       />
 

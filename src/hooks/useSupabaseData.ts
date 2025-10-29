@@ -7,6 +7,10 @@ export interface Profile {
   email: string;
   papel: string;
   modulo: string;
+  ativo: boolean;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Unidade {
@@ -119,17 +123,21 @@ export interface Cotacao {
 export function useProfiles() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
 
   useEffect(() => {
     fetchProfiles();
-  }, []);
+  }, [refetchTrigger]);
+
+  const refetch = () => {
+    setRefetchTrigger(prev => prev + 1);
+  };
 
   const fetchProfiles = async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('ativo', true)
         .order('nome');
 
       if (error) throw error;
@@ -141,7 +149,7 @@ export function useProfiles() {
     }
   };
 
-  return { profiles, loading, refetch: fetchProfiles };
+  return { profiles, loading, refetch };
 }
 
 export function useUnidades() {

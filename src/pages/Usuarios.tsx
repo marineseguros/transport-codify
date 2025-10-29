@@ -12,15 +12,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProfiles } from '@/hooks/useSupabaseData';
+import { useProfiles, type Profile } from '@/hooks/useSupabaseData';
+import { UsuarioModal } from '@/components/UsuarioModal';
+import { Eye, Edit } from 'lucide-react';
 
 const Usuarios = () => {
   const { user } = useAuth();
-  const { profiles: users, loading } = useProfiles();
+  const { profiles: users, loading, refetch } = useProfiles();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [moduloFilter, setModuloFilter] = useState('');
+  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'view' | 'edit'>('view');
 
   // Only Administrators, Managers and CEOs can access this page
   const isAdminRole = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
@@ -274,11 +279,29 @@ const Usuarios = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-2 justify-end">
-                      <Button size="sm" variant="outline">
-                        Editar
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setModalMode('view');
+                          setModalOpen(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Visualizar
                       </Button>
-                      <Button size="sm" variant="outline">
-                        Desativar
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setModalMode('edit');
+                          setModalOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Editar
                       </Button>
                     </div>
                   </TableCell>
@@ -299,6 +322,14 @@ const Usuarios = () => {
           )}
         </CardContent>
       </Card>
+
+      <UsuarioModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        usuario={selectedUser}
+        mode={modalMode}
+        onSave={refetch}
+      />
     </div>
   );
 };
