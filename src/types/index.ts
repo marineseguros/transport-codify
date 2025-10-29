@@ -1,10 +1,13 @@
 export type UserRole = 'Administrador' | 'Gerente' | 'CEO' | 'Operacional' | 'Produtor' | 'Faturamento';
+export type ModuloTipo = 'Transportes' | 'Ramos Elementares';
 
 export interface UserProfile {
   id: string;
+  user_id: string;
   nome: string;
   email: string;
   papel: UserRole;
+  modulo: ModuloTipo;
   ativo: boolean;
   created_at: string;
   updated_at: string;

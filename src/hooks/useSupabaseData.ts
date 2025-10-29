@@ -6,6 +6,7 @@ export interface Profile {
   nome: string;
   email: string;
   papel: string;
+  modulo: string;
 }
 
 export interface Unidade {

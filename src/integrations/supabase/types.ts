@@ -46,6 +46,7 @@ export type Database = {
           email: string | null
           endereco: string | null
           id: string
+          modulo: Database["public"]["Enums"]["modulo_tipo"]
           observacoes: string | null
           segurado: string
           telefone: string | null
@@ -62,6 +63,7 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           id?: string
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
           observacoes?: string | null
           segurado: string
           telefone?: string | null
@@ -78,6 +80,7 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           id?: string
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
           observacoes?: string | null
           segurado?: string
           telefone?: string | null
@@ -104,6 +107,7 @@ export type Database = {
           data_cotacao: string
           data_fechamento: string | null
           id: string
+          modulo: Database["public"]["Enums"]["modulo_tipo"]
           motivo_recusa: string | null
           num_proposta: string | null
           numero_cotacao: string
@@ -132,6 +136,7 @@ export type Database = {
           data_cotacao?: string
           data_fechamento?: string | null
           id?: string
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
           motivo_recusa?: string | null
           num_proposta?: string | null
           numero_cotacao: string
@@ -160,6 +165,7 @@ export type Database = {
           data_cotacao?: string
           data_fechamento?: string | null
           id?: string
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
           motivo_recusa?: string | null
           num_proposta?: string | null
           numero_cotacao?: string
@@ -435,6 +441,7 @@ export type Database = {
           data_realizada: string | null
           data_registro: string
           id: string
+          modulo: Database["public"]["Enums"]["modulo_tipo"]
           observacao: string | null
           segurado: string
           subtipo: string | null
@@ -451,6 +458,7 @@ export type Database = {
           data_realizada?: string | null
           data_registro?: string
           id?: string
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
           observacao?: string | null
           segurado: string
           subtipo?: string | null
@@ -467,6 +475,7 @@ export type Database = {
           data_realizada?: string | null
           data_registro?: string
           id?: string
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
           observacao?: string | null
           segurado?: string
           subtipo?: string | null
@@ -482,6 +491,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          modulo: Database["public"]["Enums"]["modulo_tipo"]
           nome: string
           papel: string
           updated_at: string
@@ -492,6 +502,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
           nome: string
           papel?: string
           updated_at?: string
@@ -502,6 +513,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
           nome?: string
           papel?: string
           updated_at?: string
@@ -665,24 +677,6 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
-        Row: {
-          created_at: string | null
-          email: string
-          id: string
-        }
-        Insert: {
-          created_at?: string | null
-          email: string
-          id?: string
-        }
-        Update: {
-          created_at?: string | null
-          email?: string
-          id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       clientes_restricted: {
@@ -731,6 +725,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "produtor" | "faturamento"
+      modulo_tipo: "Transportes" | "Ramos Elementares"
       user_role: "admin" | "faturamento" | "produtor" | "viewer"
     }
     CompositeTypes: {
@@ -860,6 +855,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "produtor", "faturamento"],
+      modulo_tipo: ["Transportes", "Ramos Elementares"],
       user_role: ["admin", "faturamento", "produtor", "viewer"],
     },
   },

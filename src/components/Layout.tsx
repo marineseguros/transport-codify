@@ -29,8 +29,12 @@ export const Layout = ({ children }: LayoutProps) => {
                 className="h-8 w-auto"
               />
               <div>
-                <h1 className="text-lg font-semibold text-primary">Sistema de Cotações Transportes</h1>
-                <p className="text-sm text-muted-foreground">Gestão de Cotações de Transportes</p>
+                <h1 className="text-lg font-semibold text-primary">
+                  Sistema de Cotações {user?.modulo || 'Transportes'}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Gestão de Cotações de {user?.modulo || 'Transportes'}
+                </p>
               </div>
             </div>
             

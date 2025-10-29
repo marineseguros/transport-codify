@@ -15,8 +15,9 @@ export const setNavigateToHome = (fn: () => void) => {
 interface AuthContextType {
   user: UserProfile | null;
   session: Session | null;
+  modulo: string | null;
   login: (email: string, password: string) => Promise<boolean>;
-  signUp: (email: string, password: string, nome: string, papel?: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, nome: string, papel?: string, modulo?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   updatePassword: (password: string) => Promise<{ success: boolean; error?: string }>;
@@ -28,6 +29,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [modulo, setModulo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastActivity, setLastActivity] = useState<number>(Date.now());
 
@@ -102,6 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 ...profile,
                 papel: profile.papel as UserRole
               });
+              setModulo(profile.modulo);
             }
             setIsLoading(false);
           }, 0);
@@ -157,7 +160,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signUp = async (email: string, password: string, nome: string, papel: string = 'Produtor') => {
+  const signUp = async (email: string, password: string, nome: string, papel: string = 'Produtor', modulo: string = 'Transportes') => {
     setIsLoading(true);
     
     try {
@@ -197,6 +200,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               nome: validationResult.data.nome,
               email: validationResult.data.email,
               papel,
+              modulo: modulo as 'Transportes' | 'Ramos Elementares',
               ativo: true
             }
           ]);
@@ -280,7 +284,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   return (
-    <AuthContext.Provider value={{ user, session, login, signUp, logout, resetPassword, updatePassword, isLoading }}>
+    <AuthContext.Provider value={{ user, session, modulo, login, signUp, logout, resetPassword, updatePassword, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

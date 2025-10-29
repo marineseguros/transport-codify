@@ -20,6 +20,7 @@ const Usuarios = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [moduloFilter, setModuloFilter] = useState('');
 
   // Only Administrators, Managers and CEOs can access this page
   const isAdminRole = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
@@ -42,12 +43,13 @@ const Usuarios = () => {
       const matchesSearch = user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            user.email.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = roleFilter === 'todos' || !roleFilter || user.papel === roleFilter;
+      const matchesModulo = moduloFilter === 'todos' || !moduloFilter || user.modulo === moduloFilter;
       // Since Supabase users are active by default, we treat all as active
       const matchesStatus = statusFilter === '' || statusFilter === 'todos' || statusFilter === 'ativo';
       
-      return matchesSearch && matchesRole && matchesStatus;
+      return matchesSearch && matchesRole && matchesModulo && matchesStatus;
     });
-  }, [users, searchTerm, roleFilter, statusFilter]);
+  }, [users, searchTerm, roleFilter, moduloFilter, statusFilter]);
 
   // Calculate stats - all users from Supabase are considered active
   const stats = useMemo(() => {
@@ -186,6 +188,20 @@ const Usuarios = () => {
             </div>
 
             <div className="w-48">
+              <label className="text-sm font-medium mb-2 block">Módulo</label>
+              <Select value={moduloFilter} onValueChange={setModuloFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os módulos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os módulos</SelectItem>
+                  <SelectItem value="Transportes">Transportes</SelectItem>
+                  <SelectItem value="Ramos Elementares">Ramos Elementares</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="w-48">
               <label className="text-sm font-medium mb-2 block">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
@@ -203,6 +219,7 @@ const Usuarios = () => {
               onClick={() => {
                 setSearchTerm('');
                 setRoleFilter('');
+                setModuloFilter('');
                 setStatusFilter('');
               }}
             >
@@ -226,6 +243,7 @@ const Usuarios = () => {
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Papel</TableHead>
+                <TableHead>Módulo</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Data de Cadastro</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -239,6 +257,11 @@ const Usuarios = () => {
                   <TableCell>
                     <Badge variant={getRoleColor(user.papel)}>
                       {user.papel}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={user.modulo === 'Transportes' ? 'default' : 'secondary'}>
+                      {user.modulo}
                     </Badge>
                   </TableCell>
                   <TableCell>
