@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { Profile } from '@/hooks/useSupabaseData';
 
@@ -30,9 +31,11 @@ interface UsuarioModalProps {
 }
 
 export function UsuarioModal({ open, onOpenChange, usuario, mode, onSave }: UsuarioModalProps) {
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
+    password: '',
     papel: 'Produtor',
     modulo: 'Transportes' as 'Transportes' | 'Ramos Elementares',
     ativo: true,
@@ -40,12 +43,14 @@ export function UsuarioModal({ open, onOpenChange, usuario, mode, onSave }: Usua
   const [loading, setLoading] = useState(false);
 
   const isViewMode = mode === 'view';
+  const isCreateMode = !usuario;
 
   useEffect(() => {
     if (usuario) {
       setFormData({
         nome: usuario.nome,
         email: usuario.email,
+        password: '',
         papel: usuario.papel,
         modulo: usuario.modulo as 'Transportes' | 'Ramos Elementares',
         ativo: usuario.ativo ?? true,
@@ -54,6 +59,7 @@ export function UsuarioModal({ open, onOpenChange, usuario, mode, onSave }: Usua
       setFormData({
         nome: '',
         email: '',
+        password: '',
         papel: 'Produtor',
         modulo: 'Transportes',
         ativo: true,
@@ -69,29 +75,55 @@ export function UsuarioModal({ open, onOpenChange, usuario, mode, onSave }: Usua
       return;
     }
 
-    if (!usuario) return;
-
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          nome: formData.nome,
-          papel: formData.papel,
-          modulo: formData.modulo,
-          ativo: formData.ativo,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', usuario.id);
+      if (isCreateMode) {
+        // Criar novo usuário
+        if (!formData.password || formData.password.length < 6) {
+          toast.error('Senha deve ter no mínimo 6 caracteres');
+          setLoading(false);
+          return;
+        }
 
-      if (error) throw error;
+        const result = await signUp(
+          formData.email,
+          formData.password,
+          formData.nome,
+          formData.papel,
+          formData.modulo
+        );
 
-      toast.success('Usuário atualizado com sucesso');
-      onSave?.();
-      onOpenChange(false);
+        if (result.success) {
+          toast.success('Usuário criado com sucesso! Um email de confirmação foi enviado.');
+          onSave?.();
+          onOpenChange(false);
+        } else {
+          toast.error(result.error || 'Erro ao criar usuário');
+        }
+      } else {
+        // Atualizar usuário existente
+        if (!usuario) return;
+
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            nome: formData.nome,
+            papel: formData.papel,
+            modulo: formData.modulo,
+            ativo: formData.ativo,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', usuario.id);
+
+        if (error) throw error;
+
+        toast.success('Usuário atualizado com sucesso');
+        onSave?.();
+        onOpenChange(false);
+      }
     } catch (error) {
-      console.error('Erro ao atualizar usuário:', error);
-      toast.error('Erro ao atualizar usuário');
+      console.error('Erro ao salvar usuário:', error);
+      toast.error('Erro ao salvar usuário');
     } finally {
       setLoading(false);
     }
@@ -102,12 +134,14 @@ export function UsuarioModal({ open, onOpenChange, usuario, mode, onSave }: Usua
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {isViewMode ? 'Visualizar Usuário' : 'Editar Usuário'}
+            {isViewMode ? 'Visualizar Usuário' : (isCreateMode ? 'Criar Novo Usuário' : 'Editar Usuário')}
           </DialogTitle>
           <DialogDescription>
             {isViewMode 
               ? 'Visualize as informações do usuário.'
-              : 'Atualize as informações do usuário.'}
+              : (isCreateMode 
+                  ? 'Preencha os dados para criar um novo usuário.'
+                  : 'Atualize as informações do usuário.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -130,13 +164,35 @@ export function UsuarioModal({ open, onOpenChange, usuario, mode, onSave }: Usua
                 id="email"
                 type="email"
                 value={formData.email}
-                disabled={true}
-                className="bg-muted"
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                disabled={isViewMode || !isCreateMode}
+                className={!isCreateMode ? 'bg-muted' : ''}
+                required
               />
-              <p className="text-xs text-muted-foreground">
-                O email não pode ser alterado
-              </p>
+              {!isCreateMode && (
+                <p className="text-xs text-muted-foreground">
+                  O email não pode ser alterado
+                </p>
+              )}
             </div>
+
+            {isCreateMode && (
+              <div className="grid gap-2">
+                <Label htmlFor="password">Senha *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  disabled={isViewMode}
+                  required
+                  minLength={6}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Mínimo de 6 caracteres
+                </p>
+              </div>
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="papel">Papel *</Label>

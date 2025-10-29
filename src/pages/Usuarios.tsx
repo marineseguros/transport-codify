@@ -105,7 +105,13 @@ const Usuarios = () => {
           </p>
         </div>
         
-        <Button>Novo Usuário</Button>
+        <Button onClick={() => {
+          setSelectedUser(null);
+          setModalMode('edit');
+          setModalOpen(true);
+        }}>
+          Novo Usuário
+        </Button>
       </div>
 
       {/* Stats Cards */}
