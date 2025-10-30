@@ -301,7 +301,13 @@ const Clientes = () => {
                   <TableCell>
                     {cliente.ultimaCotacao && (
                       <div className="text-sm">
-                        {new Date(cliente.ultimaCotacao).toLocaleDateString('pt-BR')}
+                        {(() => {
+                          const date = new Date(cliente.ultimaCotacao + 'T00:00:00Z');
+                          const day = String(date.getUTCDate()).padStart(2, '0');
+                          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                          const year = date.getUTCFullYear();
+                          return `${day}/${month}/${year}`;
+                        })()}
                       </div>
                     )}
                   </TableCell>

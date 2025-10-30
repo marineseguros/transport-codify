@@ -599,7 +599,12 @@ const Dashboard = () => {
       currency: "BRL",
     }).format(value);
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("pt-BR");
+    // Parse the date as UTC to avoid timezone conversion issues
+    const date = new Date(dateString + 'T00:00:00Z');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    return `${day}/${month}/${year}`;
   };
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
