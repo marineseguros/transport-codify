@@ -299,16 +299,18 @@ const Clientes = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    {cliente.ultimaCotacao && (
+                    {cliente.ultimaCotacao && cliente.ultimaCotacao > 0 ? (
                       <div className="text-sm">
                         {(() => {
-                          const date = new Date(cliente.ultimaCotacao + 'T00:00:00Z');
-                          const day = String(date.getUTCDate()).padStart(2, '0');
-                          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-                          const year = date.getUTCFullYear();
+                          const date = new Date(cliente.ultimaCotacao);
+                          const day = String(date.getDate()).padStart(2, '0');
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const year = date.getFullYear();
                           return `${day}/${month}/${year}`;
                         })()}
                       </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">-</div>
                     )}
                   </TableCell>
                   {canEdit && (
