@@ -961,14 +961,28 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
 
                 <div>
                   <Label htmlFor="valor_premio">Valor do Prêmio *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.valor_premio}
-                    onChange={(e) => handleInputChange("valor_premio", parseFloat(e.target.value) || 0)}
-                    placeholder="0,00"
-                    readOnly={isReadOnly}
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
+                    <Input
+                      type="text"
+                      value={
+                        formData.valor_premio
+                          ? new Intl.NumberFormat('pt-BR', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }).format(formData.valor_premio)
+                          : ''
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        const numericValue = parseFloat(value) / 100 || 0;
+                        handleInputChange("valor_premio", numericValue);
+                      }}
+                      placeholder="0,00"
+                      readOnly={isReadOnly}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
 
                 <div>
