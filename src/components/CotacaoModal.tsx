@@ -122,7 +122,13 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         captacao_id: cotacao.captacao_id || "",
         status_seguradora_id: cotacao.status_seguradora_id || "",
         tipo: cotacao.tipo || "Nova",
-        data_cotacao: cotacao.data_cotacao || new Date().toISOString().split("T")[0],
+        data_cotacao: cotacao.data_cotacao || (() => {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const day = String(now.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        })(),
         inicio_vigencia: cotacao.data_cotacao || "",
         fim_vigencia: cotacao.data_fechamento || "",
         valor_premio: cotacao.valor_premio || 0,
@@ -945,7 +951,9 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                       <SelectItem value="Em cotação">Em cotação</SelectItem>
                       <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
                       <SelectItem value="Declinado">Declinado</SelectItem>
-                      <SelectItem value="Fechamento congênere">Fechamento congênere</SelectItem>
+                      {cotacao?.status === "Negócio fechado" && (
+                        <SelectItem value="Fechamento congênere">Fechamento congênere</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
