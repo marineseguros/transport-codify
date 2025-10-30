@@ -63,7 +63,13 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
     captacao_id: "",
     status_seguradora_id: "",
     tipo: "Nova",
-    data_cotacao: new Date().toISOString().split("T")[0],
+        data_cotacao: (() => {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const day = String(now.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        })(),
     inicio_vigencia: "",
     fim_vigencia: "",
     valor_premio: 0,
@@ -143,6 +149,14 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
             (p.nome && user?.nome && p.nome.toLowerCase().includes(user.nome.toLowerCase())),
         ) || activeProdutores[0]; // Fallback to first produtor if no match
 
+      // Format dates in local timezone
+      const formatLocalDate = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
       setFormData({
         cliente_id: "",
         unidade_id: "",
@@ -156,9 +170,9 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         captacao_id: "",
         status_seguradora_id: "",
         tipo: "Nova",
-        data_cotacao: hoje.toISOString().split("T")[0],
-        inicio_vigencia: inicioVigencia.toISOString().split("T")[0],
-        fim_vigencia: fimVigencia.toISOString().split("T")[0],
+        data_cotacao: formatLocalDate(hoje),
+        inicio_vigencia: formatLocalDate(inicioVigencia),
+        fim_vigencia: formatLocalDate(fimVigencia),
         valor_premio: 0,
         status: "Em cotação",
         observacoes: "",
@@ -931,7 +945,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                       <SelectItem value="Em cotação">Em cotação</SelectItem>
                       <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
                       <SelectItem value="Declinado">Declinado</SelectItem>
-                      {mode === "view" && <SelectItem value="Fechamento congênere">Fechamento congênere</SelectItem>}
+                      <SelectItem value="Fechamento congênere">Fechamento congênere</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
