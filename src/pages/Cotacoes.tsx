@@ -305,8 +305,9 @@ const Cotacoes = () => {
   };
 
   const formatDate = (dateString: string) => {
-    // Parse the date as UTC to avoid timezone conversion issues
-    const date = new Date(dateString + 'T00:00:00Z');
+    // Parse the date from the database (which is stored as timestamptz in UTC)
+    const date = new Date(dateString);
+    // Extract the UTC date components to avoid timezone conversion
     const day = String(date.getUTCDate()).padStart(2, '0');
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
     const year = date.getUTCFullYear();
