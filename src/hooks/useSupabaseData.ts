@@ -611,6 +611,15 @@ export function useCotacoes() {
 
       if (numberError) throw numberError;
 
+      // Add time component to dates to avoid timezone conversion issues
+      const formatDateForDB = (dateStr: string | undefined) => {
+        if (!dateStr) return undefined;
+        // If already has time, return as is
+        if (dateStr.includes('T')) return dateStr;
+        // Add midday time to avoid date shift with timezone conversion
+        return `${dateStr}T12:00:00`;
+      };
+
       const insertData = {
         segurado: cotacaoData.segurado,
         cpf_cnpj: cotacaoData.cpf_cnpj,
@@ -628,7 +637,10 @@ export function useCotacoes() {
         tipo: cotacaoData.tipo || 'Nova',
         valor_premio: cotacaoData.valor_premio || 0,
         status: cotacaoData.status || 'Em cotação',
-        data_fechamento: cotacaoData.data_fechamento,
+        data_cotacao: formatDateForDB(cotacaoData.data_cotacao),
+        inicio_vigencia: formatDateForDB(cotacaoData.inicio_vigencia),
+        fim_vigencia: formatDateForDB(cotacaoData.fim_vigencia),
+        data_fechamento: formatDateForDB(cotacaoData.data_fechamento),
         num_proposta: cotacaoData.num_proposta,
         motivo_recusa: cotacaoData.motivo_recusa,
         comentarios: cotacaoData.comentarios,
@@ -655,6 +667,15 @@ export function useCotacoes() {
 
   const updateCotacao = async (id: string, updates: any) => {
     try {
+      // Add time component to dates to avoid timezone conversion issues
+      const formatDateForDB = (dateStr: string | undefined) => {
+        if (!dateStr) return undefined;
+        // If already has time, return as is
+        if (dateStr.includes('T')) return dateStr;
+        // Add midday time to avoid date shift with timezone conversion
+        return `${dateStr}T12:00:00`;
+      };
+
       const updateData = {
         segurado: updates.segurado,
         cpf_cnpj: updates.cpf_cnpj,
@@ -669,7 +690,10 @@ export function useCotacoes() {
         tipo: updates.tipo,
         valor_premio: updates.valor_premio || 0,
         status: updates.status,
-        data_fechamento: updates.data_fechamento,
+        data_cotacao: formatDateForDB(updates.data_cotacao),
+        inicio_vigencia: formatDateForDB(updates.inicio_vigencia),
+        fim_vigencia: formatDateForDB(updates.fim_vigencia),
+        data_fechamento: formatDateForDB(updates.data_fechamento),
         num_proposta: updates.num_proposta,
         motivo_recusa: updates.motivo_recusa,
         comentarios: updates.comentarios,

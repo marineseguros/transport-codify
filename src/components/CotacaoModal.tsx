@@ -241,9 +241,13 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
 
     // Validations
     if (field === "status" && value === "Negócio fechado") {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
       setFormData((prev) => ({
         ...prev,
-        data_fechamento: prev.data_fechamento || new Date().toISOString().split("T")[0],
+        data_fechamento: prev.data_fechamento || `${year}-${month}-${day}`,
       }));
     } else if (field === "status" && value !== "Negócio fechado") {
       setFormData((prev) => ({
@@ -951,7 +955,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                       <SelectItem value="Em cotação">Em cotação</SelectItem>
                       <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
                       <SelectItem value="Declinado">Declinado</SelectItem>
-                      {cotacao?.status === "Negócio fechado" && (
+                      {formData.status === "Negócio fechado" && (
                         <SelectItem value="Fechamento congênere">Fechamento congênere</SelectItem>
                       )}
                     </SelectContent>
