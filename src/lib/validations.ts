@@ -94,8 +94,7 @@ export const cotacaoSchema = z.object({
     ),
   valor_premio: z
     .number()
-    .min(0, { message: 'Valor do prêmio deve ser maior ou igual a zero' })
-    .optional(),
+    .min(0.01, { message: 'Valor do prêmio é obrigatório e deve ser maior que zero' }),
   num_proposta: z
     .string()
     .trim()

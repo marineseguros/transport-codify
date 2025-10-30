@@ -361,11 +361,8 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       }
     }
     if (!formData.valor_premio || formData.valor_premio <= 0) {
-      // Only require premium value when status is "Negócio fechado"
-      if (formData.status === "Negócio fechado") {
-        toast.error("O valor do prêmio deve ser maior que zero.");
-        return;
-      }
+      toast.error("O valor do prêmio é obrigatório e deve ser maior que zero.");
+      return;
     }
 
     // Validate required fields for "Negócio fechado"
@@ -921,8 +918,8 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                 );
               })()}
 
-              {/* Tipo, Status e Data */}
-              <div className="grid gap-4 md:grid-cols-3">
+              {/* Tipo, Status, Valor do Prêmio e Data */}
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="tipo">Tipo *</Label>
                   <Select
@@ -960,6 +957,18 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                       )}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="valor_premio">Valor do Prêmio *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.valor_premio}
+                    onChange={(e) => handleInputChange("valor_premio", parseFloat(e.target.value) || 0)}
+                    placeholder="0,00"
+                    readOnly={isReadOnly}
+                  />
                 </div>
 
                 <div>
@@ -1051,29 +1060,15 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     </div>
                   </div>
 
-                  {/* Número da Apólice e Valor do Prêmio */}
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <Label htmlFor="num_proposta">Número da Proposta *</Label>
-                      <Input
-                        value={formData.num_proposta || ""}
-                        onChange={(e) => handleInputChange("num_proposta", e.target.value)}
-                        placeholder="Digite o número da proposta"
-                        readOnly={isReadOnly}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="valor_premio">Valor do Prêmio *</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.valor_premio}
-                        onChange={(e) => handleInputChange("valor_premio", parseFloat(e.target.value) || 0)}
-                        placeholder="0,00"
-                        readOnly={isReadOnly}
-                      />
-                    </div>
+                  {/* Número da Apólice */}
+                  <div>
+                    <Label htmlFor="num_proposta">Número da Proposta *</Label>
+                    <Input
+                      value={formData.num_proposta || ""}
+                      onChange={(e) => handleInputChange("num_proposta", e.target.value)}
+                      placeholder="Digite o número da proposta"
+                      readOnly={isReadOnly}
+                    />
                   </div>
                 </>
               )}
