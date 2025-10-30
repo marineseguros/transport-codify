@@ -826,8 +826,8 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                 </div>
               )}
 
-              {/* Captação e Status Seguradora */}
-              <div className="grid gap-4 md:grid-cols-2">
+              {/* Captação, Status Seguradora e Tipo */}
+              <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <Label htmlFor="captacao_id">Captação *</Label>
                   <Select
@@ -864,6 +864,24 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                           {status.descricao}
                         </SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="tipo">Tipo *</Label>
+                  <Select
+                    value={formData.tipo}
+                    onValueChange={(value) => handleInputChange("tipo", value)}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Nova">Nova</SelectItem>
+                      <SelectItem value="Renovação">Renovação</SelectItem>
+                      <SelectItem value="Migração">Migração</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -918,26 +936,8 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                 );
               })()}
 
-              {/* Tipo, Status, Valor do Prêmio e Data */}
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="tipo">Tipo *</Label>
-                  <Select
-                    value={formData.tipo}
-                    onValueChange={(value) => handleInputChange("tipo", value)}
-                    disabled={isReadOnly}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Nova">Nova</SelectItem>
-                      <SelectItem value="Renovação">Renovação</SelectItem>
-                      <SelectItem value="Migração">Migração</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
+              {/* Status, Valor do Prêmio e Data da Cotação */}
+              <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <Label htmlFor="status">Status *</Label>
                   <Select
