@@ -1,29 +1,50 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, Download, Upload, Edit, Trash2, RefreshCw, FileText, History, CalendarIcon, Eye } from 'lucide-react';
-import { CotacaoModal } from '@/components/CotacaoModal';
-import { HistoricoGeralModal } from '@/components/HistoricoGeralModal';
-import { PaginationControls } from '@/components/ui/pagination-controls';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCotacoes, useAllCotacoesAuditLog, type Cotacao } from '@/hooks/useSupabaseData';
-import { parseCsvFile } from '@/utils/csvUtils';
-import { toast } from 'sonner';
-import { csvRowSchema } from '@/lib/validations';
-import { DatePickerWithRange } from '@/components/ui/date-picker';
-import { DateRange } from 'react-day-picker';
+import React, { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Plus,
+  Search,
+  Download,
+  Upload,
+  Edit,
+  Trash2,
+  RefreshCw,
+  FileText,
+  History,
+  CalendarIcon,
+  Eye,
+} from "lucide-react";
+import { CotacaoModal } from "@/components/CotacaoModal";
+import { HistoricoGeralModal } from "@/components/HistoricoGeralModal";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCotacoes, useAllCotacoesAuditLog, type Cotacao } from "@/hooks/useSupabaseData";
+import { parseCsvFile } from "@/utils/csvUtils";
+import { toast } from "sonner";
+import { csvRowSchema } from "@/lib/validations";
+import { DatePickerWithRange } from "@/components/ui/date-picker";
+import { DateRange } from "react-day-picker";
 
 const Cotacoes = () => {
   const { user } = useAuth();
-  const { 
-    cotacoes, 
-    loading, 
+  const {
+    cotacoes,
+    loading,
     totalCount,
     currentPage,
     pageSize,
@@ -46,7 +67,7 @@ const Cotacoes = () => {
     sortBy,
     setSortBy,
     sortOrder,
-    setSortOrder
+    setSortOrder,
   } = useCotacoes();
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,54 +77,51 @@ const Cotacoes = () => {
   const [cotacaoToDelete, setCotacaoToDelete] = useState<string | null>(null);
   const [massDeleteDialogOpen, setMassDeleteDialogOpen] = useState(false);
   const [historicoGeralOpen, setHistoricoGeralOpen] = useState(false);
-  const [dateFilter, setDateFilter] = useState<string>('todos');
+  const [dateFilter, setDateFilter] = useState<string>("todos");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  
+
   // Hook para buscar todo o histórico de alterações
   const { auditLog, loading: auditLogLoading } = useAllCotacoesAuditLog();
 
   // Get unique produtores for filter from all loaded cotacoes
   const produtores = useMemo(() => {
-    return [...new Set(cotacoes
-      .map(c => c.produtor_cotador?.nome)
-      .filter(Boolean)
-    )] as string[];
+    return [...new Set(cotacoes.map((c) => c.produtor_cotador?.nome).filter(Boolean))] as string[];
   }, [cotacoes]);
 
   // Filter cotacoes by date
   const dateFilteredCotacoes = useMemo(() => {
-    if (dateFilter === 'todos') return cotacoes;
+    if (dateFilter === "todos") return cotacoes;
 
     const now = new Date();
     let startDate: Date;
     let endDate: Date = now;
 
     switch (dateFilter) {
-      case 'hoje':
+      case "hoje":
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         break;
-      case '7dias':
+      case "7dias":
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
-      case '30dias':
+      case "30dias":
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
-      case '90dias':
+      case "90dias":
         startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
         break;
-      case 'mes_atual':
+      case "mes_atual":
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         break;
-      case 'mes_anterior':
+      case "mes_anterior":
         startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         endDate = new Date(now.getFullYear(), now.getMonth(), 0);
         break;
-      case 'ano_atual':
+      case "ano_atual":
         startDate = new Date(now.getFullYear(), 0, 1);
         endDate = new Date(now.getFullYear(), 11, 31);
         break;
-      case 'personalizado':
+      case "personalizado":
         if (!dateRange?.from) return cotacoes;
         startDate = dateRange.from;
         endDate = dateRange.to || dateRange.from;
@@ -112,14 +130,14 @@ const Cotacoes = () => {
         return cotacoes;
     }
 
-    return cotacoes.filter(cotacao => {
+    return cotacoes.filter((cotacao) => {
       const cotacaoDate = new Date(cotacao.data_cotacao);
       return cotacaoDate >= startDate && cotacaoDate <= endDate;
     });
   }, [cotacoes, dateFilter, dateRange]);
 
   // Valid status options
-  const validStatuses = ['Em cotação', 'Negócio fechado', 'Declinado', 'Alocada Outra'];
+  const validStatuses = ["Em cotação", "Negócio fechado", "Declinado", "Fechamento congênere"];
 
   const handleEdit = (cotacao: Cotacao) => {
     setSelectedCotacao(cotacao);
@@ -134,13 +152,13 @@ const Cotacoes = () => {
 
   const handleConfirmDelete = async () => {
     if (!cotacaoToDelete) return;
-    
+
     try {
       await deleteCotacao(cotacaoToDelete);
-      toast.success('Cotação excluída com sucesso!');
+      toast.success("Cotação excluída com sucesso!");
     } catch (error) {
-      console.error('Erro ao excluir cotação:', error);
-      toast.error('Erro ao excluir cotação');
+      console.error("Erro ao excluir cotação:", error);
+      toast.error("Erro ao excluir cotação");
     } finally {
       setDeleteDialogOpen(false);
       setCotacaoToDelete(null);
@@ -149,7 +167,7 @@ const Cotacoes = () => {
 
   const handleMassDeleteClick = () => {
     if (selectedIds.size === 0) {
-      toast.error('Selecione ao menos uma cotação para excluir');
+      toast.error("Selecione ao menos uma cotação para excluir");
       return;
     }
     setMassDeleteDialogOpen(true);
@@ -161,8 +179,8 @@ const Cotacoes = () => {
       toast.success(`${selectedIds.size} cotação(ões) excluída(s) com sucesso!`);
       setSelectedIds(new Set());
     } catch (error) {
-      console.error('Erro ao excluir cotações:', error);
-      toast.error('Erro ao excluir cotações');
+      console.error("Erro ao excluir cotações:", error);
+      toast.error("Erro ao excluir cotações");
     } finally {
       setMassDeleteDialogOpen(false);
     }
@@ -172,7 +190,7 @@ const Cotacoes = () => {
     if (selectedIds.size === cotacoes.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(cotacoes.map(c => c.id)));
+      setSelectedIds(new Set(cotacoes.map((c) => c.id)));
     }
   };
 
@@ -193,34 +211,34 @@ const Cotacoes = () => {
   };
 
   const handleExportCSV = () => {
-    toast.success('Funcionalidade de exportar CSV será implementada');
+    toast.success("Funcionalidade de exportar CSV será implementada");
   };
 
   const handleImportCSV = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv';
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".csv";
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
 
       try {
-        toast.info('Processando arquivo CSV...');
+        toast.info("Processando arquivo CSV...");
         const csvData = await parseCsvFile(file);
-        
+
         let successCount = 0;
         let errorCount = 0;
         const errors: string[] = [];
 
         for (let i = 0; i < csvData.length; i++) {
           const row = csvData[i];
-          
+
           // Validate row data using zod schema
           const validation = csvRowSchema.safeParse(row);
-          
+
           if (!validation.success) {
             errorCount++;
-            const errorMessages = validation.error.errors.map(e => e.message).join(', ');
+            const errorMessages = validation.error.errors.map((e) => e.message).join(", ");
             errors.push(`Linha ${i + 2}: ${errorMessages}`);
             continue;
           }
@@ -229,16 +247,16 @@ const Cotacoes = () => {
             const cotacaoData = {
               segurado: validation.data.Segurado,
               cpf_cnpj: validation.data.CNPJ,
-              segmento: validation.data.Tipo || '',
-              data_cotacao: validation.data['Data Cotação'] || new Date().toISOString().split('T')[0],
-              data_fechamento: validation.data['Data Fechamento'] || null,
-              inicio_vigencia: validation.data['Início Vigência'] || '',
-              fim_vigencia: validation.data['Fim Vigência'] || '',
-              valor_premio: parseFloat(validation.data['Valor Prêmio'] || '0') || 0,
-              status: validation.data.Status || 'Em cotação',
-              observacoes: validation.data.Observações || '',
-              num_apolice: validation.data['Número Apólice'] || '',
-              motivo_recusa: validation.data['Motivo Recusa'] || '',
+              segmento: validation.data.Tipo || "",
+              data_cotacao: validation.data["Data Cotação"] || new Date().toISOString().split("T")[0],
+              data_fechamento: validation.data["Data Fechamento"] || null,
+              inicio_vigencia: validation.data["Início Vigência"] || "",
+              fim_vigencia: validation.data["Fim Vigência"] || "",
+              valor_premio: parseFloat(validation.data["Valor Prêmio"] || "0") || 0,
+              status: validation.data.Status || "Em cotação",
+              observacoes: validation.data.Observações || "",
+              num_apolice: validation.data["Número Apólice"] || "",
+              motivo_recusa: validation.data["Motivo Recusa"] || "",
               // Campos opcionais que podem precisar de lookup
               produtor_origem_id: null,
               produtor_negociador_id: null,
@@ -261,56 +279,60 @@ const Cotacoes = () => {
           toast.success(`${successCount} cotação(ões) importada(s) com sucesso!`);
           refetch();
         }
-        
+
         if (errorCount > 0) {
           toast.error(`${errorCount} cotação(ões) falharam na importação.`);
-          
+
           // Show first few errors in console for debugging
           if (errors.length > 0) {
-            console.warn('Erros de importação CSV:', errors.slice(0, 5));
+            console.warn("Erros de importação CSV:", errors.slice(0, 5));
           }
         }
-
       } catch (error) {
-        console.error('Erro ao processar CSV:', error);
-        toast.error('Erro ao processar o arquivo CSV. Verifique o formato.');
+        console.error("Erro ao processar CSV:", error);
+        toast.error("Erro ao processar o arquivo CSV. Verifique o formato.");
       }
     };
-    
+
     input.click();
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
     }).format(value);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    return new Date(dateString).toLocaleDateString("pt-BR");
   };
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'Negócio fechado': return 'success-alt';
-      case 'Em cotação': return 'brand-orange';
-      case 'Declinado': return 'destructive';
-      case 'Alocada Outra': return 'secondary';
-      default: return 'secondary';
+      case "Negócio fechado":
+        return "success-alt";
+      case "Em cotação":
+        return "brand-orange";
+      case "Declinado":
+        return "destructive";
+      case "Fechamento congênere":
+        return "secondary";
+      default:
+        return "secondary";
     }
   };
 
   // Todos os usuários autenticados podem editar
   const canEdit = true;
-  
+
   // Verifica se o usuário pode excluir qualquer cotação
-  const canDeleteAny = ['Administrador', 'Gerente', 'CEO', 'Faturamento'].includes(user?.papel || '');
-  
+  const canDeleteAny = ["Administrador", "Gerente", "CEO", "Faturamento"].includes(user?.papel || "");
+
   // Função para verificar se o produtor pode excluir uma cotação específica
   const canProducerDeleteCotacao = (cotacao: Cotacao) => {
-    if (user?.papel !== 'Produtor') return false;
-    
+    if (user?.papel !== "Produtor") return false;
+
     // Verifica se o produtor é o criador da cotação
     const userEmail = user?.email;
     return (
@@ -326,27 +348,17 @@ const Cotacoes = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Cotações</h1>
-          <p className="text-muted-foreground">
-            Listagem completa e filtros de cotações
-          </p>
+          <p className="text-muted-foreground">Listagem completa e filtros de cotações</p>
         </div>
-        
+
         <div className="flex gap-3">
           {canDeleteAny && selectedIds.size > 0 && (
-            <Button 
-              onClick={handleMassDeleteClick} 
-              variant="destructive" 
-              className="gap-2"
-            >
+            <Button onClick={handleMassDeleteClick} variant="destructive" className="gap-2">
               <Trash2 className="h-4 w-4" />
               Excluir Selecionadas ({selectedIds.size})
             </Button>
           )}
-          <Button 
-            onClick={() => setHistoricoGeralOpen(true)} 
-            variant="outline"
-            className="gap-2"
-          >
+          <Button onClick={() => setHistoricoGeralOpen(true)} variant="outline" className="gap-2">
             <History className="h-4 w-4" />
             Histórico Geral
           </Button>
@@ -371,14 +383,14 @@ const Cotacoes = () => {
                 className="pl-10"
               />
             </div>
-            
+
             <div className="lg:col-span-2">
               <Select
                 value={`${sortBy}-${sortOrder}`}
                 onValueChange={(value) => {
-                  const [field, order] = value.split('-');
+                  const [field, order] = value.split("-");
                   setSortBy(field);
-                  setSortOrder(order as 'asc' | 'desc');
+                  setSortOrder(order as "asc" | "desc");
                 }}
               >
                 <SelectTrigger>
@@ -394,7 +406,7 @@ const Cotacoes = () => {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="lg:col-span-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
@@ -428,15 +440,15 @@ const Cotacoes = () => {
             </div>
 
             <div className="lg:col-span-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
-                  setSearchTerm('');
-                  setStatusFilter('todos');
-                  setProdutorFilter('todos');
-                  setSortBy('data_cotacao');
-                  setSortOrder('desc');
-                  setDateFilter('todos');
+                  setSearchTerm("");
+                  setStatusFilter("todos");
+                  setProdutorFilter("todos");
+                  setSortBy("data_cotacao");
+                  setSortOrder("desc");
+                  setDateFilter("todos");
                   setDateRange(undefined);
                 }}
                 className="w-full"
@@ -448,13 +460,12 @@ const Cotacoes = () => {
         </CardContent>
       </Card>
 
-
-
       {/* Results */}
       <Card>
         <CardHeader>
           <CardTitle>
-            {dateFilteredCotacoes.length} {dateFilteredCotacoes.length === 1 ? 'cotação encontrada' : 'cotações encontradas'}
+            {dateFilteredCotacoes.length}{" "}
+            {dateFilteredCotacoes.length === 1 ? "cotação encontrada" : "cotações encontradas"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -463,7 +474,7 @@ const Cotacoes = () => {
               <TableRow>
                 {canDeleteAny && (
                   <TableHead className="w-12">
-                    <Checkbox 
+                    <Checkbox
                       checked={selectedIds.size === dateFilteredCotacoes.length && dateFilteredCotacoes.length > 0}
                       onCheckedChange={toggleSelectAll}
                     />
@@ -484,53 +495,35 @@ const Cotacoes = () => {
             <TableBody>
               {dateFilteredCotacoes.map((cotacao) => {
                 const canDeleteThisCotacao = canDeleteAny || canProducerDeleteCotacao(cotacao);
-                
+
                 return (
                   <TableRow key={cotacao.id}>
                     {canDeleteAny && (
                       <TableCell>
-                        <Checkbox 
+                        <Checkbox
                           checked={selectedIds.has(cotacao.id)}
                           onCheckedChange={() => toggleSelect(cotacao.id)}
                         />
                       </TableCell>
                     )}
-                    <TableCell className="font-mono">
-                      {cotacao.numero_cotacao}
-                    </TableCell>
+                    <TableCell className="font-mono">{cotacao.numero_cotacao}</TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">{cotacao.segurado}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {cotacao.cpf_cnpj}
-                        </div>
+                        <div className="text-sm text-muted-foreground">{cotacao.cpf_cnpj}</div>
                       </div>
                     </TableCell>
+                    <TableCell>{cotacao.produtor_cotador?.nome || "Não informado"}</TableCell>
+                    <TableCell>{cotacao.seguradora?.nome || "-"}</TableCell>
+                    <TableCell>{cotacao.ramo?.descricao || "-"}</TableCell>
                     <TableCell>
-                      {cotacao.produtor_cotador?.nome || 'Não informado'}
+                      {cotacao.segmento ? <Badge variant="outline">{cotacao.segmento}</Badge> : "-"}
                     </TableCell>
+                    <TableCell className="font-mono">{formatCurrency(cotacao.valor_premio)}</TableCell>
                     <TableCell>
-                      {cotacao.seguradora?.nome || '-'}
+                      <Badge variant={getStatusBadgeVariant(cotacao.status)}>{cotacao.status}</Badge>
                     </TableCell>
-                    <TableCell>
-                      {cotacao.ramo?.descricao || '-'}
-                    </TableCell>
-                    <TableCell>
-                      {cotacao.segmento ? (
-                        <Badge variant="outline">{cotacao.segmento}</Badge>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell className="font-mono">
-                      {formatCurrency(cotacao.valor_premio)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(cotacao.status)}>
-                        {cotacao.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(cotacao.data_cotacao)}
-                    </TableCell>
+                    <TableCell>{formatDate(cotacao.data_cotacao)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
                         <Button
@@ -544,11 +537,7 @@ const Cotacoes = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(cotacao)}
-                        >
+                        <Button size="sm" variant="outline" onClick={() => handleEdit(cotacao)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         {canDeleteThisCotacao && (
@@ -580,13 +569,13 @@ const Cotacoes = () => {
               <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-sm font-semibold">Nenhuma cotação encontrada</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                {searchTerm || statusFilter || produtorFilter || dateFilter !== 'todos'
-                  ? 'Tente ajustar os filtros para encontrar cotações.'
-                  : 'Comece criando sua primeira cotação.'}
+                {searchTerm || statusFilter || produtorFilter || dateFilter !== "todos"
+                  ? "Tente ajustar os filtros para encontrar cotações."
+                  : "Comece criando sua primeira cotação."}
               </p>
             </div>
           )}
-          
+
           {/* Pagination Controls */}
           {dateFilteredCotacoes.length > 0 && (
             <div className="mt-4 border-t pt-4">
@@ -616,7 +605,7 @@ const Cotacoes = () => {
           setIsViewMode(false);
         }}
         cotacao={selectedCotacao || undefined}
-        mode={isViewMode ? 'view' : (selectedCotacao ? 'edit' : 'create')}
+        mode={isViewMode ? "view" : selectedCotacao ? "edit" : "create"}
         onSaved={() => refetch()}
       />
 
@@ -639,7 +628,10 @@ const Cotacoes = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -652,12 +644,16 @@ const Cotacoes = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão em massa</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir {selectedIds.size} cotação(ões) selecionada(s)? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir {selectedIds.size} cotação(ões) selecionada(s)? Esta ação não pode ser
+              desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmMassDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleConfirmMassDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Excluir Todas
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -9,10 +9,10 @@ BEGIN
   -- Se o status foi alterado para 'Negócio fechado'
   IF NEW.status = 'Negócio fechado' AND (OLD.status IS NULL OR OLD.status != 'Negócio fechado') THEN
     -- Atualizar todas as outras cotações do mesmo segurado e ramo
-    -- mas com seguradoras diferentes para 'Alocada Outra'
+    -- mas com seguradoras diferentes para 'Fechamento congênere'
     UPDATE public.cotacoes
     SET 
-      status = 'Alocada Outra',
+      status = 'Fechamento congênere',
       updated_at = now()
     WHERE 
       cpf_cnpj = NEW.cpf_cnpj 

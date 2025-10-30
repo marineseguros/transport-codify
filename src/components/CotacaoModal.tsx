@@ -10,103 +10,90 @@ import { toast } from "sonner";
 import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Plus, Trash2 } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfiles, useSeguradoras, useClientes, useCotacoes, useProdutores, useRamos, useCaptacao, useStatusSeguradora, useUnidades, useCotacaoHistorico, useCotacaoAuditLog, type Cotacao } from '@/hooks/useSupabaseData';
+import {
+  useProfiles,
+  useSeguradoras,
+  useClientes,
+  useCotacoes,
+  useProdutores,
+  useRamos,
+  useCaptacao,
+  useStatusSeguradora,
+  useUnidades,
+  useCotacaoHistorico,
+  useCotacaoAuditLog,
+  type Cotacao,
+} from "@/hooks/useSupabaseData";
 import { cotacaoSchema } from "@/lib/validations";
 interface CotacaoModalProps {
   isOpen: boolean;
   onClose: () => void;
   cotacao?: Cotacao | null;
-  mode?: 'create' | 'edit' | 'view';
+  mode?: "create" | "edit" | "view";
   onSaved?: () => void;
 }
-export const CotacaoModal = ({
-  isOpen,
-  onClose,
-  cotacao,
-  mode = 'create',
-  onSaved
-}: CotacaoModalProps) => {
-  const {
-    user
-  } = useAuth();
-  const {
-    profiles
-  } = useProfiles();
-  const {
-    produtores,
-    loading: produtoresLoading,
-    refetch: refetchProdutores
-  } = useProdutores();
-  const {
-    seguradoras
-  } = useSeguradoras();
-  const {
-    ramos
-  } = useRamos();
+export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSaved }: CotacaoModalProps) => {
+  const { user } = useAuth();
+  const { profiles } = useProfiles();
+  const { produtores, loading: produtoresLoading, refetch: refetchProdutores } = useProdutores();
+  const { seguradoras } = useSeguradoras();
+  const { ramos } = useRamos();
 
   // Filter only active items for dropdowns
-  const activeProdutores = produtores.filter(p => p.ativo);
-  const activeSeguradoras = seguradoras.filter(s => s.ativo);
-  const activeRamos = ramos.filter(r => r.ativo);
-  const {
-    captacao
-  } = useCaptacao();
-  const {
-    statusSeguradora
-  } = useStatusSeguradora();
-  const {
-    unidades
-  } = useUnidades();
-  const {
-    clientes
-  } = useClientes();
-  const {
-    cotacoes,
-    createCotacao,
-    updateCotacao
-  } = useCotacoes();
+  const activeProdutores = produtores.filter((p) => p.ativo);
+  const activeSeguradoras = seguradoras.filter((s) => s.ativo);
+  const activeRamos = ramos.filter((r) => r.ativo);
+  const { captacao } = useCaptacao();
+  const { statusSeguradora } = useStatusSeguradora();
+  const { unidades } = useUnidades();
+  const { clientes } = useClientes();
+  const { cotacoes, createCotacao, updateCotacao } = useCotacoes();
   const { historico, loading: historicoLoading } = useCotacaoHistorico(cotacao?.id);
   const { auditLog, loading: auditLogLoading } = useCotacaoAuditLog(cotacao?.id);
   const [formData, setFormData] = useState({
-    cliente_id: '',
-    unidade_id: '',
-    produtor_origem_id: '',
-    produtor_negociador_id: '',
-    produtor_cotador_id: '',
-    cnpj: '',
-    segurado: '',
-    seguradora_id: '',
-    ramo_id: '',
-    captacao_id: '',
-    status_seguradora_id: '',
-    tipo: 'Nova',
-    data_cotacao: new Date().toISOString().split('T')[0],
-    inicio_vigencia: '',
-    fim_vigencia: '',
+    cliente_id: "",
+    unidade_id: "",
+    produtor_origem_id: "",
+    produtor_negociador_id: "",
+    produtor_cotador_id: "",
+    cnpj: "",
+    segurado: "",
+    seguradora_id: "",
+    ramo_id: "",
+    captacao_id: "",
+    status_seguradora_id: "",
+    tipo: "Nova",
+    data_cotacao: new Date().toISOString().split("T")[0],
+    inicio_vigencia: "",
+    fim_vigencia: "",
     valor_premio: 0,
-    status: 'Em cotação',
-    observacoes: '',
-    segmento: '',
+    status: "Em cotação",
+    observacoes: "",
+    segmento: "",
     data_fechamento: undefined as string | undefined,
     num_proposta: undefined as string | undefined,
-    motivo_recusa: '',
-    motivo_declinado: '',
-    comentarios: ''
+    motivo_recusa: "",
+    motivo_declinado: "",
+    comentarios: "",
   });
 
   // State for extra ramos (up to 3 additional)
-  const [ramosExtras, setRamosExtras] = useState<{
-    ramo_id: string;
-    segmento: string;
-  }[]>([]);
+  const [ramosExtras, setRamosExtras] = useState<
+    {
+      ramo_id: string;
+      segmento: string;
+    }[]
+  >([]);
 
   // State for extra seguradoras (up to 10 additional)
-  const [seguradorasExtras, setSeguradorasExtras] = useState<{
-    seguradora_id: string;
-  }[]>([]);
-  const isReadOnly = mode === 'view';
-  const isEditing = mode === 'edit';
-  const isCreating = mode === 'create';
+  const [seguradorasExtras, setSeguradorasExtras] = useState<
+    {
+      seguradora_id: string;
+    }[]
+  >([]);
+  const isReadOnly = mode === "view";
+  const isEditing = mode === "edit";
+  const isCreating = mode === "create";
 
   // Fetch produtores when modal opens
   useEffect(() => {
@@ -115,32 +102,32 @@ export const CotacaoModal = ({
     }
   }, [isOpen, produtores.length, refetchProdutores]);
   useEffect(() => {
-    if (cotacao && (isEditing || mode === 'view')) {
+    if (cotacao && (isEditing || mode === "view")) {
       setFormData({
-        cliente_id: cotacao.cliente_id || '',
-        unidade_id: cotacao.unidade_id || '',
-        produtor_origem_id: cotacao.produtor_origem_id || '',
-        produtor_negociador_id: cotacao.produtor_negociador_id || '',
-        produtor_cotador_id: cotacao.produtor_cotador_id || '',
-        cnpj: cotacao.cpf_cnpj || '',
-        segurado: cotacao.segurado || '',
-        seguradora_id: cotacao.seguradora_id || '',
-        ramo_id: cotacao.ramo_id || '',
-        captacao_id: cotacao.captacao_id || '',
-        status_seguradora_id: cotacao.status_seguradora_id || '',
-        tipo: cotacao.tipo || 'Nova',
-        data_cotacao: cotacao.data_cotacao || new Date().toISOString().split('T')[0],
-        inicio_vigencia: cotacao.data_cotacao || '',
-        fim_vigencia: cotacao.data_fechamento || '',
+        cliente_id: cotacao.cliente_id || "",
+        unidade_id: cotacao.unidade_id || "",
+        produtor_origem_id: cotacao.produtor_origem_id || "",
+        produtor_negociador_id: cotacao.produtor_negociador_id || "",
+        produtor_cotador_id: cotacao.produtor_cotador_id || "",
+        cnpj: cotacao.cpf_cnpj || "",
+        segurado: cotacao.segurado || "",
+        seguradora_id: cotacao.seguradora_id || "",
+        ramo_id: cotacao.ramo_id || "",
+        captacao_id: cotacao.captacao_id || "",
+        status_seguradora_id: cotacao.status_seguradora_id || "",
+        tipo: cotacao.tipo || "Nova",
+        data_cotacao: cotacao.data_cotacao || new Date().toISOString().split("T")[0],
+        inicio_vigencia: cotacao.data_cotacao || "",
+        fim_vigencia: cotacao.data_fechamento || "",
         valor_premio: cotacao.valor_premio || 0,
-        status: cotacao.status || 'Em análise',
-        observacoes: cotacao.observacoes || '',
-        segmento: cotacao.segmento || '',
+        status: cotacao.status || "Em análise",
+        observacoes: cotacao.observacoes || "",
+        segmento: cotacao.segmento || "",
         data_fechamento: cotacao.data_fechamento || undefined,
         num_proposta: cotacao.num_proposta || undefined,
-        motivo_recusa: cotacao.motivo_recusa || '',
-        motivo_declinado: cotacao.motivo_recusa || '',
-        comentarios: cotacao.comentarios || ''
+        motivo_recusa: cotacao.motivo_recusa || "",
+        motivo_declinado: cotacao.motivo_recusa || "",
+        comentarios: cotacao.comentarios || "",
       });
     } else if (isCreating) {
       const hoje = new Date();
@@ -149,33 +136,38 @@ export const CotacaoModal = ({
 
       // Find current user in produtores list to set as default cotador
       // Try to match by email first, then by name if available
-      const currentUserProdutor = activeProdutores.find(p => p.email && user?.email && p.email.toLowerCase() === user.email.toLowerCase() || p.nome && user?.nome && p.nome.toLowerCase().includes(user.nome.toLowerCase())) || activeProdutores[0]; // Fallback to first produtor if no match
+      const currentUserProdutor =
+        activeProdutores.find(
+          (p) =>
+            (p.email && user?.email && p.email.toLowerCase() === user.email.toLowerCase()) ||
+            (p.nome && user?.nome && p.nome.toLowerCase().includes(user.nome.toLowerCase())),
+        ) || activeProdutores[0]; // Fallback to first produtor if no match
 
       setFormData({
-        cliente_id: '',
-        unidade_id: '',
-        produtor_origem_id: '',
-        produtor_negociador_id: '',
-        produtor_cotador_id: currentUserProdutor?.id || '',
-        cnpj: '',
-        segurado: '',
-        seguradora_id: '',
-        ramo_id: '',
-        captacao_id: '',
-        status_seguradora_id: '',
-        tipo: 'Nova',
-        data_cotacao: hoje.toISOString().split('T')[0],
-        inicio_vigencia: inicioVigencia.toISOString().split('T')[0],
-        fim_vigencia: fimVigencia.toISOString().split('T')[0],
+        cliente_id: "",
+        unidade_id: "",
+        produtor_origem_id: "",
+        produtor_negociador_id: "",
+        produtor_cotador_id: currentUserProdutor?.id || "",
+        cnpj: "",
+        segurado: "",
+        seguradora_id: "",
+        ramo_id: "",
+        captacao_id: "",
+        status_seguradora_id: "",
+        tipo: "Nova",
+        data_cotacao: hoje.toISOString().split("T")[0],
+        inicio_vigencia: inicioVigencia.toISOString().split("T")[0],
+        fim_vigencia: fimVigencia.toISOString().split("T")[0],
         valor_premio: 0,
-        status: 'Em cotação',
-        observacoes: '',
-        segmento: '',
+        status: "Em cotação",
+        observacoes: "",
+        segmento: "",
         data_fechamento: undefined,
         num_proposta: undefined,
-        motivo_recusa: '',
-        motivo_declinado: '',
-        comentarios: ''
+        motivo_recusa: "",
+        motivo_declinado: "",
+        comentarios: "",
       });
 
       // Reset extra ramos and seguradoras when creating new cotação
@@ -184,67 +176,67 @@ export const CotacaoModal = ({
     }
   }, [cotacao, mode, produtores, user]);
   const handleInputChange = (field: string, value: any) => {
-    console.log('handleInputChange called with field:', field, 'value:', value);
+    console.log("handleInputChange called with field:", field, "value:", value);
     if (isReadOnly) return;
 
     // Auto-fill client data when selecting from dropdown
-    if (field === 'cliente_id') {
-      const cliente = clientes.find(c => c.id === value);
+    if (field === "cliente_id") {
+      const cliente = clientes.find((c) => c.id === value);
       if (cliente) {
-        console.log('Auto-filling client data:', cliente);
-        setFormData(prev => ({
+        console.log("Auto-filling client data:", cliente);
+        setFormData((prev) => ({
           ...prev,
           cliente_id: value,
           segurado: cliente.segurado,
           cnpj: cliente.cpf_cnpj,
-          captacao_id: cliente.captacao_id || ''
+          captacao_id: cliente.captacao_id || "",
         }));
       }
       return; // Return early since we set all needed fields
     }
 
     // Auto-fill segment based on ramo
-    if (field === 'ramo_id') {
-      console.log('Processing ramo_id change, value:', value);
+    if (field === "ramo_id") {
+      console.log("Processing ramo_id change, value:", value);
       const segmento = getSegmentoByRamo(value);
-      console.log('Calculated segmento:', segmento);
-      setFormData(prev => {
-        console.log('Previous formData:', prev);
+      console.log("Calculated segmento:", segmento);
+      setFormData((prev) => {
+        console.log("Previous formData:", prev);
         const newData = {
           ...prev,
           ramo_id: value,
-          segmento: segmento
+          segmento: segmento,
         };
-        console.log('New formData after ramo change:', newData);
+        console.log("New formData after ramo change:", newData);
         return newData;
       });
       return; // Return early since we already set both fields
     }
 
     // For other fields, use the general update
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Validations
-    if (field === 'status' && value === 'Negócio fechado') {
-      setFormData(prev => ({
+    if (field === "status" && value === "Negócio fechado") {
+      setFormData((prev) => ({
         ...prev,
-        data_fechamento: prev.data_fechamento || new Date().toISOString().split('T')[0]
+        data_fechamento: prev.data_fechamento || new Date().toISOString().split("T")[0],
       }));
-    } else if (field === 'status' && value !== 'Negócio fechado') {
-      setFormData(prev => ({
+    } else if (field === "status" && value !== "Negócio fechado") {
+      setFormData((prev) => ({
         ...prev,
         data_fechamento: undefined,
-        num_proposta: undefined
+        num_proposta: undefined,
       }));
     }
 
     // Validate dates
-    if (field === 'inicio_vigencia' || field === 'fim_vigencia') {
-      const inicio = field === 'inicio_vigencia' ? value : formData.inicio_vigencia;
-      const fim = field === 'fim_vigencia' ? value : formData.fim_vigencia;
+    if (field === "inicio_vigencia" || field === "fim_vigencia") {
+      const inicio = field === "inicio_vigencia" ? value : formData.inicio_vigencia;
+      const fim = field === "fim_vigencia" ? value : formData.fim_vigencia;
       if (inicio && fim && new Date(fim) <= new Date(inicio)) {
         toast.error("A data de fim da vigência deve ser posterior ao início.");
       }
@@ -253,31 +245,38 @@ export const CotacaoModal = ({
 
   // Utility function to get segment based on ramo
   const getSegmentoByRamo = (ramoId: string) => {
-    console.log('getSegmentoByRamo called with ramoId:', ramoId);
-    const ramo = ramos.find(r => r.id === ramoId);
-    console.log('Found ramo:', ramo);
+    console.log("getSegmentoByRamo called with ramoId:", ramoId);
+    const ramo = ramos.find((r) => r.id === ramoId);
+    console.log("Found ramo:", ramo);
     if (!ramo) {
-      console.log('No ramo found, returning empty string');
-      return '';
+      console.log("No ramo found, returning empty string");
+      return "";
     }
     const ramoDesc = ramo.descricao.toUpperCase();
-    console.log('Ramo description (uppercase):', ramoDesc);
-    if (['NACIONAL', 'EXPORTAÇÃO', 'IMPORTAÇÃO', 'NACIONAL AVULSA', 'IMPORTAÇÃO AVULSA', 'EXPORTAÇÃO AVULSA'].includes(ramoDesc)) {
-      console.log('Returning Embarcador');
-      return 'Embarcador';
-    } else if (['RCTR-C', 'RC-DC', 'RCTR-VI', 'GARANTIA', 'RCTA-C', 'AMBIENTAL', 'RC-V'].includes(ramoDesc)) {
-      console.log('Returning Transportador');
-      return 'Transportador';
+    console.log("Ramo description (uppercase):", ramoDesc);
+    if (
+      ["NACIONAL", "EXPORTAÇÃO", "IMPORTAÇÃO", "NACIONAL AVULSA", "IMPORTAÇÃO AVULSA", "EXPORTAÇÃO AVULSA"].includes(
+        ramoDesc,
+      )
+    ) {
+      console.log("Returning Embarcador");
+      return "Embarcador";
+    } else if (["RCTR-C", "RC-DC", "RCTR-VI", "GARANTIA", "RCTA-C", "AMBIENTAL", "RC-V"].includes(ramoDesc)) {
+      console.log("Returning Transportador");
+      return "Transportador";
     }
-    console.log('No segment match found, returning empty string');
-    return '';
+    console.log("No segment match found, returning empty string");
+    return "";
   };
   const handleAddRamoExtra = () => {
     if (ramosExtras.length < 3) {
-      setRamosExtras([...ramosExtras, {
-        ramo_id: '',
-        segmento: ''
-      }]);
+      setRamosExtras([
+        ...ramosExtras,
+        {
+          ramo_id: "",
+          segmento: "",
+        },
+      ]);
     }
   };
   const handleRemoveRamoExtra = (index: number) => {
@@ -288,16 +287,19 @@ export const CotacaoModal = ({
     const newRamosExtras = [...ramosExtras];
     newRamosExtras[index] = {
       ramo_id: value,
-      segmento: segmento
+      segmento: segmento,
     };
     setRamosExtras(newRamosExtras);
   };
 
   const handleAddSeguradoraExtra = () => {
     if (seguradorasExtras.length < 10) {
-      setSeguradorasExtras([...seguradorasExtras, {
-        seguradora_id: ''
-      }]);
+      setSeguradorasExtras([
+        ...seguradorasExtras,
+        {
+          seguradora_id: "",
+        },
+      ]);
     }
   };
 
@@ -308,26 +310,27 @@ export const CotacaoModal = ({
   const handleSeguradoraExtraChange = (index: number, value: string) => {
     const newSeguradorasExtras = [...seguradorasExtras];
     newSeguradorasExtras[index] = {
-      seguradora_id: value
+      seguradora_id: value,
     };
     setSeguradorasExtras(newSeguradorasExtras);
   };
   const handleSave = async () => {
     // Basic validations
-    const requiredFields = [{
-      field: 'unidade_id',
-      message: 'Selecione uma unidade.'
-    }, {
-      field: 'cnpj',
-      message: 'Informe o CNPJ.'
-    }, {
-      field: 'segurado',
-      message: 'Informe o segurado.'
-    }];
-    for (const {
-      field,
-      message
-    } of requiredFields) {
+    const requiredFields = [
+      {
+        field: "unidade_id",
+        message: "Selecione uma unidade.",
+      },
+      {
+        field: "cnpj",
+        message: "Informe o CNPJ.",
+      },
+      {
+        field: "segurado",
+        message: "Informe o segurado.",
+      },
+    ];
+    for (const { field, message } of requiredFields) {
       if (!formData[field as keyof typeof formData]) {
         toast.error(message);
         return;
@@ -335,14 +338,14 @@ export const CotacaoModal = ({
     }
     if (!formData.valor_premio || formData.valor_premio <= 0) {
       // Only require premium value when status is "Negócio fechado"
-      if (formData.status === 'Negócio fechado') {
+      if (formData.status === "Negócio fechado") {
         toast.error("O valor do prêmio deve ser maior que zero.");
         return;
       }
     }
 
     // Validate required fields for "Negócio fechado"
-    if (formData.status === 'Negócio fechado') {
+    if (formData.status === "Negócio fechado") {
       if (!formData.data_fechamento) {
         toast.error("Data de fechamento é obrigatória para negócios fechados.");
         return;
@@ -351,15 +354,15 @@ export const CotacaoModal = ({
     }
 
     // Validate motivo_declinado for "Declinado" status
-    if (formData.status === 'Declinado') {
-      if (!formData.motivo_declinado || formData.motivo_declinado.trim() === '') {
+    if (formData.status === "Declinado") {
+      if (!formData.motivo_declinado || formData.motivo_declinado.trim() === "") {
         toast.error("Selecione pelo menos um motivo do declinado.");
         return;
       }
     }
 
     // Validate dates - only required for "Negócio fechado"
-    if (formData.status === 'Negócio fechado') {
+    if (formData.status === "Negócio fechado") {
       if (formData.inicio_vigencia && formData.fim_vigencia) {
         if (new Date(formData.fim_vigencia) <= new Date(formData.inicio_vigencia)) {
           toast.error("A data de fim da vigência deve ser posterior ao início.");
@@ -376,12 +379,12 @@ export const CotacaoModal = ({
       num_proposta: formData.num_proposta,
       observacoes: formData.observacoes,
       comentarios: formData.comentarios,
-      motivo_recusa: formData.motivo_recusa
+      motivo_recusa: formData.motivo_recusa,
     });
 
     if (!validationResult.success) {
       const errors = validationResult.error.errors;
-      toast.error(errors[0]?.message || 'Dados inválidos');
+      toast.error(errors[0]?.message || "Dados inválidos");
       return;
     }
 
@@ -405,30 +408,37 @@ export const CotacaoModal = ({
         status: formData.status,
         observacoes: validatedData.observacoes || undefined,
         comentarios: validatedData.comentarios || undefined,
-        motivo_recusa: formData.status === 'Declinado' ? formData.motivo_declinado : formData.motivo_recusa || undefined,
+        motivo_recusa:
+          formData.status === "Declinado" ? formData.motivo_declinado : formData.motivo_recusa || undefined,
         data_cotacao: formData.data_cotacao,
-        data_fechamento: formData.status === 'Negócio fechado' ? formData.data_fechamento : undefined,
-        num_proposta: formData.status === 'Negócio fechado' ? validatedData.num_proposta : undefined
+        data_fechamento: formData.status === "Negócio fechado" ? formData.data_fechamento : undefined,
+        num_proposta: formData.status === "Negócio fechado" ? validatedData.num_proposta : undefined,
       };
       if (cotacao && isEditing) {
         // When editing, just update the single record
         const cotacaoData = {
           ...baseCotacaoData,
-          ramo_id: formData.ramo_id || undefined
+          ramo_id: formData.ramo_id || undefined,
         };
         await updateCotacao(cotacao.id, cotacaoData);
-        toast.success('Cotação atualizada com sucesso!');
+        toast.success("Cotação atualizada com sucesso!");
       } else {
         // When creating, create multiple records for combinations of ramos and seguradoras
-        const ramosToCreate = [{
-          ramo_id: formData.ramo_id,
-          segmento: formData.segmento
-        }, ...ramosExtras.filter(r => r.ramo_id)];
-        
-        const seguradorasToCreate = [{
-          seguradora_id: formData.seguradora_id
-        }, ...seguradorasExtras.filter(s => s.seguradora_id)];
-        
+        const ramosToCreate = [
+          {
+            ramo_id: formData.ramo_id,
+            segmento: formData.segmento,
+          },
+          ...ramosExtras.filter((r) => r.ramo_id),
+        ];
+
+        const seguradorasToCreate = [
+          {
+            seguradora_id: formData.seguradora_id,
+          },
+          ...seguradorasExtras.filter((s) => s.seguradora_id),
+        ];
+
         let createdCount = 0;
         for (const ramoData of ramosToCreate) {
           if (ramoData.ramo_id) {
@@ -438,7 +448,7 @@ export const CotacaoModal = ({
                   ...baseCotacaoData,
                   ramo_id: ramoData.ramo_id,
                   segmento: ramoData.segmento,
-                  seguradora_id: seguradoraData.seguradora_id
+                  seguradora_id: seguradoraData.seguradora_id,
                 };
                 await createCotacao(cotacaoData);
                 createdCount++;
@@ -447,7 +457,7 @@ export const CotacaoModal = ({
           }
         }
         if (createdCount === 1) {
-          toast.success('Cotação criada com sucesso!');
+          toast.success("Cotação criada com sucesso!");
         } else {
           toast.success(`${createdCount} cotações criadas com sucesso!`);
         }
@@ -459,22 +469,25 @@ export const CotacaoModal = ({
       }
       onClose();
     } catch (error) {
-      toast.error('Erro ao salvar cotação');
-      console.error('Error saving cotacao:', error);
+      toast.error("Erro ao salvar cotação");
+      console.error("Error saving cotacao:", error);
     }
   };
-  return <Dialog open={isOpen} onOpenChange={onClose}>
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             {isCreating && "Nova Cotação"}
             {isEditing && "Editar Cotação"}
-            {mode === 'view' && "Detalhes da Cotação"}
+            {mode === "view" && "Detalhes da Cotação"}
           </DialogTitle>
-          {cotacao && mode === 'view' && <DialogDescription>
+          {cotacao && mode === "view" && (
+            <DialogDescription>
               Cotação #{cotacao.numero_cotacao} • {cotacao.segurado}
-            </DialogDescription>}
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         <Tabs defaultValue="dados" className="w-full">
@@ -491,28 +504,40 @@ export const CotacaoModal = ({
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <Label htmlFor="unidade">Unidade *</Label>
-                  <Select value={formData.unidade_id} onValueChange={value => handleInputChange('unidade_id', value)} disabled={isReadOnly}>
+                  <Select
+                    value={formData.unidade_id}
+                    onValueChange={(value) => handleInputChange("unidade_id", value)}
+                    disabled={isReadOnly}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a unidade" />
                     </SelectTrigger>
                     <SelectContent>
-                      {unidades.map(unidade => <SelectItem key={unidade.id} value={unidade.id}>
+                      {unidades.map((unidade) => (
+                        <SelectItem key={unidade.id} value={unidade.id}>
                           {unidade.descricao}
-                        </SelectItem>)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
                   <Label htmlFor="cliente_id">Segurado *</Label>
-                  <Select value={formData.cliente_id} onValueChange={value => handleInputChange('cliente_id', value)} disabled={isReadOnly}>
+                  <Select
+                    value={formData.cliente_id}
+                    onValueChange={(value) => handleInputChange("cliente_id", value)}
+                    disabled={isReadOnly}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o cliente">
-                        {formData.cliente_id ? clientes.find(c => c.id === formData.cliente_id)?.segurado : "Selecione o cliente"}
+                        {formData.cliente_id
+                          ? clientes.find((c) => c.id === formData.cliente_id)?.segurado
+                          : "Selecione o cliente"}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {clientes.map(cliente => (
+                      {clientes.map((cliente) => (
                         <SelectItem key={cliente.id} value={cliente.id}>
                           <div>
                             <div className="font-medium">{cliente.segurado}</div>
@@ -526,7 +551,12 @@ export const CotacaoModal = ({
 
                 <div>
                   <Label htmlFor="cnpj">CNPJ *</Label>
-                  <Input value={formData.cnpj} onChange={e => handleInputChange('cnpj', formatCPFCNPJ(e.target.value))} placeholder="00.000.000/0000-00" readOnly={isReadOnly} />
+                  <Input
+                    value={formData.cnpj}
+                    onChange={(e) => handleInputChange("cnpj", formatCPFCNPJ(e.target.value))}
+                    placeholder="00.000.000/0000-00"
+                    readOnly={isReadOnly}
+                  />
                 </div>
               </div>
 
@@ -534,42 +564,60 @@ export const CotacaoModal = ({
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <Label htmlFor="produtor_origem_id">Produtor Origem *</Label>
-                  <Select value={formData.produtor_origem_id} onValueChange={value => handleInputChange('produtor_origem_id', value)} disabled={isReadOnly}>
+                  <Select
+                    value={formData.produtor_origem_id}
+                    onValueChange={(value) => handleInputChange("produtor_origem_id", value)}
+                    disabled={isReadOnly}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o produtor origem" />
                     </SelectTrigger>
                     <SelectContent>
-                      {activeProdutores.map(produtor => <SelectItem key={produtor.id} value={produtor.id}>
+                      {activeProdutores.map((produtor) => (
+                        <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
-                        </SelectItem>)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
                   <Label htmlFor="produtor_negociador_id">Produtor Negociador *</Label>
-                  <Select value={formData.produtor_negociador_id} onValueChange={value => handleInputChange('produtor_negociador_id', value)} disabled={isReadOnly}>
+                  <Select
+                    value={formData.produtor_negociador_id}
+                    onValueChange={(value) => handleInputChange("produtor_negociador_id", value)}
+                    disabled={isReadOnly}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o produtor negociador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {activeProdutores.map(produtor => <SelectItem key={produtor.id} value={produtor.id}>
+                      {activeProdutores.map((produtor) => (
+                        <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
-                        </SelectItem>)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
                   <Label htmlFor="produtor_cotador_id">Produtor Cotador *</Label>
-                  <Select value={formData.produtor_cotador_id} onValueChange={value => handleInputChange('produtor_cotador_id', value)} disabled={isReadOnly}>
+                  <Select
+                    value={formData.produtor_cotador_id}
+                    onValueChange={(value) => handleInputChange("produtor_cotador_id", value)}
+                    disabled={isReadOnly}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o produtor cotador" />
                     </SelectTrigger>
                     <SelectContent>
-                      {activeProdutores.map(produtor => <SelectItem key={produtor.id} value={produtor.id}>
+                      {activeProdutores.map((produtor) => (
+                        <SelectItem key={produtor.id} value={produtor.id}>
                           {produtor.nome}
-                        </SelectItem>)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -582,9 +630,9 @@ export const CotacaoModal = ({
                   <div className="flex items-center justify-between mb-2">
                     <Label htmlFor="seguradora_id">Seguradora *</Label>
                     {isCreating && seguradorasExtras.length < 10 && (
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
+                      <Button
+                        type="button"
+                        variant="ghost"
                         size="icon"
                         className="h-6 w-6"
                         onClick={handleAddSeguradoraExtra}
@@ -593,47 +641,58 @@ export const CotacaoModal = ({
                       </Button>
                     )}
                   </div>
-                  <Select value={formData.seguradora_id} onValueChange={value => handleInputChange('seguradora_id', value)} disabled={isReadOnly}>
+                  <Select
+                    value={formData.seguradora_id}
+                    onValueChange={(value) => handleInputChange("seguradora_id", value)}
+                    disabled={isReadOnly}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a seguradora" />
                     </SelectTrigger>
                     <SelectContent>
-                      {activeSeguradoras.map(seguradora => <SelectItem key={seguradora.id} value={seguradora.id}>
+                      {activeSeguradoras.map((seguradora) => (
+                        <SelectItem key={seguradora.id} value={seguradora.id}>
                           {seguradora.nome}
-                        </SelectItem>)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  
+
                   {/* Seguradoras Extras */}
                   {isCreating && seguradorasExtras.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {seguradorasExtras.map((seguradoraExtra, index) => (
-                        <div key={index} className="flex items-center gap-1 bg-muted/50 rounded-md p-1.5 min-w-[180px] flex-1 h-10">
-                          <Select 
-                            value={seguradoraExtra.seguradora_id} 
-                            onValueChange={value => handleSeguradoraExtraChange(index, value)}
+                        <div
+                          key={index}
+                          className="flex items-center gap-1 bg-muted/50 rounded-md p-1.5 min-w-[180px] flex-1 h-10"
+                        >
+                          <Select
+                            value={seguradoraExtra.seguradora_id}
+                            onValueChange={(value) => handleSeguradoraExtraChange(index, value)}
                           >
                             <SelectTrigger className="h-7 text-xs border-0 bg-transparent">
                               <SelectValue placeholder="Seguradora" />
                             </SelectTrigger>
                             <SelectContent>
-                              {activeSeguradoras.filter(seguradora => {
-                                if (seguradora.id === seguradoraExtra.seguradora_id) return true;
-                                if (seguradora.id === formData.seguradora_id) return false;
-                                const otherSelectedSeguradoras = seguradorasExtras
-                                  .map((s, i) => i !== index ? s.seguradora_id : null)
-                                  .filter(Boolean);
-                                return !otherSelectedSeguradoras.includes(seguradora.id);
-                              }).map(seguradora => (
-                                <SelectItem key={seguradora.id} value={seguradora.id}>
-                                  {seguradora.nome}
-                                </SelectItem>
-                              ))}
+                              {activeSeguradoras
+                                .filter((seguradora) => {
+                                  if (seguradora.id === seguradoraExtra.seguradora_id) return true;
+                                  if (seguradora.id === formData.seguradora_id) return false;
+                                  const otherSelectedSeguradoras = seguradorasExtras
+                                    .map((s, i) => (i !== index ? s.seguradora_id : null))
+                                    .filter(Boolean);
+                                  return !otherSelectedSeguradoras.includes(seguradora.id);
+                                })
+                                .map((seguradora) => (
+                                  <SelectItem key={seguradora.id} value={seguradora.id}>
+                                    {seguradora.nome}
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
+                          <Button
+                            type="button"
+                            variant="ghost"
                             size="icon"
                             className="h-6 w-6 flex-shrink-0 text-destructive hover:text-destructive"
                             onClick={() => handleRemoveSeguradoraExtra(index)}
@@ -651,9 +710,9 @@ export const CotacaoModal = ({
                   <div className="flex items-center justify-between mb-2">
                     <Label>Ramo * / Segmento</Label>
                     {isCreating && ramosExtras.length < 3 && (
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
+                      <Button
+                        type="button"
+                        variant="ghost"
                         size="icon"
                         className="h-6 w-6"
                         onClick={handleAddRamoExtra}
@@ -662,57 +721,63 @@ export const CotacaoModal = ({
                       </Button>
                     )}
                   </div>
-                  
+
                   {/* Ramo e Segmento principal em grid */}
                   <div className="grid grid-cols-[1fr_auto] gap-2">
-                    <Select value={formData.ramo_id} onValueChange={value => handleInputChange('ramo_id', value)} disabled={isReadOnly}>
+                    <Select
+                      value={formData.ramo_id}
+                      onValueChange={(value) => handleInputChange("ramo_id", value)}
+                      disabled={isReadOnly}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o ramo" />
                       </SelectTrigger>
                       <SelectContent>
-                        {activeRamos.map(ramo => <SelectItem key={ramo.id} value={ramo.id}>
+                        {activeRamos.map((ramo) => (
+                          <SelectItem key={ramo.id} value={ramo.id}>
                             {ramo.descricao}
-                          </SelectItem>)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <div className="flex items-center bg-muted/30 rounded-md px-3 h-10 min-w-[120px]">
-                      <span className="text-xs text-muted-foreground">
-                        {formData.segmento || '-'}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{formData.segmento || "-"}</span>
                     </div>
                   </div>
-                  
+
                   {/* Ramos Extras - Layout responsivo */}
                   {isCreating && ramosExtras.length > 0 && (
                     <div className="grid grid-cols-[1fr_auto] gap-2 mt-2">
                       {ramosExtras.map((ramoExtra, index) => (
                         <>
                           <div key={`ramo-${index}`} className="flex items-center gap-1 bg-muted/50 rounded-md p-1.5">
-                            <Select 
-                              value={ramoExtra.ramo_id} 
-                              onValueChange={value => handleRamoExtraChange(index, value)}
+                            <Select
+                              value={ramoExtra.ramo_id}
+                              onValueChange={(value) => handleRamoExtraChange(index, value)}
                             >
                               <SelectTrigger className="h-7 text-xs border-0 bg-transparent">
                                 <SelectValue placeholder="Ramo" />
                               </SelectTrigger>
                               <SelectContent>
-                                {activeRamos.filter(ramo => {
-                                  if (ramo.id === ramoExtra.ramo_id) return true;
-                                  if (ramo.id === formData.ramo_id) return false;
-                                  const otherSelectedRamos = ramosExtras
-                                    .map((r, i) => i !== index ? r.ramo_id : null)
-                                    .filter(Boolean);
-                                  return !otherSelectedRamos.includes(ramo.id);
-                                }).map(ramo => (
-                                  <SelectItem key={ramo.id} value={ramo.id}>
-                                    {ramo.descricao}
-                                  </SelectItem>
-                                ))}
+                                {activeRamos
+                                  .filter((ramo) => {
+                                    if (ramo.id === ramoExtra.ramo_id) return true;
+                                    if (ramo.id === formData.ramo_id) return false;
+                                    const otherSelectedRamos = ramosExtras
+                                      .map((r, i) => (i !== index ? r.ramo_id : null))
+                                      .filter(Boolean);
+                                    return !otherSelectedRamos.includes(ramo.id);
+                                  })
+                                  .map((ramo) => (
+                                    <SelectItem key={ramo.id} value={ramo.id}>
+                                      {ramo.descricao}
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
+                            <Button
+                              type="button"
+                              variant="ghost"
                               size="icon"
                               className="h-6 w-6 flex-shrink-0 text-destructive hover:text-destructive"
                               onClick={() => handleRemoveRamoExtra(index)}
@@ -721,9 +786,7 @@ export const CotacaoModal = ({
                             </Button>
                           </div>
                           <div key={`segmento-${index}`} className="flex items-center bg-muted/30 rounded-md px-3 h-10">
-                            <span className="text-xs text-muted-foreground">
-                              {ramoExtra.segmento || '-'}
-                            </span>
+                            <span className="text-xs text-muted-foreground">{ramoExtra.segmento || "-"}</span>
                           </div>
                         </>
                       ))}
@@ -732,44 +795,54 @@ export const CotacaoModal = ({
                 </div>
               </div>
 
-
               {/* Info box about multiple cotações creation */}
               {isCreating && (seguradorasExtras.length > 0 || ramosExtras.length > 0) && (
                 <div className="bg-muted/50 p-3 rounded-lg">
                   <p className="text-xs text-muted-foreground">
-                    <strong>Importante:</strong> Ao criar a cotação, será gerado um registro independente 
-                    para cada combinação de ramo e seguradora selecionados, com todos os outros dados idênticos.
+                    <strong>Importante:</strong> Ao criar a cotação, será gerado um registro independente para cada
+                    combinação de ramo e seguradora selecionados, com todos os outros dados idênticos.
                   </p>
                 </div>
               )}
-
 
               {/* Captação e Status Seguradora */}
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="captacao_id">Captação *</Label>
-                  <Select value={formData.captacao_id} onValueChange={value => handleInputChange('captacao_id', value)} disabled={isReadOnly}>
+                  <Select
+                    value={formData.captacao_id}
+                    onValueChange={(value) => handleInputChange("captacao_id", value)}
+                    disabled={isReadOnly}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a captação" />
                     </SelectTrigger>
                     <SelectContent>
-                      {captacao.map(capt => <SelectItem key={capt.id} value={capt.id}>
+                      {captacao.map((capt) => (
+                        <SelectItem key={capt.id} value={capt.id}>
                           {capt.descricao}
-                        </SelectItem>)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
                   <Label htmlFor="status_seguradora_id">Status da Seguradora</Label>
-                  <Select value={formData.status_seguradora_id} onValueChange={value => handleInputChange('status_seguradora_id', value)} disabled={isReadOnly}>
+                  <Select
+                    value={formData.status_seguradora_id}
+                    onValueChange={(value) => handleInputChange("status_seguradora_id", value)}
+                    disabled={isReadOnly}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o status da seguradora" />
                     </SelectTrigger>
                     <SelectContent>
-                      {statusSeguradora.map(status => <SelectItem key={status.id} value={status.id}>
+                      {statusSeguradora.map((status) => (
+                        <SelectItem key={status.id} value={status.id}>
                           {status.descricao}
-                        </SelectItem>)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -777,140 +850,218 @@ export const CotacaoModal = ({
 
               {/* Motivo Recusa - Condicional para Status Seguradora */}
               {(() => {
-              const selectedStatus = statusSeguradora.find(s => s.id === formData.status_seguradora_id);
-              return selectedStatus?.descricao?.toLowerCase().includes('recus') && <div className="space-y-3">
-                    <Label>Motivo(s) da Recusa *</Label>
-                    <div className="flex flex-wrap gap-6 justify-between px-4">
-                      {['Sinistralidade', 'Já em cotação', 'Blacklist', 'Fora de perfil', 'Condição'].map(motivo => {
-                        const motivosArray = formData.motivo_recusa ? formData.motivo_recusa.split(',').map(m => m.trim()) : [];
-                        const isChecked = motivosArray.includes(motivo);
-                        
-                        return <div key={motivo} className="flex items-center space-x-2">
-                            <input type="checkbox" id={`motivo_recusa_${motivo}`} checked={isChecked} onChange={e => {
-                          const checked = e.target.checked;
-                          let newMotivos = [...motivosArray];
-                          
-                          if (checked) {
-                            newMotivos.push(motivo);
-                          } else {
-                            newMotivos = newMotivos.filter(m => m !== motivo);
-                          }
-                          
-                          handleInputChange('motivo_recusa', newMotivos.join(', '));
-                        }} disabled={isReadOnly} className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2" />
-                            <label htmlFor={`motivo_recusa_${motivo}`} className="text-sm cursor-pointer">
-                              {motivo}
-                            </label>
-                          </div>;
-                      })}
+                const selectedStatus = statusSeguradora.find((s) => s.id === formData.status_seguradora_id);
+                return (
+                  selectedStatus?.descricao?.toLowerCase().includes("recus") && (
+                    <div className="space-y-3">
+                      <Label>Motivo(s) da Recusa *</Label>
+                      <div className="flex flex-wrap gap-6 justify-between px-4">
+                        {["Sinistralidade", "Já em cotação", "Blacklist", "Fora de perfil", "Condição"].map(
+                          (motivo) => {
+                            const motivosArray = formData.motivo_recusa
+                              ? formData.motivo_recusa.split(",").map((m) => m.trim())
+                              : [];
+                            const isChecked = motivosArray.includes(motivo);
+
+                            return (
+                              <div key={motivo} className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  id={`motivo_recusa_${motivo}`}
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    let newMotivos = [...motivosArray];
+
+                                    if (checked) {
+                                      newMotivos.push(motivo);
+                                    } else {
+                                      newMotivos = newMotivos.filter((m) => m !== motivo);
+                                    }
+
+                                    handleInputChange("motivo_recusa", newMotivos.join(", "));
+                                  }}
+                                  disabled={isReadOnly}
+                                  className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                />
+                                <label htmlFor={`motivo_recusa_${motivo}`} className="text-sm cursor-pointer">
+                                  {motivo}
+                                </label>
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
                     </div>
-                  </div>;
-            })()}
+                  )
+                );
+              })()}
 
               {/* Tipo, Status e Data */}
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <Label htmlFor="tipo">Tipo *</Label>
-                  <Select value={formData.tipo} onValueChange={value => handleInputChange('tipo', value)} disabled={isReadOnly}>
+                  <Select
+                    value={formData.tipo}
+                    onValueChange={(value) => handleInputChange("tipo", value)}
+                    disabled={isReadOnly}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
-                     <SelectContent>
-                       <SelectItem value="Nova">Nova</SelectItem>
-                       <SelectItem value="Renovação">Renovação</SelectItem>
-                       <SelectItem value="Migração">Migração</SelectItem>
-                     </SelectContent>
+                    <SelectContent>
+                      <SelectItem value="Nova">Nova</SelectItem>
+                      <SelectItem value="Renovação">Renovação</SelectItem>
+                      <SelectItem value="Migração">Migração</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
 
                 <div>
                   <Label htmlFor="status">Status *</Label>
-                  <Select value={formData.status} onValueChange={value => handleInputChange('status', value)} disabled={isReadOnly}>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => handleInputChange("status", value)}
+                    disabled={isReadOnly}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Em cotação">Em cotação</SelectItem>
-                        <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
-                        <SelectItem value="Declinado">Declinado</SelectItem>
-                        {mode === 'view' && <SelectItem value="Alocada Outra">Alocada Outra</SelectItem>}
-                      </SelectContent>
+                    <SelectContent>
+                      <SelectItem value="Em cotação">Em cotação</SelectItem>
+                      <SelectItem value="Negócio fechado">Negócio fechado</SelectItem>
+                      <SelectItem value="Declinado">Declinado</SelectItem>
+                      {mode === "view" && <SelectItem value="Fechamento congênere">Fechamento congênere</SelectItem>}
+                    </SelectContent>
                   </Select>
                 </div>
 
                 <div>
                   <Label htmlFor="data_cotacao">Data da Cotação *</Label>
-                  <Input type="date" value={formData.data_cotacao} onChange={e => handleInputChange('data_cotacao', e.target.value)} readOnly={isReadOnly} />
+                  <Input
+                    type="date"
+                    value={formData.data_cotacao}
+                    onChange={(e) => handleInputChange("data_cotacao", e.target.value)}
+                    readOnly={isReadOnly}
+                  />
                 </div>
               </div>
 
               {/* Motivos de Recusa - Checklist quando Status é "Declinado" */}
-              {formData.status === 'Declinado' && <div className="space-y-3">
+              {formData.status === "Declinado" && (
+                <div className="space-y-3">
                   <Label>Motivo(s) do Declinado *</Label>
                   <div className="flex flex-wrap gap-6 justify-between px-4">
-                    {['Relacionamento', 'Condição', 'Taxa', 'Sem proposta'].map(motivo => {
-                      const motivosArray = formData.motivo_declinado ? formData.motivo_declinado.split(',').map(m => m.trim()) : [];
+                    {["Relacionamento", "Condição", "Taxa", "Sem proposta"].map((motivo) => {
+                      const motivosArray = formData.motivo_declinado
+                        ? formData.motivo_declinado.split(",").map((m) => m.trim())
+                        : [];
                       const isChecked = motivosArray.includes(motivo);
-                      
-                      return <div key={motivo} className="flex items-center space-x-2">
-                          <input type="checkbox" id={`motivo_${motivo}`} checked={isChecked} onChange={e => {
-                        const checked = e.target.checked;
-                        let newMotivos = [...motivosArray];
-                        
-                        if (checked) {
-                          newMotivos.push(motivo);
-                        } else {
-                          newMotivos = newMotivos.filter(m => m !== motivo);
-                        }
-                        
-                        handleInputChange('motivo_declinado', newMotivos.join(', '));
-                      }} disabled={isReadOnly} className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2" />
+
+                      return (
+                        <div key={motivo} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`motivo_${motivo}`}
+                            checked={isChecked}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              let newMotivos = [...motivosArray];
+
+                              if (checked) {
+                                newMotivos.push(motivo);
+                              } else {
+                                newMotivos = newMotivos.filter((m) => m !== motivo);
+                              }
+
+                              handleInputChange("motivo_declinado", newMotivos.join(", "));
+                            }}
+                            disabled={isReadOnly}
+                            className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                          />
                           <label htmlFor={`motivo_${motivo}`} className="text-sm cursor-pointer">
                             {motivo}
                           </label>
-                        </div>;
+                        </div>
+                      );
                     })}
                   </div>
-                </div>}
+                </div>
+              )}
 
               {/* Campos condicionais para Negócio Fechado */}
-              {formData.status === 'Negócio fechado' && <>
-                   {/* Vigência */}
-                   <div className="grid gap-4 md:grid-cols-3">
-                     <div>
-                       <Label htmlFor="data_fechamento">Data de Fechamento *</Label>
-                       <Input type="date" value={formData.data_fechamento || ''} onChange={e => handleInputChange('data_fechamento', e.target.value)} readOnly={isReadOnly} />
-                     </div>
-                     
-                     <div>
-                       <Label htmlFor="inicio_vigencia">Início da Vigência</Label>
-                       <Input type="date" value={formData.inicio_vigencia} onChange={e => handleInputChange('inicio_vigencia', e.target.value)} readOnly={isReadOnly} />
-                     </div>
+              {formData.status === "Negócio fechado" && (
+                <>
+                  {/* Vigência */}
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div>
+                      <Label htmlFor="data_fechamento">Data de Fechamento *</Label>
+                      <Input
+                        type="date"
+                        value={formData.data_fechamento || ""}
+                        onChange={(e) => handleInputChange("data_fechamento", e.target.value)}
+                        readOnly={isReadOnly}
+                      />
+                    </div>
 
-                     <div>
-                       <Label htmlFor="fim_vigencia">Fim da Vigência</Label>
-                       <Input type="date" value={formData.fim_vigencia} onChange={e => handleInputChange('fim_vigencia', e.target.value)} readOnly={isReadOnly} />
-                     </div>
-                   </div>
+                    <div>
+                      <Label htmlFor="inicio_vigencia">Início da Vigência</Label>
+                      <Input
+                        type="date"
+                        value={formData.inicio_vigencia}
+                        onChange={(e) => handleInputChange("inicio_vigencia", e.target.value)}
+                        readOnly={isReadOnly}
+                      />
+                    </div>
 
-                   {/* Número da Apólice e Valor do Prêmio */}
-                   <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <Label htmlFor="num_proposta">Número da Proposta *</Label>
-                        <Input value={formData.num_proposta || ''} onChange={e => handleInputChange('num_proposta', e.target.value)} placeholder="Digite o número da proposta" readOnly={isReadOnly} />
-                     </div>
-                     
-                     <div>
-                       <Label htmlFor="valor_premio">Valor do Prêmio *</Label>
-                       <Input type="number" step="0.01" value={formData.valor_premio} onChange={e => handleInputChange('valor_premio', parseFloat(e.target.value) || 0)} placeholder="0,00" readOnly={isReadOnly} />
-                     </div>
-                   </div>
-                </>}
+                    <div>
+                      <Label htmlFor="fim_vigencia">Fim da Vigência</Label>
+                      <Input
+                        type="date"
+                        value={formData.fim_vigencia}
+                        onChange={(e) => handleInputChange("fim_vigencia", e.target.value)}
+                        readOnly={isReadOnly}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Número da Apólice e Valor do Prêmio */}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label htmlFor="num_proposta">Número da Proposta *</Label>
+                      <Input
+                        value={formData.num_proposta || ""}
+                        onChange={(e) => handleInputChange("num_proposta", e.target.value)}
+                        placeholder="Digite o número da proposta"
+                        readOnly={isReadOnly}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="valor_premio">Valor do Prêmio *</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formData.valor_premio}
+                        onChange={(e) => handleInputChange("valor_premio", parseFloat(e.target.value) || 0)}
+                        placeholder="0,00"
+                        readOnly={isReadOnly}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Observações */}
               <div>
                 <Label htmlFor="observacoes">Observações</Label>
-                <Textarea value={formData.observacoes} onChange={e => handleInputChange('observacoes', e.target.value)} placeholder="Informações adicionais sobre a cotação..." className="min-h-[100px]" readOnly={isReadOnly} />
+                <Textarea
+                  value={formData.observacoes}
+                  onChange={(e) => handleInputChange("observacoes", e.target.value)}
+                  placeholder="Informações adicionais sobre a cotação..."
+                  className="min-h-[100px]"
+                  readOnly={isReadOnly}
+                />
               </div>
             </div>
           </TabsContent>
@@ -919,26 +1070,31 @@ export const CotacaoModal = ({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-medium text-muted-foreground">Anexos</h3>
-                {!isReadOnly && <label className="cursor-pointer">
+                {!isReadOnly && (
+                  <label className="cursor-pointer">
                     <Button variant="outline" className="gap-2" asChild>
                       <span>
                         <Upload className="h-4 w-4" />
                         Importar Arquivo
                       </span>
                     </Button>
-                    <input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    toast.success('Funcionalidade de anexos será implementada');
-                  }
-                }} className="hidden" />
-                  </label>}
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          toast.success("Funcionalidade de anexos será implementada");
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
               <div className="text-center py-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
                 <Paperclip className="mx-auto h-8 w-8 text-muted-foreground" />
-                <p className="text-muted-foreground mt-2">
-                  Nenhum arquivo anexado
-                </p>
+                <p className="text-muted-foreground mt-2">Nenhum arquivo anexado</p>
               </div>
             </div>
           </TabsContent>
@@ -950,7 +1106,13 @@ export const CotacaoModal = ({
                 <h3 className="text-sm font-medium text-muted-foreground">Comentários</h3>
               </div>
               <div>
-                <Textarea value={formData.comentarios} onChange={e => handleInputChange('comentarios', e.target.value)} placeholder="Adicione seus comentários sobre esta cotação..." className="min-h-[150px]" readOnly={isReadOnly} />
+                <Textarea
+                  value={formData.comentarios}
+                  onChange={(e) => handleInputChange("comentarios", e.target.value)}
+                  placeholder="Adicione seus comentários sobre esta cotação..."
+                  className="min-h-[150px]"
+                  readOnly={isReadOnly}
+                />
               </div>
             </div>
           </TabsContent>
@@ -961,7 +1123,7 @@ export const CotacaoModal = ({
                 <History className="h-5 w-5 text-muted-foreground" />
                 <h3 className="text-sm font-medium text-muted-foreground">Histórico de Alterações</h3>
               </div>
-              
+
               {auditLogLoading ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">Carregando histórico...</p>
@@ -970,15 +1132,15 @@ export const CotacaoModal = ({
                 <div className="text-center py-8 border border-dashed border-muted-foreground/25 rounded-lg">
                   <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
                   <p className="text-muted-foreground mt-2">
-                    {mode === 'create' ? 'O histórico estará disponível após salvar a cotação' : 'Nenhuma alteração registrada para esta cotação'}
+                    {mode === "create"
+                      ? "O histórico estará disponível após salvar a cotação"
+                      : "Nenhuma alteração registrada para esta cotação"}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    {auditLog.length} alteração(ões) registrada(s)
-                  </p>
-                  
+                  <p className="text-sm text-muted-foreground">{auditLog.length} alteração(ões) registrada(s)</p>
+
                   {/* Tabela de auditoria */}
                   <div className="border rounded-lg overflow-hidden">
                     <div className="overflow-x-auto">
@@ -995,32 +1157,26 @@ export const CotacaoModal = ({
                         <tbody className="divide-y">
                           {auditLog.map((log) => {
                             const editor = log.changed_by_profile;
-                            
+
                             return (
                               <tr key={log.id} className="hover:bg-muted/50">
                                 <td className="px-4 py-3 whitespace-nowrap">
-                                  {new Date(log.changed_at).toLocaleDateString('pt-BR', {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric'
-                                  })}{' '}
-                                  {new Date(log.changed_at).toLocaleTimeString('pt-BR', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
+                                  {new Date(log.changed_at).toLocaleDateString("pt-BR", {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                  })}{" "}
+                                  {new Date(log.changed_at).toLocaleTimeString("pt-BR", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
                                   })}
                                 </td>
-                                <td className="px-4 py-3">
-                                  {editor ? editor.nome : 'Sistema'}
-                                </td>
-                                <td className="px-4 py-3 font-medium">
-                                  {log.field_name}
-                                </td>
+                                <td className="px-4 py-3">{editor ? editor.nome : "Sistema"}</td>
+                                <td className="px-4 py-3 font-medium">{log.field_name}</td>
                                 <td className="px-4 py-3 text-muted-foreground max-w-xs truncate">
-                                  {log.old_value || '—'}
+                                  {log.old_value || "—"}
                                 </td>
-                                <td className="px-4 py-3 font-medium max-w-xs truncate">
-                                  {log.new_value || '—'}
-                                </td>
+                                <td className="px-4 py-3 font-medium max-w-xs truncate">{log.new_value || "—"}</td>
                               </tr>
                             );
                           })}
@@ -1039,14 +1195,17 @@ export const CotacaoModal = ({
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>
               <X className="h-4 w-4 mr-2" />
-              {isReadOnly ? 'Fechar' : 'Cancelar'}
+              {isReadOnly ? "Fechar" : "Cancelar"}
             </Button>
-            {!isReadOnly && <Button onClick={handleSave}>
+            {!isReadOnly && (
+              <Button onClick={handleSave}>
                 <Save className="h-4 w-4 mr-2" />
-                {isCreating ? 'Criar' : 'Salvar'} Cotação
-              </Button>}
+                {isCreating ? "Criar" : "Salvar"} Cotação
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 };

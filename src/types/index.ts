@@ -1,5 +1,5 @@
-export type UserRole = 'Administrador' | 'Gerente' | 'CEO' | 'Operacional' | 'Produtor' | 'Faturamento';
-export type ModuloTipo = 'Transportes' | 'Ramos Elementares';
+export type UserRole = "Administrador" | "Gerente" | "CEO" | "Operacional" | "Produtor" | "Faturamento";
+export type ModuloTipo = "Transportes" | "Ramos Elementares";
 
 export interface UserProfile {
   id: string;
@@ -80,13 +80,13 @@ export interface StatusSeguradora {
   descricao: string;
 }
 
-export type CotacaoStatus = 'Em cotação' | 'Negócio fechado' | 'Declinado' | 'Alocada Outra';
-export type CotacaoTipo = 'Novo' | 'Migração' | 'Renovação';
+export type CotacaoStatus = "Em cotação" | "Negócio fechado" | "Declinado" | "Fechamento congênere";
+export type CotacaoTipo = "Novo" | "Migração" | "Renovação";
 
 export interface CotacaoTRN {
   id: string;
   cliente_id: string;
-  unidade: 'Matriz' | 'Filial';
+  unidade: "Matriz" | "Filial";
   produtor_origem_id: string;
   produtor_negociador_id: string;
   produtor_cotador_id: string;
@@ -110,7 +110,7 @@ export interface CotacaoTRN {
   updated_by?: string;
   created_at: string;
   updated_at: string;
-  
+
   // Relations (populated in queries)
   cliente?: Cliente;
   produtor_origem?: Produtor;
@@ -148,10 +148,10 @@ export interface Tarefa {
   titulo: string;
   descricao?: string;
   responsavel_id?: string;
-  prioridade: 'Baixa' | 'Média' | 'Alta';
-  status: 'Aberta' | 'Em andamento' | 'Concluída';
+  prioridade: "Baixa" | "Média" | "Alta";
+  status: "Aberta" | "Em andamento" | "Concluída";
   data_limite?: string;
-  relacionada_a: 'Cotacao' | 'Geral';
+  relacionada_a: "Cotacao" | "Geral";
   cotacao_id?: string;
   created_at: string;
   updated_at: string;
@@ -181,6 +181,6 @@ export interface KPI {
 
 export interface AppConfig {
   modo_mock: boolean;
-  tema: 'light' | 'dark';
+  tema: "light" | "dark";
   sla_dias_alerta: number;
 }
