@@ -1014,7 +1014,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                           !formData.data_cotacao && "text-muted-foreground"
                         )}
                       >
-                        {formData.data_cotacao && formData.data_cotacao.trim() ? (
+                        {formData.data_cotacao && formData.data_cotacao.trim() && formData.data_cotacao !== "" ? (
                           format(new Date(formData.data_cotacao + "T00:00:00"), "dd/MM/yyyy")
                         ) : (
                           <span>Selecione uma data</span>
@@ -1025,7 +1025,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={formData.data_cotacao && formData.data_cotacao.trim() ? new Date(formData.data_cotacao + "T00:00:00") : undefined}
+                        selected={formData.data_cotacao && formData.data_cotacao.trim() && formData.data_cotacao !== "" ? new Date(formData.data_cotacao + "T00:00:00") : undefined}
                         onSelect={(date) => {
                           if (date) {
                             const year = date.getFullYear();
@@ -1101,7 +1101,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                               !formData.data_fechamento && "text-muted-foreground"
                             )}
                           >
-                            {formData.data_fechamento && formData.data_fechamento.trim() ? (
+                            {formData.data_fechamento && formData.data_fechamento.trim() && formData.data_fechamento !== "" ? (
                               format(new Date(formData.data_fechamento + "T00:00:00"), "dd/MM/yyyy")
                             ) : (
                               <span>Selecione uma data</span>
@@ -1112,7 +1112,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            selected={formData.data_fechamento && formData.data_fechamento.trim() ? new Date(formData.data_fechamento + "T00:00:00") : undefined}
+                            selected={formData.data_fechamento && formData.data_fechamento.trim() && formData.data_fechamento !== "" ? new Date(formData.data_fechamento + "T00:00:00") : undefined}
                             onSelect={(date) => {
                               if (date) {
                                 const year = date.getFullYear();
@@ -1140,7 +1140,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                               !formData.inicio_vigencia && "text-muted-foreground"
                             )}
                           >
-                            {formData.inicio_vigencia && formData.inicio_vigencia.trim() ? (
+                            {formData.inicio_vigencia && formData.inicio_vigencia.trim() && formData.inicio_vigencia !== "" ? (
                               format(new Date(formData.inicio_vigencia + "T00:00:00"), "dd/MM/yyyy")
                             ) : (
                               <span>Selecione uma data</span>
@@ -1151,7 +1151,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            selected={formData.inicio_vigencia && formData.inicio_vigencia.trim() ? new Date(formData.inicio_vigencia + "T00:00:00") : undefined}
+                            selected={formData.inicio_vigencia && formData.inicio_vigencia.trim() && formData.inicio_vigencia !== "" ? new Date(formData.inicio_vigencia + "T00:00:00") : undefined}
                             onSelect={(date) => {
                               if (date) {
                                 const year = date.getFullYear();
@@ -1179,7 +1179,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                               !formData.fim_vigencia && "text-muted-foreground"
                             )}
                           >
-                            {formData.fim_vigencia && formData.fim_vigencia.trim() ? (
+                            {formData.fim_vigencia && formData.fim_vigencia.trim() && formData.fim_vigencia !== "" ? (
                               format(new Date(formData.fim_vigencia + "T00:00:00"), "dd/MM/yyyy")
                             ) : (
                               <span>Selecione uma data</span>
@@ -1190,7 +1190,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            selected={formData.fim_vigencia && formData.fim_vigencia.trim() ? new Date(formData.fim_vigencia + "T00:00:00") : undefined}
+                            selected={formData.fim_vigencia && formData.fim_vigencia.trim() && formData.fim_vigencia !== "" ? new Date(formData.fim_vigencia + "T00:00:00") : undefined}
                             onSelect={(date) => {
                               if (date) {
                                 const year = date.getFullYear();
@@ -1329,15 +1329,21 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                             return (
                               <tr key={log.id} className="hover:bg-muted/50">
                                 <td className="px-4 py-3 whitespace-nowrap">
-                                  {new Date(log.changed_at).toLocaleDateString("pt-BR", {
-                                    day: "2-digit",
-                                    month: "2-digit",
-                                    year: "numeric",
-                                  })}{" "}
-                                  {new Date(log.changed_at).toLocaleTimeString("pt-BR", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
+                                  {log.changed_at ? (
+                                    <>
+                                      {new Date(log.changed_at).toLocaleDateString("pt-BR", {
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "numeric",
+                                      })}{" "}
+                                      {new Date(log.changed_at).toLocaleTimeString("pt-BR", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </>
+                                  ) : (
+                                    "—"
+                                  )}
                                 </td>
                                 <td className="px-4 py-3">{editor ? editor.nome : "Sistema"}</td>
                                 <td className="px-4 py-3 font-medium">{log.field_name}</td>
