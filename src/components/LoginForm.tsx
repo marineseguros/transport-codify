@@ -38,7 +38,6 @@ export const LoginForm = () => {
             <img src="/marine-logo.png" alt="Marine Seguros Logo" className="h-16 w-auto" />
           </div>
           <h1 className="text-2xl font-bold">Sistema de Gerenciamento</h1>
-          <h1 className="text-2xl font-bold">Marine Seguros</h1>
           <p className="text-muted-foreground">Faça login para acessar o sistema</p>
         </div>
 
