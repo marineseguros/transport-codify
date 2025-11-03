@@ -11,8 +11,42 @@ import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Plus, Trash2, CalendarIcon } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
+
+// Helper function to safely format dates
+const safeFormatDate = (dateString: string | undefined | null, formatStr: string = "dd/MM/yyyy"): string | null => {
+  if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
+    return null;
+  }
+  
+  try {
+    const date = new Date(dateString + "T00:00:00");
+    if (isValid(date)) {
+      return format(date, formatStr);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+// Helper function to safely parse dates
+const safeParseDateString = (dateString: string | undefined | null): Date | undefined => {
+  if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
+    return undefined;
+  }
+  
+  try {
+    const date = new Date(dateString + "T00:00:00");
+    if (isValid(date)) {
+      return date;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+};
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useProfiles,
@@ -1014,18 +1048,14 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                           !formData.data_cotacao && "text-muted-foreground"
                         )}
                       >
-                        {formData.data_cotacao && formData.data_cotacao.trim() && formData.data_cotacao !== "" ? (
-                          format(new Date(formData.data_cotacao + "T00:00:00"), "dd/MM/yyyy")
-                        ) : (
-                          <span>Selecione uma data</span>
-                        )}
+                        {safeFormatDate(formData.data_cotacao) || <span>Selecione uma data</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={formData.data_cotacao && formData.data_cotacao.trim() && formData.data_cotacao !== "" ? new Date(formData.data_cotacao + "T00:00:00") : undefined}
+                        selected={safeParseDateString(formData.data_cotacao)}
                         onSelect={(date) => {
                           if (date) {
                             const year = date.getFullYear();
@@ -1101,18 +1131,14 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                               !formData.data_fechamento && "text-muted-foreground"
                             )}
                           >
-                            {formData.data_fechamento && formData.data_fechamento.trim() && formData.data_fechamento !== "" ? (
-                              format(new Date(formData.data_fechamento + "T00:00:00"), "dd/MM/yyyy")
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
+                            {safeFormatDate(formData.data_fechamento) || <span>Selecione uma data</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            selected={formData.data_fechamento && formData.data_fechamento.trim() && formData.data_fechamento !== "" ? new Date(formData.data_fechamento + "T00:00:00") : undefined}
+                            selected={safeParseDateString(formData.data_fechamento)}
                             onSelect={(date) => {
                               if (date) {
                                 const year = date.getFullYear();
@@ -1140,18 +1166,14 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                               !formData.inicio_vigencia && "text-muted-foreground"
                             )}
                           >
-                            {formData.inicio_vigencia && formData.inicio_vigencia.trim() && formData.inicio_vigencia !== "" ? (
-                              format(new Date(formData.inicio_vigencia + "T00:00:00"), "dd/MM/yyyy")
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
+                            {safeFormatDate(formData.inicio_vigencia) || <span>Selecione uma data</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            selected={formData.inicio_vigencia && formData.inicio_vigencia.trim() && formData.inicio_vigencia !== "" ? new Date(formData.inicio_vigencia + "T00:00:00") : undefined}
+                            selected={safeParseDateString(formData.inicio_vigencia)}
                             onSelect={(date) => {
                               if (date) {
                                 const year = date.getFullYear();
@@ -1179,18 +1201,14 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                               !formData.fim_vigencia && "text-muted-foreground"
                             )}
                           >
-                            {formData.fim_vigencia && formData.fim_vigencia.trim() && formData.fim_vigencia !== "" ? (
-                              format(new Date(formData.fim_vigencia + "T00:00:00"), "dd/MM/yyyy")
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
+                            {safeFormatDate(formData.fim_vigencia) || <span>Selecione uma data</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            selected={formData.fim_vigencia && formData.fim_vigencia.trim() && formData.fim_vigencia !== "" ? new Date(formData.fim_vigencia + "T00:00:00") : undefined}
+                            selected={safeParseDateString(formData.fim_vigencia)}
                             onSelect={(date) => {
                               if (date) {
                                 const year = date.getFullYear();
@@ -1329,7 +1347,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                             return (
                               <tr key={log.id} className="hover:bg-muted/50">
                                 <td className="px-4 py-3 whitespace-nowrap">
-                                  {log.changed_at ? (
+                                  {log.changed_at && isValid(new Date(log.changed_at)) ? (
                                     <>
                                       {new Date(log.changed_at).toLocaleDateString("pt-BR", {
                                         day: "2-digit",
