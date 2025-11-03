@@ -403,6 +403,8 @@ const Cotacoes = () => {
                   <SelectValue placeholder="Classificar" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="numero_cotacao-desc">Número Mais Recente</SelectItem>
+                  <SelectItem value="numero_cotacao-asc">Número Mais Antigo</SelectItem>
                   <SelectItem value="segurado-asc">Nome A-Z</SelectItem>
                   <SelectItem value="segurado-desc">Nome Z-A</SelectItem>
                   <SelectItem value="valor_premio-desc">Maior Valor</SelectItem>
@@ -452,7 +454,7 @@ const Cotacoes = () => {
                   setSearchTerm("");
                   setStatusFilter("todos");
                   setProdutorFilter("todos");
-                  setSortBy("data_cotacao");
+                  setSortBy("numero_cotacao");
                   setSortOrder("desc");
                   setDateFilter("todos");
                   setDateRange(undefined);
