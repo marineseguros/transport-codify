@@ -6,9 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
-import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Plus, Trash2 } from "lucide-react";
+import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Plus, Trash2, CalendarIcon } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useProfiles,
@@ -231,6 +235,19 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         return newData;
       });
       return; // Return early since we already set both fields
+    }
+
+    // Auto-change Status to "Declinado" when Status da Seguradora is "Recusa"
+    if (field === "status_seguradora_id") {
+      const selectedStatus = statusSeguradora.find((s) => s.id === value);
+      if (selectedStatus?.descricao?.toLowerCase().includes("recus")) {
+        setFormData((prev) => ({
+          ...prev,
+          status_seguradora_id: value,
+          status: "Declinado",
+        }));
+        return;
+      }
     }
 
     // For other fields, use the general update
@@ -987,12 +1004,41 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
 
                 <div>
                   <Label htmlFor="data_cotacao">Data da Cotação *</Label>
-                  <Input
-                    type="date"
-                    value={formData.data_cotacao}
-                    onChange={(e) => handleInputChange("data_cotacao", e.target.value)}
-                    readOnly={isReadOnly}
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        disabled={isReadOnly}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !formData.data_cotacao && "text-muted-foreground"
+                        )}
+                      >
+                        {formData.data_cotacao ? (
+                          format(new Date(formData.data_cotacao + "T00:00:00"), "dd/MM/yyyy")
+                        ) : (
+                          <span>Selecione uma data</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.data_cotacao ? new Date(formData.data_cotacao + "T00:00:00") : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            handleInputChange("data_cotacao", `${year}-${month}-${day}`);
+                          }
+                        }}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
@@ -1045,32 +1091,119 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                   <div className="grid gap-4 md:grid-cols-3">
                     <div>
                       <Label htmlFor="data_fechamento">Data de Fechamento *</Label>
-                      <Input
-                        type="date"
-                        value={formData.data_fechamento || ""}
-                        onChange={(e) => handleInputChange("data_fechamento", e.target.value)}
-                        readOnly={isReadOnly}
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            disabled={isReadOnly}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !formData.data_fechamento && "text-muted-foreground"
+                            )}
+                          >
+                            {formData.data_fechamento ? (
+                              format(new Date(formData.data_fechamento + "T00:00:00"), "dd/MM/yyyy")
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.data_fechamento ? new Date(formData.data_fechamento + "T00:00:00") : undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                const year = date.getFullYear();
+                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const day = String(date.getDate()).padStart(2, '0');
+                                handleInputChange("data_fechamento", `${year}-${month}-${day}`);
+                              }
+                            }}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
 
                     <div>
                       <Label htmlFor="inicio_vigencia">Início da Vigência</Label>
-                      <Input
-                        type="date"
-                        value={formData.inicio_vigencia}
-                        onChange={(e) => handleInputChange("inicio_vigencia", e.target.value)}
-                        readOnly={isReadOnly}
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            disabled={isReadOnly}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !formData.inicio_vigencia && "text-muted-foreground"
+                            )}
+                          >
+                            {formData.inicio_vigencia ? (
+                              format(new Date(formData.inicio_vigencia + "T00:00:00"), "dd/MM/yyyy")
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.inicio_vigencia ? new Date(formData.inicio_vigencia + "T00:00:00") : undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                const year = date.getFullYear();
+                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const day = String(date.getDate()).padStart(2, '0');
+                                handleInputChange("inicio_vigencia", `${year}-${month}-${day}`);
+                              }
+                            }}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
 
                     <div>
                       <Label htmlFor="fim_vigencia">Fim da Vigência</Label>
-                      <Input
-                        type="date"
-                        value={formData.fim_vigencia}
-                        onChange={(e) => handleInputChange("fim_vigencia", e.target.value)}
-                        readOnly={isReadOnly}
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            disabled={isReadOnly}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !formData.fim_vigencia && "text-muted-foreground"
+                            )}
+                          >
+                            {formData.fim_vigencia ? (
+                              format(new Date(formData.fim_vigencia + "T00:00:00"), "dd/MM/yyyy")
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.fim_vigencia ? new Date(formData.fim_vigencia + "T00:00:00") : undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                const year = date.getFullYear();
+                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const day = String(date.getDate()).padStart(2, '0');
+                                handleInputChange("fim_vigencia", `${year}-${month}-${day}`);
+                              }
+                            }}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
 
