@@ -17,9 +17,9 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["marine-logo.png"],
       manifest: {
-        name: "Sistema de Cotações - Gestão de Seguros de Transporte",
-        short_name: "Marine Cotações",
-        description: "Sistema completo para gestão de cotações de seguro de transportes (TRN)",
+        name: "Sistema de Gerenciamento - Gestão de Seguros",
+        short_name: "Sistema Seguros",
+        description: "Sistema completo para gestão de seguros",
         theme_color: "#1e293b",
         background_color: "#0f172a",
         display: "standalone",
