@@ -43,6 +43,7 @@ export type Database = {
           cidade: string | null
           cpf_cnpj: string
           created_at: string
+          created_by: string | null
           email: string | null
           endereco: string | null
           id: string
@@ -60,6 +61,7 @@ export type Database = {
           cidade?: string | null
           cpf_cnpj: string
           created_at?: string
+          created_by?: string | null
           email?: string | null
           endereco?: string | null
           id?: string
@@ -77,6 +79,7 @@ export type Database = {
           cidade?: string | null
           cpf_cnpj?: string
           created_at?: string
+          created_by?: string | null
           email?: string | null
           endereco?: string | null
           id?: string
@@ -96,6 +99,99 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      clientes_audit_log: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          cliente_id: string
+          created_at: string
+          field_name: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          cliente_id: string
+          created_at?: string
+          field_name: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          cliente_id?: string
+          created_at?: string
+          field_name?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Relationships: []
+      }
+      clientes_historico: {
+        Row: {
+          ativo: boolean
+          captacao_id: string | null
+          cep: string | null
+          change_type: string
+          changed_at: string
+          changed_by: string | null
+          cidade: string | null
+          cliente_id: string
+          cpf_cnpj: string
+          email: string | null
+          endereco: string | null
+          id: string
+          modulo: Database["public"]["Enums"]["modulo_tipo"]
+          observacoes: string | null
+          segurado: string
+          telefone: string | null
+          uf: string | null
+        }
+        Insert: {
+          ativo: boolean
+          captacao_id?: string | null
+          cep?: string | null
+          change_type?: string
+          changed_at?: string
+          changed_by?: string | null
+          cidade?: string | null
+          cliente_id: string
+          cpf_cnpj: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          modulo: Database["public"]["Enums"]["modulo_tipo"]
+          observacoes?: string | null
+          segurado: string
+          telefone?: string | null
+          uf?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          captacao_id?: string | null
+          cep?: string | null
+          change_type?: string
+          changed_at?: string
+          changed_by?: string | null
+          cidade?: string | null
+          cliente_id?: string
+          cpf_cnpj?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
+          observacoes?: string | null
+          segurado?: string
+          telefone?: string | null
+          uf?: string | null
+        }
+        Relationships: []
       }
       cotacoes: {
         Row: {
