@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -987,7 +987,32 @@ export const useClienteHistorico = (clienteId?: string) => {
   const [historico, setHistorico] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchHistorico = useCallback(async () => {
+  useEffect(() => {
+    if (!clienteId) return;
+    
+    const fetchHistorico = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('clientes_historico')
+          .select('*')
+          .eq('cliente_id', clienteId)
+          .order('changed_at', { ascending: false });
+
+        if (error) throw error;
+        setHistorico(data || []);
+      } catch (error) {
+        console.error('Erro ao buscar histórico do cliente:', error);
+        toast.error('Erro ao buscar histórico do cliente');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistorico();
+  }, [clienteId]);
+
+  const refetch = async () => {
     if (!clienteId) return;
     
     setLoading(true);
@@ -1006,13 +1031,9 @@ export const useClienteHistorico = (clienteId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [clienteId]);
+  };
 
-  useEffect(() => {
-    fetchHistorico();
-  }, [fetchHistorico]);
-
-  return { historico, loading, refetch: fetchHistorico };
+  return { historico, loading, refetch };
 };
 
 // Hook para buscar audit log de um cliente específico
@@ -1020,7 +1041,32 @@ export const useClienteAuditLog = (clienteId?: string) => {
   const [auditLog, setAuditLog] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchAuditLog = useCallback(async () => {
+  useEffect(() => {
+    if (!clienteId) return;
+    
+    const fetchAuditLog = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('clientes_audit_log')
+          .select('*')
+          .eq('cliente_id', clienteId)
+          .order('changed_at', { ascending: false });
+
+        if (error) throw error;
+        setAuditLog(data || []);
+      } catch (error) {
+        console.error('Erro ao buscar audit log do cliente:', error);
+        toast.error('Erro ao buscar audit log do cliente');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuditLog();
+  }, [clienteId]);
+
+  const refetch = async () => {
     if (!clienteId) return;
     
     setLoading(true);
@@ -1039,13 +1085,9 @@ export const useClienteAuditLog = (clienteId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [clienteId]);
+  };
 
-  useEffect(() => {
-    fetchAuditLog();
-  }, [fetchAuditLog]);
-
-  return { auditLog, loading, refetch: fetchAuditLog };
+  return { auditLog, loading, refetch };
 };
 
 // Hook para buscar todo o audit log de clientes (geral)
@@ -1053,14 +1095,37 @@ export const useAllClientesAuditLog = () => {
   const [auditLog, setAuditLog] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchAuditLog = useCallback(async () => {
+  useEffect(() => {
+    const fetchAuditLog = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('clientes_audit_log')
+          .select('*')
+          .order('changed_at', { ascending: false })
+          .limit(1000);
+
+        if (error) throw error;
+        setAuditLog(data || []);
+      } catch (error) {
+        console.error('Erro ao buscar audit log geral de clientes:', error);
+        toast.error('Erro ao buscar histórico geral');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuditLog();
+  }, []);
+
+  const refetch = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('clientes_audit_log')
         .select('*')
         .order('changed_at', { ascending: false })
-        .limit(1000); // Limitar a 1000 registros para performance
+        .limit(1000);
 
       if (error) throw error;
       setAuditLog(data || []);
@@ -1070,11 +1135,7 @@ export const useAllClientesAuditLog = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    fetchAuditLog();
-  }, [fetchAuditLog]);
-
-  return { auditLog, loading, refetch: fetchAuditLog };
+  return { auditLog, loading, refetch };
 };
