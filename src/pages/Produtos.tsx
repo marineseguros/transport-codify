@@ -206,8 +206,7 @@ export default function Produtos() {
   const handleExportToExcel = () => {
     try {
       // Preparar dados para exportação
-      const dataToExport = filteredProdutos.map((produto, index) => ({
-        "#": index + 1,
+      const dataToExport = filteredProdutos.map((produto) => ({
         "Segurado": produto.segurado,
         "Consultor": produto.consultor,
         "Data do Registro": format(new Date(produto.data_registro), "dd/MM/yyyy", { locale: ptBR }),
@@ -234,7 +233,6 @@ export default function Produtos() {
 
       // Ajustar largura das colunas
       const colWidths = [
-        { wch: 5 },  // #
         { wch: 30 }, // Segurado
         { wch: 20 }, // Consultor
         { wch: 15 }, // Data
@@ -380,7 +378,6 @@ export default function Produtos() {
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
-              <TableHead className="w-12">#</TableHead>
               <TableHead>Segurado</TableHead>
               <TableHead>Consultor</TableHead>
               <TableHead>Data do Registro</TableHead>
@@ -394,7 +391,7 @@ export default function Produtos() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
@@ -402,21 +399,18 @@ export default function Produtos() {
               </TableRow>
             ) : filteredProdutos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   {produtos.length === 0 ? "Nenhum produto cadastrado" : "Nenhum produto encontrado com os filtros aplicados"}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredProdutos.map((produto, index) => (
+              filteredProdutos.map((produto) => (
                 <TableRow key={produto.id}>
                   <TableCell>
                     <Checkbox
                       checked={selectedIds.includes(produto.id)}
                       onCheckedChange={(checked) => handleSelectOne(produto.id, checked as boolean)}
                     />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {index + 1}
                   </TableCell>
                   <TableCell className="font-medium">{produto.segurado}</TableCell>
                   <TableCell>{produto.consultor}</TableCell>

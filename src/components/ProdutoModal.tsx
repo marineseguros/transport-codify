@@ -3,9 +3,10 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-import { CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProdutores } from "@/hooks/useSupabaseData";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -90,8 +91,29 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { produtores } = useProdutores();
+  const [clientes, setClientes] = useState<Array<{ id: string; segurado: string }>>([]);
+  const [seguradoOpen, setSeguradoOpen] = useState(false);
 
   const produtoresAtivos = produtores.filter(p => p.ativo);
+
+  // Fetch clientes
+  useEffect(() => {
+    const fetchClientes = async () => {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("id, segurado")
+        .eq("ativo", true)
+        .order("segurado");
+      
+      if (!error && data) {
+        setClientes(data);
+      }
+    };
+    
+    if (isOpen) {
+      fetchClientes();
+    }
+  }, [isOpen]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -305,11 +327,65 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
               control={form.control}
               name="segurado"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Segurado *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nome do segurado" {...field} />
-                  </FormControl>
+                  <Popover open={seguradoOpen} onOpenChange={setSeguradoOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value || "Selecione ou digite o segurado"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Buscar ou digitar segurado..." 
+                          value={field.value}
+                          onValueChange={(value) => {
+                            field.onChange(value.toUpperCase());
+                          }}
+                        />
+                        <CommandList>
+                          <CommandEmpty>
+                            <div className="p-2 text-sm">
+                              Nenhum cliente encontrado. Digite para adicionar: <span className="font-semibold">{field.value}</span>
+                            </div>
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {clientes.map((cliente) => (
+                              <CommandItem
+                                key={cliente.id}
+                                value={cliente.segurado}
+                                onSelect={(value) => {
+                                  field.onChange(value.toUpperCase());
+                                  setSeguradoOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    cliente.segurado === field.value
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {cliente.segurado}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
