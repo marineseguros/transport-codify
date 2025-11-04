@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Search, Edit, Trash2, FileText, Building2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, FileText, Building2, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,16 +20,33 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ClienteModal } from '@/components/ClienteModal';
-import { useClientes, useCotacoes } from '@/hooks/useSupabaseData';
+import { HistoricoGeralModal } from '@/components/HistoricoGeralModal';
+import { useClientes, useCotacoes, useAllClientesAuditLog } from '@/hooks/useSupabaseData';
 import { Cliente, ClienteWithStats } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Clientes = () => {
   const { user } = useAuth();
   const { clientes, loading: clientesLoading, refetch: refetchClientes } = useClientes();
   const { cotacoes, loading: cotacoesLoading } = useCotacoes();
+  const { auditLog, loading: auditLogLoading } = useAllClientesAuditLog();
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [historicoGeralOpen, setHistoricoGeralOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [clienteToDelete, setClienteToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUF, setSelectedUF] = useState('');
   const [filtroUF, setFiltroUF] = useState('');
@@ -76,7 +93,15 @@ const Clientes = () => {
   const ufs = [...new Set(clientes.map(c => c.uf).filter(Boolean))].sort();
 
   const canEdit = true; // All authenticated users can edit
-  const canDelete = user?.papel === 'Administrador';
+  
+  // Função para verificar se o usuário pode excluir um cliente
+  const canDeleteCliente = (cliente: Cliente) => {
+    // Administradores podem excluir qualquer cliente
+    if (user?.papel === 'Administrador') return true;
+    
+    // Usuários podem excluir apenas seus próprios clientes
+    return cliente.created_by === user?.user_id;
+  };
 
   const handleEdit = (cliente: Cliente) => {
     setSelectedCliente(cliente);
@@ -86,6 +111,37 @@ const Clientes = () => {
   const handleNewClient = () => {
     setSelectedCliente(null);
     setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = (cliente: Cliente) => {
+    if (!canDeleteCliente(cliente)) {
+      toast.error('Você só pode excluir clientes criados por você');
+      return;
+    }
+    setClienteToDelete(cliente.id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!clienteToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('clientes')
+        .delete()
+        .eq('id', clienteToDelete);
+
+      if (error) throw error;
+      
+      toast.success('Cliente excluído com sucesso!');
+      refetchClientes();
+    } catch (error) {
+      console.error('Erro ao excluir cliente:', error);
+      toast.error('Erro ao excluir cliente');
+    } finally {
+      setDeleteDialogOpen(false);
+      setClienteToDelete(null);
+    }
   };
 
   const formatCpfCnpj = (cpfCnpj: string) => {
@@ -116,12 +172,18 @@ const Clientes = () => {
             Gerencie seus clientes e acompanhe o histórico de cotações
           </p>
         </div>
-        {canEdit && (
-          <Button onClick={handleNewClient}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Cliente
+        <div className="flex gap-3">
+          <Button onClick={() => setHistoricoGeralOpen(true)} variant="outline" className="gap-2">
+            <History className="h-4 w-4" />
+            Histórico Geral
           </Button>
-        )}
+          {canEdit && (
+            <Button onClick={handleNewClient}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Cliente
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -323,11 +385,12 @@ const Clientes = () => {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        {canDelete && (
+                        {canDeleteCliente(cliente) && (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteClick(cliente)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -354,7 +417,7 @@ const Clientes = () => {
         </CardContent>
       </Card>
 
-      {/* Modal */}
+      {/* Modal de Cliente */}
       <ClienteModal
         cliente={selectedCliente}
         isOpen={isModalOpen}
@@ -368,6 +431,32 @@ const Clientes = () => {
           setSelectedCliente(null);
         }}
       />
+
+      {/* Modal de Histórico Geral */}
+      <HistoricoGeralModal
+        open={historicoGeralOpen}
+        onOpenChange={setHistoricoGeralOpen}
+        auditLog={auditLog}
+        loading={auditLogLoading}
+      />
+
+      {/* Dialog de Confirmação de Exclusão */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -45,6 +45,7 @@ export interface Cliente {
   uf?: string;
   observacoes?: string;
   captacao_id?: string;
+  created_by?: string;
   created_at: string;
   updated_at: string;
 }
