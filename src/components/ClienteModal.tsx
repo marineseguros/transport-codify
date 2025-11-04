@@ -156,6 +156,41 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
           description: "Cliente atualizado com sucesso",
         });
       } else {
+        // Check if CNPJ already exists
+        const { data: existingCliente, error: checkError } = await supabase
+          .from('clientes')
+          .select('*')
+          .eq('cpf_cnpj', clienteData.cpf_cnpj)
+          .maybeSingle();
+
+        if (checkError) throw checkError;
+
+        if (existingCliente) {
+          // CNPJ already exists, show detailed information
+          const captacaoInfo = captacao.find(c => c.id === existingCliente.captacao_id);
+          const detailedInfo = [
+            `📋 CNPJ já cadastrado!`,
+            ``,
+            `🏢 Cliente: ${existingCliente.segurado}`,
+            `🆔 CPF/CNPJ: ${existingCliente.cpf_cnpj}`,
+            existingCliente.email ? `📧 E-mail: ${existingCliente.email}` : null,
+            existingCliente.telefone ? `📞 Telefone: ${existingCliente.telefone}` : null,
+            existingCliente.cidade && existingCliente.uf ? `📍 Localização: ${existingCliente.cidade}, ${existingCliente.uf}` : null,
+            captacaoInfo ? `🎯 Captação: ${captacaoInfo.descricao}` : null,
+            existingCliente.observacoes ? `📝 Observações: ${existingCliente.observacoes}` : null,
+            ``,
+            `Status: ${existingCliente.ativo ? '✅ Ativo' : '❌ Inativo'}`
+          ].filter(Boolean).join('\n');
+
+          toast({
+            title: "CNPJ já cadastrado",
+            description: detailedInfo,
+            variant: "destructive",
+            duration: 10000,
+          });
+          return;
+        }
+
         // Create new client
         const { error } = await supabase
           .from('clientes')
