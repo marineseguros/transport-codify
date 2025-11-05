@@ -352,6 +352,49 @@ export function useStatusSeguradora() {
   return { statusSeguradora, loading, refetch: fetchStatusSeguradora };
 }
 
+// Hook específico para acompanhamento - busca todas as cotações "Em Cotação"
+export function useCotacoesAcompanhamento() {
+  const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCotacoes();
+  }, []);
+
+  const fetchCotacoes = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('cotacoes')
+        .select(`
+          *,
+          produtor_origem:produtor_origem_id(id, nome, email),
+          produtor_negociador:produtor_negociador_id(id, nome, email),
+          produtor_cotador:produtor_cotador_id(id, nome, email),
+          seguradora:seguradora_id(id, nome, codigo),
+          cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
+          ramo:ramo_id(id, codigo, descricao, ativo),
+          captacao:captacao_id(id, descricao, ativo),
+          status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
+          unidade:unidade_id(id, codigo, descricao, ativo)
+        `)
+        .eq('status', 'Em Cotação')
+        .order('data_cotacao', { ascending: true });
+
+      if (error) throw error;
+      setCotacoes((data as any[]) || []);
+    } catch (error) {
+      console.error('Error fetching cotacoes para acompanhamento:', error);
+      setCotacoes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { cotacoes, loading, refetch: fetchCotacoes };
+}
+
+
 export function useCotacoes() {
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
   const [loading, setLoading] = useState(true);

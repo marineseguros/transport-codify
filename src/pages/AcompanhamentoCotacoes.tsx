@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCotacoes } from "@/hooks/useSupabaseData";
+import { useCotacoesAcompanhamento } from "@/hooks/useSupabaseData";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,25 +28,22 @@ interface AcompanhamentoSegurado {
 
 const AcompanhamentoCotacoes = () => {
   const { user } = useAuth();
-  const { cotacoes, loading } = useCotacoes();
+  const { cotacoes, loading } = useCotacoesAcompanhamento();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Processar e agrupar cotações por segurado
   const acompanhamentos: AcompanhamentoSegurado[] = (() => {
     if (!cotacoes || cotacoes.length === 0) return [];
 
-    // Filtrar apenas cotações "Em Cotação"
-    const cotacoesEmCotacao = cotacoes.filter(c => c.status === "Em Cotação");
-
     // Agrupar por CPF/CNPJ
-    const grouped = cotacoesEmCotacao.reduce((acc, cotacao) => {
+    const grouped = cotacoes.reduce((acc, cotacao) => {
       const key = cotacao.cpf_cnpj;
       if (!acc[key]) {
         acc[key] = [];
       }
       acc[key].push(cotacao);
       return acc;
-    }, {} as Record<string, typeof cotacoesEmCotacao>);
+    }, {} as Record<string, typeof cotacoes>);
 
     // Criar array de acompanhamentos
     const result = Object.entries(grouped).map(([cpfCnpj, cotacoesGrupo]) => {
