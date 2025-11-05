@@ -364,6 +364,8 @@ export function useCotacoesAcompanhamento() {
   const fetchCotacoes = async () => {
     try {
       setLoading(true);
+      console.log('Fetching cotações para acompanhamento...');
+      
       const { data, error } = await supabase
         .from('cotacoes')
         .select(`
@@ -378,8 +380,12 @@ export function useCotacoesAcompanhamento() {
           status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
           unidade:unidade_id(id, codigo, descricao, ativo)
         `)
-        .eq('status', 'Em Cotação')
+        .eq('status', 'Em cotação')
         .order('data_cotacao', { ascending: true });
+
+      console.log('Cotações acompanhamento - Data:', data);
+      console.log('Cotações acompanhamento - Error:', error);
+      console.log('Cotações acompanhamento - Count:', data?.length || 0);
 
       if (error) throw error;
       setCotacoes((data as any[]) || []);
