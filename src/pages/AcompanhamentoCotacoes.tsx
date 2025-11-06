@@ -182,11 +182,11 @@ const AcompanhamentoCotacoes = () => {
                     <CollapsibleTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="w-full p-6 hover:bg-accent/50 flex items-center justify-between text-left"
+                        className="w-full p-6 pr-8 hover:bg-accent/50 flex items-center justify-between text-left"
                         onClick={() => toggleRow(item.cpfCnpj)}
                       >
-                        <div className="flex items-center gap-8 flex-1">
-                          <div className="flex-1 min-w-0 max-w-md">
+                        <div className="flex items-center gap-6 flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 max-w-lg">
                             <h3 className="font-semibold text-lg truncate">
                               {item.segurado}
                             </h3>
@@ -195,32 +195,32 @@ const AcompanhamentoCotacoes = () => {
                             </p>
                           </div>
 
-                          <div className="flex items-center gap-12">
-                            <div className="text-center min-w-[100px]">
-                              <p className="text-xs text-muted-foreground mb-1">Cotações</p>
-                              <p className="text-2xl font-bold">{item.quantidadeCotacoes}</p>
+                          <div className="flex items-center gap-6 flex-shrink-0">
+                            <div className="text-center">
+                              <p className="text-sm text-muted-foreground">Cotações</p>
+                              <p className="text-xl font-bold">{item.quantidadeCotacoes}</p>
                             </div>
 
-                            <div className="text-center min-w-[120px]">
-                              <p className="text-xs text-muted-foreground mb-1">Início</p>
-                              <p className="text-sm font-semibold">
+                            <div className="text-center">
+                              <p className="text-sm text-muted-foreground">Início</p>
+                              <p className="text-sm font-medium">
                                 {format(item.dataInicio, "dd/MM/yyyy", { locale: ptBR })}
                               </p>
                             </div>
 
-                            <div className="text-center min-w-[140px]">
-                              <p className="text-xs text-muted-foreground mb-2">Dias em Aberto</p>
-                              <Badge variant={variant} className="text-base px-4 py-1.5">
-                                {showIcon && <AlertTriangle className="h-4 w-4 mr-1.5" />}
+                            <div className="text-center min-w-[160px]">
+                              <p className="text-sm text-muted-foreground mb-1">Dias em Aberto</p>
+                              <Badge variant={variant} className="text-base px-3 py-1 inline-flex items-center justify-center">
+                                {showIcon && <AlertTriangle className="h-4 w-4 mr-1" />}
                                 {item.diasEmAberto} {item.diasEmAberto === 1 ? "dia" : "dias"}
                               </Badge>
                             </div>
                           </div>
 
                           {isExpanded ? (
-                            <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                            <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
                           ) : (
-                            <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                            <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
                           )}
                         </div>
                       </Button>
