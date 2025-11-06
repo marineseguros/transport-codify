@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCotacoesAcompanhamento } from "@/hooks/useSupabaseData";
+import { useCotacoesAcompanhamento, type Cotacao } from "@/hooks/useSupabaseData";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, AlertTriangle, Pencil } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { CotacaoModal } from "@/components/CotacaoModal";
 
 interface AcompanhamentoSegurado {
   segurado: string;
@@ -30,6 +31,8 @@ const AcompanhamentoCotacoes = () => {
   const { user } = useAuth();
   const { cotacoes, loading } = useCotacoesAcompanhamento();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCotacao, setEditingCotacao] = useState<Cotacao | null>(null);
 
   // Processar e agrupar cotações por segurado
   const acompanhamentos: AcompanhamentoSegurado[] = (() => {
@@ -102,6 +105,24 @@ const AcompanhamentoCotacoes = () => {
     }).format(value);
   };
 
+  const handleEditCotacao = (cotacaoId: string) => {
+    const cotacaoCompleta = cotacoes?.find(c => c.id === cotacaoId);
+    if (cotacaoCompleta) {
+      setEditingCotacao(cotacaoCompleta);
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingCotacao(null);
+  };
+
+  const handleSaved = () => {
+    // A lista será atualizada automaticamente pelo hook
+    handleCloseModal();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -160,7 +181,7 @@ const AcompanhamentoCotacoes = () => {
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full p-4 hover:bg-accent/50 flex items-center justify-between text-left"
+                      className="w-full py-6 px-4 hover:bg-accent/50 flex items-center justify-between text-left"
                       onClick={() => toggleRow(item.cpfCnpj)}
                     >
                       <div className="flex items-center gap-4 flex-1">
@@ -234,11 +255,21 @@ const AcompanhamentoCotacoes = () => {
                                   <p className="font-medium">{formatCurrency(cotacao.valorPremio)}</p>
                                 </div>
                               </div>
-                              <div className="text-right ml-4">
-                                <p className="text-xs text-muted-foreground">Data</p>
-                                <p className="text-sm font-medium">
-                                  {format(cotacao.dataCotacao, "dd/MM/yyyy", { locale: ptBR })}
-                                </p>
+                              <div className="flex items-center gap-4 ml-4">
+                                <div className="text-right">
+                                  <p className="text-xs text-muted-foreground">Data</p>
+                                  <p className="text-sm font-medium">
+                                    {format(cotacao.dataCotacao, "dd/MM/yyyy", { locale: ptBR })}
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditCotacao(cotacao.id)}
+                                  className="h-8 w-8"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
                               </div>
                             </div>
                           ))}
@@ -252,6 +283,14 @@ const AcompanhamentoCotacoes = () => {
           })
         )}
       </div>
+
+      {/* Modal de Edição */}
+      <CotacaoModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        cotacao={editingCotacao}
+        onSaved={handleSaved}
+      />
     </div>
   );
 };
