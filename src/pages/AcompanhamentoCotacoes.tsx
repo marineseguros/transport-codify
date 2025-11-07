@@ -162,10 +162,7 @@ const AcompanhamentoCotacoes = () => {
                 Servir como lembrete para evitar cotações paradas em "Em Cotação" e incentivar atualizações constantes.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  <span>Cotações com +14 dias requerem atenção urgente</span>
-                </div>
+                
                 
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <div className="h-1.5 w-1.5 rounded-full bg-primary" />
