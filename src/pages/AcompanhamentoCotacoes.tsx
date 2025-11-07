@@ -181,10 +181,10 @@ const AcompanhamentoCotacoes = () => {
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full py-8 px-6 hover:bg-accent/50 flex items-center justify-between text-left"
+                      className="w-full py-12 px-6 hover:bg-accent/50 flex items-center justify-between text-left"
                       onClick={() => toggleRow(item.cpfCnpj)}
                     >
-                      <div className="flex items-center gap-4 flex-1">
+                      <div className="flex items-center gap-8 flex-1">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-lg truncate">
                             {item.segurado}
