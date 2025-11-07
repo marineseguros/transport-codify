@@ -352,21 +352,39 @@ export function useStatusSeguradora() {
   return { statusSeguradora, loading, refetch: fetchStatusSeguradora };
 }
 
-// Hook específico para acompanhamento - busca todas as cotações "Em Cotação"
-export function useCotacoesAcompanhamento() {
+// Hook específico para acompanhamento - busca cotações "Em Cotação" filtradas por produtor
+export function useCotacoesAcompanhamento(userEmail?: string, userPapel?: string) {
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCotacoes();
-  }, []);
+    if (userEmail && userPapel) {
+      fetchCotacoes();
+    }
+  }, [userEmail, userPapel]);
 
   const fetchCotacoes = async () => {
     try {
       setLoading(true);
-      console.log('Fetching cotações para acompanhamento...');
+      console.log('Fetching cotações para acompanhamento...', { userEmail, userPapel });
       
-      const { data, error } = await supabase
+      // Se for Produtor, buscar o ID do produtor pelo email
+      let produtorId: string | null = null;
+      if (userPapel === 'Produtor' && userEmail) {
+        const { data: produtorData } = await supabase
+          .from('produtores')
+          .select('id')
+          .eq('email', userEmail)
+          .eq('ativo', true)
+          .single();
+        
+        if (produtorData) {
+          produtorId = produtorData.id;
+          console.log('Produtor ID encontrado:', produtorId);
+        }
+      }
+
+      let query = supabase
         .from('cotacoes')
         .select(`
           *,
@@ -380,8 +398,16 @@ export function useCotacoesAcompanhamento() {
           status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
           unidade:unidade_id(id, codigo, descricao, ativo)
         `)
-        .eq('status', 'Em cotação')
-        .order('data_cotacao', { ascending: true });
+        .eq('status', 'Em cotação');
+
+      // Filtrar por produtor se não for admin/gerente/ceo
+      if (produtorId && userPapel === 'Produtor') {
+        query = query.or(`produtor_origem_id.eq.${produtorId},produtor_negociador_id.eq.${produtorId},produtor_cotador_id.eq.${produtorId}`);
+      }
+
+      query = query.order('data_cotacao', { ascending: true });
+
+      const { data, error } = await query;
 
       console.log('Cotações acompanhamento - Data:', data);
       console.log('Cotações acompanhamento - Error:', error);

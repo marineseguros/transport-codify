@@ -29,7 +29,7 @@ interface AcompanhamentoSegurado {
 
 const AcompanhamentoCotacoes = () => {
   const { user } = useAuth();
-  const { cotacoes, loading } = useCotacoesAcompanhamento();
+  const { cotacoes, loading } = useCotacoesAcompanhamento(user?.email, user?.papel);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCotacao, setEditingCotacao] = useState<Cotacao | null>(null);
