@@ -181,7 +181,7 @@ const AcompanhamentoCotacoes = () => {
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full py-6 px-4 hover:bg-accent/50 flex items-center justify-between text-left"
+                      className="w-full py-8 px-6 hover:bg-accent/50 flex items-center justify-between text-left"
                       onClick={() => toggleRow(item.cpfCnpj)}
                     >
                       <div className="flex items-center gap-4 flex-1">
