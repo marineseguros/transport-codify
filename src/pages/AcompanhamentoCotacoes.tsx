@@ -9,7 +9,6 @@ import { ChevronDown, ChevronUp, AlertTriangle, Pencil } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CotacaoModal } from "@/components/CotacaoModal";
-
 interface AcompanhamentoSegurado {
   segurado: string;
   cpfCnpj: string;
@@ -26,10 +25,14 @@ interface AcompanhamentoSegurado {
     status: string;
   }>;
 }
-
 const AcompanhamentoCotacoes = () => {
-  const { user } = useAuth();
-  const { cotacoes, loading } = useCotacoesAcompanhamento(user?.email, user?.papel);
+  const {
+    user
+  } = useAuth();
+  const {
+    cotacoes,
+    loading
+  } = useCotacoesAcompanhamento(user?.email, user?.papel);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCotacao, setEditingCotacao] = useState<Cotacao | null>(null);
@@ -51,14 +54,10 @@ const AcompanhamentoCotacoes = () => {
     // Criar array de acompanhamentos
     const result = Object.entries(grouped).map(([cpfCnpj, cotacoesGrupo]) => {
       // Ordenar por data para pegar a mais antiga
-      const sorted = [...cotacoesGrupo].sort((a, b) => 
-        new Date(a.data_cotacao).getTime() - new Date(b.data_cotacao).getTime()
-      );
-      
+      const sorted = [...cotacoesGrupo].sort((a, b) => new Date(a.data_cotacao).getTime() - new Date(b.data_cotacao).getTime());
       const dataInicio = new Date(sorted[0].data_cotacao);
       const hoje = new Date();
       const diasEmAberto = differenceInDays(hoje, dataInicio);
-
       return {
         segurado: sorted[0].segurado,
         cpfCnpj,
@@ -72,22 +71,35 @@ const AcompanhamentoCotacoes = () => {
           ramo: c.ramo?.descricao || "-",
           valorPremio: c.valor_premio || 0,
           dataCotacao: new Date(c.data_cotacao),
-          status: c.status,
-        })),
+          status: c.status
+        }))
       };
     });
 
     // Ordenar por dias em aberto (decrescente)
     return result.sort((a, b) => b.diasEmAberto - a.diasEmAberto);
   })();
-
-  const getAlertVariant = (dias: number): { variant: "default" | "secondary" | "destructive" | "outline" | "brand-orange" | "success-alt"; showIcon: boolean } => {
-    if (dias <= 3) return { variant: "success-alt", showIcon: false };
-    if (dias <= 7) return { variant: "secondary", showIcon: false };
-    if (dias <= 14) return { variant: "brand-orange", showIcon: false };
-    return { variant: "destructive", showIcon: true };
+  const getAlertVariant = (dias: number): {
+    variant: "default" | "secondary" | "destructive" | "outline" | "brand-orange" | "success-alt";
+    showIcon: boolean;
+  } => {
+    if (dias <= 3) return {
+      variant: "success-alt",
+      showIcon: false
+    };
+    if (dias <= 7) return {
+      variant: "secondary",
+      showIcon: false
+    };
+    if (dias <= 14) return {
+      variant: "brand-orange",
+      showIcon: false
+    };
+    return {
+      variant: "destructive",
+      showIcon: true
+    };
   };
-
   const toggleRow = (cpfCnpj: string) => {
     const newExpanded = new Set(expandedRows);
     if (newExpanded.has(cpfCnpj)) {
@@ -97,14 +109,12 @@ const AcompanhamentoCotacoes = () => {
     }
     setExpandedRows(newExpanded);
   };
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
-      currency: "BRL",
+      currency: "BRL"
     }).format(value);
   };
-
   const handleEditCotacao = (cotacaoId: string) => {
     const cotacaoCompleta = cotacoes?.find(c => c.id === cotacaoId);
     if (cotacaoCompleta) {
@@ -112,27 +122,20 @@ const AcompanhamentoCotacoes = () => {
       setIsModalOpen(true);
     }
   };
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingCotacao(null);
   };
-
   const handleSaved = () => {
     // A lista será atualizada automaticamente pelo hook
     handleCloseModal();
   };
-
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
+    return <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="container mx-auto p-6 space-y-6">
+  return <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Acompanhamento de Cotações</h1>
@@ -163,10 +166,7 @@ const AcompanhamentoCotacoes = () => {
                   <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                   <span>Cotações com +14 dias requerem atenção urgente</span>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  <span>Mantenha os segurados informados sobre o andamento</span>
-                </div>
+                
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                   <span>Atualize o status assim que houver retorno das seguradoras</span>
@@ -195,26 +195,20 @@ const AcompanhamentoCotacoes = () => {
 
       {/* Lista de acompanhamentos */}
       <div className="space-y-3">
-        {acompanhamentos.length === 0 ? (
-          <Card className="p-8 text-center">
+        {acompanhamentos.length === 0 ? <Card className="p-8 text-center">
             <p className="text-muted-foreground">
               Nenhuma cotação em aberto no momento.
             </p>
-          </Card>
-        ) : (
-          acompanhamentos.map((item) => {
-            const { variant, showIcon } = getAlertVariant(item.diasEmAberto);
-            const isExpanded = expandedRows.has(item.cpfCnpj);
-
-            return (
-              <Collapsible key={item.cpfCnpj} open={isExpanded}>
+          </Card> : acompanhamentos.map(item => {
+        const {
+          variant,
+          showIcon
+        } = getAlertVariant(item.diasEmAberto);
+        const isExpanded = expandedRows.has(item.cpfCnpj);
+        return <Collapsible key={item.cpfCnpj} open={isExpanded}>
                 <Card className="overflow-hidden">
                   <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full py-12 px-6 hover:bg-accent/50 flex items-center justify-between text-left"
-                      onClick={() => toggleRow(item.cpfCnpj)}
-                    >
+                    <Button variant="ghost" className="w-full py-12 px-6 hover:bg-accent/50 flex items-center justify-between text-left" onClick={() => toggleRow(item.cpfCnpj)}>
                       <div className="flex items-center gap-8 flex-1">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-lg truncate">
@@ -234,7 +228,9 @@ const AcompanhamentoCotacoes = () => {
                           <div className="text-center">
                             <p className="text-sm text-muted-foreground">Início</p>
                             <p className="text-sm font-medium">
-                              {format(item.dataInicio, "dd/MM/yyyy", { locale: ptBR })}
+                              {format(item.dataInicio, "dd/MM/yyyy", {
+                          locale: ptBR
+                        })}
                             </p>
                           </div>
 
@@ -247,11 +243,7 @@ const AcompanhamentoCotacoes = () => {
                           </div>
                         </div>
 
-                        {isExpanded ? (
-                          <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                        )}
+                        {isExpanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
                       </div>
                     </Button>
                   </CollapsibleTrigger>
@@ -263,11 +255,7 @@ const AcompanhamentoCotacoes = () => {
                           Cotações em Aberto ({item.quantidadeCotacoes})
                         </h4>
                         <div className="space-y-2">
-                          {item.cotacoes.map((cotacao) => (
-                            <div
-                              key={cotacao.id}
-                              className="bg-background p-3 rounded-lg border flex items-center justify-between"
-                            >
+                          {item.cotacoes.map(cotacao => <div key={cotacao.id} className="bg-background p-3 rounded-lg border flex items-center justify-between">
                               <div className="flex-1 grid grid-cols-4 gap-4">
                                 <div>
                                   <p className="text-xs text-muted-foreground">Número</p>
@@ -290,41 +278,27 @@ const AcompanhamentoCotacoes = () => {
                                 <div className="text-right">
                                   <p className="text-xs text-muted-foreground">Data</p>
                                   <p className="text-sm font-medium">
-                                    {format(cotacao.dataCotacao, "dd/MM/yyyy", { locale: ptBR })}
+                                    {format(cotacao.dataCotacao, "dd/MM/yyyy", {
+                              locale: ptBR
+                            })}
                                   </p>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleEditCotacao(cotacao.id)}
-                                  className="h-8 w-8"
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => handleEditCotacao(cotacao.id)} className="h-8 w-8">
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                               </div>
-                            </div>
-                          ))}
+                            </div>)}
                         </div>
                       </div>
                     </div>
                   </CollapsibleContent>
                 </Card>
-              </Collapsible>
-            );
-          })
-        )}
+              </Collapsible>;
+      })}
       </div>
 
       {/* Modal de Edição */}
-      <CotacaoModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        cotacao={editingCotacao}
-        mode="edit"
-        onSaved={handleSaved}
-      />
-    </div>
-  );
+      <CotacaoModal isOpen={isModalOpen} onClose={handleCloseModal} cotacao={editingCotacao} mode="edit" onSaved={handleSaved} />
+    </div>;
 };
-
 export default AcompanhamentoCotacoes;
