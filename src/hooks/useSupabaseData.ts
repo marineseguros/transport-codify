@@ -368,15 +368,17 @@ export function useCotacoesAcompanhamento(userEmail?: string, userPapel?: string
       setLoading(true);
       console.log('Fetching cotações para acompanhamento...', { userEmail, userPapel });
       
-      // Se for Produtor, buscar o ID do produtor pelo email
+      // Se for Produtor ou Operacional, buscar o ID do produtor pelo email
       let produtorId: string | null = null;
-      if (userPapel === 'Produtor' && userEmail) {
+      const isProdutorOrOperacional = userPapel === 'Produtor' || userPapel === 'Operacional';
+      
+      if (isProdutorOrOperacional && userEmail) {
         const { data: produtorData } = await supabase
           .from('produtores')
           .select('id')
           .eq('email', userEmail)
           .eq('ativo', true)
-          .single();
+          .maybeSingle();
         
         if (produtorData) {
           produtorId = produtorData.id;
@@ -401,7 +403,7 @@ export function useCotacoesAcompanhamento(userEmail?: string, userPapel?: string
         .eq('status', 'Em cotação');
 
       // Filtrar por produtor se não for admin/gerente/ceo
-      if (produtorId && userPapel === 'Produtor') {
+      if (produtorId && isProdutorOrOperacional) {
         query = query.or(`produtor_origem_id.eq.${produtorId},produtor_negociador_id.eq.${produtorId},produtor_cotador_id.eq.${produtorId}`);
       }
 
