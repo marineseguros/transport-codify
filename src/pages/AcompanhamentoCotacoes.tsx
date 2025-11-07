@@ -146,6 +146,37 @@ const AcompanhamentoCotacoes = () => {
         </div>
       </div>
 
+      {/* Card de Objetivo */}
+      <Card className="border-l-4 border-l-primary bg-accent/30">
+        <div className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-1">
+              <AlertTriangle className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg mb-2">Objetivo desta página</h3>
+              <p className="text-sm text-foreground/90 mb-3">
+                Servir como lembrete para evitar cotações paradas em "Em Cotação" e incentivar atualizações constantes.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span>Cotações com +14 dias requerem atenção urgente</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span>Mantenha os segurados informados sobre o andamento</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span>Atualize o status assim que houver retorno das seguradoras</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* Legenda de cores */}
       <Card className="p-4">
         <div className="flex flex-wrap gap-4 items-center">
