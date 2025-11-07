@@ -289,6 +289,7 @@ const AcompanhamentoCotacoes = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         cotacao={editingCotacao}
+        mode="edit"
         onSaved={handleSaved}
       />
     </div>
