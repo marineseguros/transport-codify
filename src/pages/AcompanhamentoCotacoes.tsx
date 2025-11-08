@@ -110,7 +110,7 @@ const AcompanhamentoCotacoes = () => {
     return sortedResult;
   })();
   const getAlertVariant = (dias: number): {
-    variant: "default" | "secondary" | "destructive" | "outline" | "brand-orange" | "success-alt";
+    variant: "default" | "secondary" | "destructive" | "outline" | "brand-orange" | "success-alt" | "warning";
     showIcon: boolean;
   } => {
     if (dias <= 3) return {
@@ -118,7 +118,7 @@ const AcompanhamentoCotacoes = () => {
       showIcon: false
     };
     if (dias <= 7) return {
-      variant: "secondary",
+      variant: "warning",
       showIcon: false
     };
     if (dias <= 14) return {
@@ -231,35 +231,35 @@ const AcompanhamentoCotacoes = () => {
           <div className="flex items-center gap-2">
             <Badge 
               variant={diasFilter === "todos" ? "default" : "outline"}
-              className="cursor-pointer transition-all"
+              className="cursor-pointer transition-all hover:opacity-80"
               onClick={() => setDiasFilter("todos")}
             >
               Todos
             </Badge>
             <Badge 
-              variant={diasFilter === "0-3" ? "success-alt" : "outline"}
-              className="cursor-pointer transition-all"
+              variant="success-alt"
+              className={`cursor-pointer transition-all hover:opacity-80 ${diasFilter !== "todos" && diasFilter !== "0-3" ? "opacity-50" : ""}`}
               onClick={() => setDiasFilter("0-3")}
             >
               ≤ 3 dias
             </Badge>
             <Badge 
-              variant={diasFilter === "4-7" ? "secondary" : "outline"}
-              className="cursor-pointer transition-all"
+              variant="warning"
+              className={`cursor-pointer transition-all hover:opacity-80 ${diasFilter !== "todos" && diasFilter !== "4-7" ? "opacity-50" : ""}`}
               onClick={() => setDiasFilter("4-7")}
             >
               4-7 dias
             </Badge>
             <Badge 
-              variant={diasFilter === "8-14" ? "brand-orange" : "outline"}
-              className="cursor-pointer transition-all"
+              variant="brand-orange"
+              className={`cursor-pointer transition-all hover:opacity-80 ${diasFilter !== "todos" && diasFilter !== "8-14" ? "opacity-50" : ""}`}
               onClick={() => setDiasFilter("8-14")}
             >
               8-14 dias
             </Badge>
             <Badge 
-              variant={diasFilter === "15+" ? "destructive" : "outline"}
-              className="flex items-center gap-1 cursor-pointer transition-all"
+              variant="destructive"
+              className={`flex items-center gap-1 cursor-pointer transition-all hover:opacity-80 ${diasFilter !== "todos" && diasFilter !== "15+" ? "opacity-50" : ""}`}
               onClick={() => setDiasFilter("15+")}
             >
               <AlertTriangle className="h-3 w-3" />
