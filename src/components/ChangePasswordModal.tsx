@@ -15,17 +15,29 @@ import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 
 interface ChangePasswordModalProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export const ChangePasswordModal = ({ children }: ChangePasswordModalProps) => {
-  const [open, setOpen] = useState(false);
+export const ChangePasswordModal = ({ children, isOpen, onClose }: ChangePasswordModalProps) => {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { updatePassword } = useAuth();
+
+  // Use controlled or uncontrolled mode based on props
+  const open = isOpen !== undefined ? isOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (onClose !== undefined && !value) {
+      onClose();
+    } else {
+      setInternalOpen(value);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,9 +70,11 @@ export const ChangePasswordModal = ({ children }: ChangePasswordModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      {children && (
+        <DialogTrigger asChild>
+          {children}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Alterar Senha</DialogTitle>
