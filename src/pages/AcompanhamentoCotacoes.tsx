@@ -39,6 +39,7 @@ const AcompanhamentoCotacoes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCotacao, setEditingCotacao] = useState<Cotacao | null>(null);
   const [selectedProdutorId, setSelectedProdutorId] = useState<string>("todos");
+  const [diasFilter, setDiasFilter] = useState<string>("todos"); // "todos", "0-3", "4-7", "8-14", "15+"
 
   // Verificar se o usuário é admin/gerente/ceo
   const isAdminRole = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
@@ -93,7 +94,20 @@ const AcompanhamentoCotacoes = () => {
     });
 
     // Ordenar por dias em aberto (decrescente)
-    return result.sort((a, b) => b.diasEmAberto - a.diasEmAberto);
+    let sortedResult = result.sort((a, b) => b.diasEmAberto - a.diasEmAberto);
+
+    // Aplicar filtro de dias
+    if (diasFilter !== "todos") {
+      sortedResult = sortedResult.filter(item => {
+        if (diasFilter === "0-3") return item.diasEmAberto <= 3;
+        if (diasFilter === "4-7") return item.diasEmAberto >= 4 && item.diasEmAberto <= 7;
+        if (diasFilter === "8-14") return item.diasEmAberto >= 8 && item.diasEmAberto <= 14;
+        if (diasFilter === "15+") return item.diasEmAberto > 14;
+        return true;
+      });
+    }
+
+    return sortedResult;
   })();
   const getAlertVariant = (dias: number): {
     variant: "default" | "secondary" | "destructive" | "outline" | "brand-orange" | "success-alt";
@@ -210,15 +224,44 @@ const AcompanhamentoCotacoes = () => {
         </div>
       </Card>
 
-      {/* Legenda de cores */}
+      {/* Legenda de cores - agora com filtros clicáveis */}
       <Card className="p-4">
         <div className="flex flex-wrap gap-4 items-center">
-          <span className="text-sm font-medium">Legenda:</span>
+          <span className="text-sm font-medium">Legenda (clique para filtrar):</span>
           <div className="flex items-center gap-2">
-            <Badge variant="success-alt">≤ 3 dias</Badge>
-            <Badge variant="secondary">4-7 dias</Badge>
-            <Badge variant="brand-orange">8-14 dias</Badge>
-            <Badge variant="destructive" className="flex items-center gap-1">
+            <Badge 
+              variant={diasFilter === "todos" ? "default" : "outline"}
+              className="cursor-pointer transition-all"
+              onClick={() => setDiasFilter("todos")}
+            >
+              Todos
+            </Badge>
+            <Badge 
+              variant={diasFilter === "0-3" ? "success-alt" : "outline"}
+              className="cursor-pointer transition-all"
+              onClick={() => setDiasFilter("0-3")}
+            >
+              ≤ 3 dias
+            </Badge>
+            <Badge 
+              variant={diasFilter === "4-7" ? "secondary" : "outline"}
+              className="cursor-pointer transition-all"
+              onClick={() => setDiasFilter("4-7")}
+            >
+              4-7 dias
+            </Badge>
+            <Badge 
+              variant={diasFilter === "8-14" ? "brand-orange" : "outline"}
+              className="cursor-pointer transition-all"
+              onClick={() => setDiasFilter("8-14")}
+            >
+              8-14 dias
+            </Badge>
+            <Badge 
+              variant={diasFilter === "15+" ? "destructive" : "outline"}
+              className="flex items-center gap-1 cursor-pointer transition-all"
+              onClick={() => setDiasFilter("15+")}
+            >
               <AlertTriangle className="h-3 w-3" />
               &gt; 14 dias
             </Badge>
