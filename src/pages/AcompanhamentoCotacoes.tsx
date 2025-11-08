@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCotacoesAcompanhamento, type Cotacao } from "@/hooks/useSupabaseData";
+import { useCotacoesAcompanhamento, useProdutores, type Cotacao } from "@/hooks/useSupabaseData";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { ChevronDown, ChevronUp, AlertTriangle, Pencil } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CotacaoModal } from "@/components/CotacaoModal";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 interface AcompanhamentoSegurado {
   segurado: string;
   cpfCnpj: string;
@@ -33,16 +34,31 @@ const AcompanhamentoCotacoes = () => {
     cotacoes,
     loading
   } = useCotacoesAcompanhamento(user?.email, user?.papel);
+  const { produtores } = useProdutores();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCotacao, setEditingCotacao] = useState<Cotacao | null>(null);
+  const [selectedProdutorId, setSelectedProdutorId] = useState<string>("todos");
+
+  // Verificar se o usuário é admin/gerente/ceo
+  const isAdminRole = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
 
   // Processar e agrupar cotações por segurado
   const acompanhamentos: AcompanhamentoSegurado[] = (() => {
     if (!cotacoes || cotacoes.length === 0) return [];
 
+    // Filtrar cotações por produtor selecionado (apenas para admins)
+    let cotacoesFiltradas = cotacoes;
+    if (isAdminRole && selectedProdutorId !== "todos") {
+      cotacoesFiltradas = cotacoes.filter(c => 
+        c.produtor_origem_id === selectedProdutorId ||
+        c.produtor_negociador_id === selectedProdutorId ||
+        c.produtor_cotador_id === selectedProdutorId
+      );
+    }
+
     // Agrupar por CPF/CNPJ
-    const grouped = cotacoes.reduce((acc, cotacao) => {
+    const grouped = cotacoesFiltradas.reduce((acc, cotacao) => {
       const key = cotacao.cpf_cnpj;
       if (!acc[key]) {
         acc[key] = [];
@@ -143,9 +159,29 @@ const AcompanhamentoCotacoes = () => {
             Monitoramento de cotações em aberto por segurado
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-muted-foreground">Total de segurados</p>
-          <p className="text-2xl font-bold">{acompanhamentos.length}</p>
+        <div className="flex items-center gap-6">
+          {isAdminRole && (
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Filtrar por Produtor</label>
+              <Select value={selectedProdutorId} onValueChange={setSelectedProdutorId}>
+                <SelectTrigger className="w-[240px]">
+                  <SelectValue placeholder="Todos os produtores" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os produtores</SelectItem>
+                  {produtores.filter(p => p.ativo).map(produtor => (
+                    <SelectItem key={produtor.id} value={produtor.id}>
+                      {produtor.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Total de segurados</p>
+            <p className="text-2xl font-bold">{acompanhamentos.length}</p>
+          </div>
         </div>
       </div>
 
