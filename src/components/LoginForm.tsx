@@ -33,11 +33,11 @@ export const LoginForm = () => {
   };
   return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4 relative overflow-hidden">
       {/* Logo de fundo com transparência */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div className="absolute inset-y-0 right-0 flex items-center justify-end pointer-events-none pr-8">
         <img 
           src="/marine-logo.png" 
           alt="" 
-          className="w-[800px] h-auto opacity-[0.08] dark:opacity-[0.06]"
+          className="w-[700px] h-auto opacity-[0.08] dark:opacity-[0.06]"
         />
       </div>
       
