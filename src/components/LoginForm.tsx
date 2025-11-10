@@ -31,8 +31,17 @@ export const LoginForm = () => {
       navigate('/');
     }
   };
-  return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
-      <div className="w-full max-w-md space-y-6">
+  return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4 relative overflow-hidden">
+      {/* Logo de fundo com transparência */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <img 
+          src="/marine-logo.png" 
+          alt="" 
+          className="w-[600px] h-auto opacity-5 dark:opacity-[0.03]"
+        />
+      </div>
+      
+      <div className="w-full max-w-md space-y-6 relative z-10">
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <img src="/marine-logo.png" alt="Marine Seguros Logo" className="h-16 w-auto" />
