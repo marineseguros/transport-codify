@@ -126,6 +126,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
     {
       ramo_id: string;
       segmento: string;
+      valor_premio: number;
     }[]
   >([]);
 
@@ -350,6 +351,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         {
           ramo_id: "",
           segmento: "",
+          valor_premio: 0,
         },
       ]);
     }
@@ -357,13 +359,21 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
   const handleRemoveRamoExtra = (index: number) => {
     setRamosExtras(ramosExtras.filter((_, i) => i !== index));
   };
-  const handleRamoExtraChange = (index: number, value: string) => {
-    const segmento = getSegmentoByRamo(value);
+  const handleRamoExtraChange = (index: number, field: 'ramo_id' | 'valor_premio', value: string | number) => {
     const newRamosExtras = [...ramosExtras];
-    newRamosExtras[index] = {
-      ramo_id: value,
-      segmento: segmento,
-    };
+    if (field === 'ramo_id') {
+      const segmento = getSegmentoByRamo(value as string);
+      newRamosExtras[index] = {
+        ...newRamosExtras[index],
+        ramo_id: value as string,
+        segmento: segmento,
+      };
+    } else {
+      newRamosExtras[index] = {
+        ...newRamosExtras[index],
+        valor_premio: value as number,
+      };
+    }
     setRamosExtras(newRamosExtras);
   };
 
@@ -500,6 +510,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
           {
             ramo_id: formData.ramo_id,
             segmento: formData.segmento,
+            valor_premio: formData.valor_premio,
           },
           ...ramosExtras.filter((r) => r.ramo_id),
         ];
@@ -521,6 +532,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                   ramo_id: ramoData.ramo_id,
                   segmento: ramoData.segmento,
                   seguradora_id: seguradoraData.seguradora_id,
+                  valor_premio: ramoData.valor_premio,
                 };
                 await createCotacao(cotacaoData);
                 createdCount++;
@@ -777,7 +789,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                   )}
                 </div>
 
-                {/* Coluna 2: Ramo + Segmento */}
+                {/* Coluna 2: Ramo + Segmento + Valor do Prêmio */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label>Ramo * / Segmento</Label>
@@ -794,8 +806,8 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     )}
                   </div>
 
-                  {/* Ramo e Segmento principal em grid */}
-                  <div className="grid grid-cols-[1fr_auto] gap-2">
+                  {/* Ramo, Segmento e Valor do Prêmio principal em grid */}
+                  <div className="grid grid-cols-[1fr_auto_140px] gap-2">
                     <Select
                       value={formData.ramo_id}
                       onValueChange={(value) => handleInputChange("ramo_id", value)}
@@ -815,17 +827,39 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     <div className="flex items-center bg-muted/30 rounded-md px-3 h-10 min-w-[120px]">
                       <span className="text-xs text-muted-foreground">{formData.segmento || "-"}</span>
                     </div>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                      <Input
+                        type="text"
+                        value={
+                          formData.valor_premio
+                            ? new Intl.NumberFormat('pt-BR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }).format(formData.valor_premio)
+                            : ''
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '');
+                          const numericValue = parseFloat(value) / 100 || 0;
+                          handleInputChange("valor_premio", numericValue);
+                        }}
+                        placeholder="0,00"
+                        readOnly={isReadOnly}
+                        className="pl-10 h-10"
+                      />
+                    </div>
                   </div>
 
                   {/* Ramos Extras - Layout responsivo */}
                   {isCreating && ramosExtras.length > 0 && (
-                    <div className="grid grid-cols-[1fr_auto] gap-2 mt-2">
+                    <div className="grid grid-cols-[1fr_auto_140px] gap-2 mt-2">
                       {ramosExtras.map((ramoExtra, index) => (
                         <>
                           <div key={`ramo-${index}`} className="flex items-center gap-1 bg-muted/50 rounded-md p-1.5">
                             <Select
                               value={ramoExtra.ramo_id}
-                              onValueChange={(value) => handleRamoExtraChange(index, value)}
+                              onValueChange={(value) => handleRamoExtraChange(index, 'ramo_id', value)}
                             >
                               <SelectTrigger className="h-7 text-xs border-0 bg-transparent">
                                 <SelectValue placeholder="Ramo" />
@@ -859,6 +893,27 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                           </div>
                           <div key={`segmento-${index}`} className="flex items-center bg-muted/30 rounded-md px-3 h-10">
                             <span className="text-xs text-muted-foreground">{ramoExtra.segmento || "-"}</span>
+                          </div>
+                          <div key={`valor-${index}`} className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                            <Input
+                              type="text"
+                              value={
+                                ramoExtra.valor_premio
+                                  ? new Intl.NumberFormat('pt-BR', {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    }).format(ramoExtra.valor_premio)
+                                  : ''
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                const numericValue = parseFloat(value) / 100 || 0;
+                                handleRamoExtraChange(index, 'valor_premio', numericValue);
+                              }}
+                              placeholder="0,00"
+                              className="pl-10 h-10"
+                            />
                           </div>
                         </>
                       ))}
@@ -987,8 +1042,8 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                 );
               })()}
 
-              {/* Status, Valor do Prêmio e Data da Cotação */}
-              <div className="grid gap-4 md:grid-cols-3">
+              {/* Status e Data da Cotação */}
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="status">Status *</Label>
                   <Select
@@ -1008,32 +1063,6 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                       )}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="valor_premio">Valor do Prêmio *</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
-                    <Input
-                      type="text"
-                      value={
-                        formData.valor_premio
-                          ? new Intl.NumberFormat('pt-BR', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }).format(formData.valor_premio)
-                          : ''
-                      }
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '');
-                        const numericValue = parseFloat(value) / 100 || 0;
-                        handleInputChange("valor_premio", numericValue);
-                      }}
-                      placeholder="0,00"
-                      readOnly={isReadOnly}
-                      className="pl-10"
-                    />
-                  </div>
                 </div>
 
                 <div>
