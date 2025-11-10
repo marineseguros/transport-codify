@@ -37,7 +37,7 @@ export const LoginForm = () => {
         <img 
           src="/marine-logo.png" 
           alt="" 
-          className="w-[600px] h-auto opacity-5 dark:opacity-[0.03]"
+          className="w-[800px] h-auto opacity-[0.08] dark:opacity-[0.06]"
         />
       </div>
       
