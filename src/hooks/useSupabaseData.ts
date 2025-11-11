@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 export interface Profile {
   id: string;
@@ -144,7 +145,7 @@ export function useProfiles() {
       if (error) throw error;
       setProfiles(data || []);
     } catch (error) {
-      console.error('Error fetching profiles:', error);
+      logger.error('Error fetching profiles:', error);
     } finally {
       setLoading(false);
     }
@@ -172,7 +173,7 @@ export function useUnidades() {
       if (error) throw error;
       setUnidades(data || []);
     } catch (error) {
-      console.error('Error fetching unidades:', error);
+      logger.error('Error fetching unidades:', error);
     } finally {
       setLoading(false);
     }
@@ -199,7 +200,7 @@ export function useSeguradoras() {
       if (error) throw error;
       setSeguradoras(data || []);
     } catch (error) {
-      console.error('Error fetching seguradoras:', error);
+      logger.error('Error fetching seguradoras:', error);
     } finally {
       setLoading(false);
     }
@@ -227,7 +228,7 @@ export function useClientes() {
       if (error) throw error;
       setClientes(data || []);
     } catch (error) {
-      console.error('Error fetching clientes:', error);
+      logger.error('Error fetching clientes:', error);
     } finally {
       setLoading(false);
     }
@@ -287,7 +288,7 @@ export function useRamos() {
       if (error) throw error;
       setRamos(data || []);
     } catch (error) {
-      console.error('Error fetching ramos:', error);
+      logger.error('Error fetching ramos:', error);
     } finally {
       setLoading(false);
     }
@@ -315,7 +316,7 @@ export function useCaptacao() {
       if (error) throw error;
       setCaptacao(data || []);
     } catch (error) {
-      console.error('Error fetching captacao:', error);
+      logger.error('Error fetching captacao:', error);
     } finally {
       setLoading(false);
     }
@@ -343,7 +344,7 @@ export function useStatusSeguradora() {
       if (error) throw error;
       setStatusSeguradora(data || []);
     } catch (error) {
-      console.error('Error fetching status_seguradora:', error);
+      logger.error('Error fetching status_seguradora:', error);
     } finally {
       setLoading(false);
     }
@@ -366,7 +367,7 @@ export function useCotacoesAcompanhamento(userEmail?: string, userPapel?: string
   const fetchCotacoes = async () => {
     try {
       setLoading(true);
-      console.log('Fetching cotações para acompanhamento...', { userEmail, userPapel });
+      logger.log('Fetching cotações para acompanhamento...', { userEmail, userPapel });
       
       // Se for Produtor ou Operacional, buscar o ID do produtor pelo email
       let produtorId: string | null = null;
@@ -382,7 +383,7 @@ export function useCotacoesAcompanhamento(userEmail?: string, userPapel?: string
         
         if (produtorData) {
           produtorId = produtorData.id;
-          console.log('Produtor ID encontrado:', produtorId);
+          logger.log('Produtor ID encontrado:', produtorId);
         }
       }
 
@@ -411,14 +412,14 @@ export function useCotacoesAcompanhamento(userEmail?: string, userPapel?: string
 
       const { data, error } = await query;
 
-      console.log('Cotações acompanhamento - Data:', data);
-      console.log('Cotações acompanhamento - Error:', error);
-      console.log('Cotações acompanhamento - Count:', data?.length || 0);
+      logger.log('Cotações acompanhamento - Data:', data);
+      logger.log('Cotações acompanhamento - Error:', error);
+      logger.log('Cotações acompanhamento - Count:', data?.length || 0);
 
       if (error) throw error;
       setCotacoes((data as any[]) || []);
     } catch (error) {
-      console.error('Error fetching cotacoes para acompanhamento:', error);
+      logger.error('Error fetching cotacoes para acompanhamento:', error);
       setCotacoes([]);
     } finally {
       setLoading(false);

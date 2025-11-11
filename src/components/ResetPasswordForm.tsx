@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Lock } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 export const ResetPasswordForm = () => {
   const [password, setPassword] = useState('');
@@ -25,9 +26,9 @@ export const ResetPasswordForm = () => {
     const token = searchParams.get('token');
     const type = searchParams.get('type');
     
-    console.log('Reset password - Session:', !!session);
-    console.log('Reset password - Token:', !!token);
-    console.log('Reset password - Type:', type);
+    logger.log('Reset password - Session:', !!session);
+    logger.log('Reset password - Token:', !!token);
+    logger.log('Reset password - Type:', type);
     
     if (session || (token && type === 'recovery')) {
       setIsValidSession(true);
