@@ -34,6 +34,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ProdutoModal from "@/components/ProdutoModal";
+import { logger } from "@/lib/logger";
 
 interface Produto {
   id: string;
@@ -82,7 +83,7 @@ export default function Produtos() {
       if (error) throw error;
       setProdutos(data || []);
     } catch (error: any) {
-      console.error("Error fetching produtos:", error);
+      logger.error("Error fetching produtos:", error);
       toast({
         title: "Erro ao carregar produtos",
         description: error.message,
@@ -115,7 +116,7 @@ export default function Produtos() {
 
       fetchProdutos();
     } catch (error: any) {
-      console.error("Error deleting produto:", error);
+      logger.error("Error deleting produto:", error);
       toast({
         title: "Erro ao excluir produto",
         description: error.message,
@@ -193,7 +194,7 @@ export default function Produtos() {
       setSelectedIds([]);
       fetchProdutos();
     } catch (error: any) {
-      console.error("Error deleting produtos:", error);
+      logger.error("Error deleting produtos:", error);
       toast({
         title: "Erro ao excluir produtos",
         description: error.message,
@@ -252,7 +253,7 @@ export default function Produtos() {
         description: `${filteredProdutos.length} registro(s) exportado(s)`,
       });
     } catch (error: any) {
-      console.error("Error exporting to Excel:", error);
+      logger.error("Error exporting to Excel:", error);
       toast({
         title: "Erro ao exportar",
         description: error.message,

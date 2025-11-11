@@ -40,6 +40,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/lib/logger";
 
 const formSchema = z.object({
   segurado: z.string().min(1, "Campo obrigatório"),
@@ -300,7 +301,7 @@ export default function ProdutoModal({ isOpen, onClose, produto }: ProdutoModalP
       form.reset();
       onClose(true);
     } catch (error: any) {
-      console.error("Error saving produto:", error);
+      logger.error("Error saving produto:", error);
       toast({
         title: "Erro ao salvar produto",
         description: error.message,

@@ -26,6 +26,7 @@ import { Cliente, ClienteWithStats } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -136,7 +137,7 @@ const Clientes = () => {
       toast.success('Cliente excluído com sucesso!');
       refetchClientes();
     } catch (error) {
-      console.error('Erro ao excluir cliente:', error);
+      logger.error('Erro ao excluir cliente:', error);
       toast.error('Erro ao excluir cliente');
     } finally {
       setDeleteDialogOpen(false);

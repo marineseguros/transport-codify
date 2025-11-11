@@ -250,13 +250,13 @@ export function useProdutores() {
         .order('ordem');
 
       if (error) {
-        console.error('Error fetching produtores:', error);
+        logger.error('Error fetching produtores:', error);
         throw error;
       }
       
       setProdutores(data || []);
     } catch (error) {
-      console.error('Error in fetchProdutores:', error);
+      logger.error('Error in fetchProdutores:', error);
       setProdutores([]);
     } finally {
       setLoading(false);
@@ -507,7 +507,7 @@ export function useCotacoes() {
       if (error) throw error;
       setTotalCount(count || 0);
     } catch (error) {
-      console.error('Error getting total count:', error);
+      logger.error('Error getting total count:', error);
       setTotalCount(0);
     }
   };
@@ -558,7 +558,7 @@ export function useCotacoes() {
       
       setTotalCount(cotacoesData.length);
     } catch (error) {
-      console.error('Error getting total count with search:', error);
+      logger.error('Error getting total count with search:', error);
       setTotalCount(0);
     }
   };
@@ -652,7 +652,7 @@ export function useCotacoes() {
         setCotacoes((data as any[]) || []);
       }
     } catch (error) {
-      console.error('Error fetching cotacoes:', error);
+      logger.error('Error fetching cotacoes:', error);
       setCotacoes([]);
     } finally {
       setLoading(false);
@@ -728,7 +728,7 @@ export function useCotacoes() {
       
       return data;
     } catch (error) {
-      console.error('Error creating cotacao:', error);
+      logger.error('Error creating cotacao:', error);
       throw error;
     }
   };
@@ -771,7 +771,7 @@ export function useCotacoes() {
       
       return data;
     } catch (error) {
-      console.error('Error updating cotacao:', error);
+      logger.error('Error updating cotacao:', error);
       throw error;
     }
   };
@@ -788,7 +788,7 @@ export function useCotacoes() {
       // Refresh the list
       await refetch();
     } catch (error) {
-      console.error('Error deleting cotacao:', error);
+      logger.error('Error deleting cotacao:', error);
       throw error;
     }
   };
@@ -805,7 +805,7 @@ export function useCotacoes() {
       // Refresh the list
       await refetch();
     } catch (error) {
-      console.error('Error deleting cotacoes:', error);
+      logger.error('Error deleting cotacoes:', error);
       throw error;
     }
   };
@@ -876,7 +876,7 @@ export function useCotacoesRecentes(limit: number = 10) {
       if (error) throw error;
       setCotacoes((data as any[]) || []);
     } catch (error) {
-      console.error('Error fetching cotacoes recentes:', error);
+      logger.error('Error fetching cotacoes recentes:', error);
     } finally {
       setLoading(false);
     }
@@ -932,7 +932,7 @@ export function useCotacoesTotais() {
 
       setCotacoes(allCotacoes);
     } catch (error) {
-      console.error('Error fetching all cotacoes:', error);
+      logger.error('Error fetching all cotacoes:', error);
     } finally {
       setLoading(false);
     }
@@ -976,7 +976,7 @@ export function useCotacaoHistorico(cotacaoId?: string) {
       if (error) throw error;
       setHistorico(data || []);
     } catch (error) {
-      console.error('Error fetching cotacao historico:', error);
+      logger.error('Error fetching cotacao historico:', error);
       setHistorico([]);
     } finally {
       setLoading(false);
@@ -1016,7 +1016,7 @@ export function useCotacaoAuditLog(cotacaoId?: string) {
       if (error) throw error;
       setAuditLog(data || []);
     } catch (error) {
-      console.error('Error fetching cotacao audit log:', error);
+      logger.error('Error fetching cotacao audit log:', error);
       setAuditLog([]);
     } finally {
       setLoading(false);
@@ -1050,7 +1050,7 @@ export function useAllCotacoesAuditLog() {
       if (error) throw error;
       setAuditLog(data || []);
     } catch (error) {
-      console.error('Error fetching all audit logs:', error);
+      logger.error('Error fetching all audit logs:', error);
       setAuditLog([]);
     } finally {
       setLoading(false);
@@ -1080,7 +1080,7 @@ export const useClienteHistorico = (clienteId?: string) => {
         if (error) throw error;
         setHistorico(data || []);
       } catch (error) {
-        console.error('Erro ao buscar histórico do cliente:', error);
+        logger.error('Erro ao buscar histórico do cliente:', error);
         toast.error('Erro ao buscar histórico do cliente');
       } finally {
         setLoading(false);
@@ -1104,7 +1104,7 @@ export const useClienteHistorico = (clienteId?: string) => {
       if (error) throw error;
       setHistorico(data || []);
     } catch (error) {
-      console.error('Erro ao buscar histórico do cliente:', error);
+      logger.error('Erro ao buscar histórico do cliente:', error);
       toast.error('Erro ao buscar histórico do cliente');
     } finally {
       setLoading(false);
@@ -1134,7 +1134,7 @@ export const useClienteAuditLog = (clienteId?: string) => {
         if (error) throw error;
         setAuditLog(data || []);
       } catch (error) {
-        console.error('Erro ao buscar audit log do cliente:', error);
+        logger.error('Erro ao buscar audit log do cliente:', error);
         toast.error('Erro ao buscar audit log do cliente');
       } finally {
         setLoading(false);
@@ -1158,7 +1158,7 @@ export const useClienteAuditLog = (clienteId?: string) => {
       if (error) throw error;
       setAuditLog(data || []);
     } catch (error) {
-      console.error('Erro ao buscar audit log do cliente:', error);
+      logger.error('Erro ao buscar audit log do cliente:', error);
       toast.error('Erro ao buscar audit log do cliente');
     } finally {
       setLoading(false);
@@ -1186,7 +1186,7 @@ export const useAllClientesAuditLog = () => {
         if (error) throw error;
         setAuditLog(data || []);
       } catch (error) {
-        console.error('Erro ao buscar audit log geral de clientes:', error);
+        logger.error('Erro ao buscar audit log geral de clientes:', error);
         toast.error('Erro ao buscar histórico geral');
       } finally {
         setLoading(false);
@@ -1208,7 +1208,7 @@ export const useAllClientesAuditLog = () => {
       if (error) throw error;
       setAuditLog(data || []);
     } catch (error) {
-      console.error('Erro ao buscar audit log geral de clientes:', error);
+      logger.error('Erro ao buscar audit log geral de clientes:', error);
       toast.error('Erro ao buscar histórico geral');
     } finally {
       setLoading(false);

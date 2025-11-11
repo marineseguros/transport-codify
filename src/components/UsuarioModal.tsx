@@ -20,6 +20,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import type { Profile } from '@/hooks/useSupabaseData';
 
 interface UsuarioModalProps {
@@ -122,7 +123,7 @@ export function UsuarioModal({ open, onOpenChange, usuario, mode, onSave }: Usua
         onOpenChange(false);
       }
     } catch (error) {
-      console.error('Erro ao salvar usuário:', error);
+      logger.error('Erro ao salvar usuário:', error);
       toast.error('Erro ao salvar usuário');
     } finally {
       setLoading(false);

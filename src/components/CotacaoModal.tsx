@@ -13,6 +13,7 @@ import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Plus, Tra
 import { formatCPFCNPJ } from "@/utils/csvUtils";
 import { format, isValid, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 // Helper function to safely format dates
 const safeFormatDate = (dateString: string | undefined | null, formatStr: string = "dd/MM/yyyy"): string | null => {
@@ -235,14 +236,14 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
     }
   }, [cotacao, mode, produtores, user]);
   const handleInputChange = (field: string, value: any) => {
-    console.log("handleInputChange called with field:", field, "value:", value);
+    logger.log("handleInputChange called with field:", field, "value:", value);
     if (isReadOnly) return;
 
     // Auto-fill client data when selecting from dropdown
     if (field === "cliente_id") {
       const cliente = clientes.find((c) => c.id === value);
       if (cliente) {
-        console.log("Auto-filling client data:", cliente);
+        logger.log("Auto-filling client data:", cliente);
         setFormData((prev) => ({
           ...prev,
           cliente_id: value,
@@ -256,17 +257,17 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
 
     // Auto-fill segment based on ramo
     if (field === "ramo_id") {
-      console.log("Processing ramo_id change, value:", value);
+      logger.log("Processing ramo_id change, value:", value);
       const segmento = getSegmentoByRamo(value);
-      console.log("Calculated segmento:", segmento);
+      logger.log("Calculated segmento:", segmento);
       setFormData((prev) => {
-        console.log("Previous formData:", prev);
+        logger.log("Previous formData:", prev);
         const newData = {
           ...prev,
           ramo_id: value,
           segmento: segmento,
         };
-        console.log("New formData after ramo change:", newData);
+        logger.log("New formData after ramo change:", newData);
         return newData;
       });
       return; // Return early since we already set both fields
@@ -321,27 +322,27 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
 
   // Utility function to get segment based on ramo
   const getSegmentoByRamo = (ramoId: string) => {
-    console.log("getSegmentoByRamo called with ramoId:", ramoId);
+    logger.log("getSegmentoByRamo called with ramoId:", ramoId);
     const ramo = ramos.find((r) => r.id === ramoId);
-    console.log("Found ramo:", ramo);
+    logger.log("Found ramo:", ramo);
     if (!ramo) {
-      console.log("No ramo found, returning empty string");
+      logger.log("No ramo found, returning empty string");
       return "";
     }
     const ramoDesc = ramo.descricao.toUpperCase();
-    console.log("Ramo description (uppercase):", ramoDesc);
+    logger.log("Ramo description (uppercase):", ramoDesc);
     if (
       ["NACIONAL", "EXPORTAÇÃO", "IMPORTAÇÃO", "NACIONAL AVULSA", "IMPORTAÇÃO AVULSA", "EXPORTAÇÃO AVULSA"].includes(
         ramoDesc,
       )
     ) {
-      console.log("Returning Embarcador");
+      logger.log("Returning Embarcador");
       return "Embarcador";
     } else if (["RCTR-C", "RC-DC", "RCTR-VI", "GARANTIA", "RCTA-C", "AMBIENTAL", "RC-V"].includes(ramoDesc)) {
-      console.log("Returning Transportador");
+      logger.log("Returning Transportador");
       return "Transportador";
     }
-    console.log("No segment match found, returning empty string");
+    logger.log("No segment match found, returning empty string");
     return "";
   };
   const handleAddRamoExtra = () => {

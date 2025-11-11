@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Seguradora } from '@/types';
 import { Switch } from '@/components/ui/switch';
+import { logger } from '@/lib/logger';
 
 interface SeguradoraModalProps {
   seguradora: Seguradora | null;
@@ -74,7 +75,7 @@ export function SeguradoraModal({ seguradora, isOpen, onClose, onSuccess }: Segu
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error('Error saving seguradora:', error);
+      logger.error('Error saving seguradora:', error);
       toast.error(error.message || 'Erro ao salvar seguradora');
     } finally {
       setLoading(false);

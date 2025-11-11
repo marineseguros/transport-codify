@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Ramo } from '@/types';
 import { Switch } from '@/components/ui/switch';
+import { logger } from '@/lib/logger';
 
 interface RamoModalProps {
   ramo: Ramo | null;
@@ -74,7 +75,7 @@ export function RamoModal({ ramo, isOpen, onClose, onSuccess }: RamoModalProps) 
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error('Error saving ramo:', error);
+      logger.error('Error saving ramo:', error);
       toast.error(error.message || 'Erro ao salvar ramo');
     } finally {
       setLoading(false);

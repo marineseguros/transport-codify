@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Produtor } from '@/types';
 import { Switch } from '@/components/ui/switch';
+import { logger } from '@/lib/logger';
 
 interface ProdutorModalProps {
   produtor: Produtor | null;
@@ -85,7 +86,7 @@ export function ProdutorModal({ produtor, isOpen, onClose, onSuccess }: Produtor
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error('Error saving produtor:', error);
+      logger.error('Error saving produtor:', error);
       toast.error(error.message || 'Erro ao salvar produtor');
     } finally {
       setLoading(false);

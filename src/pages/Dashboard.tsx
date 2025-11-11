@@ -38,6 +38,8 @@ import {
   Cell,
 } from "recharts";
 import { CotacaoModal } from "@/components/CotacaoModal";
+import { logger } from "@/lib/logger";
+
 const Dashboard = () => {
   const { cotacoes: allQuotes, loading: loadingCotacoes } = useCotacoesTotais();
   const { produtores, loading: loadingProdutores } = useProdutores();
@@ -426,7 +428,7 @@ const Dashboard = () => {
       const dateMatch = new Date(cotacao.data_cotacao) >= twelveMonthsAgo;
       return produtorMatch && unidadeMatch && dateMatch;
     });
-    console.log("Seguradoras Debug:", {
+    logger.log("Seguradoras Debug:", {
       totalFiltered: seguradoraFilteredCotacoes.length,
       fechadas: seguradoraFilteredCotacoes.filter((c) => c.status === "Negócio fechado").length,
       comSeguradora: seguradoraFilteredCotacoes.filter((c) => c.seguradora).length,
@@ -454,7 +456,7 @@ const Dashboard = () => {
     const result = Object.values(seguradoraStats)
       .sort((a, b) => b.premio - a.premio)
       .slice(0, 5);
-    console.log("Seguradoras Result:", result);
+    logger.log("Seguradoras Result:", result);
     return result;
   }, [allQuotes, produtorFilter, unidadeFilter]);
 

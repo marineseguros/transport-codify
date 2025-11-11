@@ -37,6 +37,7 @@ import { useCotacoes, useAllCotacoesAuditLog, type Cotacao } from "@/hooks/useSu
 import { parseCsvFile } from "@/utils/csvUtils";
 import { toast } from "sonner";
 import { csvRowSchema } from "@/lib/validations";
+import { logger } from "@/lib/logger";
 import { DatePickerWithRange } from "@/components/ui/date-picker";
 import { DateRange } from "react-day-picker";
 
@@ -157,7 +158,7 @@ const Cotacoes = () => {
       await deleteCotacao(cotacaoToDelete);
       toast.success("Cotação excluída com sucesso!");
     } catch (error) {
-      console.error("Erro ao excluir cotação:", error);
+      logger.error("Erro ao excluir cotação:", error);
       toast.error("Erro ao excluir cotação");
     } finally {
       setDeleteDialogOpen(false);
@@ -179,7 +180,7 @@ const Cotacoes = () => {
       toast.success(`${selectedIds.size} cotação(ões) excluída(s) com sucesso!`);
       setSelectedIds(new Set());
     } catch (error) {
-      console.error("Erro ao excluir cotações:", error);
+      logger.error("Erro ao excluir cotações:", error);
       toast.error("Erro ao excluir cotações");
     } finally {
       setMassDeleteDialogOpen(false);
@@ -285,11 +286,11 @@ const Cotacoes = () => {
 
           // Show first few errors in console for debugging
           if (errors.length > 0) {
-            console.warn("Erros de importação CSV:", errors.slice(0, 5));
+            logger.warn("Erros de importação CSV:", errors.slice(0, 5));
           }
         }
       } catch (error) {
-        console.error("Erro ao processar CSV:", error);
+        logger.error("Erro ao processar CSV:", error);
         toast.error("Erro ao processar o arquivo CSV. Verifique o formato.");
       }
     };

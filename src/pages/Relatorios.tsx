@@ -16,6 +16,7 @@ import { useCotacoes } from '@/hooks/useSupabaseData';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
+import { logger } from '@/lib/logger';
 
 const Relatorios = () => {
   const { cotacoes, loading } = useCotacoes();
@@ -153,7 +154,7 @@ const Relatorios = () => {
 
   const exportToCSV = () => {
     // Implementation would export current filtered data to CSV
-    console.log('Exporting to CSV...');
+    logger.log('Exporting to CSV...');
   };
 
   return (
