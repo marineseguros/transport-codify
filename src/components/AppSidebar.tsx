@@ -62,10 +62,10 @@ export function AppSidebar() {
                       to={item.url} 
                       end 
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm transition-colors",
+                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-colors",
                         isActive
                           ? "bg-primary text-white font-semibold"
-                          : "text-muted-foreground bg-transparent hover:bg-primary/20 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white"
+                          : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
                       )}
                       aria-current={isActive ? "page" : undefined}
                     >
@@ -91,10 +91,10 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm transition-colors",
+                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-colors",
                         isActive
                           ? "bg-primary text-white font-semibold"
-                          : "text-muted-foreground bg-transparent hover:bg-primary/20 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white"
+                          : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
                       )}
                       aria-current={isActive ? "page" : undefined}
                     >
@@ -121,10 +121,10 @@ export function AppSidebar() {
                       <NavLink 
                         to={item.url} 
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-lg p-2 text-sm transition-colors",
+                          "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-colors",
                           isActive
                             ? "bg-primary text-white font-semibold"
-                            : "text-muted-foreground bg-transparent hover:bg-primary/20 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white"
+                            : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
                         )}
                         aria-current={isActive ? "page" : undefined}
                       >
