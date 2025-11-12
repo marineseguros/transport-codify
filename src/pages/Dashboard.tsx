@@ -639,20 +639,22 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Análise completa e KPIs de cotações</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Análise completa e KPIs de cotações</p>
         </div>
 
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={handleImportCSV} className="gap-2">
+        <div className="flex flex-wrap gap-2 md:gap-3 w-full sm:w-auto">
+          <Button variant="outline" onClick={handleImportCSV} size="sm" className="gap-2 flex-1 sm:flex-none">
             <Upload className="h-4 w-4" />
-            Importar CSV
+            <span className="hidden sm:inline">Importar CSV</span>
+            <span className="sm:hidden">CSV</span>
           </Button>
-          <Button onClick={handleNewCotacao} className="gap-2">
+          <Button onClick={handleNewCotacao} size="sm" className="gap-2 flex-1 sm:flex-none">
             <Plus className="h-4 w-4" />
-            Nova Cotação
+            <span className="hidden sm:inline">Nova Cotação</span>
+            <span className="sm:hidden">Nova</span>
           </Button>
         </div>
       </div>
@@ -666,8 +668,8 @@ const Dashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+            <div className="flex-1 min-w-full sm:min-w-[200px]">
               <label className="text-sm font-medium mb-2 block">Período</label>
               <Select value={dateFilter} onValueChange={setDateFilter}>
                 <SelectTrigger>
@@ -688,13 +690,13 @@ const Dashboard = () => {
             </div>
 
             {(dateFilter === "personalizado" || dateFilter === "personalizado_comparacao") && (
-              <div className="flex-1 min-w-[280px]">
+              <div className="flex-1 min-w-full sm:min-w-[280px]">
                 <label className="text-sm font-medium mb-2 block">Data personalizada</label>
                 <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
               </div>
             )}
 
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-full sm:min-w-[200px]">
               <label className="text-sm font-medium mb-2 block">Produtor</label>
               <Select value={produtorFilter} onValueChange={setProdutorFilter}>
                 <SelectTrigger>
@@ -713,7 +715,7 @@ const Dashboard = () => {
               </Select>
             </div>
 
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-full sm:min-w-[200px]">
               <label className="text-sm font-medium mb-2 block">Unidade</label>
               <Select value={unidadeFilter} onValueChange={setUnidadeFilter}>
                 <SelectTrigger>
@@ -731,7 +733,7 @@ const Dashboard = () => {
             </div>
 
             {dateFilter === "personalizado_comparacao" && (
-              <div className="flex-1 min-w-[280px]">
+              <div className="flex-1 min-w-full sm:min-w-[280px]">
                 <label className="text-sm font-medium mb-2 block">Período de comparação</label>
                 <DatePickerWithRange date={compareRange} onDateChange={setCompareRange} />
               </div>
@@ -739,6 +741,7 @@ const Dashboard = () => {
 
             <Button
               variant="outline"
+              size="sm"
               onClick={() => {
                 setDateFilter("mes_atual");
                 setProdutorFilter("todos");
@@ -746,7 +749,7 @@ const Dashboard = () => {
                 setDateRange(undefined);
                 setCompareRange(undefined);
               }}
-              className="col-span-full md:col-span-1"
+              className="w-full sm:w-auto"
             >
               Limpar filtros
             </Button>
@@ -755,7 +758,7 @@ const Dashboard = () => {
       </Card>
 
       {/* KPIs Mensais com Comparativos */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Em Cotação</CardTitle>
@@ -880,7 +883,7 @@ const Dashboard = () => {
       </div>
 
       {/* Distribuição por Status e Top Produtores */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
         {/* Distribuição por Status (50% da largura) */}
         <Card>
           <CardHeader>
@@ -954,7 +957,7 @@ const Dashboard = () => {
       </div>
 
       {/* Gráficos e Análises Avançadas */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
         {/* Tendência Mensal */}
         <Card>
           <CardHeader>
@@ -1047,7 +1050,7 @@ const Dashboard = () => {
       </div>
 
       {/* Análises por Segmento */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {/* Cotações em Aberto por Segmento */}
         <Card>
           <CardHeader>
@@ -1239,7 +1242,7 @@ const Dashboard = () => {
       </div>
 
       {/* Insights Adicionais */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {/* Gráfico de Pizza - Status */}
         <Card>
           <CardHeader>
@@ -1365,9 +1368,9 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           {recentQuotesViewMode === "list" ? (
-            <div className="space-y-3">
+            <div className="space-y-3 overflow-x-auto">
               {recentQuotes.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-[800px]">
                   {/* Header */}
                   <div className="grid grid-cols-12 gap-4 pb-2 border-b text-sm font-medium text-muted-foreground">
                     <div className="col-span-2">Status</div>
@@ -1416,7 +1419,7 @@ const Dashboard = () => {
               )}
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {recentQuotes.length > 0 ? (
                 recentQuotes.map((cotacao) => (
                   <div key={cotacao.id} className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">

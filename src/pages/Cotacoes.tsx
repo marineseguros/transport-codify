@@ -352,26 +352,27 @@ const Cotacoes = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Cotações</h1>
-          <p className="text-muted-foreground">Listagem completa e filtros de cotações</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Cotações</h1>
+          <p className="text-sm text-muted-foreground">Listagem completa e filtros de cotações</p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 md:gap-3 w-full sm:w-auto">
           {canDeleteAny && selectedIds.size > 0 && (
-            <Button onClick={handleMassDeleteClick} variant="destructive" className="gap-2">
+            <Button onClick={handleMassDeleteClick} variant="destructive" size="sm" className="gap-2 flex-1 sm:flex-none">
               <Trash2 className="h-4 w-4" />
-              Excluir Selecionadas ({selectedIds.size})
+              <span className="hidden md:inline">Excluir Selecionadas ({selectedIds.size})</span>
+              <span className="md:hidden">Excluir ({selectedIds.size})</span>
             </Button>
           )}
-          <Button onClick={() => setHistoricoGeralOpen(true)} variant="outline" className="gap-2">
+          <Button onClick={() => setHistoricoGeralOpen(true)} variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
             <History className="h-4 w-4" />
-            Histórico Geral
+            <span className="hidden sm:inline">Histórico</span>
           </Button>
-          <Button onClick={handleNewCotacao} className="gap-2">
+          <Button onClick={handleNewCotacao} size="sm" className="gap-2 flex-1 sm:flex-none">
             <Plus className="h-4 w-4" />
-            Nova Cotação
+            Nova
           </Button>
         </div>
       </div>
@@ -379,12 +380,12 @@ const Cotacoes = () => {
       {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
-          {/* Linha única com todos os filtros */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-4 relative">
+          {/* Filtros responsivos */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+            <div className="sm:col-span-2 lg:col-span-4 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Pesquisar por número, segurado, CPF/CNPJ, seguradora, ramo..."
+                placeholder="Pesquisar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -448,7 +449,7 @@ const Cotacoes = () => {
               </Select>
             </div>
 
-            <div className="lg:col-span-2">
+            <div className="sm:col-span-2 lg:col-span-2">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -461,6 +462,7 @@ const Cotacoes = () => {
                   setDateRange(undefined);
                 }}
                 className="w-full"
+                size="sm"
               >
                 Limpar filtros
               </Button>
@@ -477,8 +479,9 @@ const Cotacoes = () => {
             {dateFilteredCotacoes.length === 1 ? "cotação encontrada" : "cotações encontradas"}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow>
                 {canDeleteAny && (
@@ -566,6 +569,7 @@ const Cotacoes = () => {
               })}
             </TableBody>
           </Table>
+          </div>
 
           {loading && (
             <div className="text-center py-8">

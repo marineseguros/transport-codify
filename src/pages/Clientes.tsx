@@ -166,20 +166,21 @@ const Clientes = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Clientes</h1>
+          <p className="text-sm text-muted-foreground">
             Gerencie seus clientes e acompanhe o histórico de cotações
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button onClick={() => setHistoricoGeralOpen(true)} variant="outline" className="gap-2">
+        <div className="flex flex-wrap gap-2 md:gap-3 w-full sm:w-auto">
+          <Button onClick={() => setHistoricoGeralOpen(true)} variant="outline" className="gap-2 flex-1 sm:flex-none" size="sm">
             <History className="h-4 w-4" />
-            Histórico Geral
+            <span className="hidden sm:inline">Histórico Geral</span>
+            <span className="sm:hidden">Histórico</span>
           </Button>
           {canEdit && (
-            <Button onClick={handleNewClient}>
+            <Button onClick={handleNewClient} className="flex-1 sm:flex-none" size="sm">
               <Plus className="mr-2 h-4 w-4" />
               Novo Cliente
             </Button>
@@ -188,7 +189,7 @@ const Clientes = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Clientes</CardTitle>
@@ -243,8 +244,8 @@ const Clientes = () => {
       </div>
 
       {/* Filtros adicionais */}
-      <div className="flex flex-wrap gap-4 mb-6">
-        <div className="min-w-[200px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="sm:col-span-2">
           <Input
             placeholder="Buscar por nome, CPF/CNPJ, email..."
             value={searchTerm}
@@ -254,7 +255,7 @@ const Clientes = () => {
         </div>
         
         <Select value={filtroUF} onValueChange={setFiltroUF}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Todos os UFs" />
           </SelectTrigger>
           <SelectContent>
@@ -265,7 +266,7 @@ const Clientes = () => {
         </Select>
 
         <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
@@ -276,7 +277,7 @@ const Clientes = () => {
         </Select>
 
         <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -290,7 +291,7 @@ const Clientes = () => {
           <Button 
             variant="outline" 
             onClick={() => setSearchTerm('')}
-            className="px-3"
+            className="w-full"
           >
             Limpar
           </Button>
@@ -304,8 +305,9 @@ const Clientes = () => {
             Lista de Clientes ({filteredClientes.length})
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Cliente</TableHead>
@@ -403,6 +405,7 @@ const Clientes = () => {
               ))}
             </TableBody>
           </Table>
+          </div>
 
           {filteredClientes.length === 0 && (
             <div className="text-center py-8">
