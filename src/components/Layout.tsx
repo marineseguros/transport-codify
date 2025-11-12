@@ -30,34 +30,34 @@ export const Layout = ({ children }: LayoutProps) => {
         
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="h-16 border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 flex items-center justify-between px-6">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger />
+          <header className="h-14 md:h-16 border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 flex items-center justify-between px-3 md:px-6 sticky top-0 z-40">
+            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+              <SidebarTrigger className="flex-shrink-0" />
               <img 
                 src="/marine-logo.png" 
                 alt="Marine Seguros Logo" 
-                className="h-8 w-auto"
+                className="h-6 md:h-8 w-auto flex-shrink-0"
               />
-              <div>
-                <h1 className="text-lg font-semibold text-primary">
+              <div className="min-w-0 hidden sm:block">
+                <h1 className="text-sm md:text-lg font-semibold text-primary truncate">
                   Sistema de Cotações {user?.modulo || 'Transportes'}
                 </h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs md:text-sm text-muted-foreground truncate">
                   Gestão de Cotações de {user?.modulo || 'Transportes'}
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
               <ThemeToggle />
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-3 h-auto py-2">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                      <User className="h-4 w-4 text-primary" />
+                  <Button variant="ghost" className="flex items-center gap-2 md:gap-3 h-auto py-1.5 md:py-2 px-2 md:px-3">
+                    <div className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-primary/10">
+                      <User className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
                     </div>
-                    <div className="text-left">
+                    <div className="text-left hidden md:block">
                       <p className="text-sm font-medium">{user?.nome}</p>
                       <p className="text-xs text-muted-foreground">{user?.papel}</p>
                     </div>
@@ -105,7 +105,7 @@ export const Layout = ({ children }: LayoutProps) => {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-3 md:p-6 overflow-x-hidden">
             {children}
           </main>
         </div>
