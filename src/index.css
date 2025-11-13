@@ -36,6 +36,10 @@ All colors MUST be HSL.
     --brand-orange: 28 88% 52%;
     --brand-orange-foreground: 0 0% 100%;
     
+    /* Alert orange - Deep vibrant for 8-14 days */
+    --alert-orange: 18 90% 48%;
+    --alert-orange-foreground: 0 0% 100%;
+    
     /* Success variant - Fresh teal */
     --success-alt: 168 76% 42%;
     --success-alt-foreground: 0 0% 100%;
@@ -106,6 +110,10 @@ All colors MUST be HSL.
     /* Dark mode - Bright orange */
     --brand-orange: 28 88% 58%;
     --brand-orange-foreground: 220 20% 12%;
+    
+    /* Dark mode - Deep vibrant orange for 8-14 days */
+    --alert-orange: 18 90% 55%;
+    --alert-orange-foreground: 220 20% 12%;
     
     /* Dark mode - Bright teal */
     --success-alt: 168 76% 54%;

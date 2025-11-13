@@ -36,6 +36,10 @@ export default {
           DEFAULT: "hsl(var(--brand-orange))",
           foreground: "hsl(var(--brand-orange-foreground))",
         },
+        "alert-orange": {
+          DEFAULT: "hsl(var(--alert-orange))",
+          foreground: "hsl(var(--alert-orange-foreground))",
+        },
         "success-alt": {
           DEFAULT: "hsl(var(--success-alt))",
           foreground: "hsl(var(--success-alt-foreground))",
