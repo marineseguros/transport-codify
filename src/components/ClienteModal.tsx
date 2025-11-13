@@ -22,6 +22,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { clienteSchema } from '@/lib/validations';
 import { Textarea } from '@/components/ui/textarea';
 import { useCaptacao } from '@/hooks/useSupabaseData';
+import { DuplicateClientAlert } from '@/components/DuplicateClientAlert';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ClienteModalProps {
   cliente?: Cliente | null;
@@ -43,6 +45,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
   onSuccess,
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { captacao, loading: loadingCaptacao } = useCaptacao();
   const [formData, setFormData] = useState({
     segurado: '',
@@ -54,6 +57,10 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
     observacoes: '',
     captacao_id: '',
   });
+  const [duplicateClient, setDuplicateClient] = useState<Cliente | null>(null);
+  const [duplicateCaptacao, setDuplicateCaptacao] = useState<string>('');
+  const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
+  const [editingClient, setEditingClient] = useState<Cliente | null>(null);
 
   useEffect(() => {
     if (cliente) {
@@ -78,6 +85,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
         observacoes: '',
         captacao_id: '',
       });
+      setEditingClient(null);
     }
   }, [cliente, isOpen]);
 
@@ -155,6 +163,20 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
           title: "Sucesso",
           description: "Cliente atualizado com sucesso",
         });
+      } else if (editingClient) {
+        // Update client from duplicate alert
+        const { error } = await supabase
+          .from('clientes')
+          .update(clienteData)
+          .eq('id', editingClient.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Cliente atualizado com sucesso",
+        });
+        setEditingClient(null);
       } else {
         // Check if CNPJ already exists
         const { data: existingCliente, error: checkError } = await supabase
@@ -166,28 +188,11 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
         if (checkError) throw checkError;
 
         if (existingCliente) {
-          // CNPJ already exists, show detailed information
+          // CNPJ already exists, show alert dialog
           const captacaoInfo = captacao.find(c => c.id === existingCliente.captacao_id);
-          const detailedInfo = [
-            `📋 CNPJ já cadastrado!`,
-            ``,
-            `🏢 Cliente: ${existingCliente.segurado}`,
-            `🆔 CPF/CNPJ: ${existingCliente.cpf_cnpj}`,
-            existingCliente.email ? `📧 E-mail: ${existingCliente.email}` : null,
-            existingCliente.telefone ? `📞 Telefone: ${existingCliente.telefone}` : null,
-            existingCliente.cidade && existingCliente.uf ? `📍 Localização: ${existingCliente.cidade}, ${existingCliente.uf}` : null,
-            captacaoInfo ? `🎯 Captação: ${captacaoInfo.descricao}` : null,
-            existingCliente.observacoes ? `📝 Observações: ${existingCliente.observacoes}` : null,
-            ``,
-            `Status: ${existingCliente.ativo ? '✅ Ativo' : '❌ Inativo'}`
-          ].filter(Boolean).join('\n');
-
-          toast({
-            title: "CNPJ já cadastrado",
-            description: detailedInfo,
-            variant: "destructive",
-            duration: 10000,
-          });
+          setDuplicateClient(existingCliente);
+          setDuplicateCaptacao(captacaoInfo?.descricao || '');
+          setShowDuplicateAlert(true);
           return;
         }
 
@@ -219,7 +224,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {cliente ? 'Editar Cliente' : 'Novo Cliente'}
+            {cliente || editingClient ? 'Editar Cliente' : 'Novo Cliente'}
           </DialogTitle>
         </DialogHeader>
 
@@ -338,6 +343,32 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
           </div>
         </form>
       </DialogContent>
+
+      {/* Duplicate Client Alert */}
+      {duplicateClient && (
+        <DuplicateClientAlert
+          open={showDuplicateAlert}
+          onOpenChange={setShowDuplicateAlert}
+          cliente={duplicateClient}
+          captacaoDescricao={duplicateCaptacao}
+          canEdit={user?.papel === 'Administrador' || duplicateClient.created_by === user?.user_id}
+          onEdit={() => {
+            setShowDuplicateAlert(false);
+            setEditingClient(duplicateClient);
+            // Load existing client data into form for editing
+            setFormData({
+              segurado: duplicateClient.segurado,
+              cpf_cnpj: duplicateClient.cpf_cnpj,
+              email: duplicateClient.email || '',
+              telefone: duplicateClient.telefone || '',
+              cidade: duplicateClient.cidade || '',
+              uf: duplicateClient.uf || '',
+              observacoes: duplicateClient.observacoes || '',
+              captacao_id: duplicateClient.captacao_id || '',
+            });
+          }}
+        />
+      )}
     </Dialog>
   );
 };
