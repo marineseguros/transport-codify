@@ -14,7 +14,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfiles, type Profile } from '@/hooks/useSupabaseData';
 import { UsuarioModal } from '@/components/UsuarioModal';
-import { Eye, Edit } from 'lucide-react';
+import { Eye, Edit, Users } from 'lucide-react';
 
 const Usuarios = () => {
   const { user } = useAuth();
@@ -86,8 +86,11 @@ const Usuarios = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Usuários</h1>
-            <p className="text-muted-foreground">Carregando usuários...</p>
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+              <Users className="h-7 w-7 md:h-8 md:w-8" />
+              Usuários
+            </h1>
+            <p className="text-sm text-muted-foreground">Carregando usuários...</p>
           </div>
         </div>
       </div>
@@ -99,9 +102,12 @@ const Usuarios = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Usuários</h1>
-          <p className="text-muted-foreground">
-            Gerencie os usuários do sistema
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-3">
+            <Users className="h-7 w-7 md:h-8 md:w-8" />
+            Usuários
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Gerencie os usuários e suas permissões
           </p>
         </div>
         

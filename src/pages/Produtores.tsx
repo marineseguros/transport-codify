@@ -115,8 +115,11 @@ const Produtores = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Produtores</h1>
-            <p className="text-muted-foreground">Carregando produtores...</p>
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+              <Users className="h-7 w-7 md:h-8 md:w-8" />
+              Produtores
+            </h1>
+            <p className="text-sm text-muted-foreground">Carregando produtores...</p>
           </div>
         </div>
       </div>
@@ -128,8 +131,11 @@ const Produtores = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Produtores</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-3">
+            <Users className="h-7 w-7 md:h-8 md:w-8" />
+            Produtores
+          </h1>
+          <p className="text-sm text-muted-foreground">
             Gerencie os produtores do sistema
           </p>
         </div>

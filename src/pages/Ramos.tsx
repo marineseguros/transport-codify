@@ -115,8 +115,11 @@ const Ramos = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Ramos</h1>
-            <p className="text-muted-foreground">Carregando ramos...</p>
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+              <Tags className="h-7 w-7 md:h-8 md:w-8" />
+              Ramos
+            </h1>
+            <p className="text-sm text-muted-foreground">Carregando ramos...</p>
           </div>
         </div>
       </div>
@@ -128,8 +131,11 @@ const Ramos = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Ramos</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-3">
+            <Tags className="h-7 w-7 md:h-8 md:w-8" />
+            Ramos
+          </h1>
+          <p className="text-sm text-muted-foreground">
             Gerencie os ramos de seguros
           </p>
         </div>

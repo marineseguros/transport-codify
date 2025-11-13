@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Search, Calendar, User, Flag, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Search, Calendar, User, Flag, CheckCircle2, Clock, AlertCircle, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -91,8 +91,11 @@ const Tarefas = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tarefas</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-3">
+            <CheckSquare className="h-7 w-7 md:h-8 md:w-8" />
+            Tarefas
+          </h1>
+          <p className="text-sm text-muted-foreground">
             Gerencie suas tarefas e acompanhe o progresso da equipe
           </p>
         </div>

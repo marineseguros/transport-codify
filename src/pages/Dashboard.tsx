@@ -641,7 +641,10 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+            <BarChart className="h-7 w-7 md:h-8 md:w-8" />
+            Dashboard
+          </h1>
           <p className="text-sm text-muted-foreground">Análise completa e KPIs de cotações</p>
         </div>
 
