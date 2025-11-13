@@ -3,39 +3,16 @@ import { Plus, Pencil, Trash2, Search, Download, X, Package } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from 'xlsx';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ProdutoModal from "@/components/ProdutoModal";
 import { logger } from "@/lib/logger";
-
 interface Produto {
   id: string;
   segurado: string;
@@ -49,7 +26,6 @@ interface Produto {
   cidade?: string | null;
   data_realizada?: string | null;
 }
-
 export default function Produtos() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,29 +33,30 @@ export default function Produtos() {
   const [selectedProduto, setSelectedProduto] = useState<Produto | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [produtoToDelete, setProdutoToDelete] = useState<string | null>(null);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
 
   // Filtros
   const [searchSegurado, setSearchSegurado] = useState("");
   const [searchConsultor, setSearchConsultor] = useState("");
   const [searchCidade, setSearchCidade] = useState("");
   const [filterTipo, setFilterTipo] = useState<string>("todos");
-  
+
   // Seleção múltipla
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
   useEffect(() => {
     fetchProdutos();
   }, []);
-
   const fetchProdutos = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("produtos")
-        .select("*")
-        .order("data_registro", { ascending: false });
-
+      const {
+        data,
+        error
+      } = await supabase.from("produtos").select("*").order("data_registro", {
+        ascending: false
+      });
       if (error) throw error;
       setProdutos(data || []);
     } catch (error: any) {
@@ -87,52 +64,43 @@ export default function Produtos() {
       toast({
         title: "Erro ao carregar produtos",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
   const handleEdit = (produto: Produto) => {
     setSelectedProduto(produto);
     setIsModalOpen(true);
   };
-
   const handleDelete = async () => {
     if (!produtoToDelete) return;
-
     try {
-      const { error } = await supabase
-        .from("produtos")
-        .delete()
-        .eq("id", produtoToDelete);
-
+      const {
+        error
+      } = await supabase.from("produtos").delete().eq("id", produtoToDelete);
       if (error) throw error;
-
       toast({
-        title: "Produto excluído com sucesso",
+        title: "Produto excluído com sucesso"
       });
-
       fetchProdutos();
     } catch (error: any) {
       logger.error("Error deleting produto:", error);
       toast({
         title: "Erro ao excluir produto",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setDeleteDialogOpen(false);
       setProdutoToDelete(null);
     }
   };
-
   const openDeleteDialog = (id: string) => {
     setProdutoToDelete(id);
     setDeleteDialogOpen(true);
   };
-
   const handleModalClose = (shouldRefresh: boolean) => {
     setIsModalOpen(false);
     setSelectedProduto(null);
@@ -142,12 +110,11 @@ export default function Produtos() {
   };
 
   // Filtrar produtos
-  const filteredProdutos = produtos.filter((produto) => {
+  const filteredProdutos = produtos.filter(produto => {
     const matchSegurado = produto.segurado.toLowerCase().includes(searchSegurado.toLowerCase());
     const matchConsultor = produto.consultor.toLowerCase().includes(searchConsultor.toLowerCase());
-    const matchCidade = !searchCidade || (produto.cidade && produto.cidade.toLowerCase().includes(searchCidade.toLowerCase()));
+    const matchCidade = !searchCidade || produto.cidade && produto.cidade.toLowerCase().includes(searchCidade.toLowerCase());
     const matchTipo = filterTipo === "todos" || produto.tipo === filterTipo;
-    
     return matchSegurado && matchConsultor && matchCidade && matchTipo;
   });
 
@@ -167,7 +134,6 @@ export default function Produtos() {
       setSelectedIds([]);
     }
   };
-
   const handleSelectOne = (id: string, checked: boolean) => {
     if (checked) {
       setSelectedIds([...selectedIds, id]);
@@ -175,22 +141,16 @@ export default function Produtos() {
       setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
     }
   };
-
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) return;
-
     try {
-      const { error } = await supabase
-        .from("produtos")
-        .delete()
-        .in("id", selectedIds);
-
+      const {
+        error
+      } = await supabase.from("produtos").delete().in("id", selectedIds);
       if (error) throw error;
-
       toast({
-        title: `${selectedIds.length} produto(s) excluído(s) com sucesso`,
+        title: `${selectedIds.length} produto(s) excluído(s) com sucesso`
       });
-
       setSelectedIds([]);
       fetchProdutos();
     } catch (error: any) {
@@ -198,7 +158,7 @@ export default function Produtos() {
       toast({
         title: "Erro ao excluir produtos",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -207,24 +167,18 @@ export default function Produtos() {
   const handleExportToExcel = () => {
     try {
       // Preparar dados para exportação
-      const dataToExport = filteredProdutos.map((produto) => ({
+      const dataToExport = filteredProdutos.map(produto => ({
         "Segurado": produto.segurado,
         "Consultor": produto.consultor,
-        "Data do Registro": format(new Date(produto.data_registro), "dd/MM/yyyy", { locale: ptBR }),
+        "Data do Registro": format(new Date(produto.data_registro), "dd/MM/yyyy", {
+          locale: ptBR
+        }),
         "Tipo": produto.tipo,
-        "Subtipo/Indicação": produto.tipo === "Indicação" && produto.tipo_indicacao
-          ? produto.tipo_indicacao
-          : produto.tipo === "Visita/Video" && produto.subtipo
-          ? produto.subtipo
-          : "-",
-        "Detalhes": produto.tipo === "Indicação" && produto.cliente_indicado
-          ? produto.cliente_indicado
-          : produto.tipo === "Visita/Video" && produto.subtipo === "Visita" && produto.cidade
-          ? produto.cidade
-          : produto.tipo === "Visita/Video" && produto.subtipo === "Vídeo" && produto.data_realizada
-          ? format(new Date(produto.data_realizada), "dd/MM/yyyy", { locale: ptBR })
-          : "-",
-        "Observação": produto.observacao || "-",
+        "Subtipo/Indicação": produto.tipo === "Indicação" && produto.tipo_indicacao ? produto.tipo_indicacao : produto.tipo === "Visita/Video" && produto.subtipo ? produto.subtipo : "-",
+        "Detalhes": produto.tipo === "Indicação" && produto.cliente_indicado ? produto.cliente_indicado : produto.tipo === "Visita/Video" && produto.subtipo === "Visita" && produto.cidade ? produto.cidade : produto.tipo === "Visita/Video" && produto.subtipo === "Vídeo" && produto.data_realizada ? format(new Date(produto.data_realizada), "dd/MM/yyyy", {
+          locale: ptBR
+        }) : "-",
+        "Observação": produto.observacao || "-"
       }));
 
       // Criar workbook e worksheet
@@ -233,37 +187,53 @@ export default function Produtos() {
       XLSX.utils.book_append_sheet(wb, ws, "Produtos");
 
       // Ajustar largura das colunas
-      const colWidths = [
-        { wch: 30 }, // Segurado
-        { wch: 20 }, // Consultor
-        { wch: 15 }, // Data
-        { wch: 15 }, // Tipo
-        { wch: 20 }, // Subtipo/Indicação
-        { wch: 25 }, // Detalhes
-        { wch: 30 }, // Observação
+      const colWidths = [{
+        wch: 30
+      },
+      // Segurado
+      {
+        wch: 20
+      },
+      // Consultor
+      {
+        wch: 15
+      },
+      // Data
+      {
+        wch: 15
+      },
+      // Tipo
+      {
+        wch: 20
+      },
+      // Subtipo/Indicação
+      {
+        wch: 25
+      },
+      // Detalhes
+      {
+        wch: 30
+      } // Observação
       ];
       ws['!cols'] = colWidths;
 
       // Gerar arquivo
       const fileName = `produtos_${format(new Date(), "dd-MM-yyyy_HH-mm")}.xlsx`;
       XLSX.writeFile(wb, fileName);
-
       toast({
         title: "Exportação concluída",
-        description: `${filteredProdutos.length} registro(s) exportado(s)`,
+        description: `${filteredProdutos.length} registro(s) exportado(s)`
       });
     } catch (error: any) {
       logger.error("Error exporting to Excel:", error);
       toast({
         title: "Erro ao exportar",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
@@ -275,20 +245,11 @@ export default function Produtos() {
           </p>
         </div>
         <div className="flex gap-2">
-          {selectedIds.length > 0 && (
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteSelected}
-            >
+          {selectedIds.length > 0 && <Button variant="destructive" onClick={handleDeleteSelected}>
               <Trash2 className="mr-2 h-4 w-4" />
               Excluir {selectedIds.length} selecionado(s)
-            </Button>
-          )}
-          <Button 
-            variant="outline" 
-            onClick={handleExportToExcel}
-            disabled={filteredProdutos.length === 0}
-          >
+            </Button>}
+          <Button variant="outline" onClick={handleExportToExcel} disabled={filteredProdutos.length === 0}>
             <Download className="mr-2 h-4 w-4" />
             Exportar Excel
           </Button>
@@ -305,12 +266,7 @@ export default function Produtos() {
           <label className="text-sm font-medium">Segurado</label>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por segurado..."
-              value={searchSegurado}
-              onChange={(e) => setSearchSegurado(e.target.value)}
-              className="pl-8"
-            />
+            <Input placeholder="Buscar por segurado..." value={searchSegurado} onChange={e => setSearchSegurado(e.target.value)} className="pl-8" />
           </div>
         </div>
         
@@ -318,12 +274,7 @@ export default function Produtos() {
           <label className="text-sm font-medium">Consultor</label>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por consultor..."
-              value={searchConsultor}
-              onChange={(e) => setSearchConsultor(e.target.value)}
-              className="pl-8"
-            />
+            <Input placeholder="Buscar por consultor..." value={searchConsultor} onChange={e => setSearchConsultor(e.target.value)} className="pl-8" />
           </div>
         </div>
 
@@ -331,12 +282,7 @@ export default function Produtos() {
           <label className="text-sm font-medium">Cidade</label>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por cidade..."
-              value={searchCidade}
-              onChange={(e) => setSearchCidade(e.target.value)}
-              className="pl-8"
-            />
+            <Input placeholder="Buscar por cidade..." value={searchCidade} onChange={e => setSearchCidade(e.target.value)} className="pl-8" />
           </div>
         </div>
 
@@ -357,15 +303,8 @@ export default function Produtos() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="h-10 px-3 rounded-md border bg-muted flex items-center">
-            <span className="text-sm font-medium whitespace-nowrap">
-              {filteredProdutos.length} de {produtos.length}
-            </span>
-          </div>
-          <Button
-            variant="outline"
-            onClick={handleClearFilters}
-          >
+          
+          <Button variant="outline" onClick={handleClearFilters}>
             <X className="mr-2 h-4 w-4" />
             Limpar
           </Button>
@@ -377,10 +316,7 @@ export default function Produtos() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-12">
-                <Checkbox
-                  checked={selectedIds.length === filteredProdutos.length && filteredProdutos.length > 0}
-                  onCheckedChange={handleSelectAll}
-                />
+                <Checkbox checked={selectedIds.length === filteredProdutos.length && filteredProdutos.length > 0} onCheckedChange={handleSelectAll} />
               </TableHead>
               <TableHead>Segurado</TableHead>
               <TableHead>Consultor</TableHead>
@@ -393,84 +329,55 @@ export default function Produtos() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
+            {loading ? <TableRow>
                 <TableCell colSpan={9} className="text-center py-8">
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
                 </TableCell>
-              </TableRow>
-            ) : filteredProdutos.length === 0 ? (
-              <TableRow>
+              </TableRow> : filteredProdutos.length === 0 ? <TableRow>
                 <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   {produtos.length === 0 ? "Nenhum produto cadastrado" : "Nenhum produto encontrado com os filtros aplicados"}
                 </TableCell>
-              </TableRow>
-            ) : (
-              filteredProdutos.map((produto) => (
-                <TableRow key={produto.id}>
+              </TableRow> : filteredProdutos.map(produto => <TableRow key={produto.id}>
                   <TableCell>
-                    <Checkbox
-                      checked={selectedIds.includes(produto.id)}
-                      onCheckedChange={(checked) => handleSelectOne(produto.id, checked as boolean)}
-                    />
+                    <Checkbox checked={selectedIds.includes(produto.id)} onCheckedChange={checked => handleSelectOne(produto.id, checked as boolean)} />
                   </TableCell>
                   <TableCell className="font-medium">{produto.segurado}</TableCell>
                   <TableCell>{produto.consultor}</TableCell>
                   <TableCell>
-                    {format(new Date(produto.data_registro), "dd/MM/yyyy", { locale: ptBR })}
+                    {format(new Date(produto.data_registro), "dd/MM/yyyy", {
+                locale: ptBR
+              })}
                   </TableCell>
                   <TableCell>{produto.tipo}</TableCell>
                   <TableCell>
-                    {produto.tipo === "Indicação" && produto.tipo_indicacao
-                      ? produto.tipo_indicacao
-                      : produto.tipo === "Visita/Video" && produto.subtipo
-                      ? produto.subtipo
-                      : "-"}
+                    {produto.tipo === "Indicação" && produto.tipo_indicacao ? produto.tipo_indicacao : produto.tipo === "Visita/Video" && produto.subtipo ? produto.subtipo : "-"}
                   </TableCell>
                   <TableCell>
-                    {produto.tipo === "Indicação" && produto.cliente_indicado
-                      ? produto.cliente_indicado
-                      : produto.tipo === "Visita/Video" && produto.subtipo === "Visita" && produto.cidade
-                      ? produto.cidade
-                      : produto.tipo === "Visita/Video" && produto.subtipo === "Vídeo" && produto.data_realizada
-                      ? format(new Date(produto.data_realizada), "dd/MM/yyyy", { locale: ptBR })
-                      : "-"}
+                    {produto.tipo === "Indicação" && produto.cliente_indicado ? produto.cliente_indicado : produto.tipo === "Visita/Video" && produto.subtipo === "Visita" && produto.cidade ? produto.cidade : produto.tipo === "Visita/Video" && produto.subtipo === "Vídeo" && produto.data_realizada ? format(new Date(produto.data_realizada), "dd/MM/yyyy", {
+                locale: ptBR
+              }) : "-"}
                   </TableCell>
                   <TableCell className="max-w-xs truncate">
                     {produto.observacao || "-"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(produto)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(produto)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openDeleteDialog(produto.id)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(produto.id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))
-            )}
+                </TableRow>)}
           </TableBody>
         </Table>
       </div>
 
-      <ProdutoModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        produto={selectedProduto}
-      />
+      <ProdutoModal isOpen={isModalOpen} onClose={handleModalClose} produto={selectedProduto} />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -486,6 +393,5 @@ export default function Produtos() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>;
 }
