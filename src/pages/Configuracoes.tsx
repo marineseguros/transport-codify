@@ -50,8 +50,11 @@ const Configuracoes = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-3">
+            <Settings className="h-7 w-7 md:h-8 md:w-8" />
+            Configurações
+          </h1>
+          <p className="text-sm text-muted-foreground">
             Configure as preferências e comportamentos do sistema
           </p>
         </div>

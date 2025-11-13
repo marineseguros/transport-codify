@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Search, Download, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download, X, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -263,11 +263,14 @@ export default function Produtos() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Produtos</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+            <Package className="h-7 w-7 md:h-8 md:w-8" />
+            Produtos
+          </h1>
+          <p className="text-sm text-muted-foreground">
             Gerencie os registros de produtos
           </p>
         </div>

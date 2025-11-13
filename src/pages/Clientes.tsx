@@ -168,7 +168,10 @@ const Clientes = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Clientes</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-3">
+            <Building2 className="h-7 w-7 md:h-8 md:w-8" />
+            Clientes
+          </h1>
           <p className="text-sm text-muted-foreground">
             Gerencie seus clientes e acompanhe o histórico de cotações
           </p>

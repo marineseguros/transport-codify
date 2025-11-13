@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Download, BarChart3, TrendingUp, Calendar, Filter, FileText } from 'lucide-react';
+import { Download, TrendingUp, Calendar, Filter, FileText, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePickerWithRange } from '@/components/ui/date-picker';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { useCotacoes } from '@/hooks/useSupabaseData';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -162,8 +162,11 @@ const Relatorios = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Relatórios</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-3">
+            <BarChart className="h-7 w-7 md:h-8 md:w-8" />
+            Relatórios
+          </h1>
+          <p className="text-sm text-muted-foreground">
             Análise detalhada de performance e métricas de vendas
           </p>
         </div>
@@ -253,7 +256,7 @@ const Relatorios = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Prêmio Total</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <BarChart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(kpis.totalPremio)}</div>
@@ -284,7 +287,7 @@ const Relatorios = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData}>
+              <RechartsBarChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -294,7 +297,7 @@ const Relatorios = () => {
                 ]} />
                 <Bar dataKey="fechadas" fill="#3b82f6" name="Fechadas" />
                 <Bar dataKey="declinadas" fill="#ef4444" name="Declinadas" />
-              </BarChart>
+              </RechartsBarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -335,7 +338,7 @@ const Relatorios = () => {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={produtorData} layout="horizontal">
+            <RechartsBarChart data={produtorData} layout="horizontal">
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
               <YAxis dataKey="nome" type="category" width={120} />
@@ -346,7 +349,7 @@ const Relatorios = () => {
                 name === 'taxa' ? 'Taxa' : name
               ]} />
               <Bar dataKey="premio" fill="#3b82f6" name="Prêmio" />
-            </BarChart>
+            </RechartsBarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
