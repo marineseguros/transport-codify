@@ -773,6 +773,27 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_reminder_confirmations: {
+        Row: {
+          confirmed_date: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          confirmed_date?: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          confirmed_date?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       clientes_restricted: {
