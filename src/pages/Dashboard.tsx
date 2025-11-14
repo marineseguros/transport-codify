@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCotacoesTotais, useProdutores, useUnidades, type Cotacao } from "@/hooks/useSupabaseData";
+import { useAuth } from "@/contexts/AuthContext";
+import { WeeklyReminderModal } from "@/components/WeeklyReminderModal";
 import {
   TrendingUp,
   TrendingDown,
@@ -18,11 +20,12 @@ import {
   List,
   Grid3X3,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DatePickerWithRange } from "@/components/ui/date-picker";
 import { DateRange } from "react-day-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ResponsiveContainer,
   LineChart,
@@ -41,6 +44,7 @@ import { CotacaoModal } from "@/components/CotacaoModal";
 import { logger } from "@/lib/logger";
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const { cotacoes: allQuotes, loading: loadingCotacoes } = useCotacoesTotais();
   const { produtores, loading: loadingProdutores } = useProdutores();
   const { unidades, loading: loadingUnidades } = useUnidades();
@@ -52,6 +56,49 @@ const Dashboard = () => {
   const [compareRange, setCompareRange] = useState<DateRange | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
+  const [showReminder, setShowReminder] = useState(false);
+
+  useEffect(() => {
+    const checkWeeklyReminder = async () => {
+      if (!user?.user_id) return;
+
+      // Only show for Produtor and Operacional roles
+      const targetRoles = ['Produtor', 'Operacional'];
+      if (!user.papel || !targetRoles.includes(user.papel)) return;
+
+      // Check if today is Monday (0 = Sunday, 1 = Monday)
+      const today = new Date();
+      const isMonday = today.getDay() === 1;
+      if (!isMonday) return;
+
+      const todayStr = today.toISOString().split('T')[0];
+
+      // Check if dismissed in localStorage for today
+      const dismissed = localStorage.getItem(`weekly_reminder_dismissed_${user.user_id}`);
+      if (dismissed === todayStr) return;
+
+      // Check if already confirmed in database for today
+      try {
+        const { data, error } = await supabase
+          .from("weekly_reminder_confirmations")
+          .select("id")
+          .eq("user_id", user.user_id)
+          .eq("confirmed_date", todayStr)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        // If not confirmed yet, show reminder
+        if (!data) {
+          setShowReminder(true);
+        }
+      } catch (error) {
+        logger.error("Error checking weekly reminder:", error);
+      }
+    };
+
+    checkWeeklyReminder();
+  }, [user]);
   const handleImportCSV = () => {
     toast.success("Funcionalidade de importar CSV será implementada");
   };
@@ -637,7 +684,14 @@ const Dashboard = () => {
     );
   };
   return (
-    <div className="space-y-6">
+    <>
+      <WeeklyReminderModal
+        open={showReminder}
+        onClose={() => setShowReminder(false)}
+        userId={user?.user_id || ""}
+      />
+      
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -1459,7 +1513,8 @@ const Dashboard = () => {
           setSelectedCotacao(null);
         }}
       />
-    </div>
+      </div>
+    </>
   );
 };
 export default Dashboard;
