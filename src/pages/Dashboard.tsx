@@ -68,8 +68,9 @@ const Dashboard = () => {
 
       // Check if today is Monday (0 = Sunday, 1 = Monday)
       const today = new Date();
-      const isMonday = today.getDay() === 1;
-      if (!isMonday) return;
+      // TEMPORÁRIO: Comentado para validação - descomentar depois
+      // const isMonday = today.getDay() === 1;
+      // if (!isMonday) return;
 
       const todayStr = today.toISOString().split('T')[0];
 
