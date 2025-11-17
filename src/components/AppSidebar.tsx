@@ -12,6 +12,7 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
+  SidebarHeader,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,6 +49,22 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
+      {/* Logo e Nome da Empresa */}
+      <SidebarHeader className="border-b px-3 py-4">
+        <div className="flex items-center gap-3">
+          <img 
+            src="/marine-logo.png" 
+            alt="Marine Seguros Logo" 
+            className="h-8 w-8 flex-shrink-0"
+          />
+          {!collapsed && (
+            <span className="text-lg font-semibold text-foreground">
+              Marine Seguros
+            </span>
+          )}
+        </div>
+      </SidebarHeader>
+
       <SidebarContent>
         {/* Main Navigation */}
         <SidebarGroup>
