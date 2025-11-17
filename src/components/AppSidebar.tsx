@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   BarChart3, FileText, Users, Settings, Kanban, 
-  Building2, Tags, Home, Package, ClipboardList
+  Building2, Tags, Home, Package, ClipboardList, ChevronLeft, ChevronRight
 } from "lucide-react";
 
 import {
@@ -13,7 +13,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarHeader,
-  SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,7 +39,7 @@ const reportItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { user } = useAuth();
@@ -177,8 +176,20 @@ export function AppSidebar() {
         )}
       </SidebarContent>
       
-      {/* Botão na linha divisória */}
-      <SidebarRail />
+      {/* Botão customizado na linha divisória com chevron */}
+      <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-50">
+        <button
+          onClick={toggleSidebar}
+          className="h-6 w-6 rounded-full border bg-background shadow-md flex items-center justify-center hover:bg-accent hover:scale-110 transition-all duration-200"
+          aria-label={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
+        >
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4 text-foreground transition-transform duration-200" />
+          ) : (
+            <ChevronLeft className="h-4 w-4 text-foreground transition-transform duration-200" />
+          )}
+        </button>
+      </div>
     </Sidebar>
   );
 }
