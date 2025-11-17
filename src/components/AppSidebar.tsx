@@ -52,21 +52,16 @@ export function AppSidebar() {
       "transition-all duration-300 ease-in-out",
       collapsed ? "w-14" : "w-64"
     )} collapsible="icon">
-      {/* Logo e Nome da Empresa */}
-      <SidebarHeader className="border-b px-3 py-4">
-        <div className="flex items-center gap-3">
-          <img 
-            src="/marine-logo.png" 
-            alt="Marine Seguros Logo" 
-            className="h-8 w-8 flex-shrink-0 transition-all duration-300"
-          />
-          <span className={cn(
-            "text-lg font-semibold text-foreground whitespace-nowrap transition-all duration-300",
-            collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"
-          )}>
-            Marine Seguros
-          </span>
-        </div>
+      {/* Logo da Empresa */}
+      <SidebarHeader className="border-b px-3 py-4 flex items-center justify-center">
+        <img 
+          src="/marine-logo.png" 
+          alt="Marine Seguros Logo" 
+          className={cn(
+            "transition-all duration-300",
+            collapsed ? "h-10 w-10" : "h-16 w-16"
+          )}
+        />
       </SidebarHeader>
 
       <SidebarContent>
