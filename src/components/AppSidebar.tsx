@@ -48,20 +48,24 @@ export function AppSidebar() {
   const canAccessAdmin = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
+    <Sidebar className={cn(
+      "transition-all duration-300 ease-in-out",
+      collapsed ? "w-14" : "w-64"
+    )} collapsible="icon">
       {/* Logo e Nome da Empresa */}
       <SidebarHeader className="border-b px-3 py-4">
         <div className="flex items-center gap-3">
           <img 
             src="/marine-logo.png" 
             alt="Marine Seguros Logo" 
-            className="h-8 w-8 flex-shrink-0"
+            className="h-8 w-8 flex-shrink-0 transition-all duration-300"
           />
-          {!collapsed && (
-            <span className="text-lg font-semibold text-foreground">
-              Marine Seguros
-            </span>
-          )}
+          <span className={cn(
+            "text-lg font-semibold text-foreground whitespace-nowrap transition-all duration-300",
+            collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"
+          )}>
+            Marine Seguros
+          </span>
         </div>
       </SidebarHeader>
 
@@ -79,15 +83,20 @@ export function AppSidebar() {
                       to={item.url} 
                       end 
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-colors",
+                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200",
                         isActive
                           ? "bg-primary text-white font-semibold"
                           : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
                       )}
                       aria-current={isActive ? "page" : undefined}
                     >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <item.icon className="h-4 w-4 flex-shrink-0 transition-all duration-200" />
+                      <span className={cn(
+                        "whitespace-nowrap transition-all duration-300",
+                        collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"
+                      )}>
+                        {item.title}
+                      </span>
                     </NavLink>
                   </SidebarMenuItem>
                 );
@@ -108,15 +117,20 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-colors",
+                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200",
                         isActive
                           ? "bg-primary text-white font-semibold"
                           : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
                       )}
                       aria-current={isActive ? "page" : undefined}
                     >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <item.icon className="h-4 w-4 flex-shrink-0 transition-all duration-200" />
+                      <span className={cn(
+                        "whitespace-nowrap transition-all duration-300",
+                        collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"
+                      )}>
+                        {item.title}
+                      </span>
                     </NavLink>
                   </SidebarMenuItem>
                 );
@@ -138,15 +152,20 @@ export function AppSidebar() {
                       <NavLink 
                         to={item.url} 
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-colors",
+                          "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200",
                           isActive
                             ? "bg-primary text-white font-semibold"
                             : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
                         )}
                         aria-current={isActive ? "page" : undefined}
                       >
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
+                        <item.icon className="h-4 w-4 flex-shrink-0 transition-all duration-200" />
+                        <span className={cn(
+                          "whitespace-nowrap transition-all duration-300",
+                          collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"
+                        )}>
+                          {item.title}
+                        </span>
                       </NavLink>
                     </SidebarMenuItem>
                   );
