@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -175,6 +176,9 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
       </SidebarContent>
+      
+      {/* Botão na linha divisória */}
+      <SidebarRail />
     </Sidebar>
   );
 }
