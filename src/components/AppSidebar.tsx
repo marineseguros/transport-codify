@@ -58,7 +58,7 @@ export function AppSidebar() {
           src="/marine-logo.png" 
           alt="Marine Seguros Logo" 
           className={cn(
-            "transition-all duration-300",
+            "transition-all duration-300 cursor-pointer hover:scale-110 hover:rotate-3",
             collapsed ? "h-10 w-10" : "h-16 w-16"
           )}
         />
