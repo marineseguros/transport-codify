@@ -53,6 +53,7 @@ const Clientes = () => {
   const [filtroUF, setFiltroUF] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
+  const [ordenacao, setOrdenacao] = useState('alfabetica');
 
   // Calculate stats for each client
   const clientesWithStats = useMemo(() => {
@@ -73,9 +74,9 @@ const Clientes = () => {
     });
   }, [clientes, cotacoes]);
 
-  // Filter clients
+  // Filter and sort clients
   const filteredClientes = useMemo(() => {
-    return clientesWithStats.filter(cliente => {
+    const filtered = clientesWithStats.filter(cliente => {
       const matchesSearch = cliente.segurado.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            cliente.cpf_cnpj.includes(searchTerm) ||
                            cliente.email?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -89,7 +90,27 @@ const Clientes = () => {
       
       return matchesSearch && matchesUF && matchesTipo && matchesStatus;
     });
-  }, [clientesWithStats, searchTerm, selectedUF, filtroTipo, filtroStatus]);
+
+    // Sort clients based on selected ordering
+    return filtered.sort((a, b) => {
+      switch (ordenacao) {
+        case 'alfabetica':
+          return a.segurado.localeCompare(b.segurado);
+        case 'alfabetica-desc':
+          return b.segurado.localeCompare(a.segurado);
+        case 'mais-recentes':
+          return b.ultimaCotacao - a.ultimaCotacao;
+        case 'mais-antigos':
+          return a.ultimaCotacao - b.ultimaCotacao;
+        case 'maior-premio':
+          return b.premioTotal - a.premioTotal;
+        case 'menor-premio':
+          return a.premioTotal - b.premioTotal;
+        default:
+          return 0;
+      }
+    });
+  }, [clientesWithStats, searchTerm, selectedUF, filtroTipo, filtroStatus, ordenacao]);
 
   const ufs = [...new Set(clientes.map(c => c.uf).filter(Boolean))].sort();
 
@@ -247,7 +268,7 @@ const Clientes = () => {
       </div>
 
       {/* Filtros adicionais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
         <div className="sm:col-span-2">
           <Input
             placeholder="Buscar por nome, CPF/CNPJ, email..."
@@ -287,6 +308,20 @@ const Clientes = () => {
             <SelectItem value="todos">Todos</SelectItem>
             <SelectItem value="ativo">Ativo</SelectItem>
             <SelectItem value="inativo">Inativo</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={ordenacao} onValueChange={setOrdenacao}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Ordenar por" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="alfabetica">A-Z</SelectItem>
+            <SelectItem value="alfabetica-desc">Z-A</SelectItem>
+            <SelectItem value="mais-recentes">Mais Recentes</SelectItem>
+            <SelectItem value="mais-antigos">Mais Antigos</SelectItem>
+            <SelectItem value="maior-premio">Maior Prêmio</SelectItem>
+            <SelectItem value="menor-premio">Menor Prêmio</SelectItem>
           </SelectContent>
         </Select>
 
