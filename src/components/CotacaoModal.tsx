@@ -301,12 +301,12 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       setFormData((prev) => ({
         ...prev,
         data_fechamento: prev.data_fechamento || `${year}-${month}-${day}`,
+        num_proposta: undefined,
       }));
     } else if (field === "status" && value !== "Negócio fechado") {
       setFormData((prev) => ({
         ...prev,
         data_fechamento: undefined,
-        num_proposta: undefined,
       }));
     }
 
@@ -495,7 +495,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
           formData.status === "Declinado" ? formData.motivo_declinado : formData.motivo_recusa || undefined,
         data_cotacao: formData.data_cotacao,
         data_fechamento: formData.status === "Negócio fechado" ? formData.data_fechamento : undefined,
-        num_proposta: formData.status === "Negócio fechado" ? validatedData.num_proposta : undefined,
+        num_proposta: formData.status !== "Negócio fechado" ? validatedData.num_proposta : undefined,
       };
       if (cotacao && isEditing) {
         // When editing, just update the single record
@@ -1253,17 +1253,6 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                         </PopoverContent>
                       </Popover>
                     </div>
-                  </div>
-
-                  {/* Número da Apólice */}
-                  <div>
-                    <Label htmlFor="num_proposta">Número da Proposta *</Label>
-                    <Input
-                      value={formData.num_proposta || ""}
-                      onChange={(e) => handleInputChange("num_proposta", e.target.value)}
-                      placeholder="Digite o número da proposta"
-                      readOnly={isReadOnly}
-                    />
                   </div>
                 </>
               )}
