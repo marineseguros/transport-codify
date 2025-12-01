@@ -320,9 +320,12 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         num_proposta: undefined,
       }));
     } else if (field === "status" && value !== "Negócio fechado") {
+      // Clear dates when status is not "Negócio fechado"
       setFormData((prev) => ({
         ...prev,
         data_fechamento: undefined,
+        inicio_vigencia: "",
+        fim_vigencia: "",
       }));
     }
 
@@ -521,18 +524,18 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         motivo_recusa:
           formData.status === "Declinado" ? formData.motivo_declinado : formData.motivo_recusa || undefined,
         data_cotacao: formData.data_cotacao,
-        data_fechamento: formData.status === "Negócio fechado" ? formData.data_fechamento : undefined,
+        // When status is "Negócio fechado", save all required dates; otherwise set them to null
+        data_fechamento: formData.status === "Negócio fechado" ? formData.data_fechamento : null,
+        inicio_vigencia: formData.status === "Negócio fechado" ? (formData.inicio_vigencia || null) : null,
+        fim_vigencia: formData.status === "Negócio fechado" ? (formData.fim_vigencia || null) : null,
         num_proposta: formData.status !== "Negócio fechado" ? validatedData.num_proposta : undefined,
-        inicio_vigencia: formData.inicio_vigencia || undefined,
-        fim_vigencia: formData.fim_vigencia || undefined,
       };
       if (cotacao && isEditing) {
         // When editing, just update the single record
         const cotacaoData = {
           ...baseCotacaoData,
           ramo_id: formData.ramo_id || undefined,
-          inicio_vigencia: formData.inicio_vigencia || undefined,
-          fim_vigencia: formData.fim_vigencia || undefined,
+          // Dates are already handled in baseCotacaoData with conditional logic
         };
         await updateCotacao(cotacao.id, cotacaoData);
         toast.success("Cotação atualizada com sucesso!");
