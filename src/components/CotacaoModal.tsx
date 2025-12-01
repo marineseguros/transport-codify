@@ -298,9 +298,25 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
+      const hoje = `${year}-${month}-${day}`;
+      
+      // Calculate default vigência dates (30 days from today to 1 year)
+      const inicioVigencia = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const fimVigencia = new Date(inicioVigencia.getTime() + 365 * 24 * 60 * 60 * 1000);
+      
+      const formatLocalDate = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
       setFormData((prev) => ({
         ...prev,
-        data_fechamento: prev.data_fechamento || `${year}-${month}-${day}`,
+        data_fechamento: prev.data_fechamento || hoje,
+        data_cotacao: prev.data_cotacao || hoje,
+        inicio_vigencia: prev.inicio_vigencia || formatLocalDate(inicioVigencia),
+        fim_vigencia: prev.fim_vigencia || formatLocalDate(fimVigencia),
         num_proposta: undefined,
       }));
     } else if (field === "status" && value !== "Negócio fechado") {
@@ -433,7 +449,18 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         toast.error("Data de fechamento é obrigatória para negócios fechados.");
         return;
       }
-      // Número da proposta não é mais obrigatório
+      if (!formData.data_cotacao) {
+        toast.error("Data da cotação é obrigatória para negócios fechados.");
+        return;
+      }
+      if (!formData.inicio_vigencia) {
+        toast.error("Data de início da vigência é obrigatória para negócios fechados.");
+        return;
+      }
+      if (!formData.fim_vigencia) {
+        toast.error("Data de fim da vigência é obrigatória para negócios fechados.");
+        return;
+      }
     }
 
     // Validate motivo_declinado for "Declinado" status
@@ -496,12 +523,16 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         data_cotacao: formData.data_cotacao,
         data_fechamento: formData.status === "Negócio fechado" ? formData.data_fechamento : undefined,
         num_proposta: formData.status !== "Negócio fechado" ? validatedData.num_proposta : undefined,
+        inicio_vigencia: formData.inicio_vigencia || undefined,
+        fim_vigencia: formData.fim_vigencia || undefined,
       };
       if (cotacao && isEditing) {
         // When editing, just update the single record
         const cotacaoData = {
           ...baseCotacaoData,
           ramo_id: formData.ramo_id || undefined,
+          inicio_vigencia: formData.inicio_vigencia || undefined,
+          fim_vigencia: formData.fim_vigencia || undefined,
         };
         await updateCotacao(cotacao.id, cotacaoData);
         toast.success("Cotação atualizada com sucesso!");
