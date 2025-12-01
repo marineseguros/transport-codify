@@ -202,7 +202,9 @@ export type Database = {
           created_at: string
           data_cotacao: string
           data_fechamento: string | null
+          fim_vigencia: string | null
           id: string
+          inicio_vigencia: string | null
           modulo: Database["public"]["Enums"]["modulo_tipo"]
           motivo_recusa: string | null
           num_proposta: string | null
@@ -231,7 +233,9 @@ export type Database = {
           created_at?: string
           data_cotacao?: string
           data_fechamento?: string | null
+          fim_vigencia?: string | null
           id?: string
+          inicio_vigencia?: string | null
           modulo?: Database["public"]["Enums"]["modulo_tipo"]
           motivo_recusa?: string | null
           num_proposta?: string | null
@@ -260,7 +264,9 @@ export type Database = {
           created_at?: string
           data_cotacao?: string
           data_fechamento?: string | null
+          fim_vigencia?: string | null
           id?: string
+          inicio_vigencia?: string | null
           modulo?: Database["public"]["Enums"]["modulo_tipo"]
           motivo_recusa?: string | null
           num_proposta?: string | null

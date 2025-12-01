@@ -753,6 +753,8 @@ export function useCotacoes() {
         status: updates.status,
         data_cotacao: updates.data_cotacao,
         data_fechamento: updates.data_fechamento,
+        inicio_vigencia: updates.inicio_vigencia,
+        fim_vigencia: updates.fim_vigencia,
         num_proposta: updates.num_proposta,
         motivo_recusa: updates.motivo_recusa,
         comentarios: updates.comentarios,
