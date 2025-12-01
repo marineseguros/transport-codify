@@ -738,6 +738,8 @@ export function useCotacoes() {
       const updateData = {
         segurado: updates.segurado,
         cpf_cnpj: updates.cpf_cnpj,
+        cliente_id: updates.cliente_id,
+        unidade_id: updates.unidade_id,
         produtor_origem_id: updates.produtor_origem_id,
         produtor_negociador_id: updates.produtor_negociador_id,
         produtor_cotador_id: updates.produtor_cotador_id,
