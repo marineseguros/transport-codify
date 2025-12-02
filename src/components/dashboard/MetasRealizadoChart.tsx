@@ -124,8 +124,11 @@ export const MetasRealizadoChart = ({
     }
 
     // For metas, we use the first day of the month from the start date
+    // Format as YYYY-MM-DD without timezone issues
     const monthStart = new Date(start.getFullYear(), start.getMonth(), 1);
-    const targetMonthStr = monthStart.toISOString().split('T')[0];
+    const year = monthStart.getFullYear();
+    const month = String(monthStart.getMonth() + 1).padStart(2, '0');
+    const targetMonthStr = `${year}-${month}-01`;
 
     return {
       startDate: start,

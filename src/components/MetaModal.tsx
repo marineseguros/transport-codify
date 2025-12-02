@@ -22,7 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProdutores } from '@/hooks/useSupabaseData';
 import { logger } from '@/lib/logger';
 import { Plus } from 'lucide-react';
-import { format, startOfMonth, parse } from 'date-fns';
+// date-fns removed - using manual date parsing to avoid timezone issues
 
 interface TipoMeta {
   id: string;
@@ -65,16 +65,27 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
 
   useEffect(() => {
     if (meta) {
+      // Parse the DATE string (YYYY-MM-DD) without timezone issues
+      let mesValue = '';
+      if (meta.mes) {
+        const parts = meta.mes.split('-');
+        if (parts.length >= 2) {
+          mesValue = `${parts[0]}-${parts[1]}`;
+        }
+      }
       setFormData({
         produtor_id: meta.produtor_id,
-        mes: meta.mes ? format(new Date(meta.mes), 'yyyy-MM') : '',
+        mes: mesValue,
         tipo_meta_id: meta.tipo_meta_id,
         quantidade: meta.quantidade,
       });
     } else {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
       setFormData({
         produtor_id: '',
-        mes: format(new Date(), 'yyyy-MM'),
+        mes: `${year}-${month}`,
         tipo_meta_id: '',
         quantidade: 0,
       });
