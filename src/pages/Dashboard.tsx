@@ -42,6 +42,7 @@ import {
 } from "recharts";
 import { CotacaoModal } from "@/components/CotacaoModal";
 import { logger } from "@/lib/logger";
+import { MetasRealizadoChart } from "@/components/dashboard/MetasRealizadoChart";
 
 // Helper function to determine branch group
 const getBranchGroup = (ramoDescricao: string | undefined): string => {
@@ -1437,6 +1438,14 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Seção de Metas */}
+      <MetasRealizadoChart
+        dateFilter={dateFilter}
+        dateRange={dateRange}
+        produtorFilter={produtorFilter}
+        fechamentosCount={monthlyStats.fechados}
+      />
 
       {/* Insights Adicionais */}
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
