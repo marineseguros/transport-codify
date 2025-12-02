@@ -38,6 +38,15 @@ interface Produtor {
   nome: string;
 }
 
+interface CotacaoForCount {
+  id: string;
+  cpf_cnpj: string;
+  produtor_origem_id: string | null;
+  produtor_negociador_id: string | null;
+  produtor_cotador_id: string | null;
+  ramo: { descricao: string } | null;
+}
+
 interface MetasRealizadoChartProps {
   dateFilter: string;
   dateRange?: { from?: Date; to?: Date };
@@ -46,6 +55,61 @@ interface MetasRealizadoChartProps {
   // Fechamentos count from cotacoes (passed from parent to avoid duplicate queries)
   fechamentosCount: number;
 }
+
+// Function to categorize branches into groups for distinct counting
+// Group 1: RCTR-C + RC-DC (combined)
+// Group 2: All other specific types (each counts separately)
+const getBranchGroup = (ramoDescricao: string | undefined): string => {
+  if (!ramoDescricao) return "outros";
+  const ramoUpper = ramoDescricao.toUpperCase();
+  
+  // Group 1: RCTR-C + RC-DC count together
+  if (ramoUpper.includes("RCTR-C") || ramoUpper.includes("RC-DC")) {
+    return "grupo_rctr";
+  }
+  
+  // Group 2: Each of these counts separately
+  if (ramoUpper.includes("NACIONAL") && !ramoUpper.includes("AVULSA")) return "nacional";
+  if (ramoUpper.includes("EXPORTAÇÃO") || ramoUpper.includes("EXPORTACAO")) {
+    if (ramoUpper.includes("AVULSA")) return "exportacao_avulsa";
+    return "exportacao";
+  }
+  if (ramoUpper.includes("IMPORTAÇÃO") || ramoUpper.includes("IMPORTACAO")) {
+    if (ramoUpper.includes("AVULSA")) return "importacao_avulsa";
+    return "importacao";
+  }
+  if (ramoUpper.includes("RCTR-VI")) return "rctr_vi";
+  if (ramoUpper.includes("NACIONAL") && ramoUpper.includes("AVULSA")) return "nacional_avulsa";
+  if (ramoUpper.includes("RCTA-C")) return "rcta_c";
+  if (ramoUpper.includes("AMBIENTAL")) return "ambiental";
+  if (ramoUpper.includes("RC-V")) return "rc_v";
+  
+  return "outros";
+};
+
+// Count distinct cotações by CNPJ + branch group
+const countDistinctCotacoes = (
+  cotacoes: CotacaoForCount[],
+  produtorId: string | null
+): number => {
+  const distinctKeys = new Set<string>();
+  
+  cotacoes.forEach(cotacao => {
+    // Filter by produtor if selected
+    if (produtorId && 
+        cotacao.produtor_origem_id !== produtorId &&
+        cotacao.produtor_negociador_id !== produtorId &&
+        cotacao.produtor_cotador_id !== produtorId) {
+      return;
+    }
+    
+    const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+    const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
+    distinctKeys.add(key);
+  });
+  
+  return distinctKeys.size;
+};
 
 // Map activity types from produtos to display names
 // RULES:
@@ -105,7 +169,7 @@ export const MetasRealizadoChart = ({
 }: MetasRealizadoChartProps) => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
-  const [cotacoesCount, setCotacoesCount] = useState(0);
+  const [cotacoesData, setCotacoesData] = useState<CotacaoForCount[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Calculate date range based on filter
@@ -206,37 +270,25 @@ export const MetasRealizadoChart = ({
 
         if (metasError) throw metasError;
 
-        // Fetch cotações count from cotacoes table
-        // Filter by data_cotacao within date range and produtor if selected
-        let cotacoesQuery = supabase
+        // Fetch cotações with full data for distinct counting (CNPJ + Ramo)
+        const { data: cotacoesDataResult, error: cotacoesError } = await supabase
           .from('cotacoes')
-          .select('id, produtor_origem_id, produtor_negociador_id, produtor_cotador_id', { count: 'exact' })
+          .select(`
+            id,
+            cpf_cnpj,
+            produtor_origem_id,
+            produtor_negociador_id,
+            produtor_cotador_id,
+            ramo:ramos(descricao)
+          `)
           .gte('data_cotacao', startStr)
           .lte('data_cotacao', endStr);
 
-        const { count: totalCotacoes, error: cotacoesError } = await cotacoesQuery;
-
         if (cotacoesError) throw cotacoesError;
-
-        // If a produtor is selected, we need to filter cotações by produtor
-        let filteredCotacoesCount = totalCotacoes || 0;
-        
-        if (selectedProdutorId) {
-          // Fetch cotações filtered by produtor (any of the 3 produtor fields)
-          const { count: produtorCotacoes, error: produtorCotacoesError } = await supabase
-            .from('cotacoes')
-            .select('id', { count: 'exact' })
-            .gte('data_cotacao', startStr)
-            .lte('data_cotacao', endStr)
-            .or(`produtor_origem_id.eq.${selectedProdutorId},produtor_negociador_id.eq.${selectedProdutorId},produtor_cotador_id.eq.${selectedProdutorId}`);
-
-          if (produtorCotacoesError) throw produtorCotacoesError;
-          filteredCotacoesCount = produtorCotacoes || 0;
-        }
 
         setProdutos(produtosData || []);
         setMetas(metasData || []);
-        setCotacoesCount(filteredCotacoesCount);
+        setCotacoesData(cotacoesDataResult as CotacaoForCount[] || []);
       } catch (error) {
         logger.error('Error fetching metas data:', error);
       } finally {
@@ -270,11 +322,11 @@ export const MetasRealizadoChart = ({
     // Add fechamentos count (already filtered in parent)
     counts['Fechamento'] = fechamentosCount;
 
-    // Use cotações count from the cotacoes table (not from produtos)
-    counts['Cotação'] = cotacoesCount;
+    // Use distinct cotações count (CNPJ + Ramo group)
+    counts['Cotação'] = countDistinctCotacoes(cotacoesData, selectedProdutorId);
 
     return counts;
-  }, [produtos, produtorFilter, fechamentosCount, cotacoesCount]);
+  }, [produtos, produtorFilter, fechamentosCount, cotacoesData, selectedProdutorId]);
 
   // Calculate metas totals by activity type - FILTERED BY PRODUTOR
   // Each producer should only see their own metas, never sum across producers
