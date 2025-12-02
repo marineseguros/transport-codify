@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,13 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProdutores } from '@/hooks/useSupabaseData';
 import { logger } from '@/lib/logger';
-import { Plus } from 'lucide-react';
-// date-fns removed - using manual date parsing to avoid timezone issues
+import { Plus, X } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface TipoMeta {
   id: string;
@@ -56,6 +57,7 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
   const [newTipoMeta, setNewTipoMeta] = useState('');
   const [creatingTipo, setCreatingTipo] = useState(false);
 
+  // Single edit mode form data
   const [formData, setFormData] = useState({
     produtor_id: '',
     mes: '',
@@ -63,9 +65,33 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
     quantidade: 0,
   });
 
+  // Batch creation mode data
+  const [selectedProdutores, setSelectedProdutores] = useState<string[]>([]);
+  const [selectedMeses, setSelectedMeses] = useState<string[]>([]);
+  const [quantidadesPorTipo, setQuantidadesPorTipo] = useState<Record<string, number>>({});
+
+  const isEditMode = !!meta;
+
+  // Generate available months (current month + next 11 months)
+  const availableMonths = useMemo(() => {
+    const months: { value: string; label: string }[] = [];
+    const now = new Date();
+    
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const value = `${year}-${month}`;
+      const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      months.push({ value, label });
+    }
+    
+    return months;
+  }, []);
+
   useEffect(() => {
     if (meta) {
-      // Parse the DATE string (YYYY-MM-DD) without timezone issues
+      // Edit mode - single record
       let mesValue = '';
       if (meta.mes) {
         const parts = meta.mes.split('-');
@@ -80,6 +106,7 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
         quantidade: meta.quantidade,
       });
     } else {
+      // Create mode - batch
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -89,10 +116,18 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
         tipo_meta_id: '',
         quantidade: 0,
       });
+      setSelectedProdutores([]);
+      setSelectedMeses([`${year}-${month}`]);
+      // Initialize quantities for all active tipos_meta
+      const initialQuantities: Record<string, number> = {};
+      tiposMeta.filter(t => t.ativo).forEach(tipo => {
+        initialQuantities[tipo.id] = 0;
+      });
+      setQuantidadesPorTipo(initialQuantities);
     }
     setShowNewTipoInput(false);
     setNewTipoMeta('');
-  }, [meta, isOpen]);
+  }, [meta, isOpen, tiposMeta]);
 
   const handleCreateTipoMeta = async () => {
     if (!newTipoMeta.trim()) {
@@ -119,7 +154,13 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
 
       toast.success('Tipo de meta criado com sucesso!');
       onTiposMetaChange();
-      setFormData(prev => ({ ...prev, tipo_meta_id: data.id }));
+      
+      if (isEditMode) {
+        setFormData(prev => ({ ...prev, tipo_meta_id: data.id }));
+      } else {
+        setQuantidadesPorTipo(prev => ({ ...prev, [data.id]: 0 }));
+      }
+      
       setShowNewTipoInput(false);
       setNewTipoMeta('');
     } catch (error) {
@@ -130,7 +171,27 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleToggleProdutor = (produtorId: string) => {
+    setSelectedProdutores(prev => 
+      prev.includes(produtorId) 
+        ? prev.filter(id => id !== produtorId)
+        : [...prev, produtorId]
+    );
+  };
+
+  const handleToggleMes = (mes: string) => {
+    setSelectedMeses(prev => 
+      prev.includes(mes) 
+        ? prev.filter(m => m !== mes)
+        : [...prev, mes]
+    );
+  };
+
+  const handleQuantidadeChange = (tipoId: string, quantidade: number) => {
+    setQuantidadesPorTipo(prev => ({ ...prev, [tipoId]: quantidade }));
+  };
+
+  const handleSubmitEdit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.produtor_id) {
@@ -152,7 +213,6 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
 
     setLoading(true);
     try {
-      // Convert YYYY-MM to first day of month
       const mesDate = `${formData.mes}-01`;
 
       const dataToSave = {
@@ -164,23 +224,13 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
         created_by: user?.user_id,
       };
 
-      if (meta) {
-        const { error } = await supabase
-          .from('metas')
-          .update(dataToSave)
-          .eq('id', meta.id);
+      const { error } = await supabase
+        .from('metas')
+        .update(dataToSave)
+        .eq('id', meta!.id);
 
-        if (error) throw error;
-        toast.success('Meta atualizada com sucesso!');
-      } else {
-        const { error } = await supabase
-          .from('metas')
-          .insert(dataToSave);
-
-        if (error) throw error;
-        toast.success('Meta criada com sucesso!');
-      }
-
+      if (error) throw error;
+      toast.success('Meta atualizada com sucesso!');
       onSuccess();
     } catch (error) {
       logger.error('Erro ao salvar meta:', error);
@@ -190,129 +240,306 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
     }
   };
 
-  const activeProdutores = produtores?.filter(p => p.ativo) || [];
+  const handleSubmitBatch = async (e: React.FormEvent) => {
+    e.preventDefault();
 
+    if (selectedProdutores.length === 0) {
+      toast.error('Selecione pelo menos um produtor');
+      return;
+    }
+    if (selectedMeses.length === 0) {
+      toast.error('Selecione pelo menos um mês');
+      return;
+    }
+
+    // Get tipos with quantity > 0
+    const tiposComQuantidade = Object.entries(quantidadesPorTipo)
+      .filter(([_, qtd]) => qtd > 0)
+      .map(([tipoId, qtd]) => ({ tipoId, quantidade: qtd }));
+
+    if (tiposComQuantidade.length === 0) {
+      toast.error('Defina a quantidade para pelo menos um tipo de meta');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Create all combinations
+      const modulo = (user?.modulo || 'Transportes') as 'Transportes' | 'Ramos Elementares';
+      const metasToInsert: Array<{
+        produtor_id: string;
+        mes: string;
+        tipo_meta_id: string;
+        quantidade: number;
+        modulo: 'Transportes' | 'Ramos Elementares';
+        created_by: string | undefined;
+      }> = [];
+
+      for (const produtorId of selectedProdutores) {
+        for (const mes of selectedMeses) {
+          for (const { tipoId, quantidade } of tiposComQuantidade) {
+            metasToInsert.push({
+              produtor_id: produtorId,
+              mes: `${mes}-01`,
+              tipo_meta_id: tipoId,
+              quantidade,
+              modulo,
+              created_by: user?.user_id,
+            });
+          }
+        }
+      }
+
+      const { error } = await supabase
+        .from('metas')
+        .insert(metasToInsert);
+
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('Algumas metas já existem para a combinação selecionada');
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      toast.success(`${metasToInsert.length} meta(s) criada(s) com sucesso!`);
+      onSuccess();
+    } catch (error) {
+      logger.error('Erro ao salvar metas:', error);
+      toast.error('Erro ao salvar metas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activeProdutores = produtores?.filter(p => p.ativo) || [];
+  const activeTiposMeta = tiposMeta.filter(t => t.ativo);
+
+  // Edit mode - single record form
+  if (isEditMode) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Meta</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmitEdit}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="produtor_id">Produtor *</Label>
+                <Select
+                  value={formData.produtor_id}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, produtor_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o produtor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeProdutores.map(produtor => (
+                      <SelectItem key={produtor.id} value={produtor.id}>
+                        {produtor.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mes">Mês *</Label>
+                <Input
+                  id="mes"
+                  type="month"
+                  value={formData.mes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, mes: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tipo_meta_id">Tipo de Meta *</Label>
+                <Select
+                  value={formData.tipo_meta_id}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, tipo_meta_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo de meta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposMeta.map(tipo => (
+                      <SelectItem key={tipo.id} value={tipo.id}>
+                        {tipo.descricao}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="quantidade">Quantidade *</Label>
+                <Input
+                  id="quantidade"
+                  type="number"
+                  min="0"
+                  value={formData.quantidade}
+                  onChange={(e) => setFormData(prev => ({ ...prev, quantidade: parseInt(e.target.value) || 0 }))}
+                  required
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Create mode - batch form
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>{meta ? 'Editar Meta' : 'Nova Meta'}</DialogTitle>
+          <DialogTitle>Nova Meta (Criação em Lote)</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
-            {/* Produtor */}
-            <div className="space-y-2">
-              <Label htmlFor="produtor_id">Produtor *</Label>
-              <Select
-                value={formData.produtor_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, produtor_id: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o produtor" />
-                </SelectTrigger>
-                <SelectContent>
+        <form onSubmit={handleSubmitBatch}>
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-6 py-4">
+              {/* Produtores - Multi-select */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Produtores *</Label>
+                <div className="border rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
                   {activeProdutores.map(produtor => (
-                    <SelectItem key={produtor.id} value={produtor.id}>
-                      {produtor.nome}
-                    </SelectItem>
+                    <div key={produtor.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`produtor-${produtor.id}`}
+                        checked={selectedProdutores.includes(produtor.id)}
+                        onCheckedChange={() => handleToggleProdutor(produtor.id)}
+                      />
+                      <label
+                        htmlFor={`produtor-${produtor.id}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        {produtor.nome}
+                      </label>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Mês */}
-            <div className="space-y-2">
-              <Label htmlFor="mes">Mês *</Label>
-              <Input
-                id="mes"
-                type="month"
-                value={formData.mes}
-                onChange={(e) => setFormData(prev => ({ ...prev, mes: e.target.value }))}
-                required
-              />
-            </div>
-
-            {/* Tipo de Meta */}
-            <div className="space-y-2">
-              <Label htmlFor="tipo_meta_id">Tipo de Meta *</Label>
-              {showNewTipoInput ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={newTipoMeta}
-                    onChange={(e) => setNewTipoMeta(e.target.value)}
-                    placeholder="Nome do novo tipo"
-                    disabled={creatingTipo}
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleCreateTipoMeta}
-                    disabled={creatingTipo}
-                    size="sm"
-                  >
-                    {creatingTipo ? 'Salvando...' : 'Salvar'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowNewTipoInput(false);
-                      setNewTipoMeta('');
-                    }}
-                    size="sm"
-                  >
-                    Cancelar
-                  </Button>
                 </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Select
-                    value={formData.tipo_meta_id}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, tipo_meta_id: value }))}
-                  >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Selecione o tipo de meta" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tiposMeta.map(tipo => (
-                        <SelectItem key={tipo.id} value={tipo.id}>
-                          {tipo.descricao}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {selectedProdutores.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedProdutores.length} produtor(es) selecionado(s)
+                  </p>
+                )}
+              </div>
+
+              {/* Meses - Multi-select */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Meses *</Label>
+                <div className="border rounded-lg p-3 grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
+                  {availableMonths.map(({ value, label }) => (
+                    <div key={value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`mes-${value}`}
+                        checked={selectedMeses.includes(value)}
+                        onCheckedChange={() => handleToggleMes(value)}
+                      />
+                      <label
+                        htmlFor={`mes-${value}`}
+                        className="text-sm cursor-pointer capitalize"
+                      >
+                        {label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {selectedMeses.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedMeses.length} mês(es) selecionado(s)
+                  </p>
+                )}
+              </div>
+
+              {/* Tipos de Meta com Quantidade Individual */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">Quantidade por Tipo de Meta *</Label>
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
+                    size="sm"
                     onClick={() => setShowNewTipoInput(true)}
-                    title="Adicionar novo tipo"
+                    className="h-8"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4 mr-1" />
+                    Novo Tipo
                   </Button>
                 </div>
-              )}
-            </div>
 
-            {/* Quantidade */}
-            <div className="space-y-2">
-              <Label htmlFor="quantidade">Quantidade *</Label>
-              <Input
-                id="quantidade"
-                type="number"
-                min="0"
-                value={formData.quantidade}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantidade: parseInt(e.target.value) || 0 }))}
-                required
-              />
-            </div>
-          </div>
+                {showNewTipoInput && (
+                  <div className="flex gap-2 p-3 border rounded-lg bg-muted/50">
+                    <Input
+                      value={newTipoMeta}
+                      onChange={(e) => setNewTipoMeta(e.target.value)}
+                      placeholder="Nome do novo tipo"
+                      disabled={creatingTipo}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleCreateTipoMeta}
+                      disabled={creatingTipo}
+                      size="sm"
+                    >
+                      {creatingTipo ? 'Salvando...' : 'Salvar'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setShowNewTipoInput(false);
+                        setNewTipoMeta('');
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
 
-          <DialogFooter>
+                <div className="border rounded-lg divide-y">
+                  {activeTiposMeta.map(tipo => (
+                    <div key={tipo.id} className="flex items-center justify-between p-3">
+                      <span className="text-sm font-medium">{tipo.descricao}</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={quantidadesPorTipo[tipo.id] || 0}
+                        onChange={(e) => handleQuantidadeChange(tipo.id, parseInt(e.target.value) || 0)}
+                        className="w-24 text-center"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Apenas tipos com quantidade maior que 0 serão criados
+                </p>
+              </div>
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="mt-4">
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Cancelar
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : 'Salvar'}
+              {loading ? 'Salvando...' : `Criar Metas`}
             </Button>
           </DialogFooter>
         </form>
