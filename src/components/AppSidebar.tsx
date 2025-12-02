@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   BarChart3, FileText, Users, Settings, Kanban, 
-  Building2, Tags, Home, Package, ClipboardList, ChevronLeft, ChevronRight
+  Building2, Tags, Home, Package, ClipboardList, ChevronLeft, ChevronRight, Target
 } from "lucide-react";
 
 import {
@@ -31,6 +31,7 @@ const adminItems = [
   { title: "Produtores", url: "/produtores", icon: Users },
   { title: "Seguradoras", url: "/seguradoras", icon: Building2 },
   { title: "Ramos", url: "/ramos", icon: Tags },
+  { title: "Metas", url: "/metas", icon: Target },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 

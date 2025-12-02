@@ -494,6 +494,57 @@ export type Database = {
         }
         Relationships: []
       }
+      metas: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          mes: string
+          modulo: Database["public"]["Enums"]["modulo_tipo"]
+          produtor_id: string
+          quantidade: number
+          tipo_meta_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mes: string
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
+          produtor_id: string
+          quantidade?: number
+          tipo_meta_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mes?: string
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
+          produtor_id?: string
+          quantidade?: number
+          tipo_meta_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metas_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "produtores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metas_tipo_meta_id_fkey"
+            columns: ["tipo_meta_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_meta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtores: {
         Row: {
           ativo: boolean
@@ -698,6 +749,27 @@ export type Database = {
         Update: {
           ativo?: boolean
           codigo?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      tipos_meta: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string
+          id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao: string
+          id?: string
+        }
+        Update: {
+          ativo?: boolean
           created_at?: string
           descricao?: string
           id?: string
