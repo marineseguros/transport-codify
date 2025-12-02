@@ -33,10 +33,16 @@ interface Meta {
   } | null;
 }
 
+interface Produtor {
+  id: string;
+  nome: string;
+}
+
 interface MetasRealizadoChartProps {
   dateFilter: string;
   dateRange?: { from?: Date; to?: Date };
   produtorFilter: string;
+  produtores: Produtor[];
   // Fechamentos count from cotacoes (passed from parent to avoid duplicate queries)
   fechamentosCount: number;
 }
@@ -95,6 +101,7 @@ export const MetasRealizadoChart = ({
   dateFilter,
   dateRange,
   produtorFilter,
+  produtores,
   fechamentosCount,
 }: MetasRealizadoChartProps) => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -230,16 +237,23 @@ export const MetasRealizadoChart = ({
     return counts;
   }, [produtos, produtorFilter, fechamentosCount]);
 
+  // Find the produtor_id from the selected producer name
+  const selectedProdutorId = useMemo(() => {
+    if (produtorFilter === 'todos') return null;
+    const produtor = produtores.find(p => p.nome === produtorFilter);
+    return produtor?.id || null;
+  }, [produtores, produtorFilter]);
+
   // Calculate metas totals by activity type - FILTERED BY PRODUTOR
   // Each producer should only see their own metas, never sum across producers
   const metasPorAtividade = useMemo(() => {
     const totals: Record<string, number> = {};
     ACTIVITIES.forEach(act => totals[act] = 0);
 
-    // Filter metas by produtor if a specific one is selected
-    const filteredMetas = produtorFilter === 'todos' 
+    // Filter metas by produtor_id if a specific one is selected
+    const filteredMetas = !selectedProdutorId 
       ? metas 
-      : metas.filter(meta => meta.produtor_id === produtorFilter);
+      : metas.filter(meta => meta.produtor_id === selectedProdutorId);
 
     filteredMetas.forEach(meta => {
       if (meta.tipo_meta?.descricao) {
@@ -251,7 +265,7 @@ export const MetasRealizadoChart = ({
     });
 
     return totals;
-  }, [metas, produtorFilter]);
+  }, [metas, selectedProdutorId]);
 
   // Prepare chart data
   const chartData = useMemo(() => {

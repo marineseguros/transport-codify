@@ -1444,6 +1444,7 @@ const Dashboard = () => {
         dateFilter={dateFilter}
         dateRange={dateRange}
         produtorFilter={produtorFilter}
+        produtores={produtores}
         fechamentosCount={monthlyStats.fechados}
       />
 
