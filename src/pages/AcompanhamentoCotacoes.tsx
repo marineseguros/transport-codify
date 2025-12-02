@@ -32,7 +32,8 @@ const AcompanhamentoCotacoes = () => {
   } = useAuth();
   const {
     cotacoes,
-    loading
+    loading,
+    refetch
   } = useCotacoesAcompanhamento(user?.email, user?.papel);
   const { produtores } = useProdutores();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -156,8 +157,9 @@ const AcompanhamentoCotacoes = () => {
     setIsModalOpen(false);
     setEditingCotacao(null);
   };
-  const handleSaved = () => {
-    // A lista será atualizada automaticamente pelo hook
+  const handleSaved = async () => {
+    // Refetch data to update the list with latest changes
+    await refetch();
     handleCloseModal();
   };
   if (loading) {
