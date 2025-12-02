@@ -41,16 +41,40 @@ interface MetasRealizadoChartProps {
   fechamentosCount: number;
 }
 
-// Map activity types from produtos.tipo to display names
-const mapProdutoTipoToActivity = (tipo: string, subtipo: string | null): string | null => {
-  if (tipo === 'Coleta') return 'Coleta';
-  if (tipo === 'Indicação') return 'Indicação';
-  if (tipo === 'Novos CRM') return 'Cotação';
-  if (tipo === 'Visita/Video') {
-    if (subtipo === 'Visita') return 'Visita';
-    if (subtipo === 'Vídeo') return 'Vídeo';
+// Map activity types from produtos to display names
+// RULES:
+// - VISITA and VÍDEO: Count ONLY by "subtipo" field, NOT by "tipo"
+// - COLETA and INDICAÇÃO: Count by "tipo" field
+// - COTAÇÃO: Count by tipo === 'Novos CRM'
+const mapProdutoToActivities = (tipo: string, subtipo: string | null): string[] => {
+  const activities: string[] = [];
+  
+  // COLETA: Count by tipo
+  if (tipo === 'Coleta') {
+    activities.push('Coleta');
   }
-  return null;
+  
+  // INDICAÇÃO: Count by tipo
+  if (tipo === 'Indicação') {
+    activities.push('Indicação');
+  }
+  
+  // COTAÇÃO: Count by tipo
+  if (tipo === 'Novos CRM') {
+    activities.push('Cotação');
+  }
+  
+  // VISITA: Count ONLY by subtipo (regardless of tipo)
+  if (subtipo === 'Visita') {
+    activities.push('Visita');
+  }
+  
+  // VÍDEO: Count ONLY by subtipo (regardless of tipo)
+  if (subtipo === 'Vídeo') {
+    activities.push('Vídeo');
+  }
+  
+  return activities;
 };
 
 // Map tipos_meta.descricao to activity names for matching
@@ -191,10 +215,13 @@ export const MetasRealizadoChart = ({
       : produtos.filter(p => p.consultor === produtorFilter);
 
     filteredProdutos.forEach(produto => {
-      const activity = mapProdutoTipoToActivity(produto.tipo, produto.subtipo);
-      if (activity && counts[activity] !== undefined) {
-        counts[activity]++;
-      }
+      // Get all activities this produto counts for
+      const activities = mapProdutoToActivities(produto.tipo, produto.subtipo);
+      activities.forEach(activity => {
+        if (counts[activity] !== undefined) {
+          counts[activity]++;
+        }
+      });
     });
 
     // Add fechamentos count (already filtered in parent)
@@ -203,12 +230,18 @@ export const MetasRealizadoChart = ({
     return counts;
   }, [produtos, produtorFilter, fechamentosCount]);
 
-  // Calculate metas totals by activity type
+  // Calculate metas totals by activity type - FILTERED BY PRODUTOR
+  // Each producer should only see their own metas, never sum across producers
   const metasPorAtividade = useMemo(() => {
     const totals: Record<string, number> = {};
     ACTIVITIES.forEach(act => totals[act] = 0);
 
-    metas.forEach(meta => {
+    // Filter metas by produtor if a specific one is selected
+    const filteredMetas = produtorFilter === 'todos' 
+      ? metas 
+      : metas.filter(meta => meta.produtor_id === produtorFilter);
+
+    filteredMetas.forEach(meta => {
       if (meta.tipo_meta?.descricao) {
         const normalizedType = normalizeMetaType(meta.tipo_meta.descricao);
         if (totals[normalizedType] !== undefined) {
@@ -218,7 +251,7 @@ export const MetasRealizadoChart = ({
     });
 
     return totals;
-  }, [metas]);
+  }, [metas, produtorFilter]);
 
   // Prepare chart data
   const chartData = useMemo(() => {
