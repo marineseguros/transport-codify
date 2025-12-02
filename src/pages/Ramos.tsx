@@ -26,6 +26,30 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Ramo } from '@/types';
 
+// Helper function to get Segmento based on ramo description
+const getSegmento = (descricao: string): string => {
+  const transportes = ['Nacional', 'Exportação', 'Importação', 'RCTR-C', 'RC-DC', 'RCTR-VI', 'RCTA-C'];
+  const avulso = ['Nacional Avulsa', 'Importação Avulsa', 'Exportação Avulsa', 'Garantia Aduaneira'];
+  const ambiental = ['Ambiental'];
+  const rcv = ['RC-V'];
+
+  if (avulso.some(r => descricao === r)) return 'Avulso';
+  if (ambiental.some(r => descricao === r)) return 'Ambiental';
+  if (rcv.some(r => descricao === r)) return 'RC-V';
+  if (transportes.some(r => descricao === r)) return 'Transportes';
+  return 'Outros';
+};
+
+// Helper function to get Regra based on ramo description
+const getRegra = (descricao: string): string => {
+  const recorrente = ['Nacional', 'Exportação', 'Importação', 'RCTR-C', 'RC-DC', 'RCTR-VI', 'RCTA-C', 'RC-V'];
+  const total = ['Nacional Avulsa', 'Importação Avulsa', 'Exportação Avulsa', 'Garantia Aduaneira', 'Ambiental'];
+
+  if (recorrente.some(r => descricao === r)) return 'Recorrente';
+  if (total.some(r => descricao === r)) return 'Total';
+  return 'Outros';
+};
+
 const Ramos = () => {
   const { user } = useAuth();
   const { ramos, loading, refetch } = useRamos();
@@ -235,8 +259,9 @@ const Ramos = () => {
               <TableRow>
                 <TableHead>Código</TableHead>
                 <TableHead>Descrição</TableHead>
+                <TableHead>Segmento</TableHead>
+                <TableHead>Regra</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Data de Cadastro</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -248,12 +273,17 @@ const Ramos = () => {
                   </TableCell>
                   <TableCell className="font-medium">{ramo.descricao}</TableCell>
                   <TableCell>
-                    <Badge variant={ramo.ativo ? "success-alt" : "secondary"}>
-                      {ramo.ativo ? 'Ativo' : 'Inativo'}
+                    <Badge variant="outline">{getSegmento(ramo.descricao)}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getRegra(ramo.descricao) === 'Recorrente' ? 'default' : 'secondary'}>
+                      {getRegra(ramo.descricao)}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    -
+                    <Badge variant={ramo.ativo ? "success-alt" : "secondary"}>
+                      {ramo.ativo ? 'Ativo' : 'Inativo'}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
