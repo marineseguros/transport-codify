@@ -72,12 +72,13 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
 
   const isEditMode = !!meta;
 
-  // Generate available months (current month + next 11 months)
+  // Generate available months (12 months back + current + 12 months forward)
   const availableMonths = useMemo(() => {
     const months: { value: string; label: string }[] = [];
     const now = new Date();
     
-    for (let i = 0; i < 12; i++) {
+    // 12 months back + current month + 12 months forward = 25 months total
+    for (let i = -12; i <= 12; i++) {
       const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
