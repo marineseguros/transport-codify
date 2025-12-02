@@ -173,10 +173,12 @@ const Metas = () => {
     return Array.from(months).sort().reverse();
   }, [metas]);
 
-  // Format month for display
+  // Format month for display - parse DATE string correctly to avoid timezone issues
   const formatMonth = (dateStr: string) => {
     try {
-      const date = new Date(dateStr);
+      // The database stores dates as YYYY-MM-DD, parse without timezone conversion
+      const [year, month] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, 1);
       return format(date, 'MMMM/yyyy', { locale: ptBR });
     } catch {
       return dateStr;
