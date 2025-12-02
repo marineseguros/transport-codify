@@ -155,13 +155,6 @@ export const MetasRealizadoChart = ({
         if (produtosError) throw produtosError;
 
         // Fetch metas for the target month with tipo_meta relation
-        // Use range filter to match all dates within the month (YYYY-MM-01 to YYYY-MM-31)
-        const [year, month] = targetMonth.split('-');
-        const monthStart = `${year}-${month}-01`;
-        const nextMonth = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
-        const nextYear = parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
-        const monthEnd = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
-
         const { data: metasData, error: metasError } = await supabase
           .from('metas')
           .select(`
@@ -171,8 +164,7 @@ export const MetasRealizadoChart = ({
             quantidade,
             tipo_meta:tipos_meta(id, descricao)
           `)
-          .gte('mes', monthStart)
-          .lt('mes', monthEnd);
+          .eq('mes', targetMonth);
 
         if (metasError) throw metasError;
 
