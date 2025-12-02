@@ -51,7 +51,8 @@ interface MetasRealizadoChartProps {
 // RULES:
 // - VISITA and VÍDEO: Count ONLY by "subtipo" field, NOT by "tipo"
 // - COLETA and INDICAÇÃO: Count by "tipo" field
-// - COTAÇÃO: Count by tipo === 'Novos CRM'
+// - COTAÇÃO: Counted from cotacoes table, NOT from produtos
+// - FECHAMENTO: Counted from cotacoes table with status "Negócio fechado"
 const mapProdutoToActivities = (tipo: string, subtipo: string | null): string[] => {
   const activities: string[] = [];
   
@@ -65,10 +66,8 @@ const mapProdutoToActivities = (tipo: string, subtipo: string | null): string[] 
     activities.push('Indicação');
   }
   
-  // COTAÇÃO: Count by tipo
-  if (tipo === 'Novos CRM') {
-    activities.push('Cotação');
-  }
+  // COTAÇÃO: Now counted from cotacoes table, not from produtos
+  // Removed: if (tipo === 'Novos CRM') activities.push('Cotação');
   
   // VISITA: Count ONLY by subtipo (regardless of tipo)
   if (subtipo === 'Visita') {
@@ -106,6 +105,7 @@ export const MetasRealizadoChart = ({
 }: MetasRealizadoChartProps) => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
+  const [cotacoesCount, setCotacoesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Calculate date range based on filter
@@ -168,7 +168,14 @@ export const MetasRealizadoChart = ({
     };
   }, [dateFilter, dateRange]);
 
-  // Fetch produtos and metas
+  // Find the produtor_id from the selected producer name
+  const selectedProdutorId = useMemo(() => {
+    if (produtorFilter === 'todos') return null;
+    const produtor = produtores.find(p => p.nome === produtorFilter);
+    return produtor?.id || null;
+  }, [produtores, produtorFilter]);
+
+  // Fetch produtos, metas, and cotações count
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -199,8 +206,37 @@ export const MetasRealizadoChart = ({
 
         if (metasError) throw metasError;
 
+        // Fetch cotações count from cotacoes table
+        // Filter by data_cotacao within date range and produtor if selected
+        let cotacoesQuery = supabase
+          .from('cotacoes')
+          .select('id, produtor_origem_id, produtor_negociador_id, produtor_cotador_id', { count: 'exact' })
+          .gte('data_cotacao', startStr)
+          .lte('data_cotacao', endStr);
+
+        const { count: totalCotacoes, error: cotacoesError } = await cotacoesQuery;
+
+        if (cotacoesError) throw cotacoesError;
+
+        // If a produtor is selected, we need to filter cotações by produtor
+        let filteredCotacoesCount = totalCotacoes || 0;
+        
+        if (selectedProdutorId) {
+          // Fetch cotações filtered by produtor (any of the 3 produtor fields)
+          const { count: produtorCotacoes, error: produtorCotacoesError } = await supabase
+            .from('cotacoes')
+            .select('id', { count: 'exact' })
+            .gte('data_cotacao', startStr)
+            .lte('data_cotacao', endStr)
+            .or(`produtor_origem_id.eq.${selectedProdutorId},produtor_negociador_id.eq.${selectedProdutorId},produtor_cotador_id.eq.${selectedProdutorId}`);
+
+          if (produtorCotacoesError) throw produtorCotacoesError;
+          filteredCotacoesCount = produtorCotacoes || 0;
+        }
+
         setProdutos(produtosData || []);
         setMetas(metasData || []);
+        setCotacoesCount(filteredCotacoesCount);
       } catch (error) {
         logger.error('Error fetching metas data:', error);
       } finally {
@@ -209,7 +245,7 @@ export const MetasRealizadoChart = ({
     };
 
     fetchData();
-  }, [startDate, endDate, targetMonth]);
+  }, [startDate, endDate, targetMonth, selectedProdutorId]);
 
   // Calculate realized counts from produtos
   const realizadoPorAtividade = useMemo(() => {
@@ -234,15 +270,11 @@ export const MetasRealizadoChart = ({
     // Add fechamentos count (already filtered in parent)
     counts['Fechamento'] = fechamentosCount;
 
-    return counts;
-  }, [produtos, produtorFilter, fechamentosCount]);
+    // Use cotações count from the cotacoes table (not from produtos)
+    counts['Cotação'] = cotacoesCount;
 
-  // Find the produtor_id from the selected producer name
-  const selectedProdutorId = useMemo(() => {
-    if (produtorFilter === 'todos') return null;
-    const produtor = produtores.find(p => p.nome === produtorFilter);
-    return produtor?.id || null;
-  }, [produtores, produtorFilter]);
+    return counts;
+  }, [produtos, produtorFilter, fechamentosCount, cotacoesCount]);
 
   // Calculate metas totals by activity type - FILTERED BY PRODUTOR
   // Each producer should only see their own metas, never sum across producers
