@@ -102,6 +102,8 @@ export interface Cotacao {
   status: string;
   data_cotacao: string;
   data_fechamento?: string;
+  inicio_vigencia?: string;
+  fim_vigencia?: string;
   num_proposta?: string;
   motivo_recusa?: string;
   comentarios?: string;
