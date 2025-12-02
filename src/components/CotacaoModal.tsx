@@ -169,8 +169,8 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
           const day = String(now.getDate()).padStart(2, '0');
           return `${year}-${month}-${day}`;
         })(),
-        inicio_vigencia: cotacao.data_cotacao || "",
-        fim_vigencia: cotacao.data_fechamento || "",
+        inicio_vigencia: cotacao.inicio_vigencia || "",
+        fim_vigencia: cotacao.fim_vigencia || "",
         valor_premio: cotacao.valor_premio || 0,
         status: cotacao.status || "Em análise",
         observacoes: cotacao.observacoes || "",
