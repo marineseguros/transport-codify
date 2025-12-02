@@ -43,6 +43,55 @@ import {
 import { CotacaoModal } from "@/components/CotacaoModal";
 import { logger } from "@/lib/logger";
 
+// Helper function to determine branch group
+const getBranchGroup = (ramoDescricao: string | undefined): string => {
+  if (!ramoDescricao) return "outros";
+  
+  const ramoUpper = ramoDescricao.toUpperCase();
+  
+  // Group 1: RCTR-C + RC-DC
+  if (ramoUpper.includes("RCTR-C") || ramoUpper.includes("RC-DC")) {
+    return "grupo_rctr";
+  }
+  
+  // Group 2: All other specific types
+  const group2Types = [
+    "NACIONAL",
+    "EXPORTAÇÃO",
+    "EXPORTACAO",
+    "IMPORTAÇÃO",
+    "IMPORTACAO",
+    "RCTR-VI",
+    "NACIONAL AVULSA",
+    "IMPORTAÇÃO AVULSA",
+    "IMPORTACAO AVULSA",
+    "RCTA-C",
+    "AMBIENTAL",
+    "RC-V"
+  ];
+  
+  if (group2Types.some(type => ramoUpper.includes(type))) {
+    return "grupo_nacional";
+  }
+  
+  return "outros";
+};
+
+// Helper function to count distinct closings by CNPJ + branch group
+const countDistinctClosings = (cotacoes: Cotacao[]): number => {
+  const closingKeys = new Set<string>();
+  
+  cotacoes.forEach(cotacao => {
+    if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
+      const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+      const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
+      closingKeys.add(key);
+    }
+  });
+  
+  return closingKeys.size;
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
   const { cotacoes: allQuotes, loading: loadingCotacoes } = useCotacoesTotais();
@@ -109,6 +158,8 @@ const Dashboard = () => {
   };
 
   // Filter cotacoes by date, produtor and unidade
+  // Use data_cotacao for "Em cotação" and "Declinado"
+  // Use data_fechamento for "Negócio fechado" and "Fechamento congênere"
   const filteredCotacoes = useMemo(() => {
     let filtered = allQuotes;
 
@@ -164,7 +215,21 @@ const Dashboard = () => {
       default:
         return filtered;
     }
+    
+    // Filter by correct date field based on status
     return filtered.filter((cotacao) => {
+      // Use data_cotacao for "Em cotação" and "Declinado"
+      if (cotacao.status === "Em cotação" || cotacao.status === "Declinado") {
+        const cotacaoDate = new Date(cotacao.data_cotacao);
+        return cotacaoDate >= startDate && cotacaoDate <= endDate;
+      }
+      // Use data_fechamento for "Negócio fechado" and "Fechamento congênere"
+      if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
+        if (!cotacao.data_fechamento) return false;
+        const fechamentoDate = new Date(cotacao.data_fechamento);
+        return fechamentoDate >= startDate && fechamentoDate <= endDate;
+      }
+      // Default fallback
       const cotacaoDate = new Date(cotacao.data_cotacao);
       return cotacaoDate >= startDate && cotacaoDate <= endDate;
     });
@@ -267,23 +332,51 @@ const Dashboard = () => {
       const unidadeMatch = unidadeFilter === "todas" || c.unidade?.descricao === unidadeFilter;
       return produtorMatch && unidadeMatch;
     });
+    
+    // Filter quotations (Em cotação, Declinado) by data_cotacao
     const currentPeriodCotacoes = baseFilteredQuotes.filter((c) => {
-      const date = new Date(c.data_cotacao);
-      return date >= currentStartDate && date <= currentEndDate;
+      if (c.status === "Em cotação" || c.status === "Declinado") {
+        const date = new Date(c.data_cotacao);
+        return date >= currentStartDate && date <= currentEndDate;
+      }
+      return false;
     });
+    
     const previousPeriodCotacoes = baseFilteredQuotes.filter((c) => {
-      const date = new Date(c.data_cotacao);
-      return date >= previousStartDate && date <= previousEndDate;
+      if (c.status === "Em cotação" || c.status === "Declinado") {
+        const date = new Date(c.data_cotacao);
+        return date >= previousStartDate && date <= previousEndDate;
+      }
+      return false;
+    });
+    
+    // Filter closings (Negócio fechado, Fechamento congênere) by data_fechamento
+    const currentPeriodFechamentos = baseFilteredQuotes.filter((c) => {
+      if (c.status === "Negócio fechado" || c.status === "Fechamento congênere") {
+        if (!c.data_fechamento) return false;
+        const date = new Date(c.data_fechamento);
+        return date >= currentStartDate && date <= currentEndDate;
+      }
+      return false;
+    });
+    
+    const previousPeriodFechamentos = baseFilteredQuotes.filter((c) => {
+      if (c.status === "Negócio fechado" || c.status === "Fechamento congênere") {
+        if (!c.data_fechamento) return false;
+        const date = new Date(c.data_fechamento);
+        return date >= previousStartDate && date <= previousEndDate;
+      }
+      return false;
     });
 
-    // Current period stats
+    // Current period stats - use distinct count for closings
     const emCotacao = currentPeriodCotacoes.filter((c) => c.status === "Em cotação").length;
-    const fechados = currentPeriodCotacoes.filter((c) => c.status === "Negócio fechado").length;
+    const fechados = countDistinctClosings(currentPeriodFechamentos); // Distinct count
     const declinados = currentPeriodCotacoes.filter((c) => c.status === "Declinado").length;
 
-    // Previous period stats
+    // Previous period stats - use distinct count for closings
     const emCotacaoAnterior = previousPeriodCotacoes.filter((c) => c.status === "Em cotação").length;
-    const fechadosAnterior = previousPeriodCotacoes.filter((c) => c.status === "Negócio fechado").length;
+    const fechadosAnterior = countDistinctClosings(previousPeriodFechamentos); // Distinct count
     const declinadosAnterior = previousPeriodCotacoes.filter((c) => c.status === "Declinado").length;
 
     // Calculate differences and percentages
@@ -299,10 +392,10 @@ const Dashboard = () => {
     const fechadosComp = calculateComparison(fechados, fechadosAnterior);
     const declinadosComp = calculateComparison(declinados, declinadosAnterior);
 
-    // KPIs calculations using current period
-    const cotacoesFechadas = currentPeriodCotacoes.filter((c) => c.status === "Negócio fechado");
-    const premioTotal = cotacoesFechadas.reduce((sum, c) => sum + c.valor_premio, 0);
-    const ticketMedio = cotacoesFechadas.length > 0 ? premioTotal / cotacoesFechadas.length : 0;
+    // KPIs calculations using current period - include "Fechamento congênere" in premio total
+    const cotacoesFechadas = currentPeriodFechamentos; // Already filtered for both statuses
+    const premioTotal = cotacoesFechadas.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+    const ticketMedio = fechados > 0 ? premioTotal / fechados : 0; // Use distinct count
 
     // Tempo médio de fechamento (dias)
     const temposFechamento = cotacoesFechadas
@@ -317,11 +410,15 @@ const Dashboard = () => {
         ? temposFechamento.reduce((sum, tempo) => sum + tempo, 0) / temposFechamento.length
         : 0;
 
-    // Taxa de conversão
-    const taxaConversao = currentPeriodCotacoes.length > 0 ? (fechados / currentPeriodCotacoes.length) * 100 : 0;
-    const taxaConversaoAnterior =
-      previousPeriodCotacoes.length > 0 ? (fechadosAnterior / previousPeriodCotacoes.length) * 100 : 0;
+    // Taxa de conversão: fechamentos distintos / total de cotações
+    const totalCotacoes = currentPeriodCotacoes.length + currentPeriodFechamentos.length;
+    const taxaConversao = totalCotacoes > 0 ? (fechados / totalCotacoes) * 100 : 0;
+    
+    const totalCotacoesAnterior = previousPeriodCotacoes.length + previousPeriodFechamentos.length;
+    const taxaConversaoAnterior = totalCotacoesAnterior > 0 ? (fechadosAnterior / totalCotacoesAnterior) * 100 : 0;
+    
     const taxaConversaoComp = calculateComparison(taxaConversao, taxaConversaoAnterior);
+    
     return {
       emCotacao,
       fechados,
@@ -337,24 +434,42 @@ const Dashboard = () => {
     };
   }, [allQuotes, dateFilter, dateRange, produtorFilter, unidadeFilter]);
 
-  // Distribuição por status no período atual com segurados distintos
+  // Distribuição por status no período atual
+  // Note: "Fechamento congênere" is counted together with "Negócio fechado"
   const distribuicaoStatus = useMemo(() => {
-    const validStatuses = ["Em cotação", "Negócio fechado", "Declinado", "Fechamento congênere"];
+    const validStatuses = ["Em cotação", "Negócio fechado", "Declinado"];
     const statusData = validStatuses.map((status) => {
-      const statusCotacoes = filteredCotacoes.filter((cotacao) => cotacao.status === status);
-      const totalCotacoes = statusCotacoes.length;
-      const seguradosDistintos = new Set(statusCotacoes.map((cotacao) => cotacao.cpf_cnpj)).size;
-      return {
-        status,
-        count: totalCotacoes,
-        seguradosDistintos,
-        percentage: filteredCotacoes.length > 0 ? (totalCotacoes / filteredCotacoes.length) * 100 : 0,
-      };
+      let statusCotacoes: Cotacao[];
+      
+      if (status === "Negócio fechado") {
+        // Include "Fechamento congênere" with "Negócio fechado"
+        statusCotacoes = filteredCotacoes.filter(
+          (cotacao) => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere"
+        );
+        // Use distinct count by CNPJ + branch group
+        const count = countDistinctClosings(statusCotacoes);
+        return {
+          status,
+          count,
+          seguradosDistintos: new Set(statusCotacoes.map((cotacao) => cotacao.cpf_cnpj)).size,
+          percentage: filteredCotacoes.length > 0 ? (count / filteredCotacoes.length) * 100 : 0,
+        };
+      } else {
+        statusCotacoes = filteredCotacoes.filter((cotacao) => cotacao.status === status);
+        const totalCotacoes = statusCotacoes.length;
+        return {
+          status,
+          count: totalCotacoes,
+          seguradosDistintos: new Set(statusCotacoes.map((cotacao) => cotacao.cpf_cnpj)).size,
+          percentage: filteredCotacoes.length > 0 ? (totalCotacoes / filteredCotacoes.length) * 100 : 0,
+        };
+      }
     });
     return statusData;
   }, [filteredCotacoes]);
 
   // Top produtores com métricas detalhadas
+  // Include "Fechamento congênere" in "fechadas" count
   const topProdutoresDetalhado = useMemo(() => {
     const produtorStats: Record<
       string,
@@ -377,7 +492,7 @@ const Dashboard = () => {
           };
         }
         produtorStats[nome].total++;
-        if (cotacao.status === "Negócio fechado") {
+        if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
           produtorStats[nome].fechadas++;
         } else if (cotacao.status === "Declinado") {
           produtorStats[nome].declinadas++;
@@ -392,10 +507,10 @@ const Dashboard = () => {
       .slice(0, 5);
   }, [filteredCotacoes]);
 
-  // Clientes fechados para o tooltip
+  // Clientes fechados para o tooltip - include "Fechamento congênere"
   const clientesFechados = useMemo(() => {
     return filteredCotacoes
-      .filter((cotacao) => cotacao.status === "Negócio fechado")
+      .filter((cotacao) => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere")
       .sort(
         (a, b) =>
           new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime(),
@@ -443,7 +558,7 @@ const Dashboard = () => {
         return cotacaoDate.getMonth() === date.getMonth() && cotacaoDate.getFullYear() === date.getFullYear();
       });
       const emCotacao = monthCotacoes.filter((c) => c.status === "Em cotação").length;
-      const fechadas = monthCotacoes.filter((c) => c.status === "Negócio fechado").length;
+      const fechadas = monthCotacoes.filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere").length;
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
         total: monthCotacoes.length,
@@ -478,9 +593,9 @@ const Dashboard = () => {
     });
     logger.log("Seguradoras Debug:", {
       totalFiltered: seguradoraFilteredCotacoes.length,
-      fechadas: seguradoraFilteredCotacoes.filter((c) => c.status === "Negócio fechado").length,
+      fechadas: seguradoraFilteredCotacoes.filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere").length,
       comSeguradora: seguradoraFilteredCotacoes.filter((c) => c.seguradora).length,
-      comPremio: seguradoraFilteredCotacoes.filter((c) => c.status === "Negócio fechado" && c.valor_premio > 0).length,
+      comPremio: seguradoraFilteredCotacoes.filter((c) => (c.status === "Negócio fechado" || c.status === "Fechamento congênere") && c.valor_premio > 0).length,
       sample: seguradoraFilteredCotacoes.slice(0, 3).map((c) => ({
         status: c.status,
         seguradora: c.seguradora?.nome,
@@ -488,7 +603,7 @@ const Dashboard = () => {
       })),
     });
     seguradoraFilteredCotacoes.forEach((cotacao) => {
-      if (cotacao.seguradora && cotacao.status === "Negócio fechado" && cotacao.valor_premio > 0) {
+      if (cotacao.seguradora && (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") && cotacao.valor_premio > 0) {
         const nome = cotacao.seguradora.nome;
         if (!seguradoraStats[nome]) {
           seguradoraStats[nome] = {
@@ -543,7 +658,7 @@ const Dashboard = () => {
           };
         }
         produtorStats[nome].total++;
-        if (cotacao.status === "Negócio fechado") {
+        if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
           produtorStats[nome].fechadas++;
         }
       }
@@ -592,7 +707,7 @@ const Dashboard = () => {
       }
     > = {};
     filteredCotacoes
-      .filter((c) => c.status === "Negócio fechado")
+      .filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere")
       .forEach((cotacao) => {
         const segmento = cotacao.segmento || "Não informado";
         if (!segmentoStats[segmento]) {
@@ -1380,7 +1495,7 @@ const Dashboard = () => {
                 .slice(0, 5)
                 .map((unidadeNome) => {
                   const unidadeCotacoes = filteredCotacoes.filter((c) => c.unidade?.descricao === unidadeNome);
-                  const fechadas = unidadeCotacoes.filter((c) => c.status === "Negócio fechado").length;
+                  const fechadas = unidadeCotacoes.filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere").length;
                   const taxa = unidadeCotacoes.length > 0 ? (fechadas / unidadeCotacoes.length) * 100 : 0;
                   return (
                     <div key={unidadeNome} className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
