@@ -162,27 +162,38 @@ const Metas = () => {
     handleModalClose();
   };
 
-  // Get unique months from metas for filter
+  // Get unique months from metas for filter (extract YYYY-MM from date)
   const uniqueMonths = useMemo(() => {
     const months = new Set<string>();
     metas.forEach(meta => {
       if (meta.mes) {
-        months.add(meta.mes);
+        // Extract YYYY-MM from the date string
+        const [year, month] = meta.mes.split('-');
+        if (year && month) {
+          months.add(`${year}-${month}`);
+        }
       }
     });
     return Array.from(months).sort().reverse();
   }, [metas]);
 
-  // Format month for display - parse DATE string correctly to avoid timezone issues
+  // Format month for display - accepts YYYY-MM or YYYY-MM-DD
   const formatMonth = (dateStr: string) => {
     try {
-      // The database stores dates as YYYY-MM-DD, parse without timezone conversion
-      const [year, month] = dateStr.split('-').map(Number);
+      const parts = dateStr.split('-').map(Number);
+      const year = parts[0];
+      const month = parts[1];
       const date = new Date(year, month - 1, 1);
       return format(date, 'MMMM/yyyy', { locale: ptBR });
     } catch {
       return dateStr;
     }
+  };
+
+  // Extract YYYY-MM from a date string for comparison
+  const getYearMonth = (dateStr: string) => {
+    const [year, month] = dateStr.split('-');
+    return `${year}-${month}`;
   };
 
   // Filtered metas
@@ -194,7 +205,8 @@ const Metas = () => {
 
       const matchesProdutor = filterProdutor === 'all' || meta.produtor_id === filterProdutor;
       const matchesTipoMeta = filterTipoMeta === 'all' || meta.tipo_meta_id === filterTipoMeta;
-      const matchesMes = filterMes === 'all' || meta.mes === filterMes;
+      // Compare by YYYY-MM, not full date
+      const matchesMes = filterMes === 'all' || (meta.mes && getYearMonth(meta.mes) === filterMes);
 
       return matchesSearch && matchesProdutor && matchesTipoMeta && matchesMes;
     });
