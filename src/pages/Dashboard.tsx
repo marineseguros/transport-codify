@@ -77,19 +77,24 @@ const getBranchGroup = (ramoDescricao: string | undefined): string => {
   return "outros";
 };
 
-// Helper function to count distinct closings by CNPJ + branch group
-const countDistinctClosings = (cotacoes: Cotacao[]): number => {
-  const closingKeys = new Set<string>();
+// Helper function to count distinct quotes by CNPJ + branch group for any status
+const countDistinctByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): number => {
+  const distinctKeys = new Set<string>();
   
   cotacoes.forEach(cotacao => {
-    if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
+    if (targetStatuses.includes(cotacao.status)) {
       const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
       const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
-      closingKeys.add(key);
+      distinctKeys.add(key);
     }
   });
   
-  return closingKeys.size;
+  return distinctKeys.size;
+};
+
+// Helper function to count distinct closings (backward compatibility wrapper)
+const countDistinctClosings = (cotacoes: Cotacao[]): number => {
+  return countDistinctByStatus(cotacoes, ["Negócio fechado", "Fechamento congênere"]);
 };
 
 const Dashboard = () => {
@@ -369,15 +374,15 @@ const Dashboard = () => {
       return false;
     });
 
-    // Current period stats - use distinct count for closings
-    const emCotacao = currentPeriodCotacoes.filter((c) => c.status === "Em cotação").length;
-    const fechados = countDistinctClosings(currentPeriodFechamentos); // Distinct count
-    const declinados = currentPeriodCotacoes.filter((c) => c.status === "Declinado").length;
+    // Current period stats - use distinct count (CNPJ + branch group) for ALL statuses
+    const emCotacao = countDistinctByStatus(currentPeriodCotacoes, ["Em cotação"]);
+    const fechados = countDistinctByStatus(currentPeriodFechamentos, ["Negócio fechado", "Fechamento congênere"]);
+    const declinados = countDistinctByStatus(currentPeriodCotacoes, ["Declinado"]);
 
-    // Previous period stats - use distinct count for closings
-    const emCotacaoAnterior = previousPeriodCotacoes.filter((c) => c.status === "Em cotação").length;
-    const fechadosAnterior = countDistinctClosings(previousPeriodFechamentos); // Distinct count
-    const declinadosAnterior = previousPeriodCotacoes.filter((c) => c.status === "Declinado").length;
+    // Previous period stats - use distinct count for ALL statuses
+    const emCotacaoAnterior = countDistinctByStatus(previousPeriodCotacoes, ["Em cotação"]);
+    const fechadosAnterior = countDistinctByStatus(previousPeriodFechamentos, ["Negócio fechado", "Fechamento congênere"]);
+    const declinadosAnterior = countDistinctByStatus(previousPeriodCotacoes, ["Declinado"]);
 
     // Calculate differences and percentages
     const calculateComparison = (current: number, previous: number) => {
@@ -410,12 +415,12 @@ const Dashboard = () => {
         ? temposFechamento.reduce((sum, tempo) => sum + tempo, 0) / temposFechamento.length
         : 0;
 
-    // Taxa de conversão: fechamentos distintos / total de cotações
-    const totalCotacoes = currentPeriodCotacoes.length + currentPeriodFechamentos.length;
-    const taxaConversao = totalCotacoes > 0 ? (fechados / totalCotacoes) * 100 : 0;
+    // Taxa de conversão: fechamentos distintos / total distintos de todos os status
+    const totalDistinct = emCotacao + declinados + fechados;
+    const taxaConversao = totalDistinct > 0 ? (fechados / totalDistinct) * 100 : 0;
     
-    const totalCotacoesAnterior = previousPeriodCotacoes.length + previousPeriodFechamentos.length;
-    const taxaConversaoAnterior = totalCotacoesAnterior > 0 ? (fechadosAnterior / totalCotacoesAnterior) * 100 : 0;
+    const totalDistinctAnterior = emCotacaoAnterior + declinadosAnterior + fechadosAnterior;
+    const taxaConversaoAnterior = totalDistinctAnterior > 0 ? (fechadosAnterior / totalDistinctAnterior) * 100 : 0;
     
     const taxaConversaoComp = calculateComparison(taxaConversao, taxaConversaoAnterior);
     
@@ -436,35 +441,45 @@ const Dashboard = () => {
 
   // Distribuição por status no período atual
   // Note: "Fechamento congênere" is counted together with "Negócio fechado"
+  // ALL statuses use distinct counting by CNPJ + branch group
   const distribuicaoStatus = useMemo(() => {
     const validStatuses = ["Em cotação", "Negócio fechado", "Declinado"];
-    const statusData = validStatuses.map((status) => {
+    
+    // Calculate distinct counts for each status
+    const statusCounts: Record<string, { cotacoes: Cotacao[]; count: number }> = {};
+    
+    validStatuses.forEach((status) => {
       let statusCotacoes: Cotacao[];
+      let targetStatuses: string[];
       
       if (status === "Negócio fechado") {
-        // Include "Fechamento congênere" with "Negócio fechado"
+        targetStatuses = ["Negócio fechado", "Fechamento congênere"];
         statusCotacoes = filteredCotacoes.filter(
           (cotacao) => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere"
         );
-        // Use distinct count by CNPJ + branch group
-        const count = countDistinctClosings(statusCotacoes);
-        return {
-          status,
-          count,
-          seguradosDistintos: new Set(statusCotacoes.map((cotacao) => cotacao.cpf_cnpj)).size,
-          percentage: filteredCotacoes.length > 0 ? (count / filteredCotacoes.length) * 100 : 0,
-        };
       } else {
+        targetStatuses = [status];
         statusCotacoes = filteredCotacoes.filter((cotacao) => cotacao.status === status);
-        const totalCotacoes = statusCotacoes.length;
-        return {
-          status,
-          count: totalCotacoes,
-          seguradosDistintos: new Set(statusCotacoes.map((cotacao) => cotacao.cpf_cnpj)).size,
-          percentage: filteredCotacoes.length > 0 ? (totalCotacoes / filteredCotacoes.length) * 100 : 0,
-        };
       }
+      
+      // Use distinct count by CNPJ + branch group for ALL statuses
+      const count = countDistinctByStatus(statusCotacoes, targetStatuses);
+      statusCounts[status] = { cotacoes: statusCotacoes, count };
     });
+    
+    // Calculate total distinct for percentage calculation
+    const totalDistinct = Object.values(statusCounts).reduce((sum, item) => sum + item.count, 0);
+    
+    const statusData = validStatuses.map((status) => {
+      const { cotacoes: statusCotacoes, count } = statusCounts[status];
+      return {
+        status,
+        count,
+        seguradosDistintos: new Set(statusCotacoes.map((cotacao) => cotacao.cpf_cnpj)).size,
+        percentage: totalDistinct > 0 ? (count / totalDistinct) * 100 : 0,
+      };
+    });
+    
     return statusData;
   }, [filteredCotacoes]);
 
@@ -666,12 +681,12 @@ const Dashboard = () => {
     return Object.values(produtorStats).sort((a, b) => b.fechadas - a.fechadas);
   }, [filteredCotacoes]);
 
-  // Análise por segmento - cotações em aberto (clientes distintos)
+  // Análise por segmento - cotações em aberto (clientes distintos por CNPJ + grupo de ramo)
   const cotacoesPorSegmento = useMemo(() => {
     const segmentoStats: Record<
       string,
       {
-        clientes: Set<string>;
+        distinctKeys: Set<string>;
         cotacoes: Cotacao[];
       }
     > = {};
@@ -681,28 +696,31 @@ const Dashboard = () => {
         const segmento = cotacao.segmento || "Não informado";
         if (!segmentoStats[segmento]) {
           segmentoStats[segmento] = {
-            clientes: new Set(),
+            distinctKeys: new Set(),
             cotacoes: [],
           };
         }
-        segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
+        // Use CNPJ + branch group as distinct key
+        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+        const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
+        segmentoStats[segmento].distinctKeys.add(key);
         segmentoStats[segmento].cotacoes.push(cotacao);
       });
     return Object.entries(segmentoStats)
       .map(([segmento, data]) => ({
         segmento,
-        count: data.clientes.size,
+        count: data.distinctKeys.size,
         cotacoes: data.cotacoes,
       }))
       .sort((a, b) => b.count - a.count);
   }, [filteredCotacoes]);
 
-  // Análise por segmento - negócios fechados (clientes distintos)
+  // Análise por segmento - negócios fechados (clientes distintos por CNPJ + grupo de ramo)
   const fechamentosPorSegmento = useMemo(() => {
     const segmentoStats: Record<
       string,
       {
-        clientes: Set<string>;
+        distinctKeys: Set<string>;
         cotacoes: Cotacao[];
       }
     > = {};
@@ -712,28 +730,31 @@ const Dashboard = () => {
         const segmento = cotacao.segmento || "Não informado";
         if (!segmentoStats[segmento]) {
           segmentoStats[segmento] = {
-            clientes: new Set(),
+            distinctKeys: new Set(),
             cotacoes: [],
           };
         }
-        segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
+        // Use CNPJ + branch group as distinct key
+        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+        const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
+        segmentoStats[segmento].distinctKeys.add(key);
         segmentoStats[segmento].cotacoes.push(cotacao);
       });
     return Object.entries(segmentoStats)
       .map(([segmento, data]) => ({
         segmento,
-        count: data.clientes.size,
+        count: data.distinctKeys.size,
         cotacoes: data.cotacoes,
       }))
       .sort((a, b) => b.count - a.count);
   }, [filteredCotacoes]);
 
-  // Análise por segmento - declinados (clientes distintos)
+  // Análise por segmento - declinados (clientes distintos por CNPJ + grupo de ramo)
   const declinadosPorSegmento = useMemo(() => {
     const segmentoStats: Record<
       string,
       {
-        clientes: Set<string>;
+        distinctKeys: Set<string>;
         cotacoes: Cotacao[];
       }
     > = {};
@@ -743,17 +764,20 @@ const Dashboard = () => {
         const segmento = cotacao.segmento || "Não informado";
         if (!segmentoStats[segmento]) {
           segmentoStats[segmento] = {
-            clientes: new Set(),
+            distinctKeys: new Set(),
             cotacoes: [],
           };
         }
-        segmentoStats[segmento].clientes.add(cotacao.cpf_cnpj);
+        // Use CNPJ + branch group as distinct key
+        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+        const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
+        segmentoStats[segmento].distinctKeys.add(key);
         segmentoStats[segmento].cotacoes.push(cotacao);
       });
     return Object.entries(segmentoStats)
       .map(([segmento, data]) => ({
         segmento,
-        count: data.clientes.size,
+        count: data.distinctKeys.size,
         cotacoes: data.cotacoes,
       }))
       .sort((a, b) => b.count - a.count);
