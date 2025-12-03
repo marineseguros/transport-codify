@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface CotacoesEmAbertoChartProps {
   cotacoes: Cotacao[];
+  produtorFilter?: string;
 }
 
 type ViewType = 'Recorrente' | 'Total';
@@ -172,19 +173,28 @@ const renderCustomLabel = (props: any) => {
   );
 };
 
-export const CotacoesEmAbertoChart = ({ cotacoes }: CotacoesEmAbertoChartProps) => {
+export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: CotacoesEmAbertoChartProps) => {
   const [viewType, setViewType] = useState<ViewType>('Recorrente');
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [isLoadingAI, setIsLoadingAI] = useState(false);
 
-  // Clear AI analysis when cotacoes changes (refresh/update)
+  // Clear AI analysis when cotacoes or produtorFilter changes (refresh/update)
   useEffect(() => {
     setAiAnalysis('');
-  }, [cotacoes]);
+  }, [cotacoes, produtorFilter]);
 
-  // Process all "Em cotação" data
+  // Process all "Em cotação" data - SEM filtro de data, apenas filtro de produtor
   const allData = useMemo(() => {
-    const emCotacao = cotacoes.filter(c => c.status === 'Em cotação');
+    let emCotacao = cotacoes.filter(c => c.status === 'Em cotação');
+    
+    // Aplicar filtro de produtor (único filtro permitido além do seletor Recorrente/Total)
+    if (produtorFilter !== 'todos') {
+      emCotacao = emCotacao.filter(c => 
+        c.produtor_cotador?.nome === produtorFilter ||
+        c.produtor_negociador?.nome === produtorFilter ||
+        c.produtor_origem?.nome === produtorFilter
+      );
+    }
     const groupedBySegurado = new Map<string, SeguradoData>();
     
     emCotacao.forEach(cotacao => {
@@ -230,7 +240,7 @@ export const CotacoesEmAbertoChart = ({ cotacoes }: CotacoesEmAbertoChartProps) 
     });
     
     return Array.from(groupedBySegurado.values());
-  }, [cotacoes]);
+  }, [cotacoes, produtorFilter]);
 
   // Filter and sort based on viewType
   const chartData = useMemo(() => {

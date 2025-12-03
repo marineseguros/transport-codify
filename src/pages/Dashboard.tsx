@@ -1449,8 +1449,8 @@ const Dashboard = () => {
         fechamentosCount={monthlyStats.fechados}
       />
 
-      {/* Cotações em Aberto */}
-      <CotacoesEmAbertoChart cotacoes={filteredCotacoes} />
+      {/* Cotações em Aberto - Sempre exibe TODAS as cotações "Em cotação", sem filtro de data */}
+      <CotacoesEmAbertoChart cotacoes={allQuotes} produtorFilter={produtorFilter} />
 
       {/* Insights Adicionais */}
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
