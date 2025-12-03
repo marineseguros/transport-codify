@@ -43,6 +43,7 @@ import {
 import { CotacaoModal } from "@/components/CotacaoModal";
 import { logger } from "@/lib/logger";
 import { MetasRealizadoChart } from "@/components/dashboard/MetasRealizadoChart";
+import { CotacoesEmAbertoChart } from "@/components/dashboard/CotacoesEmAbertoChart";
 
 // Helper function to determine branch group
 const getBranchGroup = (ramoDescricao: string | undefined): string => {
@@ -1447,6 +1448,9 @@ const Dashboard = () => {
         produtores={produtores}
         fechamentosCount={monthlyStats.fechados}
       />
+
+      {/* Cotações em Aberto */}
+      <CotacoesEmAbertoChart cotacoes={filteredCotacoes} />
 
       {/* Insights Adicionais */}
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
