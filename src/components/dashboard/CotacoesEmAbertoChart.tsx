@@ -175,7 +175,7 @@ const CustomTooltip = ({ active, payload, viewType }: any) => {
         )}
         {representativeGroup && (
           <div className="pt-1 border-t mt-1">
-            <span className="text-muted-foreground">Prêmio {data.ramoRepresentativo}: </span>
+            <span className="text-muted-foreground">Prêmio Cotação: </span>
             <span className="font-semibold text-primary">{formatCurrency(representativeGroup.premioTotal)}</span>
           </div>
         )}
