@@ -379,9 +379,8 @@ export const CotacoesEmAbertoChart = ({ cotacoes }: CotacoesEmAbertoChartProps) 
                   <YAxis 
                     type="category"
                     dataKey="segurado" 
-                    tick={{ fontSize: 9 }}
+                    tick={{ fontSize: 9, fill: '#FFFFFF' }}
                     tickLine={false}
-                    className="text-muted-foreground"
                     width={100}
                   />
                   <Tooltip content={<CustomTooltip viewType={viewType} />} />
@@ -438,11 +437,18 @@ export const CotacoesEmAbertoChart = ({ cotacoes }: CotacoesEmAbertoChartProps) 
                 </Button>
               </div>
             </div>
-            <div className="text-xs text-muted-foreground min-h-[220px] overflow-y-auto">
+            <div className="text-sm min-h-[220px] overflow-y-auto">
               {aiAnalysis ? (
-                <div className="whitespace-pre-wrap leading-relaxed text-foreground">{aiAnalysis}</div>
+                <div 
+                  className="whitespace-pre-wrap leading-relaxed text-foreground"
+                  dangerouslySetInnerHTML={{ 
+                    __html: aiAnalysis
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\n/g, '<br/>') 
+                  }}
+                />
               ) : (
-                <div className="flex flex-col items-center justify-center h-[200px] text-center">
+                <div className="flex flex-col items-center justify-center h-[200px] text-center text-muted-foreground">
                   <Sparkles className="h-8 w-8 text-muted-foreground/50 mb-2" />
                   <p>Clique em "Gerar Análise" para obter insights.</p>
                 </div>
