@@ -24,24 +24,21 @@ serve(async (req) => {
     if (type === "open-quotes") {
       systemPrompt = `Você é um analista comercial especializado em seguros. Analise os dados de cotações em aberto e forneça insights acionáveis em português brasileiro. Seja direto e objetivo. Use formatação clara com bullets.`;
       
-      userPrompt = `Analise estas cotações em aberto e forneça insights comerciais:
+      userPrompt = `Analise estas cotações em aberto e forneça EXATAMENTE 3 insights comerciais curtos e diretos.
 
-RESUMO GERAL:
+DADOS:
 - Total Recorrente: R$ ${totals.recorrente?.toLocaleString('pt-BR') || 0}
 - Total Avulso: R$ ${totals.total?.toLocaleString('pt-BR') || 0}
-- Segurados com cotações: ${totals.segurados || 0}
+- Segurados: ${totals.segurados || 0}
 
-DADOS POR SEGURADO:
-${JSON.stringify(data.slice(0, 15), null, 2)}
+TOP SEGURADOS:
+${JSON.stringify(data.slice(0, 10), null, 2)}
 
-Forneça análise em até 200 palavras cobrindo:
-1. **Maiores Oportunidades**: Clientes com maior valor em aberto
-2. **Concentração de Risco**: Onde está o maior volume
-3. **Cotações Antigas**: Clientes que precisam de follow-up urgente
-4. **Diversificação**: Clientes com apenas 1 ramo (oportunidade de cross-sell)
-5. **Recorrente vs Avulso**: Proporção e recomendações
-
-Seja objetivo e prático.`;
+REGRAS:
+- Retorne EXATAMENTE 3 análises numeradas (1., 2., 3.)
+- Cada análise deve ter NO MÁXIMO 2 linhas
+- Seja direto e objetivo
+- Foque em: maiores oportunidades, cotações antigas, e proporção recorrente/total`;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

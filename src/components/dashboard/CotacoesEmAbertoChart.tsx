@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Sparkles, Loader2 } from 'lucide-react';
@@ -57,6 +57,7 @@ interface QuoteDetail {
   premio: number;
   regra: 'Recorrente' | 'Total';
   dataCotacao: string | null;
+  produtorCotador: string | null;
 }
 
 interface SeguradoData {
@@ -96,12 +97,22 @@ const formatDate = (dateStr: string | null) => {
   return new Date(dateStr).toLocaleDateString('pt-BR');
 };
 
+// Format ramo name - replace RC-DC with RCTR-C
+const formatRamoName = (ramo: string): string => {
+  if (ramo === 'RC-DC') return 'RCTR-C';
+  return ramo;
+};
+
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, viewType }: any) => {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0]?.payload as SeguradoData;
   if (!data) return null;
+
+  // Get the representative quote details
+  const cotacoes = viewType === 'Recorrente' ? data.cotacoesRecorrente : data.cotacoesTotal;
+  const representativo = cotacoes?.[0];
 
   return (
     <div className="bg-popover border border-border rounded-lg p-3 shadow-lg max-w-xs">
@@ -113,7 +124,7 @@ const CustomTooltip = ({ active, payload, viewType }: any) => {
         </div>
         <div>
           <span className="text-muted-foreground">Ramo: </span>
-          <span className="font-medium text-foreground">{data.ramoRepresentativo}</span>
+          <span className="font-medium text-foreground">{formatRamoName(data.ramoRepresentativo)}</span>
         </div>
         <div>
           <span className="text-muted-foreground">Segmento: </span>
@@ -123,10 +134,18 @@ const CustomTooltip = ({ active, payload, viewType }: any) => {
           <span className="text-muted-foreground">Data Início: </span>
           <span className="font-medium text-foreground">{formatDate(data.dataInicio)}</span>
         </div>
-        <div className="pt-1 border-t mt-1">
-          <span className="text-muted-foreground">Prêmio: </span>
-          <span className="font-semibold text-primary">{formatCurrency(data.premio)}</span>
-        </div>
+        {representativo?.produtorCotador && (
+          <div>
+            <span className="text-muted-foreground">Produtor Cotador: </span>
+            <span className="font-medium text-foreground">{representativo.produtorCotador}</span>
+          </div>
+        )}
+        {representativo && (
+          <div className="pt-1 border-t mt-1">
+            <span className="text-muted-foreground">Prêmio Cotação: </span>
+            <span className="font-semibold text-primary">{formatCurrency(representativo.premio)}</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -157,6 +176,11 @@ export const CotacoesEmAbertoChart = ({ cotacoes }: CotacoesEmAbertoChartProps) 
   const [viewType, setViewType] = useState<ViewType>('Recorrente');
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [isLoadingAI, setIsLoadingAI] = useState(false);
+
+  // Clear AI analysis when cotacoes changes (refresh/update)
+  useEffect(() => {
+    setAiAnalysis('');
+  }, [cotacoes]);
 
   // Process all "Em cotação" data
   const allData = useMemo(() => {
@@ -193,6 +217,7 @@ export const CotacoesEmAbertoChart = ({ cotacoes }: CotacoesEmAbertoChartProps) 
         premio,
         regra,
         dataCotacao: cotacao.data_cotacao,
+        produtorCotador: cotacao.produtor_cotador?.nome || null,
       };
       
       if (regra === 'Recorrente') {
@@ -384,33 +409,42 @@ export const CotacoesEmAbertoChart = ({ cotacoes }: CotacoesEmAbertoChartProps) 
                 <Sparkles className="h-4 w-4 text-primary" />
                 Análise por IA
               </h4>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={generateAIAnalysis}
-                disabled={isLoadingAI}
-              >
-                {isLoadingAI ? (
-                  <>
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                    Analisando...
-                  </>
-                ) : (
-                  'Gerar Análise'
+              <div className="flex gap-2">
+                {aiAnalysis && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                    onClick={() => setAiAnalysis('')}
+                  >
+                    Apagar
+                  </Button>
                 )}
-              </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={generateAIAnalysis}
+                  disabled={isLoadingAI}
+                >
+                  {isLoadingAI ? (
+                    <>
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      Analisando...
+                    </>
+                  ) : (
+                    'Gerar Análise'
+                  )}
+                </Button>
+              </div>
             </div>
             <div className="text-xs text-muted-foreground min-h-[220px] overflow-y-auto">
               {aiAnalysis ? (
-                <div className="whitespace-pre-wrap leading-relaxed">{aiAnalysis}</div>
+                <div className="whitespace-pre-wrap leading-relaxed text-foreground">{aiAnalysis}</div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-[200px] text-center">
                   <Sparkles className="h-8 w-8 text-muted-foreground/50 mb-2" />
-                  <p>Clique em "Gerar Análise" para obter insights sobre as cotações em aberto.</p>
-                  <p className="mt-2 text-muted-foreground/70">
-                    A IA identificará clientes com maior potencial, valores concentrados e oportunidades.
-                  </p>
+                  <p>Clique em "Gerar Análise" para obter insights.</p>
                 </div>
               )}
             </div>
