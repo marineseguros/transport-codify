@@ -51,14 +51,38 @@ const getSegmento = (ramoDescricao: string | undefined): string => {
   return 'Transportes';
 };
 
+// Identifica se o ramo pertence ao grupo RCTR-C + RC-DC
+const getRamoGroup = (ramoDescricao: string | undefined): string => {
+  if (!ramoDescricao) return ramoDescricao || 'Não informado';
+  const ramoUpper = ramoDescricao.toUpperCase();
+  
+  // Grupo 1: RCTR-C e RC-DC são combinados
+  if (ramoUpper.includes('RCTR-C') || ramoUpper === 'RC-DC') {
+    return 'RCTR-C + RC-DC';
+  }
+  
+  return ramoDescricao;
+};
+
 interface QuoteDetail {
   id: string;
   ramo: string;
+  ramoGroup: string; // Grupo do ramo (ex: "RCTR-C + RC-DC")
   segmento: string;
   premio: number;
   regra: 'Recorrente' | 'Total';
   dataCotacao: string | null;
   produtorCotador: string | null;
+}
+
+// Estrutura para agrupar cotações por segurado E por grupo de ramo
+interface RamoGroupData {
+  ramoGroup: string;
+  segmento: string;
+  premioTotal: number;
+  dataMaisAntiga: string | null;
+  produtorCotador: string | null;
+  cotacoes: QuoteDetail[];
 }
 
 interface SeguradoData {
@@ -67,6 +91,9 @@ interface SeguradoData {
   premioTotal: number;
   cotacoesRecorrente: QuoteDetail[];
   cotacoesTotal: QuoteDetail[];
+  // Grupos de ramo agrupados
+  ramoGroupsRecorrente: Map<string, RamoGroupData>;
+  ramoGroupsTotal: Map<string, RamoGroupData>;
   // For chart display
   premio: number;
   ramoRepresentativo: string;
@@ -98,12 +125,6 @@ const formatDate = (dateStr: string | null) => {
   return new Date(dateStr).toLocaleDateString('pt-BR');
 };
 
-// Format ramo name - replace RC-DC with RCTR-C
-const formatRamoName = (ramo: string): string => {
-  if (ramo === 'RC-DC') return 'RCTR-C';
-  return ramo;
-};
-
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, viewType }: any) => {
   if (!active || !payload || !payload.length) return null;
@@ -111,9 +132,20 @@ const CustomTooltip = ({ active, payload, viewType }: any) => {
   const data = payload[0]?.payload as SeguradoData;
   if (!data) return null;
 
-  // Get the representative quote details
-  const cotacoes = viewType === 'Recorrente' ? data.cotacoesRecorrente : data.cotacoesTotal;
-  const representativo = cotacoes?.[0];
+  // Get the ramoGroups based on viewType
+  const ramoGroups = viewType === 'Recorrente' ? data.ramoGroupsRecorrente : data.ramoGroupsTotal;
+  
+  // Find the representative ramo group (highest premium)
+  let representativeGroup: RamoGroupData | null = null;
+  if (ramoGroups) {
+    let maxPremio = 0;
+    ramoGroups.forEach((group) => {
+      if (group.premioTotal > maxPremio) {
+        maxPremio = group.premioTotal;
+        representativeGroup = group;
+      }
+    });
+  }
 
   return (
     <div className="bg-popover border border-border rounded-lg p-3 shadow-lg max-w-xs">
@@ -125,7 +157,7 @@ const CustomTooltip = ({ active, payload, viewType }: any) => {
         </div>
         <div>
           <span className="text-muted-foreground">Ramo: </span>
-          <span className="font-medium text-foreground">{formatRamoName(data.ramoRepresentativo)}</span>
+          <span className="font-medium text-foreground">{data.ramoRepresentativo}</span>
         </div>
         <div>
           <span className="text-muted-foreground">Segmento: </span>
@@ -135,16 +167,16 @@ const CustomTooltip = ({ active, payload, viewType }: any) => {
           <span className="text-muted-foreground">Data Início: </span>
           <span className="font-medium text-foreground">{formatDate(data.dataInicio)}</span>
         </div>
-        {representativo?.produtorCotador && (
+        {representativeGroup?.produtorCotador && (
           <div>
             <span className="text-muted-foreground">Produtor Cotador: </span>
-            <span className="font-medium text-foreground">{representativo.produtorCotador}</span>
+            <span className="font-medium text-foreground">{representativeGroup.produtorCotador}</span>
           </div>
         )}
-        {representativo && (
+        {representativeGroup && (
           <div className="pt-1 border-t mt-1">
-            <span className="text-muted-foreground">Prêmio Cotação: </span>
-            <span className="font-semibold text-primary">{formatCurrency(representativo.premio)}</span>
+            <span className="text-muted-foreground">Prêmio {data.ramoRepresentativo}: </span>
+            <span className="font-semibold text-primary">{formatCurrency(representativeGroup.premioTotal)}</span>
           </div>
         )}
       </div>
@@ -202,6 +234,7 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: Co
       const ramoDescricao = cotacao.ramo?.descricao;
       const regra = getRegraRamo(ramoDescricao);
       const segmento = getSegmento(ramoDescricao);
+      const ramoGroup = getRamoGroup(ramoDescricao);
       const premio = cotacao.valor_premio || 0;
       
       if (!groupedBySegurado.has(segurado)) {
@@ -211,6 +244,8 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: Co
           premioTotal: 0,
           cotacoesRecorrente: [],
           cotacoesTotal: [],
+          ramoGroupsRecorrente: new Map<string, RamoGroupData>(),
+          ramoGroupsTotal: new Map<string, RamoGroupData>(),
           premio: 0,
           ramoRepresentativo: '',
           segmentoRepresentativo: '',
@@ -223,12 +258,36 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: Co
       const quoteDetail: QuoteDetail = {
         id: cotacao.id,
         ramo: ramoDescricao || 'Não informado',
+        ramoGroup,
         segmento,
         premio,
         regra,
         dataCotacao: cotacao.data_cotacao,
         produtorCotador: cotacao.produtor_cotador?.nome || null,
       };
+      
+      // Agrupar por ramoGroup para somar RCTR-C + RC-DC
+      const ramoGroupsMap = regra === 'Recorrente' ? data.ramoGroupsRecorrente : data.ramoGroupsTotal;
+      
+      if (!ramoGroupsMap.has(ramoGroup)) {
+        ramoGroupsMap.set(ramoGroup, {
+          ramoGroup,
+          segmento,
+          premioTotal: 0,
+          dataMaisAntiga: cotacao.data_cotacao,
+          produtorCotador: cotacao.produtor_cotador?.nome || null,
+          cotacoes: [],
+        });
+      }
+      
+      const groupData = ramoGroupsMap.get(ramoGroup)!;
+      groupData.premioTotal += premio;
+      groupData.cotacoes.push(quoteDetail);
+      
+      // Atualizar data mais antiga
+      if (cotacao.data_cotacao && (!groupData.dataMaisAntiga || cotacao.data_cotacao < groupData.dataMaisAntiga)) {
+        groupData.dataMaisAntiga = cotacao.data_cotacao;
+      }
       
       if (regra === 'Recorrente') {
         data.premioRecorrente += premio;
@@ -246,18 +305,25 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: Co
   const chartData = useMemo(() => {
     return allData
       .map(item => {
-        const cotacoes = viewType === 'Recorrente' ? item.cotacoesRecorrente : item.cotacoesTotal;
+        const ramoGroups = viewType === 'Recorrente' ? item.ramoGroupsRecorrente : item.ramoGroupsTotal;
         const premio = viewType === 'Recorrente' ? item.premioRecorrente : item.premioTotal;
         
-        // Get representative quote (highest premium)
-        const representativo = cotacoes.sort((a, b) => b.premio - a.premio)[0];
+        // Find the representative ramo group (highest premium)
+        let representativeGroup: RamoGroupData | null = null;
+        let maxPremio = 0;
+        ramoGroups.forEach((group) => {
+          if (group.premioTotal > maxPremio) {
+            maxPremio = group.premioTotal;
+            representativeGroup = group;
+          }
+        });
         
         return {
           ...item,
           premio,
-          ramoRepresentativo: representativo?.ramo || 'N/A',
-          segmentoRepresentativo: representativo?.segmento || 'N/A',
-          dataInicio: representativo?.dataCotacao || null,
+          ramoRepresentativo: representativeGroup?.ramoGroup || 'N/A',
+          segmentoRepresentativo: representativeGroup?.segmento || 'N/A',
+          dataInicio: representativeGroup?.dataMaisAntiga || null,
         };
       })
       .filter(item => item.premio > 0)
