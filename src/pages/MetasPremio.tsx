@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Search, DollarSign, Filter, Save, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, DollarSign, Filter, Save } from 'lucide-react';
+import EscadinhaVisualization from '@/components/EscadinhaVisualization';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -542,6 +543,11 @@ const MetasPremio = () => {
         <div className="text-sm text-muted-foreground text-center">
           Exibindo {filteredMetas.length} de {metas.length} metas de prêmio
         </div>
+      )}
+
+      {/* Escadinha Visualization - shows when single meta is filtered */}
+      {filteredMetas.length === 1 && (
+        <EscadinhaVisualization meta={filteredMetas[0]} />
       )}
 
       {/* Create/Edit Modal */}
