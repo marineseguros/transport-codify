@@ -1,0 +1,430 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Target, TrendingUp, Calendar, Award } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { DateRange } from "react-day-picker";
+import { logger } from "@/lib/logger";
+
+interface MetaPremio {
+  id: string;
+  produtor_id: string;
+  ano: number;
+  meta_jan: number;
+  meta_fev: number;
+  meta_mar: number;
+  meta_abr: number;
+  meta_mai: number;
+  meta_jun: number;
+  meta_jul: number;
+  meta_ago: number;
+  meta_set: number;
+  meta_out: number;
+  meta_nov: number;
+  meta_dez: number;
+  produtor?: { id: string; nome: string; email: string };
+}
+
+interface Cotacao {
+  id: string;
+  valor_premio: number | null;
+  status: string;
+  data_fechamento: string | null;
+  produtor_cotador?: { nome: string; email: string } | null;
+}
+
+interface MetasPremioComparisonProps {
+  dateFilter: string;
+  dateRange: DateRange | undefined;
+  produtorFilter: string;
+  produtores: { id: string; nome: string; email: string }[];
+}
+
+const MONTHS = [
+  { key: 'meta_jan', label: 'Jan', index: 0 },
+  { key: 'meta_fev', label: 'Fev', index: 1 },
+  { key: 'meta_mar', label: 'Mar', index: 2 },
+  { key: 'meta_abr', label: 'Abr', index: 3 },
+  { key: 'meta_mai', label: 'Mai', index: 4 },
+  { key: 'meta_jun', label: 'Jun', index: 5 },
+  { key: 'meta_jul', label: 'Jul', index: 6 },
+  { key: 'meta_ago', label: 'Ago', index: 7 },
+  { key: 'meta_set', label: 'Set', index: 8 },
+  { key: 'meta_out', label: 'Out', index: 9 },
+  { key: 'meta_nov', label: 'Nov', index: 10 },
+  { key: 'meta_dez', label: 'Dez', index: 11 },
+] as const;
+
+// Calculate accumulated meta (escadinha)
+const calculateAccumulatedMetas = (meta: MetaPremio): number[] => {
+  const monthlyValues = MONTHS.map(m => meta[m.key as keyof MetaPremio] as number);
+  
+  // Step 1: Simple accumulation
+  const simpleAccum: number[] = [];
+  monthlyValues.forEach((value, index) => {
+    if (index === 0) {
+      simpleAccum.push(value);
+    } else {
+      simpleAccum.push(simpleAccum[index - 1] + value);
+    }
+  });
+  
+  // Step 2: Escadinha accumulation
+  const escadinhaAccum: number[] = [];
+  simpleAccum.forEach((value, index) => {
+    if (index === 0) {
+      escadinhaAccum.push(value);
+    } else {
+      escadinhaAccum.push(escadinhaAccum[index - 1] + value);
+    }
+  });
+  
+  return escadinhaAccum;
+};
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
+const getPercentageColor = (percentage: number) => {
+  if (percentage >= 100) return 'text-success-alt';
+  if (percentage >= 80) return 'text-amber-500';
+  return 'text-destructive';
+};
+
+const getPercentageBgColor = (percentage: number) => {
+  if (percentage >= 100) return 'bg-success-alt/10 border-success-alt/20';
+  if (percentage >= 80) return 'bg-amber-500/10 border-amber-500/20';
+  return 'bg-destructive/10 border-destructive/20';
+};
+
+export const MetasPremioComparison = ({
+  dateFilter,
+  dateRange,
+  produtorFilter,
+  produtores,
+}: MetasPremioComparisonProps) => {
+  const [metasPremio, setMetasPremio] = useState<MetaPremio[]>([]);
+  const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Calculate target month/year based on date filter
+  const { targetMonth, targetYear, startDate, endDate } = useMemo(() => {
+    const now = new Date();
+    let start: Date;
+    let end: Date = now;
+    
+    switch (dateFilter) {
+      case "hoje":
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case "7dias":
+        start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "30dias":
+        start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case "90dias":
+        start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case "mes_atual":
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case "mes_anterior":
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        end = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case "ano_atual":
+        start = new Date(now.getFullYear(), 0, 1);
+        end = new Date(now.getFullYear(), 11, 31);
+        break;
+      case "personalizado":
+      case "personalizado_comparacao":
+        if (dateRange?.from) {
+          start = dateRange.from;
+          end = dateRange.to || dateRange.from;
+        } else {
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        }
+        break;
+      default:
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
+
+    // Use end date to determine target month for monthly comparison
+    return {
+      targetMonth: end.getMonth(),
+      targetYear: end.getFullYear(),
+      startDate: start,
+      endDate: end,
+    };
+  }, [dateFilter, dateRange]);
+
+  // Get selected produtor ID
+  const selectedProdutorId = useMemo(() => {
+    if (produtorFilter === "todos") return null;
+    const produtor = produtores.find(p => p.nome === produtorFilter);
+    return produtor?.id || null;
+  }, [produtorFilter, produtores]);
+
+  // Fetch data
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch metas premio
+        let metasQuery = supabase
+          .from('metas_premio')
+          .select(`*, produtor:produtores(id, nome, email)`)
+          .eq('ano', targetYear);
+
+        if (selectedProdutorId) {
+          metasQuery = metasQuery.eq('produtor_id', selectedProdutorId);
+        }
+
+        const { data: metasData, error: metasError } = await metasQuery;
+        if (metasError) throw metasError;
+
+        // Fetch closed cotacoes
+        const startStr = startDate.toISOString().split('T')[0];
+        const endStr = endDate.toISOString().split('T')[0];
+
+        let cotacoesQuery = supabase
+          .from('cotacoes')
+          .select(`id, valor_premio, status, data_fechamento, produtor_cotador:produtores!cotacoes_produtor_cotador_id_fkey(nome, email)`)
+          .in('status', ['Negócio fechado', 'Fechamento congênere'])
+          .gte('data_fechamento', startStr)
+          .lte('data_fechamento', endStr + 'T23:59:59');
+
+        const { data: cotacoesData, error: cotacoesError } = await cotacoesQuery;
+        if (cotacoesError) throw cotacoesError;
+
+        setMetasPremio((metasData as MetaPremio[]) || []);
+        setCotacoes((cotacoesData as Cotacao[]) || []);
+      } catch (error) {
+        logger.error('Erro ao carregar dados de comparação de metas:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [targetYear, startDate, endDate, selectedProdutorId]);
+
+  // Calculate monthly comparison
+  const monthlyComparison = useMemo(() => {
+    // Filter cotacoes by produtor if needed
+    let filteredCotacoes = cotacoes;
+    if (selectedProdutorId) {
+      const selectedProdutor = produtores.find(p => p.id === selectedProdutorId);
+      if (selectedProdutor) {
+        filteredCotacoes = cotacoes.filter(c => c.produtor_cotador?.email === selectedProdutor.email);
+      }
+    }
+
+    // Filter by target month
+    const monthCotacoes = filteredCotacoes.filter(c => {
+      if (!c.data_fechamento) return false;
+      const fechDate = new Date(c.data_fechamento);
+      return fechDate.getMonth() === targetMonth && fechDate.getFullYear() === targetYear;
+    });
+
+    const valorRealizado = monthCotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+
+    // Get monthly meta
+    const monthKey = MONTHS[targetMonth].key as keyof MetaPremio;
+    let metaMensal = 0;
+
+    if (selectedProdutorId) {
+      const produtorMeta = metasPremio.find(m => m.produtor_id === selectedProdutorId);
+      if (produtorMeta) {
+        metaMensal = produtorMeta[monthKey] as number;
+      }
+    } else {
+      metaMensal = metasPremio.reduce((sum, m) => sum + (m[monthKey] as number || 0), 0);
+    }
+
+    const percentual = metaMensal > 0 ? (valorRealizado / metaMensal) * 100 : 0;
+
+    return {
+      valorRealizado,
+      metaMensal,
+      percentual,
+      mesLabel: MONTHS[targetMonth].label,
+    };
+  }, [cotacoes, metasPremio, targetMonth, targetYear, selectedProdutorId, produtores]);
+
+  // Calculate accumulated comparison (escadinha)
+  const accumulatedComparison = useMemo(() => {
+    // Filter cotacoes by produtor if needed
+    let filteredCotacoes = cotacoes;
+    if (selectedProdutorId) {
+      const selectedProdutor = produtores.find(p => p.id === selectedProdutorId);
+      if (selectedProdutor) {
+        filteredCotacoes = cotacoes.filter(c => c.produtor_cotador?.email === selectedProdutor.email);
+      }
+    }
+
+    // Sum all closed values within the year up to the target month
+    const yearCotacoes = filteredCotacoes.filter(c => {
+      if (!c.data_fechamento) return false;
+      const fechDate = new Date(c.data_fechamento);
+      return fechDate.getFullYear() === targetYear && fechDate.getMonth() <= targetMonth;
+    });
+
+    const valorRealizadoAno = yearCotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+
+    // Get accumulated meta (escadinha) for the target month
+    let metaAcumulada = 0;
+
+    if (selectedProdutorId) {
+      const produtorMeta = metasPremio.find(m => m.produtor_id === selectedProdutorId);
+      if (produtorMeta) {
+        const accumulated = calculateAccumulatedMetas(produtorMeta);
+        metaAcumulada = accumulated[targetMonth];
+      }
+    } else {
+      // Sum all produtors' accumulated metas
+      metasPremio.forEach(m => {
+        const accumulated = calculateAccumulatedMetas(m);
+        metaAcumulada += accumulated[targetMonth];
+      });
+    }
+
+    const percentual = metaAcumulada > 0 ? (valorRealizadoAno / metaAcumulada) * 100 : 0;
+
+    return {
+      valorRealizadoAno,
+      metaAcumulada,
+      percentual,
+    };
+  }, [cotacoes, metasPremio, targetMonth, targetYear, selectedProdutorId, produtores]);
+
+  if (loading) {
+    return (
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
+        <Card>
+          <CardContent className="flex items-center justify-center h-[180px]">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center justify-center h-[180px]">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
+      {/* Monthly Comparison Card */}
+      <Card className={`border ${getPercentageBgColor(monthlyComparison.percentual)}`}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            Meta Mensal x Realizado
+            <span className="ml-auto text-sm font-normal text-muted-foreground">
+              {monthlyComparison.mesLabel}/{targetYear}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Meta do Mês</p>
+              <p className="text-xl font-bold">{formatCurrency(monthlyComparison.metaMensal)}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Realizado</p>
+              <p className="text-xl font-bold">{formatCurrency(monthlyComparison.valorRealizado)}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between pt-2 border-t">
+            <span className="text-sm font-medium">Atingimento</span>
+            <div className="flex items-center gap-2">
+              <span className={`text-2xl font-bold ${getPercentageColor(monthlyComparison.percentual)}`}>
+                {monthlyComparison.percentual.toFixed(1)}%
+              </span>
+              {monthlyComparison.percentual >= 100 ? (
+                <Award className="h-5 w-5 text-success-alt" />
+              ) : (
+                <Target className="h-5 w-5 text-muted-foreground" />
+              )}
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="w-full bg-secondary rounded-full h-2">
+            <div
+              className={`h-2 rounded-full transition-all ${
+                monthlyComparison.percentual >= 100 ? 'bg-success-alt' :
+                monthlyComparison.percentual >= 80 ? 'bg-amber-500' : 'bg-destructive'
+              }`}
+              style={{ width: `${Math.min(monthlyComparison.percentual, 100)}%` }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Accumulated Comparison Card */}
+      <Card className={`border ${getPercentageBgColor(accumulatedComparison.percentual)}`}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Meta Acumulada x Realizado
+            <span className="ml-auto text-sm font-normal text-muted-foreground">
+              {targetYear} (até {monthlyComparison.mesLabel})
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Meta Acumulada (Escadinha)</p>
+              <p className="text-xl font-bold">{formatCurrency(accumulatedComparison.metaAcumulada)}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Total Realizado no Ano</p>
+              <p className="text-xl font-bold">{formatCurrency(accumulatedComparison.valorRealizadoAno)}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between pt-2 border-t">
+            <span className="text-sm font-medium">Atingimento Acumulado</span>
+            <div className="flex items-center gap-2">
+              <span className={`text-2xl font-bold ${getPercentageColor(accumulatedComparison.percentual)}`}>
+                {accumulatedComparison.percentual.toFixed(1)}%
+              </span>
+              {accumulatedComparison.percentual >= 100 ? (
+                <Award className="h-5 w-5 text-success-alt" />
+              ) : (
+                <Target className="h-5 w-5 text-muted-foreground" />
+              )}
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="w-full bg-secondary rounded-full h-2">
+            <div
+              className={`h-2 rounded-full transition-all ${
+                accumulatedComparison.percentual >= 100 ? 'bg-success-alt' :
+                accumulatedComparison.percentual >= 80 ? 'bg-amber-500' : 'bg-destructive'
+              }`}
+              style={{ width: `${Math.min(accumulatedComparison.percentual, 100)}%` }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};

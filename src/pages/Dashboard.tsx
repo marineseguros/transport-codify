@@ -44,6 +44,7 @@ import { CotacaoModal } from "@/components/CotacaoModal";
 import { logger } from "@/lib/logger";
 import { MetasRealizadoChart } from "@/components/dashboard/MetasRealizadoChart";
 import { CotacoesEmAbertoChart } from "@/components/dashboard/CotacoesEmAbertoChart";
+import { MetasPremioComparison } from "@/components/dashboard/MetasPremioComparison";
 
 // Helper function to determine branch group
 const getBranchGroup = (ramoDescricao: string | undefined): string => {
@@ -1447,6 +1448,14 @@ const Dashboard = () => {
         produtorFilter={produtorFilter}
         produtores={produtores}
         fechamentosCount={monthlyStats.fechados}
+      />
+
+      {/* Batimento de Metas de Prêmio */}
+      <MetasPremioComparison
+        dateFilter={dateFilter}
+        dateRange={dateRange}
+        produtorFilter={produtorFilter}
+        produtores={produtores}
       />
 
       {/* Cotações em Aberto - Sempre exibe TODAS as cotações "Em cotação", sem filtro de data */}
