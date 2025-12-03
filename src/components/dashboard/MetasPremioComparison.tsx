@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
 import { logger } from "@/lib/logger";
+import { getDaysInMonth, getDate } from "date-fns";
 
 interface MetaPremio {
   id: string;
@@ -24,11 +25,19 @@ interface MetaPremio {
   produtor?: { id: string; nome: string; email: string };
 }
 
+interface Ramo {
+  id: string;
+  descricao: string;
+  ramo_agrupado: string | null;
+}
+
 interface Cotacao {
   id: string;
   valor_premio: number | null;
   status: string;
   data_fechamento: string | null;
+  inicio_vigencia: string | null;
+  ramo_id: string | null;
   produtor_cotador?: { nome: string; email: string } | null;
 }
 
@@ -53,6 +62,57 @@ const MONTHS = [
   { key: 'meta_nov', label: 'Nov', index: 10 },
   { key: 'meta_dez', label: 'Dez', index: 11 },
 ] as const;
+
+// Ramos recorrentes based on ramo_agrupado
+const RECURRENT_RAMOS = [
+  'Nacional', 'Exportação', 'Importação', 'RCTR-C', 'RC-DC', 'RCTR-VI', 'RCTA-C', 'RC-V'
+];
+
+const isRecurrentRamo = (ramo: Ramo | undefined): boolean => {
+  if (!ramo) return false;
+  return RECURRENT_RAMOS.includes(ramo.ramo_agrupado || ramo.descricao);
+};
+
+// Calculate monthly prize distribution for a cotacao
+const calculateMonthlyPrizes = (
+  cotacao: Cotacao,
+  ramo: Ramo | undefined,
+  targetYear: number
+): number[] => {
+  const monthlyPrizes = new Array(12).fill(0);
+  const premio = cotacao.valor_premio || 0;
+  
+  if (premio === 0 || !cotacao.inicio_vigencia) return monthlyPrizes;
+  
+  const inicioDate = new Date(cotacao.inicio_vigencia + 'T00:00:00');
+  const inicioYear = inicioDate.getFullYear();
+  const inicioMonth = inicioDate.getMonth();
+  
+  // Only process if inicio_vigencia is in the target year
+  if (inicioYear !== targetYear) return monthlyPrizes;
+  
+  if (!isRecurrentRamo(ramo)) {
+    // Non-recurrent: use full prize only in the month of inicio_vigencia
+    monthlyPrizes[inicioMonth] = premio;
+  } else {
+    // Recurrent: proportional in first month, full for remaining months until December
+    const daysInMonth = getDaysInMonth(inicioDate);
+    const dayOfMonth = getDate(inicioDate);
+    const daysRemaining = daysInMonth - dayOfMonth + 1;
+    const dailyPremium = premio / daysInMonth;
+    const proportionalPremium = dailyPremium * daysRemaining;
+    
+    // First month: proportional
+    monthlyPrizes[inicioMonth] = proportionalPremium;
+    
+    // Remaining months until December: full premium
+    for (let month = inicioMonth + 1; month < 12; month++) {
+      monthlyPrizes[month] = premio;
+    }
+  }
+  
+  return monthlyPrizes;
+};
 
 // Calculate accumulated meta (escadinha)
 const calculateAccumulatedMetas = (meta: MetaPremio): number[] => {
@@ -110,6 +170,7 @@ export const MetasPremioComparison = ({
 }: MetasPremioComparisonProps) => {
   const [metasPremio, setMetasPremio] = useState<MetaPremio[]>([]);
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
+  const [ramos, setRamos] = useState<Record<string, Ramo>>({});
   const [loading, setLoading] = useState(true);
 
   // Calculate target month/year based on date filter
@@ -179,6 +240,19 @@ export const MetasPremioComparison = ({
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Fetch ramos first
+        const { data: ramosData, error: ramosError } = await supabase
+          .from('ramos')
+          .select('id, descricao, ramo_agrupado');
+        
+        if (ramosError) throw ramosError;
+        
+        const ramosMap: Record<string, Ramo> = {};
+        (ramosData || []).forEach(r => {
+          ramosMap[r.id] = r;
+        });
+        setRamos(ramosMap);
+
         // Fetch metas premio
         let metasQuery = supabase
           .from('metas_premio')
@@ -192,18 +266,17 @@ export const MetasPremioComparison = ({
         const { data: metasData, error: metasError } = await metasQuery;
         if (metasError) throw metasError;
 
-        // Fetch closed cotacoes
-        const startStr = startDate.toISOString().split('T')[0];
-        const endStr = endDate.toISOString().split('T')[0];
+        // Fetch closed cotacoes for the target year (need full year for recurrent calculation)
+        const yearStart = `${targetYear}-01-01`;
+        const yearEnd = `${targetYear}-12-31T23:59:59`;
 
-        let cotacoesQuery = supabase
+        const { data: cotacoesData, error: cotacoesError } = await supabase
           .from('cotacoes')
-          .select(`id, valor_premio, status, data_fechamento, produtor_cotador:produtores!cotacoes_produtor_cotador_id_fkey(nome, email)`)
+          .select(`id, valor_premio, status, data_fechamento, inicio_vigencia, ramo_id, produtor_cotador:produtores!cotacoes_produtor_cotador_id_fkey(nome, email)`)
           .in('status', ['Negócio fechado', 'Fechamento congênere'])
-          .gte('data_fechamento', startStr)
-          .lte('data_fechamento', endStr + 'T23:59:59');
+          .gte('data_fechamento', yearStart)
+          .lte('data_fechamento', yearEnd);
 
-        const { data: cotacoesData, error: cotacoesError } = await cotacoesQuery;
         if (cotacoesError) throw cotacoesError;
 
         setMetasPremio((metasData as MetaPremio[]) || []);
@@ -216,10 +289,10 @@ export const MetasPremioComparison = ({
     };
 
     fetchData();
-  }, [targetYear, startDate, endDate, selectedProdutorId]);
+  }, [targetYear, selectedProdutorId]);
 
-  // Calculate monthly comparison
-  const monthlyComparison = useMemo(() => {
+  // Calculate monthly prizes using recurrent logic
+  const monthlyPrizes = useMemo(() => {
     // Filter cotacoes by produtor if needed
     let filteredCotacoes = cotacoes;
     if (selectedProdutorId) {
@@ -229,14 +302,33 @@ export const MetasPremioComparison = ({
       }
     }
 
-    // Filter by target month
-    const monthCotacoes = filteredCotacoes.filter(c => {
-      if (!c.data_fechamento) return false;
-      const fechDate = new Date(c.data_fechamento);
-      return fechDate.getMonth() === targetMonth && fechDate.getFullYear() === targetYear;
+    // Calculate monthly distribution for all cotacoes
+    const totalMonthly = new Array(12).fill(0);
+    
+    filteredCotacoes.forEach(cotacao => {
+      const ramo = cotacao.ramo_id ? ramos[cotacao.ramo_id] : undefined;
+      const monthly = calculateMonthlyPrizes(cotacao, ramo, targetYear);
+      monthly.forEach((value, index) => {
+        totalMonthly[index] += value;
+      });
     });
 
-    const valorRealizado = monthCotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+    // Calculate accumulated
+    const accumulated: number[] = [];
+    totalMonthly.forEach((value, index) => {
+      if (index === 0) {
+        accumulated.push(value);
+      } else {
+        accumulated.push(accumulated[index - 1] + value);
+      }
+    });
+
+    return { monthly: totalMonthly, accumulated };
+  }, [cotacoes, ramos, targetYear, selectedProdutorId, produtores]);
+
+  // Calculate monthly comparison
+  const monthlyComparison = useMemo(() => {
+    const valorRealizado = monthlyPrizes.monthly[targetMonth];
 
     // Get monthly meta
     const monthKey = MONTHS[targetMonth].key as keyof MetaPremio;
@@ -259,27 +351,11 @@ export const MetasPremioComparison = ({
       percentual,
       mesLabel: MONTHS[targetMonth].label,
     };
-  }, [cotacoes, metasPremio, targetMonth, targetYear, selectedProdutorId, produtores]);
+  }, [monthlyPrizes, metasPremio, targetMonth, selectedProdutorId]);
 
   // Calculate accumulated comparison (escadinha)
   const accumulatedComparison = useMemo(() => {
-    // Filter cotacoes by produtor if needed
-    let filteredCotacoes = cotacoes;
-    if (selectedProdutorId) {
-      const selectedProdutor = produtores.find(p => p.id === selectedProdutorId);
-      if (selectedProdutor) {
-        filteredCotacoes = cotacoes.filter(c => c.produtor_cotador?.email === selectedProdutor.email);
-      }
-    }
-
-    // Sum all closed values within the year up to the target month
-    const yearCotacoes = filteredCotacoes.filter(c => {
-      if (!c.data_fechamento) return false;
-      const fechDate = new Date(c.data_fechamento);
-      return fechDate.getFullYear() === targetYear && fechDate.getMonth() <= targetMonth;
-    });
-
-    const valorRealizadoAno = yearCotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+    const valorRealizadoAno = monthlyPrizes.accumulated[targetMonth];
 
     // Get accumulated meta (escadinha) for the target month
     let metaAcumulada = 0;
@@ -305,7 +381,7 @@ export const MetasPremioComparison = ({
       metaAcumulada,
       percentual,
     };
-  }, [cotacoes, metasPremio, targetMonth, targetYear, selectedProdutorId, produtores]);
+  }, [monthlyPrizes, metasPremio, targetMonth, selectedProdutorId]);
 
   if (loading) {
     return (
