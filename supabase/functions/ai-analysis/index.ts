@@ -71,19 +71,28 @@ REGRAS:
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+          JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Payment required. Please add credits." }),
+          JSON.stringify({ error: "Créditos insuficientes. Adicione créditos na sua conta." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 503 || response.status === 502) {
+        return new Response(
+          JSON.stringify({ error: "Serviço de IA temporariamente indisponível. Tente novamente em alguns segundos." }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      throw new Error("AI gateway error");
+      return new Response(
+        JSON.stringify({ error: "Erro ao gerar análise. Tente novamente." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const aiResponse = await response.json();
