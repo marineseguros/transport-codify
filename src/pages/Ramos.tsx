@@ -4,21 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRamos } from '@/hooks/useSupabaseData';
 import { RamoModal } from '@/components/RamoModal';
@@ -32,7 +19,6 @@ const getSegmento = (descricao: string): string => {
   const avulso = ['Nacional Avulsa', 'Importação Avulsa', 'Exportação Avulsa', 'Garantia Aduaneira'];
   const ambiental = ['Ambiental'];
   const rcv = ['RC-V'];
-
   if (avulso.some(r => descricao === r)) return 'Avulso';
   if (ambiental.some(r => descricao === r)) return 'Ambiental';
   if (rcv.some(r => descricao === r)) return 'RC-V';
@@ -44,15 +30,19 @@ const getSegmento = (descricao: string): string => {
 const getRegra = (descricao: string): string => {
   const recorrente = ['Nacional', 'Exportação', 'Importação', 'RCTR-C', 'RC-DC', 'RCTR-VI', 'RCTA-C', 'RC-V'];
   const total = ['Nacional Avulsa', 'Importação Avulsa', 'Exportação Avulsa', 'Garantia Aduaneira', 'Ambiental'];
-
   if (recorrente.some(r => descricao === r)) return 'Recorrente';
   if (total.some(r => descricao === r)) return 'Total';
   return 'Outros';
 };
-
 const Ramos = () => {
-  const { user } = useAuth();
-  const { ramos, loading, refetch } = useRamos();
+  const {
+    user
+  } = useAuth();
+  const {
+    ramos,
+    loading,
+    refetch
+  } = useRamos();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [selectedRamo, setSelectedRamo] = useState<Ramo | null>(null);
@@ -60,51 +50,49 @@ const Ramos = () => {
 
   // Only Administrators can access this page
   if (user?.papel !== 'Administrador') {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
+    return <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Acesso Negado</h2>
           <p className="text-muted-foreground">
             Você não tem permissão para acessar esta página.
           </p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const handleEdit = (ramo: Ramo) => {
     setSelectedRamo(ramo);
     setIsModalOpen(true);
   };
-
   const handleNew = () => {
     setSelectedRamo(null);
     setIsModalOpen(true);
   };
-
   const handleMoveUp = async (ramo: Ramo, currentIndex: number) => {
     if (currentIndex === 0) return;
-    
     const prevRamo = filteredRamos[currentIndex - 1];
-    
     try {
-      await supabase.from('ramos').update({ ordem: prevRamo.ordem }).eq('id', ramo.id);
-      await supabase.from('ramos').update({ ordem: ramo.ordem }).eq('id', prevRamo.id);
+      await supabase.from('ramos').update({
+        ordem: prevRamo.ordem
+      }).eq('id', ramo.id);
+      await supabase.from('ramos').update({
+        ordem: ramo.ordem
+      }).eq('id', prevRamo.id);
       toast.success('Ordem atualizada!');
       refetch();
     } catch (error: any) {
       toast.error('Erro ao atualizar ordem');
     }
   };
-
   const handleMoveDown = async (ramo: Ramo, currentIndex: number) => {
     if (currentIndex === filteredRamos.length - 1) return;
-    
     const nextRamo = filteredRamos[currentIndex + 1];
-    
     try {
-      await supabase.from('ramos').update({ ordem: nextRamo.ordem }).eq('id', ramo.id);
-      await supabase.from('ramos').update({ ordem: ramo.ordem }).eq('id', nextRamo.id);
+      await supabase.from('ramos').update({
+        ordem: nextRamo.ordem
+      }).eq('id', ramo.id);
+      await supabase.from('ramos').update({
+        ordem: ramo.ordem
+      }).eq('id', nextRamo.id);
       toast.success('Ordem atualizada!');
       refetch();
     } catch (error: any) {
@@ -115,12 +103,8 @@ const Ramos = () => {
   // Filter ramos based on search and filters
   const filteredRamos = useMemo(() => {
     return ramos.filter(ramo => {
-      const matchesSearch = ramo.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           ramo.codigo.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === '' || statusFilter === 'todos' || 
-                           (statusFilter === 'ativo' && ramo.ativo) ||
-                           (statusFilter === 'inativo' && !ramo.ativo);
-      
+      const matchesSearch = ramo.descricao.toLowerCase().includes(searchTerm.toLowerCase()) || ramo.codigo.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === '' || statusFilter === 'todos' || statusFilter === 'ativo' && ramo.ativo || statusFilter === 'inativo' && !ramo.ativo;
       return matchesSearch && matchesStatus;
     });
   }, [ramos, searchTerm, statusFilter]);
@@ -130,13 +114,14 @@ const Ramos = () => {
     const total = ramos.length;
     const ativos = ramos.filter(r => r.ativo).length;
     const inativos = ramos.filter(r => !r.ativo).length;
-    
-    return { total, ativos, inativos };
+    return {
+      total,
+      ativos,
+      inativos
+    };
   }, [ramos]);
-
   if (loading) {
-    return (
-      <div className="space-y-6">
+    return <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
@@ -146,12 +131,9 @@ const Ramos = () => {
             <p className="text-sm text-muted-foreground">Carregando ramos...</p>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -212,11 +194,7 @@ const Ramos = () => {
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-64">
               <label className="text-sm font-medium mb-2 block">Buscar</label>
-              <Input
-                placeholder="Buscar por descrição ou código..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <Input placeholder="Buscar por descrição ou código..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
 
             <div className="w-48">
@@ -233,13 +211,10 @@ const Ramos = () => {
               </Select>
             </div>
 
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('');
-              }}
-            >
+            <Button variant="outline" onClick={() => {
+            setSearchTerm('');
+            setStatusFilter('');
+          }}>
               Limpar
             </Button>
           </div>
@@ -258,7 +233,7 @@ const Ramos = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Código</TableHead>
-                <TableHead>Descrição</TableHead>
+                <TableHead>Ramo</TableHead>
                 <TableHead>Segmento</TableHead>
                 <TableHead>Regra</TableHead>
                 <TableHead>Status</TableHead>
@@ -266,8 +241,7 @@ const Ramos = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRamos.map((ramo, index) => (
-                <TableRow key={ramo.id}>
+              {filteredRamos.map((ramo, index) => <TableRow key={ramo.id}>
                   <TableCell>
                     <code className="text-sm">{ramo.codigo}</code>
                   </TableCell>
@@ -287,20 +261,10 @@ const Ramos = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => handleMoveUp(ramo, index)}
-                        disabled={index === 0}
-                      >
+                      <Button size="sm" variant="ghost" onClick={() => handleMoveUp(ramo, index)} disabled={index === 0}>
                         <ChevronUp className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => handleMoveDown(ramo, index)}
-                        disabled={index === filteredRamos.length - 1}
-                      >
+                      <Button size="sm" variant="ghost" onClick={() => handleMoveDown(ramo, index)} disabled={index === filteredRamos.length - 1}>
                         <ChevronDown className="h-4 w-4" />
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => handleEdit(ramo)}>
@@ -311,40 +275,28 @@ const Ramos = () => {
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
           </Table>
 
-          {filteredRamos.length === 0 && (
-            <div className="text-center py-8">
+          {filteredRamos.length === 0 && <div className="text-center py-8">
               <Tags className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-sm font-semibold">Nenhum ramo encontrado</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                {searchTerm || statusFilter
-                  ? 'Tente ajustar os filtros para encontrar ramos.'
-                  : 'Comece criando seu primeiro ramo.'}
+                {searchTerm || statusFilter ? 'Tente ajustar os filtros para encontrar ramos.' : 'Comece criando seu primeiro ramo.'}
               </p>
-            </div>
-          )}
+            </div>}
         </CardContent>
       </Card>
 
-      <RamoModal
-        ramo={selectedRamo}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedRamo(null);
-        }}
-        onSuccess={() => {
-          refetch();
-          setIsModalOpen(false);
-          setSelectedRamo(null);
-        }}
-      />
-    </div>
-  );
+      <RamoModal ramo={selectedRamo} isOpen={isModalOpen} onClose={() => {
+      setIsModalOpen(false);
+      setSelectedRamo(null);
+    }} onSuccess={() => {
+      refetch();
+      setIsModalOpen(false);
+      setSelectedRamo(null);
+    }} />
+    </div>;
 };
-
 export default Ramos;
