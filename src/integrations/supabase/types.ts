@@ -545,6 +545,80 @@ export type Database = {
           },
         ]
       }
+      metas_premio: {
+        Row: {
+          ano: number
+          created_at: string
+          created_by: string | null
+          id: string
+          meta_abr: number
+          meta_ago: number
+          meta_dez: number
+          meta_fev: number
+          meta_jan: number
+          meta_jul: number
+          meta_jun: number
+          meta_mai: number
+          meta_mar: number
+          meta_nov: number
+          meta_out: number
+          meta_set: number
+          modulo: Database["public"]["Enums"]["modulo_tipo"]
+          produtor_id: string
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meta_abr?: number
+          meta_ago?: number
+          meta_dez?: number
+          meta_fev?: number
+          meta_jan?: number
+          meta_jul?: number
+          meta_jun?: number
+          meta_mai?: number
+          meta_mar?: number
+          meta_nov?: number
+          meta_out?: number
+          meta_set?: number
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
+          produtor_id: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meta_abr?: number
+          meta_ago?: number
+          meta_dez?: number
+          meta_fev?: number
+          meta_jan?: number
+          meta_jul?: number
+          meta_jun?: number
+          meta_mai?: number
+          meta_mar?: number
+          meta_nov?: number
+          meta_out?: number
+          meta_set?: number
+          modulo?: Database["public"]["Enums"]["modulo_tipo"]
+          produtor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metas_premio_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "produtores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtores: {
         Row: {
           ativo: boolean
