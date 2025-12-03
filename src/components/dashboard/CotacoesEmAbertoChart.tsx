@@ -297,7 +297,11 @@ export const CotacoesEmAbertoChart = ({ cotacoes }: CotacoesEmAbertoChartProps) 
       });
 
       if (error) throw error;
-      setAiAnalysis(data.analysis || 'Não foi possível gerar a análise.');
+      if (data?.error) {
+        setAiAnalysis(data.error);
+      } else {
+        setAiAnalysis(data.analysis || 'Não foi possível gerar a análise.');
+      }
     } catch (err) {
       setAiAnalysis('Erro ao gerar análise. Tente novamente.');
     } finally {
