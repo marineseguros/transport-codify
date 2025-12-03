@@ -30,19 +30,40 @@ interface MetaPremio {
 }
 
 const MONTHS = [
-  { key: 'meta_jan', label: 'Jan', index: 0 },
-  { key: 'meta_fev', label: 'Fev', index: 1 },
-  { key: 'meta_mar', label: 'Mar', index: 2 },
-  { key: 'meta_abr', label: 'Abr', index: 3 },
-  { key: 'meta_mai', label: 'Mai', index: 4 },
-  { key: 'meta_jun', label: 'Jun', index: 5 },
-  { key: 'meta_jul', label: 'Jul', index: 6 },
-  { key: 'meta_ago', label: 'Ago', index: 7 },
-  { key: 'meta_set', label: 'Set', index: 8 },
-  { key: 'meta_out', label: 'Out', index: 9 },
-  { key: 'meta_nov', label: 'Nov', index: 10 },
-  { key: 'meta_dez', label: 'Dez', index: 11 },
+  { key: 'meta_jan', label: 'Jan', index: 0, quarter: 1 },
+  { key: 'meta_fev', label: 'Fev', index: 1, quarter: 1 },
+  { key: 'meta_mar', label: 'Mar', index: 2, quarter: 1 },
+  { key: 'meta_abr', label: 'Abr', index: 3, quarter: 2 },
+  { key: 'meta_mai', label: 'Mai', index: 4, quarter: 2 },
+  { key: 'meta_jun', label: 'Jun', index: 5, quarter: 2 },
+  { key: 'meta_jul', label: 'Jul', index: 6, quarter: 3 },
+  { key: 'meta_ago', label: 'Ago', index: 7, quarter: 3 },
+  { key: 'meta_set', label: 'Set', index: 8, quarter: 3 },
+  { key: 'meta_out', label: 'Out', index: 9, quarter: 4 },
+  { key: 'meta_nov', label: 'Nov', index: 10, quarter: 4 },
+  { key: 'meta_dez', label: 'Dez', index: 11, quarter: 4 },
 ] as const;
+
+// Quarter colors for escadinha visualization
+const getQuarterColor = (quarter: number) => {
+  switch (quarter) {
+    case 1: return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200';
+    case 2: return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200';
+    case 3: return 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200';
+    case 4: return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200';
+    default: return 'bg-muted';
+  }
+};
+
+const getQuarterHeaderColor = (quarter: number) => {
+  switch (quarter) {
+    case 1: return 'bg-blue-200 dark:bg-blue-800 text-blue-900 dark:text-blue-100';
+    case 2: return 'bg-green-200 dark:bg-green-800 text-green-900 dark:text-green-100';
+    case 3: return 'bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100';
+    case 4: return 'bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100';
+    default: return 'bg-muted';
+  }
+};
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', {
@@ -161,7 +182,7 @@ const EscadinhaVisualization = ({ meta }: EscadinhaVisualizationProps) => {
                 <TableRow>
                   <TableHead className="sticky left-0 bg-background z-10 font-semibold">Mês</TableHead>
                   {MONTHS.map(m => (
-                    <TableHead key={m.key} className="text-center min-w-[80px]">
+                    <TableHead key={m.key} className={`text-center min-w-[80px] ${getQuarterHeaderColor(m.quarter)}`}>
                       {m.label}
                     </TableHead>
                   ))}
@@ -172,24 +193,28 @@ const EscadinhaVisualization = ({ meta }: EscadinhaVisualizationProps) => {
                 {escadinhaRows.map((row, rowIndex) => {
                   const filledCells = row.cells.filter(c => c !== null).length;
                   const rowTotal = (monthlyValues[rowIndex] || 0) * filledCells;
+                  const rowQuarter = MONTHS[rowIndex].quarter;
                   
                   return (
                     <TableRow key={row.month}>
-                      <TableCell className="font-medium sticky left-0 bg-background z-10">
+                      <TableCell className={`font-medium sticky left-0 z-10 ${getQuarterColor(rowQuarter)}`}>
                         {row.month}
                       </TableCell>
-                      {row.cells.map((cell, colIndex) => (
-                        <TableCell 
-                          key={colIndex} 
-                          className={`text-center text-sm ${
-                            cell !== null 
-                              ? 'bg-primary/10 font-medium' 
-                              : 'bg-muted/30'
-                          }`}
-                        >
-                          {cell !== null ? formatCurrency(cell) : '-'}
-                        </TableCell>
-                      ))}
+                      {row.cells.map((cell, colIndex) => {
+                        const colQuarter = MONTHS[colIndex].quarter;
+                        return (
+                          <TableCell 
+                            key={colIndex} 
+                            className={`text-center text-sm ${
+                              cell !== null 
+                                ? `${getQuarterColor(colQuarter)} font-medium` 
+                                : 'bg-muted/30'
+                            }`}
+                          >
+                            {cell !== null ? formatCurrency(cell) : '-'}
+                          </TableCell>
+                        );
+                      })}
                       <TableCell className="text-center font-semibold bg-muted">
                         {formatCurrency(rowTotal)}
                       </TableCell>
