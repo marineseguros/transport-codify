@@ -545,9 +545,32 @@ const MetasPremio = () => {
         </div>
       )}
 
-      {/* Escadinha Visualization - shows when single meta is filtered */}
-      {filteredMetas.length === 1 && (
+      {/* Escadinha Visualization - individual when producer selected, general when no producer */}
+      {filterProdutor !== 'all' && filteredMetas.length > 0 && (
         <EscadinhaVisualization meta={filteredMetas[0]} />
+      )}
+      
+      {filterProdutor === 'all' && filteredMetas.length > 0 && (
+        <EscadinhaVisualization 
+          meta={{
+            id: 'total',
+            produtor_id: 'total',
+            ano: filterAno !== 'all' ? parseInt(filterAno) : new Date().getFullYear(),
+            meta_jan: filteredMetas.reduce((sum, m) => sum + m.meta_jan, 0),
+            meta_fev: filteredMetas.reduce((sum, m) => sum + m.meta_fev, 0),
+            meta_mar: filteredMetas.reduce((sum, m) => sum + m.meta_mar, 0),
+            meta_abr: filteredMetas.reduce((sum, m) => sum + m.meta_abr, 0),
+            meta_mai: filteredMetas.reduce((sum, m) => sum + m.meta_mai, 0),
+            meta_jun: filteredMetas.reduce((sum, m) => sum + m.meta_jun, 0),
+            meta_jul: filteredMetas.reduce((sum, m) => sum + m.meta_jul, 0),
+            meta_ago: filteredMetas.reduce((sum, m) => sum + m.meta_ago, 0),
+            meta_set: filteredMetas.reduce((sum, m) => sum + m.meta_set, 0),
+            meta_out: filteredMetas.reduce((sum, m) => sum + m.meta_out, 0),
+            meta_nov: filteredMetas.reduce((sum, m) => sum + m.meta_nov, 0),
+            meta_dez: filteredMetas.reduce((sum, m) => sum + m.meta_dez, 0),
+            produtor: { id: 'total', nome: 'Total Geral (Todos Produtores)' }
+          }} 
+        />
       )}
 
       {/* Create/Edit Modal */}
