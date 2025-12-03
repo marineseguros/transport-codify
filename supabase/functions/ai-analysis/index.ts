@@ -22,9 +22,9 @@ serve(async (req) => {
     let userPrompt = "";
 
     if (type === "open-quotes") {
-      systemPrompt = `Você é um analista comercial especializado em seguros. Analise os dados de cotações em aberto e forneça insights acionáveis em português brasileiro. Seja direto e objetivo. Use formatação clara com bullets.`;
+      systemPrompt = `Você é um analista comercial especializado em seguros. Analise os dados de cotações em aberto e forneça insights acionáveis em português brasileiro. Use emojis comerciais e formatação clara.`;
       
-      userPrompt = `Analise estas cotações em aberto e forneça EXATAMENTE 3 insights comerciais curtos e diretos.
+      userPrompt = `Analise estas cotações em aberto e forneça EXATAMENTE 2 ou 3 insights comerciais.
 
 DADOS:
 - Total Recorrente: R$ ${totals.recorrente?.toLocaleString('pt-BR') || 0}
@@ -34,11 +34,22 @@ DADOS:
 TOP SEGURADOS:
 ${JSON.stringify(data.slice(0, 10), null, 2)}
 
+FORMATO OBRIGATÓRIO (use exatamente este formato):
+
+📊 **Maior Potencial**
+[1 frase curta sobre o cliente com maior valor]
+
+🎯 **Foco Comercial**
+[1 frase curta sobre onde concentrar esforços]
+
+⚠️ **Atenção**
+[1 frase curta sobre cotações antigas ou riscos - opcional]
+
 REGRAS:
-- Retorne EXATAMENTE 3 análises numeradas (1., 2., 3.)
-- Cada análise deve ter NO MÁXIMO 2 linhas
-- Seja direto e objetivo
-- Foque em: maiores oportunidades, cotações antigas, e proporção recorrente/total`;
+- Use EXATAMENTE os emojis e títulos em negrito (**texto**)
+- Cada insight deve ter NO MÁXIMO 1 linha
+- Seja direto e comercial
+- Pule uma linha entre cada insight`;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
