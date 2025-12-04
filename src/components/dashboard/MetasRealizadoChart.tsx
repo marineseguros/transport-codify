@@ -173,10 +173,11 @@ export const MetasRealizadoChart = ({
   const [loading, setLoading] = useState(true);
 
   // Calculate date range based on filter
-  const { startDate, endDate, targetMonth } = useMemo(() => {
+  const { startDate, endDate, targetYear, isYearFilter } = useMemo(() => {
     const now = new Date();
     let start: Date;
     let end: Date = now;
+    let yearFilter = false;
     
     switch (dateFilter) {
       case 'hoje':
@@ -202,6 +203,7 @@ export const MetasRealizadoChart = ({
       case 'ano_atual':
         start = new Date(now.getFullYear(), 0, 1);
         end = new Date(now.getFullYear(), 11, 31);
+        yearFilter = true;
         break;
       case 'personalizado':
       case 'personalizado_comparacao':
@@ -218,17 +220,14 @@ export const MetasRealizadoChart = ({
         end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     }
 
-    // For metas, we use the first day of the month from the start date
-    // Format as YYYY-MM-DD without timezone issues
-    const monthStart = new Date(start.getFullYear(), start.getMonth(), 1);
-    const year = monthStart.getFullYear();
-    const month = String(monthStart.getMonth() + 1).padStart(2, '0');
-    const targetMonthStr = `${year}-${month}-01`;
+    // For metas, we use the year from the start date
+    const year = start.getFullYear();
 
     return {
       startDate: start,
       endDate: end,
-      targetMonth: targetMonthStr,
+      targetYear: year,
+      isYearFilter: yearFilter,
     };
   }, [dateFilter, dateRange]);
 
@@ -256,8 +255,8 @@ export const MetasRealizadoChart = ({
 
         if (produtosError) throw produtosError;
 
-        // Fetch metas for the target month with tipo_meta relation
-        const { data: metasData, error: metasError } = await supabase
+        // Fetch metas - for year filter, get all months of the year; otherwise get specific month
+        let metasQuery = supabase
           .from('metas')
           .select(`
             id,
@@ -265,9 +264,22 @@ export const MetasRealizadoChart = ({
             mes,
             quantidade,
             tipo_meta:tipos_meta(id, descricao)
-          `)
-          .eq('mes', targetMonth);
+          `);
 
+        if (isYearFilter) {
+          // Fetch all metas for the entire year (all 12 months)
+          const yearStart = `${targetYear}-01-01`;
+          const yearEnd = `${targetYear}-12-31`;
+          metasQuery = metasQuery.gte('mes', yearStart).lte('mes', yearEnd);
+        } else {
+          // Fetch metas for the specific month
+          const monthStart = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+          const month = String(monthStart.getMonth() + 1).padStart(2, '0');
+          const targetMonth = `${monthStart.getFullYear()}-${month}-01`;
+          metasQuery = metasQuery.eq('mes', targetMonth);
+        }
+
+        const { data: metasData, error: metasError } = await metasQuery;
         if (metasError) throw metasError;
 
         // Fetch cotações with full data for distinct counting (CNPJ + Ramo)
@@ -297,7 +309,7 @@ export const MetasRealizadoChart = ({
     };
 
     fetchData();
-  }, [startDate, endDate, targetMonth, selectedProdutorId]);
+  }, [startDate, endDate, targetYear, isYearFilter, selectedProdutorId]);
 
   // Calculate realized counts from produtos
   const realizadoPorAtividade = useMemo(() => {
