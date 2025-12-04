@@ -82,20 +82,32 @@ const calculateMonthlyPrizes = (
   const monthlyPrizes = new Array(12).fill(0);
   const premio = cotacao.valor_premio || 0;
   
-  if (premio === 0 || !cotacao.inicio_vigencia) return monthlyPrizes;
-  
-  const inicioDate = new Date(cotacao.inicio_vigencia + 'T00:00:00');
-  const inicioYear = inicioDate.getFullYear();
-  const inicioMonth = inicioDate.getMonth();
-  
-  // Only process if inicio_vigencia is in the target year
-  if (inicioYear !== targetYear) return monthlyPrizes;
+  if (premio === 0) return monthlyPrizes;
   
   if (!isRecurrentRamo(ramo)) {
-    // Non-recurrent: use full prize only in the month of inicio_vigencia
-    monthlyPrizes[inicioMonth] = premio;
+    // NON-RECURRENT: use full prize only in the month of data_fechamento
+    if (!cotacao.data_fechamento) return monthlyPrizes;
+    
+    const fechamentoDate = new Date(cotacao.data_fechamento);
+    const fechamentoYear = fechamentoDate.getFullYear();
+    const fechamentoMonth = fechamentoDate.getMonth();
+    
+    // Only process if data_fechamento is in the target year
+    if (fechamentoYear !== targetYear) return monthlyPrizes;
+    
+    monthlyPrizes[fechamentoMonth] = premio;
   } else {
-    // Recurrent: proportional in first month, full for remaining months until December
+    // RECURRENT: use inicio_vigencia for proportional calculation
+    if (!cotacao.inicio_vigencia) return monthlyPrizes;
+    
+    const inicioDate = new Date(cotacao.inicio_vigencia + 'T00:00:00');
+    const inicioYear = inicioDate.getFullYear();
+    const inicioMonth = inicioDate.getMonth();
+    
+    // Only process if inicio_vigencia is in the target year
+    if (inicioYear !== targetYear) return monthlyPrizes;
+    
+    // Proportional in first month, full for remaining months until December
     const daysInMonth = getDaysInMonth(inicioDate);
     const dayOfMonth = getDate(inicioDate);
     const daysRemaining = daysInMonth - dayOfMonth + 1;
