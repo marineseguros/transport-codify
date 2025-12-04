@@ -395,6 +395,50 @@ export const MetasPremioComparison = ({
     };
   }, [monthlyPrizes, metasPremio, targetMonth, selectedProdutorId]);
 
+  // Calculate full year month-by-month comparison for table
+  const monthlyTableData = useMemo(() => {
+    return MONTHS.map((month, index) => {
+      const monthKey = month.key as keyof MetaPremio;
+      
+      // Get meta for this month
+      let metaMensal = 0;
+      let metaAcumulada = 0;
+      
+      if (selectedProdutorId) {
+        const produtorMeta = metasPremio.find(m => m.produtor_id === selectedProdutorId);
+        if (produtorMeta) {
+          metaMensal = produtorMeta[monthKey] as number;
+          const accumulated = calculateAccumulatedMetas(produtorMeta);
+          metaAcumulada = accumulated[index];
+        }
+      } else {
+        metasPremio.forEach(m => {
+          metaMensal += (m[monthKey] as number || 0);
+          const accumulated = calculateAccumulatedMetas(m);
+          metaAcumulada += accumulated[index];
+        });
+      }
+
+      const realizadoMensal = monthlyPrizes.monthly[index];
+      const realizadoAcumulado = monthlyPrizes.accumulated[index];
+      
+      const percentualMensal = metaMensal > 0 ? (realizadoMensal / metaMensal) * 100 : 0;
+      const percentualAcumulado = metaAcumulada > 0 ? (realizadoAcumulado / metaAcumulada) * 100 : 0;
+
+      return {
+        mes: month.label,
+        index,
+        metaMensal,
+        realizadoMensal,
+        percentualMensal,
+        metaAcumulada,
+        realizadoAcumulado,
+        percentualAcumulado,
+        isCurrent: index === targetMonth,
+      };
+    });
+  }, [metasPremio, monthlyPrizes, selectedProdutorId, targetMonth]);
+
   if (loading) {
     return (
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
@@ -413,103 +457,172 @@ export const MetasPremioComparison = ({
   }
 
   return (
-    <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
-      {/* Monthly Comparison Card */}
-      <Card className={`border ${getPercentageBgColor(monthlyComparison.percentual)}`}>
+    <div className="space-y-6">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
+        {/* Monthly Comparison Card */}
+        <Card className={`border ${getPercentageBgColor(monthlyComparison.percentual)}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Meta Mensal x Realizado
+              <span className="ml-auto text-sm font-normal text-muted-foreground">
+                {monthlyComparison.mesLabel}/{targetYear}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Meta do Mês</p>
+                <p className="text-xl font-bold">{formatCurrency(monthlyComparison.metaMensal)}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Realizado</p>
+                <p className="text-xl font-bold">{formatCurrency(monthlyComparison.valorRealizado)}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between pt-2 border-t">
+              <span className="text-sm font-medium">Atingimento</span>
+              <div className="flex items-center gap-2">
+                <span className={`text-2xl font-bold ${getPercentageColor(monthlyComparison.percentual)}`}>
+                  {monthlyComparison.percentual.toFixed(1)}%
+                </span>
+                {monthlyComparison.percentual >= 100 ? (
+                  <Award className="h-5 w-5 text-success-alt" />
+                ) : (
+                  <Target className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-secondary rounded-full h-2">
+              <div
+                className={`h-2 rounded-full transition-all ${
+                  monthlyComparison.percentual >= 100 ? 'bg-success-alt' :
+                  monthlyComparison.percentual >= 80 ? 'bg-amber-500' : 'bg-destructive'
+                }`}
+                style={{ width: `${Math.min(monthlyComparison.percentual, 100)}%` }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Accumulated Comparison Card */}
+        <Card className={`border ${getPercentageBgColor(accumulatedComparison.percentual)}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Meta Acumulada x Realizado
+              <span className="ml-auto text-sm font-normal text-muted-foreground">
+                {targetYear} (até {monthlyComparison.mesLabel})
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Meta Acumulada (Escadinha)</p>
+                <p className="text-xl font-bold">{formatCurrency(accumulatedComparison.metaAcumulada)}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Total Realizado no Ano</p>
+                <p className="text-xl font-bold">{formatCurrency(accumulatedComparison.valorRealizadoAno)}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between pt-2 border-t">
+              <span className="text-sm font-medium">Atingimento Acumulado</span>
+              <div className="flex items-center gap-2">
+                <span className={`text-2xl font-bold ${getPercentageColor(accumulatedComparison.percentual)}`}>
+                  {accumulatedComparison.percentual.toFixed(1)}%
+                </span>
+                {accumulatedComparison.percentual >= 100 ? (
+                  <Award className="h-5 w-5 text-success-alt" />
+                ) : (
+                  <Target className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-secondary rounded-full h-2">
+              <div
+                className={`h-2 rounded-full transition-all ${
+                  accumulatedComparison.percentual >= 100 ? 'bg-success-alt' :
+                  accumulatedComparison.percentual >= 80 ? 'bg-amber-500' : 'bg-destructive'
+                }`}
+                style={{ width: `${Math.min(accumulatedComparison.percentual, 100)}%` }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Month-by-Month Comparison Table */}
+      <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
-            Meta Mensal x Realizado
-            <span className="ml-auto text-sm font-normal text-muted-foreground">
-              {monthlyComparison.mesLabel}/{targetYear}
-            </span>
+            Análise Mensal de Prêmio - {targetYear}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Meta do Mês</p>
-              <p className="text-xl font-bold">{formatCurrency(monthlyComparison.metaMensal)}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Realizado</p>
-              <p className="text-xl font-bold">{formatCurrency(monthlyComparison.valorRealizado)}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between pt-2 border-t">
-            <span className="text-sm font-medium">Atingimento</span>
-            <div className="flex items-center gap-2">
-              <span className={`text-2xl font-bold ${getPercentageColor(monthlyComparison.percentual)}`}>
-                {monthlyComparison.percentual.toFixed(1)}%
-              </span>
-              {monthlyComparison.percentual >= 100 ? (
-                <Award className="h-5 w-5 text-success-alt" />
-              ) : (
-                <Target className="h-5 w-5 text-muted-foreground" />
-              )}
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="w-full bg-secondary rounded-full h-2">
-            <div
-              className={`h-2 rounded-full transition-all ${
-                monthlyComparison.percentual >= 100 ? 'bg-success-alt' :
-                monthlyComparison.percentual >= 80 ? 'bg-amber-500' : 'bg-destructive'
-              }`}
-              style={{ width: `${Math.min(monthlyComparison.percentual, 100)}%` }}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Accumulated Comparison Card */}
-      <Card className={`border ${getPercentageBgColor(accumulatedComparison.percentual)}`}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            Meta Acumulada x Realizado
-            <span className="ml-auto text-sm font-normal text-muted-foreground">
-              {targetYear} (até {monthlyComparison.mesLabel})
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Meta Acumulada (Escadinha)</p>
-              <p className="text-xl font-bold">{formatCurrency(accumulatedComparison.metaAcumulada)}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Total Realizado no Ano</p>
-              <p className="text-xl font-bold">{formatCurrency(accumulatedComparison.valorRealizadoAno)}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between pt-2 border-t">
-            <span className="text-sm font-medium">Atingimento Acumulado</span>
-            <div className="flex items-center gap-2">
-              <span className={`text-2xl font-bold ${getPercentageColor(accumulatedComparison.percentual)}`}>
-                {accumulatedComparison.percentual.toFixed(1)}%
-              </span>
-              {accumulatedComparison.percentual >= 100 ? (
-                <Award className="h-5 w-5 text-success-alt" />
-              ) : (
-                <Target className="h-5 w-5 text-muted-foreground" />
-              )}
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="w-full bg-secondary rounded-full h-2">
-            <div
-              className={`h-2 rounded-full transition-all ${
-                accumulatedComparison.percentual >= 100 ? 'bg-success-alt' :
-                accumulatedComparison.percentual >= 80 ? 'bg-amber-500' : 'bg-destructive'
-              }`}
-              style={{ width: `${Math.min(accumulatedComparison.percentual, 100)}%` }}
-            />
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-2 px-3 text-left font-medium text-muted-foreground">Mês</th>
+                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">Meta Mensal</th>
+                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">Realizado</th>
+                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">%</th>
+                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">Meta Acum.</th>
+                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">Real. Acum.</th>
+                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">% Acum.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyTableData.map((row) => (
+                  <tr 
+                    key={row.mes}
+                    className={`border-b last:border-0 ${row.isCurrent ? 'bg-primary/5 font-medium' : ''}`}
+                  >
+                    <td className="py-2 px-3">
+                      {row.mes}
+                      {row.isCurrent && (
+                        <span className="ml-2 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">atual</span>
+                      )}
+                    </td>
+                    <td className="py-2 px-3 text-right">{formatCurrency(row.metaMensal)}</td>
+                    <td className="py-2 px-3 text-right">{formatCurrency(row.realizadoMensal)}</td>
+                    <td className={`py-2 px-3 text-right font-medium ${getPercentageColor(row.percentualMensal)}`}>
+                      {row.percentualMensal.toFixed(0)}%
+                    </td>
+                    <td className="py-2 px-3 text-right text-muted-foreground">{formatCurrency(row.metaAcumulada)}</td>
+                    <td className="py-2 px-3 text-right text-muted-foreground">{formatCurrency(row.realizadoAcumulado)}</td>
+                    <td className={`py-2 px-3 text-right font-medium ${getPercentageColor(row.percentualAcumulado)}`}>
+                      {row.percentualAcumulado.toFixed(0)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 font-bold bg-muted/30">
+                  <td className="py-2 px-3">Total Ano</td>
+                  <td className="py-2 px-3 text-right">
+                    {formatCurrency(monthlyTableData.reduce((sum, r) => sum + r.metaMensal, 0))}
+                  </td>
+                  <td className="py-2 px-3 text-right">
+                    {formatCurrency(monthlyTableData.reduce((sum, r) => sum + r.realizadoMensal, 0))}
+                  </td>
+                  <td className="py-2 px-3 text-right">-</td>
+                  <td className="py-2 px-3 text-right text-muted-foreground">-</td>
+                  <td className="py-2 px-3 text-right text-muted-foreground">-</td>
+                  <td className="py-2 px-3 text-right">-</td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </CardContent>
       </Card>
