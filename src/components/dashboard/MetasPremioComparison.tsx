@@ -1,10 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, TrendingUp, Calendar, Award } from "lucide-react";
+import { Target, TrendingUp, Calendar, Award, LayoutGrid, Table2, Lightbulb, User, Users } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
 import { logger } from "@/lib/logger";
 import { getDaysInMonth, getDate } from "date-fns";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface MetaPremio {
   id: string;
@@ -49,19 +58,40 @@ interface MetasPremioComparisonProps {
 }
 
 const MONTHS = [
-  { key: 'meta_jan', label: 'Jan', index: 0 },
-  { key: 'meta_fev', label: 'Fev', index: 1 },
-  { key: 'meta_mar', label: 'Mar', index: 2 },
-  { key: 'meta_abr', label: 'Abr', index: 3 },
-  { key: 'meta_mai', label: 'Mai', index: 4 },
-  { key: 'meta_jun', label: 'Jun', index: 5 },
-  { key: 'meta_jul', label: 'Jul', index: 6 },
-  { key: 'meta_ago', label: 'Ago', index: 7 },
-  { key: 'meta_set', label: 'Set', index: 8 },
-  { key: 'meta_out', label: 'Out', index: 9 },
-  { key: 'meta_nov', label: 'Nov', index: 10 },
-  { key: 'meta_dez', label: 'Dez', index: 11 },
+  { key: 'meta_jan', label: 'Jan', index: 0, quarter: 1 },
+  { key: 'meta_fev', label: 'Fev', index: 1, quarter: 1 },
+  { key: 'meta_mar', label: 'Mar', index: 2, quarter: 1 },
+  { key: 'meta_abr', label: 'Abr', index: 3, quarter: 2 },
+  { key: 'meta_mai', label: 'Mai', index: 4, quarter: 2 },
+  { key: 'meta_jun', label: 'Jun', index: 5, quarter: 2 },
+  { key: 'meta_jul', label: 'Jul', index: 6, quarter: 3 },
+  { key: 'meta_ago', label: 'Ago', index: 7, quarter: 3 },
+  { key: 'meta_set', label: 'Set', index: 8, quarter: 3 },
+  { key: 'meta_out', label: 'Out', index: 9, quarter: 4 },
+  { key: 'meta_nov', label: 'Nov', index: 10, quarter: 4 },
+  { key: 'meta_dez', label: 'Dez', index: 11, quarter: 4 },
 ] as const;
+
+// Quarter colors for escadinha visualization
+const getQuarterColor = (quarter: number) => {
+  switch (quarter) {
+    case 1: return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200';
+    case 2: return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200';
+    case 3: return 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200';
+    case 4: return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200';
+    default: return 'bg-muted';
+  }
+};
+
+const getQuarterHeaderColor = (quarter: number) => {
+  switch (quarter) {
+    case 1: return 'bg-blue-200 dark:bg-blue-800 text-blue-900 dark:text-blue-100';
+    case 2: return 'bg-green-200 dark:bg-green-800 text-green-900 dark:text-green-100';
+    case 3: return 'bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100';
+    case 4: return 'bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100';
+    default: return 'bg-muted';
+  }
+};
 
 // Ramos recorrentes based on ramo_agrupado
 const RECURRENT_RAMOS = [
@@ -184,6 +214,7 @@ export const MetasPremioComparison = ({
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
   const [ramos, setRamos] = useState<Record<string, Ramo>>({});
   const [loading, setLoading] = useState(true);
+  const [showEscadinha, setShowEscadinha] = useState(false);
 
   // Calculate target month/year based on date filter
   const { targetMonth, targetYear, startDate, endDate } = useMemo(() => {
@@ -439,6 +470,149 @@ export const MetasPremioComparison = ({
     });
   }, [metasPremio, monthlyPrizes, selectedProdutorId, targetMonth]);
 
+  // Get selected meta for escadinha (only when a single produtor is selected)
+  const selectedMeta = useMemo(() => {
+    if (!selectedProdutorId) return null;
+    return metasPremio.find(m => m.produtor_id === selectedProdutorId) || null;
+  }, [metasPremio, selectedProdutorId]);
+
+  // Calculate escadinha rows for visualization
+  const escadinhaData = useMemo(() => {
+    if (!selectedMeta) return null;
+
+    const monthlyValues = MONTHS.map(m => selectedMeta[m.key as keyof MetaPremio] as number);
+    
+    // Calculate accumulated values (escadinha)
+    const simpleAccum: number[] = [];
+    monthlyValues.forEach((value, index) => {
+      if (index === 0) {
+        simpleAccum.push(value);
+      } else {
+        simpleAccum.push(simpleAccum[index - 1] + value);
+      }
+    });
+
+    const escadinhaAccum: number[] = [];
+    simpleAccum.forEach((value, index) => {
+      if (index === 0) {
+        escadinhaAccum.push(value);
+      } else {
+        escadinhaAccum.push(escadinhaAccum[index - 1] + value);
+      }
+    });
+
+    // Generate escadinha rows
+    const rows = MONTHS.map((month, rowIndex) => {
+      const cells: (number | null)[] = [];
+      for (let colIndex = 0; colIndex < 12; colIndex++) {
+        if (colIndex >= rowIndex) {
+          cells.push(monthlyValues[rowIndex]);
+        } else {
+          cells.push(null);
+        }
+      }
+      return { month: month.label, cells, quarter: month.quarter };
+    });
+
+    return {
+      monthlyValues,
+      accumulatedValues: escadinhaAccum,
+      rows,
+      totalAnual: escadinhaAccum[11] || 0,
+    };
+  }, [selectedMeta]);
+
+  // Calculate insights for consultor and gestor
+  const insights = useMemo(() => {
+    if (!escadinhaData || !selectedMeta) return null;
+
+    const { monthlyValues, accumulatedValues, totalAnual } = escadinhaData;
+    const produtorNome = selectedMeta.produtor?.nome || 'Produtor';
+
+    // Find biggest growth jump
+    let maxGrowth = 0;
+    let maxGrowthFrom = 0;
+    let maxGrowthTo = 1;
+    
+    for (let i = 1; i < 12; i++) {
+      const growth = accumulatedValues[i] - accumulatedValues[i - 1];
+      if (growth > maxGrowth) {
+        maxGrowth = growth;
+        maxGrowthFrom = i - 1;
+        maxGrowthTo = i;
+      }
+    }
+
+    // Find best months
+    const sortedMonths = [...monthlyValues]
+      .map((value, index) => ({ value, label: MONTHS[index].label }))
+      .sort((a, b) => b.value - a.value);
+    
+    const bestMonths = sortedMonths.slice(0, 3).filter(m => m.value > 0);
+
+    // Compare with realized
+    const realizedTotal = monthlyPrizes.accumulated[targetMonth];
+    const metaAcumulada = accumulatedValues[targetMonth];
+    const gapValue = metaAcumulada - realizedTotal;
+    const remainingMonths = 11 - targetMonth;
+    const avgNeeded = remainingMonths > 0 ? gapValue / remainingMonths : 0;
+
+    // Find months below average
+    const avgMeta = totalAnual / 12;
+    const monthsBelowAvg = monthlyValues
+      .map((value, index) => ({ value, label: MONTHS[index].label }))
+      .filter(m => m.value < avgMeta * 0.8);
+
+    // Consultor insights
+    const consultorInsights: string[] = [];
+    
+    if (gapValue > 0 && remainingMonths > 0) {
+      consultorInsights.push(
+        `Para atingir a meta acumulada até ${MONTHS[targetMonth].label}, você precisa fechar mais ${formatCurrency(gapValue)} em prêmios.`
+      );
+      consultorInsights.push(
+        `Média necessária por mês restante (${remainingMonths} meses): ${formatCurrency(avgNeeded)}.`
+      );
+    } else if (gapValue <= 0) {
+      consultorInsights.push(
+        `Parabéns! Você já superou a meta acumulada até ${MONTHS[targetMonth].label} em ${formatCurrency(Math.abs(gapValue))}.`
+      );
+    }
+    
+    if (bestMonths.length > 0) {
+      consultorInsights.push(
+        `Seus meses de maior meta: ${bestMonths.map(m => m.label).join(', ')} - foque nesses períodos para maximizar resultados.`
+      );
+    }
+
+    // Gestor insights
+    const gestorInsights: string[] = [];
+    
+    gestorInsights.push(
+      `Meta anual total de ${produtorNome}: ${formatCurrency(totalAnual)}.`
+    );
+    
+    gestorInsights.push(
+      `O maior salto de crescimento de meta ocorre entre ${MONTHS[maxGrowthFrom].label} e ${MONTHS[maxGrowthTo].label} (+${formatCurrency(maxGrowth)}).`
+    );
+    
+    const percentageRealized = metaAcumulada > 0 ? (realizedTotal / metaAcumulada) * 100 : 0;
+    gestorInsights.push(
+      `Até ${MONTHS[targetMonth].label}: ${percentageRealized.toFixed(1)}% da meta acumulada realizada (${formatCurrency(realizedTotal)} de ${formatCurrency(metaAcumulada)}).`
+    );
+    
+    if (monthsBelowAvg.length > 0) {
+      gestorInsights.push(
+        `Meses com metas abaixo da média: ${monthsBelowAvg.map(m => m.label).join(', ')} - oportunidade para redistribuição.`
+      );
+    }
+
+    return {
+      consultorInsights,
+      gestorInsights,
+    };
+  }, [escadinhaData, selectedMeta, monthlyPrizes, targetMonth]);
+
   if (loading) {
     return (
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
@@ -560,70 +734,201 @@ export const MetasPremioComparison = ({
         </Card>
       </div>
 
-      {/* Month-by-Month Comparison Table */}
+      {/* Month-by-Month Comparison Table with Escadinha Toggle */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Análise Mensal de Prêmio - {targetYear}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              {showEscadinha ? 'Visualização Escadinha' : 'Análise Mensal de Prêmio'} - {targetYear}
+            </CardTitle>
+            {selectedProdutorId && escadinhaData && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEscadinha(!showEscadinha)}
+                className="gap-2"
+              >
+                {showEscadinha ? (
+                  <>
+                    <Table2 className="h-4 w-4" />
+                    Ver Tabela
+                  </>
+                ) : (
+                  <>
+                    <LayoutGrid className="h-4 w-4" />
+                    Ver Escadinha
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+          {showEscadinha && selectedMeta && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {selectedMeta.produtor?.nome} - Cada linha mostra a meta mensal replicada até dezembro
+            </p>
+          )}
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="py-2 px-3 text-left font-medium text-muted-foreground">Mês</th>
-                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">Meta Mensal</th>
-                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">Realizado</th>
-                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">%</th>
-                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">Meta Acum.</th>
-                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">Real. Acum.</th>
-                  <th className="py-2 px-3 text-right font-medium text-muted-foreground">% Acum.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {monthlyTableData.map((row) => (
-                  <tr 
-                    key={row.mes}
-                    className={`border-b last:border-0 ${row.isCurrent ? 'bg-primary/5 font-medium' : ''}`}
-                  >
-                    <td className="py-2 px-3">
-                      {row.mes}
-                      {row.isCurrent && (
-                        <span className="ml-2 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">atual</span>
-                      )}
-                    </td>
-                    <td className="py-2 px-3 text-right">{formatCurrency(row.metaMensal)}</td>
-                    <td className="py-2 px-3 text-right">{formatCurrency(row.realizadoMensal)}</td>
-                    <td className={`py-2 px-3 text-right font-medium ${getPercentageColor(row.percentualMensal)}`}>
-                      {row.percentualMensal.toFixed(0)}%
-                    </td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">{formatCurrency(row.metaAcumulada)}</td>
-                    <td className="py-2 px-3 text-right text-muted-foreground">{formatCurrency(row.realizadoAcumulado)}</td>
-                    <td className={`py-2 px-3 text-right font-medium ${getPercentageColor(row.percentualAcumulado)}`}>
-                      {row.percentualAcumulado.toFixed(0)}%
-                    </td>
+          {showEscadinha && escadinhaData ? (
+            <div className="space-y-6">
+              {/* Escadinha Table */}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="sticky left-0 bg-background z-10 font-semibold">Mês</TableHead>
+                      {MONTHS.map(m => (
+                        <TableHead key={m.key} className={`text-center min-w-[75px] text-xs ${getQuarterHeaderColor(m.quarter)}`}>
+                          {m.label}
+                        </TableHead>
+                      ))}
+                      <TableHead className="text-center font-semibold bg-muted min-w-[90px]">Total Linha</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {escadinhaData.rows.map((row, rowIndex) => {
+                      const filledCells = row.cells.filter(c => c !== null).length;
+                      const rowTotal = (escadinhaData.monthlyValues[rowIndex] || 0) * filledCells;
+                      
+                      return (
+                        <TableRow key={row.month}>
+                          <TableCell className={`font-medium sticky left-0 z-10 ${getQuarterColor(row.quarter)}`}>
+                            {row.month}
+                          </TableCell>
+                          {row.cells.map((cell, colIndex) => {
+                            const colQuarter = MONTHS[colIndex].quarter;
+                            return (
+                              <TableCell 
+                                key={colIndex} 
+                                className={`text-center text-xs ${
+                                  cell !== null 
+                                    ? `${getQuarterColor(colQuarter)} font-medium` 
+                                    : 'bg-muted/30'
+                                }`}
+                              >
+                                {cell !== null ? formatCurrency(cell) : '-'}
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-center font-semibold bg-muted text-xs">
+                            {formatCurrency(rowTotal)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {/* Accumulated row */}
+                    <TableRow className="border-t-2 border-primary">
+                      <TableCell className="font-bold sticky left-0 bg-background z-10">
+                        Acumulado
+                      </TableCell>
+                      {escadinhaData.accumulatedValues.map((value, index) => (
+                        <TableCell key={index} className="text-center font-bold bg-primary/20 text-xs">
+                          {formatCurrency(value)}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center font-bold bg-primary/30 text-xs">
+                        {formatCurrency(escadinhaData.totalAnual)}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Insights Section */}
+              {insights && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Consultor Insights */}
+                  <div className="p-4 rounded-lg border bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-2 mb-3">
+                      <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <h4 className="font-semibold text-blue-800 dark:text-blue-200">Para o Consultor</h4>
+                    </div>
+                    <div className="space-y-2">
+                      {insights.consultorInsights.map((insight, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-sm">
+                          <Lightbulb className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                          <span className="text-blue-700 dark:text-blue-300">{insight}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Gestor Insights */}
+                  <div className="p-4 rounded-lg border bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                      <h4 className="font-semibold text-purple-800 dark:text-purple-200">Para o Gestor</h4>
+                    </div>
+                    <div className="space-y-2">
+                      {insights.gestorInsights.map((insight, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-sm">
+                          <Lightbulb className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                          <span className="text-purple-700 dark:text-purple-300">{insight}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-2 px-3 text-left font-medium text-muted-foreground">Mês</th>
+                    <th className="py-2 px-3 text-right font-medium text-muted-foreground">Meta Mensal</th>
+                    <th className="py-2 px-3 text-right font-medium text-muted-foreground">Realizado</th>
+                    <th className="py-2 px-3 text-right font-medium text-muted-foreground">%</th>
+                    <th className="py-2 px-3 text-right font-medium text-muted-foreground">Meta Acum.</th>
+                    <th className="py-2 px-3 text-right font-medium text-muted-foreground">Real. Acum.</th>
+                    <th className="py-2 px-3 text-right font-medium text-muted-foreground">% Acum.</th>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 font-bold bg-muted/30">
-                  <td className="py-2 px-3">Total Ano</td>
-                  <td className="py-2 px-3 text-right">
-                    {formatCurrency(monthlyTableData.reduce((sum, r) => sum + r.metaMensal, 0))}
-                  </td>
-                  <td className="py-2 px-3 text-right">
-                    {formatCurrency(monthlyTableData.reduce((sum, r) => sum + r.realizadoMensal, 0))}
-                  </td>
-                  <td className="py-2 px-3 text-right">-</td>
-                  <td className="py-2 px-3 text-right text-muted-foreground">-</td>
-                  <td className="py-2 px-3 text-right text-muted-foreground">-</td>
-                  <td className="py-2 px-3 text-right">-</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {monthlyTableData.map((row) => (
+                    <tr 
+                      key={row.mes}
+                      className={`border-b last:border-0 ${row.isCurrent ? 'bg-primary/5 font-medium' : ''}`}
+                    >
+                      <td className="py-2 px-3">
+                        {row.mes}
+                        {row.isCurrent && (
+                          <span className="ml-2 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">atual</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-right">{formatCurrency(row.metaMensal)}</td>
+                      <td className="py-2 px-3 text-right">{formatCurrency(row.realizadoMensal)}</td>
+                      <td className={`py-2 px-3 text-right font-medium ${getPercentageColor(row.percentualMensal)}`}>
+                        {row.percentualMensal.toFixed(0)}%
+                      </td>
+                      <td className="py-2 px-3 text-right text-muted-foreground">{formatCurrency(row.metaAcumulada)}</td>
+                      <td className="py-2 px-3 text-right text-muted-foreground">{formatCurrency(row.realizadoAcumulado)}</td>
+                      <td className={`py-2 px-3 text-right font-medium ${getPercentageColor(row.percentualAcumulado)}`}>
+                        {row.percentualAcumulado.toFixed(0)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 font-bold bg-muted/30">
+                    <td className="py-2 px-3">Total Ano</td>
+                    <td className="py-2 px-3 text-right">
+                      {formatCurrency(monthlyTableData.reduce((sum, r) => sum + r.metaMensal, 0))}
+                    </td>
+                    <td className="py-2 px-3 text-right">
+                      {formatCurrency(monthlyTableData.reduce((sum, r) => sum + r.realizadoMensal, 0))}
+                    </td>
+                    <td className="py-2 px-3 text-right">-</td>
+                    <td className="py-2 px-3 text-right text-muted-foreground">-</td>
+                    <td className="py-2 px-3 text-right text-muted-foreground">-</td>
+                    <td className="py-2 px-3 text-right">-</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
