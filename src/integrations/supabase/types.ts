@@ -757,6 +757,8 @@ export type Database = {
           id: string
           ordem: number | null
           ramo_agrupado: string | null
+          regra: string | null
+          segmento: string | null
         }
         Insert: {
           ativo?: boolean
@@ -766,6 +768,8 @@ export type Database = {
           id?: string
           ordem?: number | null
           ramo_agrupado?: string | null
+          regra?: string | null
+          segmento?: string | null
         }
         Update: {
           ativo?: boolean
@@ -775,6 +779,8 @@ export type Database = {
           id?: string
           ordem?: number | null
           ramo_agrupado?: string | null
+          regra?: string | null
+          segmento?: string | null
         }
         Relationships: []
       }
