@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getRegraRamo } from "@/lib/ramoClassification";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -575,15 +576,8 @@ const Dashboard = () => {
   } | null>(null);
   const [selectedProdutorRanking, setSelectedProdutorRanking] = useState(0);
 
-  // Helper function to classify if ramo is "Recorrente" or "Total"
-  const getRegraRamo = (ramoDescricao: string | undefined): 'Recorrente' | 'Total' => {
-    if (!ramoDescricao) return 'Total';
-    const ramoUpper = ramoDescricao.toUpperCase();
-    if (ramoUpper.includes('AVULSA') || ramoUpper.includes('GARANTIA ADUANEIRA') || ramoUpper.includes('AMBIENTAL')) {
-      return 'Total';
-    }
-    return 'Recorrente';
-  };
+  // Import centralized classification from lib
+  // Using centralized getRegraRamo from lib/ramoClassification.ts
 
   // Top produtores com métricas detalhadas consolidadas
   // Using DISTINCT counting by CNPJ + branch group

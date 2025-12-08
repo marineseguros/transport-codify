@@ -23,17 +23,8 @@ interface CotacoesEmAbertoChartProps {
 
 type ViewType = 'Recorrente' | 'Total';
 
-// Classifica se o ramo é "Recorrente" ou "Total" baseado na regra
-const getRegraRamo = (ramoDescricao: string | undefined): 'Recorrente' | 'Total' => {
-  if (!ramoDescricao) return 'Total';
-  const ramoUpper = ramoDescricao.toUpperCase();
-  
-  if (ramoUpper.includes('AVULSA') || ramoUpper.includes('GARANTIA ADUANEIRA') || ramoUpper.includes('AMBIENTAL')) {
-    return 'Total';
-  }
-  
-  return 'Recorrente';
-};
+// Import centralized classification
+import { getRegraRamo, getRamoGroup as getRamoGroupFromLib } from '@/lib/ramoClassification';
 
 // Get Segmento based on ramo
 const getSegmento = (ramoDescricao: string | undefined): string => {
@@ -52,17 +43,9 @@ const getSegmento = (ramoDescricao: string | undefined): string => {
   return 'Transportes';
 };
 
-// Identifica se o ramo pertence ao grupo RCTR-C + RC-DC
+// Usa a função importada para agrupar ramos - renomeamos para evitar conflito
 const getRamoGroup = (ramoDescricao: string | undefined): string => {
-  if (!ramoDescricao) return ramoDescricao || 'Não informado';
-  const ramoUpper = ramoDescricao.toUpperCase();
-  
-  // Grupo 1: RCTR-C e RC-DC são combinados
-  if (ramoUpper.includes('RCTR-C') || ramoUpper === 'RC-DC') {
-    return 'RCTR-C + RC-DC';
-  }
-  
-  return ramoDescricao;
+  return getRamoGroupFromLib(ramoDescricao);
 };
 
 interface QuoteDetail {
