@@ -799,107 +799,164 @@ const Dashboard = () => {
     return Object.values(produtorStats).sort((a, b) => b.fechadas - a.fechadas);
   }, [filteredCotacoes]);
 
-  // Análise por segmento - cotações em aberto (clientes distintos por CNPJ + grupo de ramo)
-  const cotacoesPorSegmento = useMemo(() => {
-    const segmentoStats: Record<
-      string,
-      {
-        distinctKeys: Set<string>;
-        cotacoes: Cotacao[];
+  // Análise por tipo de cliente (Transportador/Embarcador) - cotações em aberto
+  const cotacoesPorTipoCliente = useMemo(() => {
+    const tipoStats: Record<string, { 
+      transportador: Set<string>; 
+      embarcador: Set<string>;
+      transportadorCotacoes: Cotacao[];
+      embarcadorCotacoes: Cotacao[];
+      premioTransportador: number;
+      premioEmbarcador: number;
+    }> = {
+      "Em Aberto": { 
+        transportador: new Set(), 
+        embarcador: new Set(),
+        transportadorCotacoes: [],
+        embarcadorCotacoes: [],
+        premioTransportador: 0,
+        premioEmbarcador: 0,
       }
-    > = {};
+    };
+    
     filteredCotacoes
       .filter((c) => c.status === "Em cotação" || c.status === "Em análise")
       .forEach((cotacao) => {
         const segmento = cotacao.segmento || "Não informado";
-        if (!segmentoStats[segmento]) {
-          segmentoStats[segmento] = {
-            distinctKeys: new Set(),
-            cotacoes: [],
-          };
-        }
-        // Use CNPJ + branch group as distinct key
         const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
         const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
-        segmentoStats[segmento].distinctKeys.add(key);
-        segmentoStats[segmento].cotacoes.push(cotacao);
+        
+        if (segmento === "Transportador") {
+          tipoStats["Em Aberto"].transportador.add(key);
+          tipoStats["Em Aberto"].transportadorCotacoes.push(cotacao);
+          tipoStats["Em Aberto"].premioTransportador += Number(cotacao.valor_premio) || 0;
+        } else {
+          tipoStats["Em Aberto"].embarcador.add(key);
+          tipoStats["Em Aberto"].embarcadorCotacoes.push(cotacao);
+          tipoStats["Em Aberto"].premioEmbarcador += Number(cotacao.valor_premio) || 0;
+        }
       });
-    return Object.entries(segmentoStats)
-      .map(([segmento, data]) => ({
-        segmento,
-        count: data.distinctKeys.size,
-        cotacoes: data.cotacoes,
-      }))
-      .sort((a, b) => b.count - a.count);
+    
+    return {
+      transportador: tipoStats["Em Aberto"].transportador.size,
+      embarcador: tipoStats["Em Aberto"].embarcador.size,
+      total: tipoStats["Em Aberto"].transportador.size + tipoStats["Em Aberto"].embarcador.size,
+      transportadorCotacoes: tipoStats["Em Aberto"].transportadorCotacoes,
+      embarcadorCotacoes: tipoStats["Em Aberto"].embarcadorCotacoes,
+      premioTransportador: tipoStats["Em Aberto"].premioTransportador,
+      premioEmbarcador: tipoStats["Em Aberto"].premioEmbarcador,
+    };
   }, [filteredCotacoes]);
 
-  // Análise por segmento - negócios fechados (clientes distintos por CNPJ + grupo de ramo)
-  const fechamentosPorSegmento = useMemo(() => {
-    const segmentoStats: Record<
-      string,
-      {
-        distinctKeys: Set<string>;
-        cotacoes: Cotacao[];
-      }
-    > = {};
+  // Análise por tipo de cliente - fechamentos
+  const fechamentosPorTipoCliente = useMemo(() => {
+    const tipoStats = {
+      transportador: new Set<string>(),
+      embarcador: new Set<string>(),
+      transportadorCotacoes: [] as Cotacao[],
+      embarcadorCotacoes: [] as Cotacao[],
+      premioTransportador: 0,
+      premioEmbarcador: 0,
+    };
+    
     filteredCotacoes
       .filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere")
       .forEach((cotacao) => {
         const segmento = cotacao.segmento || "Não informado";
-        if (!segmentoStats[segmento]) {
-          segmentoStats[segmento] = {
-            distinctKeys: new Set(),
-            cotacoes: [],
-          };
-        }
-        // Use CNPJ + branch group as distinct key
         const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
         const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
-        segmentoStats[segmento].distinctKeys.add(key);
-        segmentoStats[segmento].cotacoes.push(cotacao);
+        
+        if (segmento === "Transportador") {
+          tipoStats.transportador.add(key);
+          tipoStats.transportadorCotacoes.push(cotacao);
+          tipoStats.premioTransportador += Number(cotacao.valor_premio) || 0;
+        } else {
+          tipoStats.embarcador.add(key);
+          tipoStats.embarcadorCotacoes.push(cotacao);
+          tipoStats.premioEmbarcador += Number(cotacao.valor_premio) || 0;
+        }
       });
-    return Object.entries(segmentoStats)
-      .map(([segmento, data]) => ({
-        segmento,
-        count: data.distinctKeys.size,
-        cotacoes: data.cotacoes,
-      }))
-      .sort((a, b) => b.count - a.count);
+    
+    return {
+      transportador: tipoStats.transportador.size,
+      embarcador: tipoStats.embarcador.size,
+      total: tipoStats.transportador.size + tipoStats.embarcador.size,
+      transportadorCotacoes: tipoStats.transportadorCotacoes,
+      embarcadorCotacoes: tipoStats.embarcadorCotacoes,
+      premioTransportador: tipoStats.premioTransportador,
+      premioEmbarcador: tipoStats.premioEmbarcador,
+    };
   }, [filteredCotacoes]);
 
-  // Análise por segmento - declinados (clientes distintos por CNPJ + grupo de ramo)
-  const declinadosPorSegmento = useMemo(() => {
-    const segmentoStats: Record<
-      string,
-      {
-        distinctKeys: Set<string>;
-        cotacoes: Cotacao[];
-      }
-    > = {};
+  // Análise por tipo de cliente - declinados
+  const declinadosPorTipoCliente = useMemo(() => {
+    const tipoStats = {
+      transportador: new Set<string>(),
+      embarcador: new Set<string>(),
+      transportadorCotacoes: [] as Cotacao[],
+      embarcadorCotacoes: [] as Cotacao[],
+      premioTransportador: 0,
+      premioEmbarcador: 0,
+    };
+    
     filteredCotacoes
       .filter((c) => c.status === "Declinado")
       .forEach((cotacao) => {
         const segmento = cotacao.segmento || "Não informado";
-        if (!segmentoStats[segmento]) {
-          segmentoStats[segmento] = {
-            distinctKeys: new Set(),
-            cotacoes: [],
-          };
-        }
-        // Use CNPJ + branch group as distinct key
         const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
         const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
-        segmentoStats[segmento].distinctKeys.add(key);
-        segmentoStats[segmento].cotacoes.push(cotacao);
+        
+        if (segmento === "Transportador") {
+          tipoStats.transportador.add(key);
+          tipoStats.transportadorCotacoes.push(cotacao);
+          tipoStats.premioTransportador += Number(cotacao.valor_premio) || 0;
+        } else {
+          tipoStats.embarcador.add(key);
+          tipoStats.embarcadorCotacoes.push(cotacao);
+          tipoStats.premioEmbarcador += Number(cotacao.valor_premio) || 0;
+        }
       });
-    return Object.entries(segmentoStats)
-      .map(([segmento, data]) => ({
-        segmento,
-        count: data.distinctKeys.size,
-        cotacoes: data.cotacoes,
-      }))
-      .sort((a, b) => b.count - a.count);
+    
+    return {
+      transportador: tipoStats.transportador.size,
+      embarcador: tipoStats.embarcador.size,
+      total: tipoStats.transportador.size + tipoStats.embarcador.size,
+      transportadorCotacoes: tipoStats.transportadorCotacoes,
+      embarcadorCotacoes: tipoStats.embarcadorCotacoes,
+      premioTransportador: tipoStats.premioTransportador,
+      premioEmbarcador: tipoStats.premioEmbarcador,
+    };
   }, [filteredCotacoes]);
+
+  // Dados combinados para o gráfico empilhado
+  const segmentoStackedData = useMemo(() => {
+    return [
+      {
+        name: "Em Aberto",
+        transportador: cotacoesPorTipoCliente.transportador,
+        embarcador: cotacoesPorTipoCliente.embarcador,
+        total: cotacoesPorTipoCliente.total,
+        premioTransportador: cotacoesPorTipoCliente.premioTransportador,
+        premioEmbarcador: cotacoesPorTipoCliente.premioEmbarcador,
+      },
+      {
+        name: "Fechados",
+        transportador: fechamentosPorTipoCliente.transportador,
+        embarcador: fechamentosPorTipoCliente.embarcador,
+        total: fechamentosPorTipoCliente.total,
+        premioTransportador: fechamentosPorTipoCliente.premioTransportador,
+        premioEmbarcador: fechamentosPorTipoCliente.premioEmbarcador,
+      },
+      {
+        name: "Declinados",
+        transportador: declinadosPorTipoCliente.transportador,
+        embarcador: declinadosPorTipoCliente.embarcador,
+        total: declinadosPorTipoCliente.total,
+        premioTransportador: declinadosPorTipoCliente.premioTransportador,
+        premioEmbarcador: declinadosPorTipoCliente.premioEmbarcador,
+      }
+    ];
+  }, [cotacoesPorTipoCliente, fechamentosPorTipoCliente, declinadosPorTipoCliente]);
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -1443,194 +1500,295 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Análises por Segmento */}
+      {/* Análises por Tipo de Cliente - Barras Empilhadas */}
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {/* Cotações em Aberto por Segmento */}
+        {/* Cotações em Aberto por Tipo */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Cotações em Aberto por Segmento</CardTitle>
-            <p className="text-xs text-muted-foreground">Clientes distintos</p>
+            <CardTitle className="text-base">Cotações em Aberto</CardTitle>
+            <p className="text-xs text-muted-foreground">Transportador x Embarcador (distintos)</p>
           </CardHeader>
           <CardContent>
-            {cotacoesPorSegmento.length > 0 ? (
-              <TooltipProvider>
-                <div className="space-y-3">
-                  {cotacoesPorSegmento.map((item) => (
-                    <div key={item.segmento} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{item.segmento}</span>
-                        <span className="font-bold text-brand-orange">{item.count}</span>
-                      </div>
-                      <UITooltip>
-                        <TooltipTrigger asChild>
-                          <div className="w-full bg-secondary rounded-full h-8 flex items-center cursor-help">
+            <TooltipProvider>
+              <div className="space-y-4">
+                {/* Barra empilhada */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Total</span>
+                    <span className="font-bold text-brand-orange">{cotacoesPorTipoCliente.total}</span>
+                  </div>
+                  {cotacoesPorTipoCliente.total > 0 ? (
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <div className="w-full bg-secondary rounded-full h-10 flex items-center overflow-hidden cursor-help">
+                          {cotacoesPorTipoCliente.transportador > 0 && (
                             <div
-                              className="bg-brand-orange rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
+                              className="bg-brand-orange h-10 flex items-center justify-center text-xs font-medium text-white"
                               style={{
-                                width: `${Math.max((item.count / Math.max(...cotacoesPorSegmento.map((s) => s.count))) * 100, 10)}%`,
+                                width: `${(cotacoesPorTipoCliente.transportador / cotacoesPorTipoCliente.total) * 100}%`,
                               }}
                             >
-                              {item.count}
+                              {cotacoesPorTipoCliente.transportador}
                             </div>
+                          )}
+                          {cotacoesPorTipoCliente.embarcador > 0 && (
+                            <div
+                              className="bg-chart-2 h-10 flex items-center justify-center text-xs font-medium text-white"
+                              style={{
+                                width: `${(cotacoesPorTipoCliente.embarcador / cotacoesPorTipoCliente.total) * 100}%`,
+                              }}
+                            >
+                              {cotacoesPorTipoCliente.embarcador}
+                            </div>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-sm">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between gap-4">
+                            <span className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded bg-brand-orange"></div>
+                              Transportador
+                            </span>
+                            <span className="font-bold">{cotacoesPorTipoCliente.transportador} ({formatCurrency(cotacoesPorTipoCliente.premioTransportador)})</span>
                           </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="max-w-md max-h-96 overflow-y-auto">
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-sm mb-2">Detalhes - {item.segmento}</h4>
-                            {item.cotacoes.slice(0, 10).map((cotacao) => (
-                              <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
-                                <div className="font-medium">{cotacao.segurado}</div>
-                                <div className="text-muted-foreground mt-1">
-                                  <div>Produtor: {cotacao.produtor_cotador?.nome || "Não informado"}</div>
-                                  <div>Ramo: {cotacao.ramo?.descricao || "Não informado"}</div>
-                                  <div>Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
-                                </div>
-                              </div>
-                            ))}
-                            {item.cotacoes.length > 10 && (
-                              <p className="text-xs text-muted-foreground italic">
-                                E mais {item.cotacoes.length - 10} cotações...
-                              </p>
-                            )}
+                          <div className="flex justify-between gap-4">
+                            <span className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded bg-chart-2"></div>
+                              Embarcador
+                            </span>
+                            <span className="font-bold">{cotacoesPorTipoCliente.embarcador} ({formatCurrency(cotacoesPorTipoCliente.premioEmbarcador)})</span>
                           </div>
-                        </TooltipContent>
-                      </UITooltip>
+                        </div>
+                      </TooltipContent>
+                    </UITooltip>
+                  ) : (
+                    <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
+                      Nenhuma cotação
                     </div>
-                  ))}
+                  )}
                 </div>
-              </TooltipProvider>
-            ) : (
-              <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
-                Nenhuma cotação em aberto no período
+                
+                {/* Legenda e insights */}
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                  <div className="text-center p-2 rounded-lg bg-brand-orange/10">
+                    <div className="text-lg font-bold text-brand-orange">{cotacoesPorTipoCliente.transportador}</div>
+                    <div className="text-xs text-muted-foreground">Transportador</div>
+                    <div className="text-xs font-medium mt-1">{formatCurrency(cotacoesPorTipoCliente.premioTransportador)}</div>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-chart-2/10">
+                    <div className="text-lg font-bold text-chart-2">{cotacoesPorTipoCliente.embarcador}</div>
+                    <div className="text-xs text-muted-foreground">Embarcador</div>
+                    <div className="text-xs font-medium mt-1">{formatCurrency(cotacoesPorTipoCliente.premioEmbarcador)}</div>
+                  </div>
+                </div>
+                
+                {/* Insight */}
+                {cotacoesPorTipoCliente.total > 0 && (
+                  <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                    {cotacoesPorTipoCliente.transportador > cotacoesPorTipoCliente.embarcador
+                      ? `Foco em Transportadores: ${((cotacoesPorTipoCliente.transportador / cotacoesPorTipoCliente.total) * 100).toFixed(0)}% do pipeline`
+                      : cotacoesPorTipoCliente.embarcador > cotacoesPorTipoCliente.transportador
+                      ? `Foco em Embarcadores: ${((cotacoesPorTipoCliente.embarcador / cotacoesPorTipoCliente.total) * 100).toFixed(0)}% do pipeline`
+                      : "Pipeline equilibrado entre segmentos"}
+                  </div>
+                )}
               </div>
-            )}
+            </TooltipProvider>
           </CardContent>
         </Card>
 
-        {/* Fechamentos por Segmento */}
+        {/* Fechamentos por Tipo */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Quantidade de Fechamentos Por Segmento</CardTitle>
-            <p className="text-xs text-muted-foreground">Clientes distintos</p>
+            <CardTitle className="text-base">Fechamentos por Segmento</CardTitle>
+            <p className="text-xs text-muted-foreground">Transportador x Embarcador (distintos)</p>
           </CardHeader>
           <CardContent>
-            {fechamentosPorSegmento.length > 0 ? (
-              <TooltipProvider>
-                <div className="space-y-3">
-                  {fechamentosPorSegmento.map((item) => (
-                    <div key={item.segmento} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{item.segmento}</span>
-                        <span className="font-bold text-success-alt">{item.count}</span>
-                      </div>
-                      <UITooltip>
-                        <TooltipTrigger asChild>
-                          <div className="w-full bg-secondary rounded-full h-8 flex items-center cursor-help">
+            <TooltipProvider>
+              <div className="space-y-4">
+                {/* Barra empilhada */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Total</span>
+                    <span className="font-bold text-success-alt">{fechamentosPorTipoCliente.total}</span>
+                  </div>
+                  {fechamentosPorTipoCliente.total > 0 ? (
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <div className="w-full bg-secondary rounded-full h-10 flex items-center overflow-hidden cursor-help">
+                          {fechamentosPorTipoCliente.transportador > 0 && (
                             <div
-                              className="bg-success-alt rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
+                              className="bg-success-alt h-10 flex items-center justify-center text-xs font-medium text-white"
                               style={{
-                                width: `${Math.max((item.count / Math.max(...fechamentosPorSegmento.map((s) => s.count))) * 100, 10)}%`,
+                                width: `${(fechamentosPorTipoCliente.transportador / fechamentosPorTipoCliente.total) * 100}%`,
                               }}
                             >
-                              {item.count}
+                              {fechamentosPorTipoCliente.transportador}
                             </div>
+                          )}
+                          {fechamentosPorTipoCliente.embarcador > 0 && (
+                            <div
+                              className="bg-chart-4 h-10 flex items-center justify-center text-xs font-medium text-white"
+                              style={{
+                                width: `${(fechamentosPorTipoCliente.embarcador / fechamentosPorTipoCliente.total) * 100}%`,
+                              }}
+                            >
+                              {fechamentosPorTipoCliente.embarcador}
+                            </div>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-sm">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between gap-4">
+                            <span className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded bg-success-alt"></div>
+                              Transportador
+                            </span>
+                            <span className="font-bold">{fechamentosPorTipoCliente.transportador} ({formatCurrency(fechamentosPorTipoCliente.premioTransportador)})</span>
                           </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="max-w-md max-h-96 overflow-y-auto">
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-sm mb-2">Detalhes - {item.segmento}</h4>
-                            {item.cotacoes.slice(0, 10).map((cotacao) => (
-                              <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
-                                <div className="font-medium">{cotacao.segurado}</div>
-                                <div className="text-muted-foreground mt-1">
-                                  <div>Produtor: {cotacao.produtor_cotador?.nome || "Não informado"}</div>
-                                  <div>Ramo: {cotacao.ramo?.descricao || "Não informado"}</div>
-                                  <div>Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
-                                  {cotacao.data_fechamento && (
-                                    <div>Fechamento: {formatDate(cotacao.data_fechamento)}</div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                            {item.cotacoes.length > 10 && (
-                              <p className="text-xs text-muted-foreground italic">
-                                E mais {item.cotacoes.length - 10} cotações...
-                              </p>
-                            )}
+                          <div className="flex justify-between gap-4">
+                            <span className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded bg-chart-4"></div>
+                              Embarcador
+                            </span>
+                            <span className="font-bold">{fechamentosPorTipoCliente.embarcador} ({formatCurrency(fechamentosPorTipoCliente.premioEmbarcador)})</span>
                           </div>
-                        </TooltipContent>
-                      </UITooltip>
+                        </div>
+                      </TooltipContent>
+                    </UITooltip>
+                  ) : (
+                    <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
+                      Nenhum fechamento
                     </div>
-                  ))}
+                  )}
                 </div>
-              </TooltipProvider>
-            ) : (
-              <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
-                Nenhum fechamento no período
+                
+                {/* Legenda e insights */}
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                  <div className="text-center p-2 rounded-lg bg-success-alt/10">
+                    <div className="text-lg font-bold text-success-alt">{fechamentosPorTipoCliente.transportador}</div>
+                    <div className="text-xs text-muted-foreground">Transportador</div>
+                    <div className="text-xs font-medium mt-1">{formatCurrency(fechamentosPorTipoCliente.premioTransportador)}</div>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-chart-4/10">
+                    <div className="text-lg font-bold text-chart-4">{fechamentosPorTipoCliente.embarcador}</div>
+                    <div className="text-xs text-muted-foreground">Embarcador</div>
+                    <div className="text-xs font-medium mt-1">{formatCurrency(fechamentosPorTipoCliente.premioEmbarcador)}</div>
+                  </div>
+                </div>
+                
+                {/* Ticket médio */}
+                {fechamentosPorTipoCliente.total > 0 && (
+                  <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded space-y-1">
+                    <div className="flex justify-between">
+                      <span>Ticket médio Transp.:</span>
+                      <span className="font-medium">{fechamentosPorTipoCliente.transportador > 0 ? formatCurrency(fechamentosPorTipoCliente.premioTransportador / fechamentosPorTipoCliente.transportador) : '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Ticket médio Embarc.:</span>
+                      <span className="font-medium">{fechamentosPorTipoCliente.embarcador > 0 ? formatCurrency(fechamentosPorTipoCliente.premioEmbarcador / fechamentosPorTipoCliente.embarcador) : '-'}</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </TooltipProvider>
           </CardContent>
         </Card>
 
-        {/* Declinados por Segmento */}
+        {/* Declinados por Tipo */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Cotações Declinadas por Segmento</CardTitle>
-            <p className="text-xs text-muted-foreground">Clientes distintos</p>
+            <CardTitle className="text-base">Declinados por Segmento</CardTitle>
+            <p className="text-xs text-muted-foreground">Transportador x Embarcador (distintos)</p>
           </CardHeader>
           <CardContent>
-            {declinadosPorSegmento.length > 0 ? (
-              <TooltipProvider>
-                <div className="space-y-3">
-                  {declinadosPorSegmento.map((item) => (
-                    <div key={item.segmento} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{item.segmento}</span>
-                        <span className="font-bold text-destructive">{item.count}</span>
-                      </div>
-                      <UITooltip>
-                        <TooltipTrigger asChild>
-                          <div className="w-full bg-secondary rounded-full h-8 flex items-center cursor-help">
+            <TooltipProvider>
+              <div className="space-y-4">
+                {/* Barra empilhada */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Total</span>
+                    <span className="font-bold text-destructive">{declinadosPorTipoCliente.total}</span>
+                  </div>
+                  {declinadosPorTipoCliente.total > 0 ? (
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <div className="w-full bg-secondary rounded-full h-10 flex items-center overflow-hidden cursor-help">
+                          {declinadosPorTipoCliente.transportador > 0 && (
                             <div
-                              className="bg-destructive rounded-full h-8 flex items-center justify-end px-3 text-xs font-medium text-white transition-all"
+                              className="bg-destructive h-10 flex items-center justify-center text-xs font-medium text-white"
                               style={{
-                                width: `${Math.max((item.count / Math.max(...declinadosPorSegmento.map((s) => s.count))) * 100, 10)}%`,
+                                width: `${(declinadosPorTipoCliente.transportador / declinadosPorTipoCliente.total) * 100}%`,
                               }}
                             >
-                              {item.count}
+                              {declinadosPorTipoCliente.transportador}
                             </div>
+                          )}
+                          {declinadosPorTipoCliente.embarcador > 0 && (
+                            <div
+                              className="bg-chart-5 h-10 flex items-center justify-center text-xs font-medium text-white"
+                              style={{
+                                width: `${(declinadosPorTipoCliente.embarcador / declinadosPorTipoCliente.total) * 100}%`,
+                              }}
+                            >
+                              {declinadosPorTipoCliente.embarcador}
+                            </div>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-sm">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between gap-4">
+                            <span className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded bg-destructive"></div>
+                              Transportador
+                            </span>
+                            <span className="font-bold">{declinadosPorTipoCliente.transportador} ({formatCurrency(declinadosPorTipoCliente.premioTransportador)})</span>
                           </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="max-w-md max-h-96 overflow-y-auto">
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-sm mb-2">Detalhes - {item.segmento}</h4>
-                            {item.cotacoes.slice(0, 10).map((cotacao) => (
-                              <div key={cotacao.id} className="text-xs border-b pb-2 last:border-b-0">
-                                <div className="font-medium">{cotacao.segurado}</div>
-                                <div className="text-muted-foreground mt-1">
-                                  <div>Produtor: {cotacao.produtor_cotador?.nome || "Não informado"}</div>
-                                  <div>Ramo: {cotacao.ramo?.descricao || "Não informado"}</div>
-                                  <div>Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
-                                </div>
-                              </div>
-                            ))}
-                            {item.cotacoes.length > 10 && (
-                              <p className="text-xs text-muted-foreground italic">
-                                E mais {item.cotacoes.length - 10} cotações...
-                              </p>
-                            )}
+                          <div className="flex justify-between gap-4">
+                            <span className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded bg-chart-5"></div>
+                              Embarcador
+                            </span>
+                            <span className="font-bold">{declinadosPorTipoCliente.embarcador} ({formatCurrency(declinadosPorTipoCliente.premioEmbarcador)})</span>
                           </div>
-                        </TooltipContent>
-                      </UITooltip>
+                        </div>
+                      </TooltipContent>
+                    </UITooltip>
+                  ) : (
+                    <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
+                      Nenhum declinado
                     </div>
-                  ))}
+                  )}
                 </div>
-              </TooltipProvider>
-            ) : (
-              <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
-                Nenhuma cotação declinada no período
+                
+                {/* Legenda e insights */}
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                  <div className="text-center p-2 rounded-lg bg-destructive/10">
+                    <div className="text-lg font-bold text-destructive">{declinadosPorTipoCliente.transportador}</div>
+                    <div className="text-xs text-muted-foreground">Transportador</div>
+                    <div className="text-xs font-medium mt-1">{formatCurrency(declinadosPorTipoCliente.premioTransportador)}</div>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-chart-5/10">
+                    <div className="text-lg font-bold text-chart-5">{declinadosPorTipoCliente.embarcador}</div>
+                    <div className="text-xs text-muted-foreground">Embarcador</div>
+                    <div className="text-xs font-medium mt-1">{formatCurrency(declinadosPorTipoCliente.premioEmbarcador)}</div>
+                  </div>
+                </div>
+                
+                {/* Taxa de declínio */}
+                {(cotacoesPorTipoCliente.total + fechamentosPorTipoCliente.total + declinadosPorTipoCliente.total) > 0 && (
+                  <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                    Taxa de declínio: {(
+                      (declinadosPorTipoCliente.total / 
+                      (cotacoesPorTipoCliente.total + fechamentosPorTipoCliente.total + declinadosPorTipoCliente.total)) * 100
+                    ).toFixed(1)}% do total de cotações
+                  </div>
+                )}
               </div>
-            )}
+            </TooltipProvider>
           </CardContent>
         </Card>
       </div>
