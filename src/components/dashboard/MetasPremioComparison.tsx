@@ -111,8 +111,8 @@ const isRecurrentRamo = (ramo: Ramo | undefined): boolean => {
   return RECURRENT_RAMOS.some(r => descricao.includes(r.toUpperCase()));
 };
 
-// Calculate monthly prize distribution for a cotacao
-const calculateMonthlyPrizes = (
+// Calculate FIRST INVOICE prize for a cotacao (for monthly "Realizado" - primeiras faturas only)
+const calculateFirstInvoicePrize = (
   cotacao: Cotacao,
   ramo: Ramo | undefined,
   targetYear: number
@@ -135,7 +135,55 @@ const calculateMonthlyPrizes = (
     
     monthlyPrizes[fechamentoMonth] = premio;
   } else {
-    // RECURRENT: use inicio_vigencia for proportional calculation
+    // RECURRENT: only the first invoice (proportional in inicio_vigencia month)
+    if (!cotacao.inicio_vigencia) return monthlyPrizes;
+    
+    const inicioDate = new Date(cotacao.inicio_vigencia + 'T00:00:00');
+    const inicioYear = inicioDate.getFullYear();
+    const inicioMonth = inicioDate.getMonth();
+    
+    // Only process if inicio_vigencia is in the target year
+    if (inicioYear !== targetYear) return monthlyPrizes;
+    
+    // First invoice: proportional only (primeira fatura)
+    const daysInMonth = getDaysInMonth(inicioDate);
+    const dayOfMonth = getDate(inicioDate);
+    const daysRemaining = daysInMonth - dayOfMonth + 1;
+    const dailyPremium = premio / daysInMonth;
+    const proportionalPremium = dailyPremium * daysRemaining;
+    
+    // Only first month: proportional (NO subsequent months)
+    monthlyPrizes[inicioMonth] = proportionalPremium;
+  }
+  
+  return monthlyPrizes;
+};
+
+// Calculate FULL monthly prize distribution for a cotacao (for accumulated calculation)
+const calculateMonthlyPrizesAccumulated = (
+  cotacao: Cotacao,
+  ramo: Ramo | undefined,
+  targetYear: number
+): number[] => {
+  const monthlyPrizes = new Array(12).fill(0);
+  const premio = cotacao.valor_premio || 0;
+  
+  if (premio === 0) return monthlyPrizes;
+  
+  if (!isRecurrentRamo(ramo)) {
+    // NON-RECURRENT: use full prize only in the month of data_fechamento
+    if (!cotacao.data_fechamento) return monthlyPrizes;
+    
+    const fechamentoDate = new Date(cotacao.data_fechamento);
+    const fechamentoYear = fechamentoDate.getFullYear();
+    const fechamentoMonth = fechamentoDate.getMonth();
+    
+    // Only process if data_fechamento is in the target year
+    if (fechamentoYear !== targetYear) return monthlyPrizes;
+    
+    monthlyPrizes[fechamentoMonth] = premio;
+  } else {
+    // RECURRENT: use inicio_vigencia for proportional calculation + full for remaining months
     if (!cotacao.inicio_vigencia) return monthlyPrizes;
     
     const inicioDate = new Date(cotacao.inicio_vigencia + 'T00:00:00');
@@ -353,20 +401,31 @@ export const MetasPremioComparison = ({
       }
     }
 
-    // Calculate monthly distribution for all cotacoes
-    const totalMonthly = new Array(12).fill(0);
+    // Calculate FIRST INVOICE only for "Realizado" mensal (primeiras faturas)
+    const totalMonthlyFirstInvoice = new Array(12).fill(0);
+    
+    // Calculate FULL distribution for accumulated calculation
+    const totalMonthlyAccumulated = new Array(12).fill(0);
     
     filteredCotacoes.forEach(cotacao => {
       const ramo = cotacao.ramo_id ? ramos[cotacao.ramo_id] : undefined;
-      const monthly = calculateMonthlyPrizes(cotacao, ramo, targetYear);
-      monthly.forEach((value, index) => {
-        totalMonthly[index] += value;
+      
+      // First invoice for monthly "Realizado"
+      const firstInvoice = calculateFirstInvoicePrize(cotacao, ramo, targetYear);
+      firstInvoice.forEach((value, index) => {
+        totalMonthlyFirstInvoice[index] += value;
+      });
+      
+      // Full distribution for accumulated
+      const fullMonthly = calculateMonthlyPrizesAccumulated(cotacao, ramo, targetYear);
+      fullMonthly.forEach((value, index) => {
+        totalMonthlyAccumulated[index] += value;
       });
     });
 
-    // Calculate accumulated
+    // Calculate accumulated from full monthly distribution
     const accumulated: number[] = [];
-    totalMonthly.forEach((value, index) => {
+    totalMonthlyAccumulated.forEach((value, index) => {
       if (index === 0) {
         accumulated.push(value);
       } else {
@@ -374,7 +433,7 @@ export const MetasPremioComparison = ({
       }
     });
 
-    return { monthly: totalMonthly, accumulated };
+    return { monthly: totalMonthlyFirstInvoice, accumulated };
   }, [cotacoes, ramos, targetYear, selectedProdutorId, produtores]);
 
   // Calculate monthly comparison
