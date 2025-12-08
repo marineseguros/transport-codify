@@ -39,6 +39,8 @@ interface Ramo {
   id: string;
   descricao: string;
   ramo_agrupado: string | null;
+  segmento?: string;
+  regra?: string;
 }
 
 interface Cotacao {
@@ -95,9 +97,10 @@ const getQuarterHeaderColor = (quarter: number) => {
 };
 
 // Verifica se o ramo é recorrente usando a classificação centralizada
+// PRIORIDADE: campo regra do banco, fallback para descrição
 const isRecurrentRamo = (ramo: Ramo | undefined): boolean => {
   if (!ramo) return false;
-  return getRegraRamo(ramo.descricao) === 'Recorrente';
+  return getRegraRamo(ramo) === 'Recorrente';
 };
 
 // Calculate FIRST INVOICE prize for a cotacao (for monthly "Realizado" - primeiras faturas only)
@@ -331,7 +334,7 @@ export const MetasPremioComparison = ({
         // Fetch ramos first
         const { data: ramosData, error: ramosError } = await supabase
           .from('ramos')
-          .select('id, descricao, ramo_agrupado');
+          .select('id, descricao, ramo_agrupado, segmento, regra');
         
         if (ramosError) throw ramosError;
         

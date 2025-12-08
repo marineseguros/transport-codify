@@ -1,24 +1,51 @@
 /**
  * Centraliza a classificação de ramos como "Recorrente" ou "Total"
  * 
- * Conforme tabela de ramos:
+ * REGRA PRINCIPAL: Usar o campo "regra" armazenado no banco de dados.
+ * Fallback: Para compatibilidade com dados antigos, usa descrição.
+ * 
+ * Conforme tabela de ramos (fallback):
  * Recorrente = RCTR-C, RC-DC, RC-V, Nacional (apenas esses 4)
  * Total = Ambiental, Importação, Exportação, Nacional Avulsa, Exportação Avulsa, 
  *         Importação Avulsa, Garantia Aduaneira, RCTA-C, RCTR-VI
  */
 
-// Lista de ramos considerados recorrentes (case-insensitive, match exato)
+// Interface para ramo com campo regra do banco
+interface RamoWithRegra {
+  regra?: string | null;
+  descricao?: string;
+}
+
+// Lista de ramos considerados recorrentes (case-insensitive, match exato) - FALLBACK
 const RECURRENT_RAMOS_EXACT = ['RCTR-C', 'RC-DC', 'RC-V', 'NACIONAL'];
 
 /**
  * Classifica se um ramo é "Recorrente" ou "Total"
- * @param ramoDescricao - A descrição do ramo
- * @returns 'Recorrente' se for um dos ramos recorrentes, 'Total' caso contrário
+ * 
+ * PRIORIDADE:
+ * 1. Se receber objeto com campo "regra", usa diretamente do banco
+ * 2. Se receber string ou objeto sem "regra", usa fallback por descrição
+ * 
+ * @param ramo - Objeto ramo com campo regra, ou string com descrição
+ * @returns 'Recorrente' ou 'Total'
  */
-export const getRegraRamo = (ramoDescricao: string | undefined | null): 'Recorrente' | 'Total' => {
-  if (!ramoDescricao) return 'Total';
+export const getRegraRamo = (
+  ramo: RamoWithRegra | string | undefined | null
+): 'Recorrente' | 'Total' => {
+  // Se for nulo/undefined, retorna Total
+  if (!ramo) return 'Total';
   
-  const ramoUpper = ramoDescricao.toUpperCase().trim();
+  // PRIORIDADE 1: Se for objeto com campo "regra" do banco, usar diretamente
+  if (typeof ramo === 'object' && ramo.regra) {
+    return ramo.regra === 'Recorrente' ? 'Recorrente' : 'Total';
+  }
+  
+  // PRIORIDADE 2: Fallback - usar descrição (string ou objeto.descricao)
+  const descricao = typeof ramo === 'string' ? ramo : ramo?.descricao;
+  
+  if (!descricao) return 'Total';
+  
+  const ramoUpper = descricao.toUpperCase().trim();
   
   // Verifica se é exatamente um dos ramos recorrentes
   // RCTR-C, RC-DC, RC-V ou Nacional (exato)
@@ -31,6 +58,11 @@ export const getRegraRamo = (ramoDescricao: string | undefined | null): 'Recorre
   
   // Para grupos combinados como "RCTR-C + RC-DC"
   if (ramoUpper === 'RCTR-C + RC-DC') {
+    return 'Recorrente';
+  }
+  
+  // Grupos que contêm ramos recorrentes
+  if (ramoUpper.includes('GRUPO_RCTR')) {
     return 'Recorrente';
   }
   

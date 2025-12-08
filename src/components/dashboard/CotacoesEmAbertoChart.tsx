@@ -216,7 +216,7 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: Co
     emCotacao.forEach(cotacao => {
       const segurado = cotacao.segurado || 'Não informado';
       const ramoDescricao = cotacao.ramo?.descricao;
-      const regra = getRegraRamo(ramoDescricao);
+      const regra = getRegraRamo(cotacao.ramo);
       const segmento = getSegmento(ramoDescricao);
       const ramoGroup = getRamoGroup(ramoDescricao);
       const premio = cotacao.valor_premio || 0;

@@ -64,6 +64,8 @@ export interface Ramo {
   codigo: string;
   descricao: string;
   ramo_agrupado?: string;
+  segmento?: string;
+  regra?: string;
   ativo: boolean;
   ordem: number;
   created_at: string;
@@ -398,7 +400,7 @@ export function useCotacoesAcompanhamento(userEmail?: string, userPapel?: string
           produtor_cotador:produtor_cotador_id(id, nome, email),
           seguradora:seguradora_id(id, nome, codigo),
           cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
-          ramo:ramo_id(id, codigo, descricao, ativo),
+        ramo:ramo_id(id, codigo, descricao, ativo, segmento, regra),
           captacao:captacao_id(id, descricao, ativo),
           status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
           unidade:unidade_id(id, codigo, descricao, ativo)
@@ -461,7 +463,7 @@ export function useCotacoes() {
         produtor_cotador:produtor_cotador_id(id, nome, email),
         seguradora:seguradora_id(id, nome, codigo),
         cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
-        ramo:ramo_id(id, codigo, descricao, ativo),
+        ramo:ramo_id(id, codigo, descricao, ativo, segmento, regra),
         captacao:captacao_id(id, descricao, ativo),
          status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
          unidade:unidade_id(id, codigo, descricao, ativo)
@@ -871,7 +873,7 @@ export function useCotacoesRecentes(limit: number = 10) {
           produtor_cotador:produtor_cotador_id(id, nome, email),
           seguradora:seguradora_id(id, nome, codigo),
           cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
-          ramo:ramo_id(id, codigo, descricao, ativo),
+          ramo:ramo_id(id, codigo, descricao, ativo, segmento, regra),
           captacao:captacao_id(id, descricao, ativo),
            status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
            unidade:unidade_id(id, codigo, descricao, ativo)
@@ -924,7 +926,7 @@ export function useCotacoesTotais() {
             produtor_cotador:produtor_cotador_id(id, nome, email),
             seguradora:seguradora_id(id, nome, codigo),
             cliente:cliente_id(id, segurado, cpf_cnpj, email, telefone, cidade, uf),
-            ramo:ramo_id(id, codigo, descricao, ativo),
+            ramo:ramo_id(id, codigo, descricao, ativo, segmento, regra),
             captacao:captacao_id(id, descricao, ativo),
              status_seguradora:status_seguradora_id(id, descricao, codigo, ativo),
              unidade:unidade_id(id, codigo, descricao, ativo)
