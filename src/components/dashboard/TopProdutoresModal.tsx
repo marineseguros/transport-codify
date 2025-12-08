@@ -5,9 +5,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Users, Target, DollarSign, FileText, Clock } from "lucide-react";
+import { TrendingUp, TrendingDown, Users, Target, DollarSign, FileText, Clock, Zap, Eye } from "lucide-react";
 import { type Cotacao } from "@/hooks/useSupabaseData";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { ProdutorDetailModal } from "./ProdutorDetailModal";
 
 interface ProdutorStats {
   nome: string;
@@ -21,6 +24,8 @@ interface ProdutorStats {
   taxaConversao: number;
   cotacoesFechadas: Cotacao[];
   cotacoesEmAberto: Cotacao[];
+  distinctFechadasList: { segurado: string; grupo: string; cotacoes: Cotacao[] }[];
+  distinctEmAbertoList: { segurado: string; grupo: string; cotacoes: Cotacao[] }[];
 }
 
 interface TopProdutoresModalProps {
@@ -38,171 +43,170 @@ export function TopProdutoresModal({
   formatCurrency,
   formatDate,
 }: TopProdutoresModalProps) {
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[85vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Ranking de Produtores - Análise Detalhada
-          </DialogTitle>
-        </DialogHeader>
+  const [selectedProdutor, setSelectedProdutor] = useState<ProdutorStats | null>(null);
+  const [selectedRanking, setSelectedRanking] = useState(0);
 
-        <ScrollArea className="max-h-[70vh] pr-4">
-          <div className="space-y-6">
-            {produtores.map((produtor, index) => (
-              <div
-                key={produtor.nome}
-                className="p-4 border rounded-lg bg-muted/30"
-              >
-                {/* Header */}
-                <div className="flex items-center gap-4 mb-4">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${
-                      index === 0
-                        ? "bg-amber-500 text-amber-950"
-                        : index === 1
-                          ? "bg-slate-400 text-slate-950"
-                          : index === 2
-                            ? "bg-amber-700 text-amber-100"
-                            : "bg-primary text-primary-foreground"
-                    }`}
-                  >
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold">{produtor.nome}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {produtor.totalDistinct} clientes distintos no período
+  // Calculate totals for forecast
+  const totalPremioFechado = produtores.reduce((sum, p) => sum + p.premioTotal, 0);
+  const totalPremioEmAberto = produtores.reduce((sum, p) => sum + p.premioEmAberto, 0);
+  const avgConversao = produtores.length > 0 
+    ? produtores.reduce((sum, p) => sum + p.taxaConversao, 0) / produtores.length 
+    : 0;
+  const potencialTotal = totalPremioEmAberto * (avgConversao / 100);
+  const previsaoGeral = totalPremioFechado + potencialTotal;
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="max-w-5xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Ranking de Produtores - Análise Consolidada
+            </DialogTitle>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[70vh] pr-4">
+            <div className="space-y-4">
+              {/* Summary KPIs */}
+              <div className="grid grid-cols-4 gap-3 p-3 bg-muted/30 rounded-lg">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-success">{formatCurrency(totalPremioFechado)}</p>
+                  <p className="text-xs text-muted-foreground">Total Fechado</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-brand-orange">{formatCurrency(totalPremioEmAberto)}</p>
+                  <p className="text-xs text-muted-foreground">Total em Aberto</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{avgConversao.toFixed(0)}%</p>
+                  <p className="text-xs text-muted-foreground">Média Conversão</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-primary">{produtores.length}</p>
+                  <p className="text-xs text-muted-foreground">Produtores</p>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-xs text-muted-foreground">
+                      <th className="text-left py-2 px-2 font-medium">#</th>
+                      <th className="text-left py-2 px-2 font-medium">Produtor</th>
+                      <th className="text-center py-2 px-2 font-medium text-success">Fechados</th>
+                      <th className="text-center py-2 px-2 font-medium text-brand-orange">Em Aberto</th>
+                      <th className="text-center py-2 px-2 font-medium text-destructive">Declinados</th>
+                      <th className="text-center py-2 px-2 font-medium">Conversão</th>
+                      <th className="text-right py-2 px-2 font-medium">Prêmio Fechado</th>
+                      <th className="text-right py-2 px-2 font-medium">Prêmio Aberto</th>
+                      <th className="text-center py-2 px-2 font-medium">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {produtores.map((produtor, index) => (
+                      <tr key={produtor.nome} className="border-b border-border/50 hover:bg-muted/30">
+                        <td className="py-2 px-2">
+                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+                            index === 0 ? 'bg-amber-500 text-amber-950' : 
+                            index === 1 ? 'bg-slate-400 text-slate-950' : 
+                            index === 2 ? 'bg-amber-700 text-amber-100' : 
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            {index + 1}
+                          </span>
+                        </td>
+                        <td className="py-2 px-2 font-medium">{produtor.nome}</td>
+                        <td className="py-2 px-2 text-center">
+                          <span className="font-semibold text-success">{produtor.fechadasDistinct}</span>
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          <span className="font-semibold text-brand-orange">{produtor.emCotacaoDistinct}</span>
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          <span className="font-semibold text-destructive">{produtor.declinadasDistinct}</span>
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          <Badge 
+                            variant={produtor.taxaConversao >= 50 ? 'success-alt' : produtor.taxaConversao >= 30 ? 'warning' : 'destructive'}
+                            className="text-xs"
+                          >
+                            {produtor.taxaConversao.toFixed(0)}%
+                          </Badge>
+                        </td>
+                        <td className="py-2 px-2 text-right font-semibold text-success">
+                          {formatCurrency(produtor.premioTotal)}
+                        </td>
+                        <td className="py-2 px-2 text-right font-semibold text-brand-orange">
+                          {formatCurrency(produtor.premioEmAberto)}
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={() => {
+                              setSelectedProdutor(produtor);
+                              setSelectedRanking(index + 1);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Forecast Section */}
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  Previsão e Potencial Consolidado
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-4 bg-gradient-to-br from-success/10 to-success/5 rounded-lg border border-success/20">
+                    <p className="text-xs text-muted-foreground mb-1">Total Realizado</p>
+                    <p className="text-xl font-bold text-success">
+                      {formatCurrency(totalPremioFechado)}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xl font-bold text-primary">
-                      {formatCurrency(produtor.premioTotal)}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Prêmio Fechado</p>
+                  <div className="p-4 bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-lg border border-amber-500/20">
+                    <p className="text-xs text-muted-foreground mb-1">Potencial de Fechamento</p>
+                    <p className="text-xl font-bold text-amber-600">
+                      {formatCurrency(potencialTotal)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatCurrency(totalPremioEmAberto)} × {avgConversao.toFixed(0)}%
+                    </p>
+                  </div>
+                  <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                    <p className="text-xs text-muted-foreground mb-1">Previsão Total</p>
+                    <p className="text-xl font-bold text-primary">
+                      {formatCurrency(previsaoGeral)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Fechado + Potencial
+                    </p>
                   </div>
                 </div>
-
-                {/* KPIs Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                  <div className="p-3 bg-background rounded-lg text-center">
-                    <div className="flex items-center justify-center gap-1 text-success mb-1">
-                      <Target className="h-4 w-4" />
-                      <span className="text-2xl font-bold">{produtor.fechadasDistinct}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Fechados</p>
-                  </div>
-                  <div className="p-3 bg-background rounded-lg text-center">
-                    <div className="flex items-center justify-center gap-1 text-brand-orange mb-1">
-                      <FileText className="h-4 w-4" />
-                      <span className="text-2xl font-bold">{produtor.emCotacaoDistinct}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Em Aberto</p>
-                  </div>
-                  <div className="p-3 bg-background rounded-lg text-center">
-                    <div className="flex items-center justify-center gap-1 text-destructive mb-1">
-                      <TrendingDown className="h-4 w-4" />
-                      <span className="text-2xl font-bold">{produtor.declinadasDistinct}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Declinados</p>
-                  </div>
-                  <div className="p-3 bg-background rounded-lg text-center">
-                    <div className={`flex items-center justify-center gap-1 mb-1 ${
-                      produtor.taxaConversao >= 50 ? 'text-success' : 
-                      produtor.taxaConversao >= 30 ? 'text-amber-500' : 'text-destructive'
-                    }`}>
-                      <TrendingUp className="h-4 w-4" />
-                      <span className="text-2xl font-bold">{produtor.taxaConversao.toFixed(0)}%</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Conversão</p>
-                  </div>
-                </div>
-
-                {/* Additional Metrics */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4 text-sm">
-                  <div className="p-2 bg-background/50 rounded flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-muted-foreground text-xs">Ticket Médio</p>
-                      <p className="font-semibold">{formatCurrency(produtor.ticketMedio)}</p>
-                    </div>
-                  </div>
-                  <div className="p-2 bg-background/50 rounded flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-brand-orange" />
-                    <div>
-                      <p className="text-muted-foreground text-xs">Prêmio em Aberto</p>
-                      <p className="font-semibold text-brand-orange">{formatCurrency(produtor.premioEmAberto)}</p>
-                    </div>
-                  </div>
-                  <div className="p-2 bg-background/50 rounded flex items-center gap-2">
-                    <Target className="h-4 w-4 text-success" />
-                    <div>
-                      <p className="text-muted-foreground text-xs">Potencial Total</p>
-                      <p className="font-semibold">{formatCurrency(produtor.premioTotal + produtor.premioEmAberto)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Recent Closings */}
-                {produtor.cotacoesFechadas.length > 0 && (
-                  <div className="border-t pt-3">
-                    <p className="text-sm font-medium mb-2">Últimos Fechamentos</p>
-                    <div className="space-y-2">
-                      {produtor.cotacoesFechadas.slice(0, 5).map((c) => (
-                        <div
-                          key={c.id}
-                          className="flex items-center justify-between text-sm p-2 bg-background/50 rounded"
-                        >
-                          <div className="flex-1">
-                            <p className="font-medium truncate">{c.segurado}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {c.ramo?.descricao || "N/A"} • {c.data_fechamento ? formatDate(c.data_fechamento) : "N/A"}
-                            </p>
-                          </div>
-                          <Badge variant="success-alt" className="ml-2">
-                            {formatCurrency(c.valor_premio)}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Open Quotes Preview */}
-                {produtor.cotacoesEmAberto.length > 0 && (
-                  <div className="border-t pt-3 mt-3">
-                    <p className="text-sm font-medium mb-2">Cotações em Aberto</p>
-                    <div className="space-y-2">
-                      {produtor.cotacoesEmAberto.slice(0, 3).map((c) => (
-                        <div
-                          key={c.id}
-                          className="flex items-center justify-between text-sm p-2 bg-background/50 rounded"
-                        >
-                          <div className="flex-1">
-                            <p className="font-medium truncate">{c.segurado}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {c.ramo?.descricao || "N/A"}
-                            </p>
-                          </div>
-                          <Badge variant="brand-orange" className="ml-2">
-                            {formatCurrency(c.valor_premio)}
-                          </Badge>
-                        </div>
-                      ))}
-                      {produtor.cotacoesEmAberto.length > 3 && (
-                        <p className="text-xs text-muted-foreground text-center">
-                          E mais {produtor.cotacoesEmAberto.length - 3} cotações em aberto...
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Individual Producer Detail Modal */}
+      <ProdutorDetailModal
+        open={!!selectedProdutor}
+        onClose={() => setSelectedProdutor(null)}
+        produtor={selectedProdutor}
+        formatCurrency={formatCurrency}
+        formatDate={formatDate}
+        ranking={selectedRanking}
+      />
+    </>
   );
 }

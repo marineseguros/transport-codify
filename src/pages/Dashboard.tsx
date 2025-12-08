@@ -20,8 +20,10 @@ import {
   List,
   Grid3X3,
   ExternalLink,
+  Eye,
 } from "lucide-react";
 import { TopProdutoresModal } from "@/components/dashboard/TopProdutoresModal";
+import { ProdutorDetailModal } from "@/components/dashboard/ProdutorDetailModal";
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DatePickerWithRange } from "@/components/ui/date-picker";
@@ -490,6 +492,22 @@ const Dashboard = () => {
 
   // State for Top Produtores modal
   const [showTopProdutoresModal, setShowTopProdutoresModal] = useState(false);
+  const [selectedProdutor, setSelectedProdutor] = useState<{
+    nome: string;
+    totalDistinct: number;
+    emCotacaoDistinct: number;
+    fechadasDistinct: number;
+    declinadasDistinct: number;
+    premioTotal: number;
+    premioEmAberto: number;
+    ticketMedio: number;
+    taxaConversao: number;
+    cotacoesFechadas: Cotacao[];
+    cotacoesEmAberto: Cotacao[];
+    distinctFechadasList: { segurado: string; grupo: string; cotacoes: Cotacao[] }[];
+    distinctEmAbertoList: { segurado: string; grupo: string; cotacoes: Cotacao[] }[];
+  } | null>(null);
+  const [selectedProdutorRanking, setSelectedProdutorRanking] = useState(0);
 
   // Top produtores com métricas detalhadas consolidadas
   // Using DISTINCT counting by CNPJ + branch group
@@ -506,6 +524,9 @@ const Dashboard = () => {
         premioEmAberto: number;
         cotacoesFechadas: Cotacao[];
         cotacoesEmAberto: Cotacao[];
+        // Group cotações by segurado+grupo for distinct listing
+        fechadasByKey: Record<string, { segurado: string; grupo: string; cotacoes: Cotacao[] }>;
+        emAbertoByKey: Record<string, { segurado: string; grupo: string; cotacoes: Cotacao[] }>;
       }
     > = {};
     
@@ -523,6 +544,8 @@ const Dashboard = () => {
             premioEmAberto: 0,
             cotacoesFechadas: [],
             cotacoesEmAberto: [],
+            fechadasByKey: {},
+            emAbertoByKey: {},
           };
         }
         
@@ -537,10 +560,30 @@ const Dashboard = () => {
           produtorStats[nome].distinctKeysFechadas.add(distinctKey);
           produtorStats[nome].premioTotal += cotacao.valor_premio || 0;
           produtorStats[nome].cotacoesFechadas.push(cotacao);
+          
+          // Group by segurado+grupo for distinct listing
+          if (!produtorStats[nome].fechadasByKey[distinctKey]) {
+            produtorStats[nome].fechadasByKey[distinctKey] = {
+              segurado: cotacao.segurado,
+              grupo: branchGroup,
+              cotacoes: [],
+            };
+          }
+          produtorStats[nome].fechadasByKey[distinctKey].cotacoes.push(cotacao);
         } else if (cotacao.status === "Em cotação") {
           produtorStats[nome].distinctKeysEmCotacao.add(distinctKey);
           produtorStats[nome].premioEmAberto += cotacao.valor_premio || 0;
           produtorStats[nome].cotacoesEmAberto.push(cotacao);
+          
+          // Group by segurado+grupo for distinct listing
+          if (!produtorStats[nome].emAbertoByKey[distinctKey]) {
+            produtorStats[nome].emAbertoByKey[distinctKey] = {
+              segurado: cotacao.segurado,
+              grupo: branchGroup,
+              cotacoes: [],
+            };
+          }
+          produtorStats[nome].emAbertoByKey[distinctKey].cotacoes.push(cotacao);
         } else if (cotacao.status === "Declinado") {
           produtorStats[nome].distinctKeysDeclinadas.add(distinctKey);
         }
@@ -554,6 +597,25 @@ const Dashboard = () => {
         const emCotacaoDistinct = p.distinctKeysEmCotacao.size;
         const declinadasDistinct = p.distinctKeysDeclinadas.size;
         
+        // Convert grouped objects to sorted arrays (most recent first)
+        const distinctFechadasList = Object.values(p.fechadasByKey).sort((a, b) => {
+          const dateA = a.cotacoes.reduce((latest, c) => {
+            const d = c.data_fechamento || c.created_at;
+            return d > latest ? d : latest;
+          }, '');
+          const dateB = b.cotacoes.reduce((latest, c) => {
+            const d = c.data_fechamento || c.created_at;
+            return d > latest ? d : latest;
+          }, '');
+          return new Date(dateB).getTime() - new Date(dateA).getTime();
+        });
+        
+        const distinctEmAbertoList = Object.values(p.emAbertoByKey).sort((a, b) => {
+          const dateA = a.cotacoes[0]?.data_cotacao || '';
+          const dateB = b.cotacoes[0]?.data_cotacao || '';
+          return new Date(dateB).getTime() - new Date(dateA).getTime();
+        });
+        
         return {
           nome: p.nome,
           totalDistinct,
@@ -566,6 +628,8 @@ const Dashboard = () => {
           taxaConversao: totalDistinct > 0 ? (fechadasDistinct / totalDistinct) * 100 : 0,
           cotacoesFechadas: p.cotacoesFechadas,
           cotacoesEmAberto: p.cotacoesEmAberto,
+          distinctFechadasList,
+          distinctEmAbertoList,
         };
       })
       .sort((a, b) => {
@@ -1204,6 +1268,7 @@ const Dashboard = () => {
                       <th className="text-center py-2 font-medium text-brand-orange">Aberto</th>
                       <th className="text-center py-2 font-medium text-destructive">Decl.</th>
                       <th className="text-right py-2 font-medium">Prêmio</th>
+                      <th className="text-center py-2 font-medium"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1234,6 +1299,19 @@ const Dashboard = () => {
                         <td className="py-2 text-right">
                           <span className="font-semibold text-primary text-xs">{formatCurrency(produtor.premioTotal)}</span>
                         </td>
+                        <td className="py-2 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => {
+                              setSelectedProdutor(produtor);
+                              setSelectedProdutorRanking(index + 1);
+                            }}
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1259,6 +1337,16 @@ const Dashboard = () => {
           produtores={topProdutoresDetalhado}
           formatCurrency={formatCurrency}
           formatDate={formatDate}
+        />
+
+        {/* Modal Individual de Produtor */}
+        <ProdutorDetailModal
+          open={!!selectedProdutor}
+          onClose={() => setSelectedProdutor(null)}
+          produtor={selectedProdutor}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+          ranking={selectedProdutorRanking}
         />
       </div>
 
