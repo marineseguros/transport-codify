@@ -58,14 +58,16 @@ export function ProdutorDetailModal({
     .slice(0, 10)
     .map(item => {
       const totalPremio = item.cotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
-      // Determine regra using centralized classification - use the grupo name (which is the ramo description or group)
-      // For grouped ramos like "RCTR-C + RC-DC", check if it contains any recurrent ramo
-      const grupoName = item.grupo || '';
-      let regra: 'Recorrente' | 'Total' = getRegraRamo(grupoName);
+      // Determine regra using centralized classification
+      // First try to get regra from the cotacao's ramo object (from database)
+      // Fall back to grupo name for grouped ramos like "RCTR-C + RC-DC"
+      const cotacaoRamo = item.cotacoes[0]?.ramo;
+      let regra: 'Recorrente' | 'Total' = getRegraRamo(cotacaoRamo);
       
-      // Special case: "RCTR-C + RC-DC" is a recurrent group
-      if (grupoName.includes('RCTR-C') || grupoName.includes('RC-DC')) {
-        regra = 'Recorrente';
+      // If no ramo object, use grupo name as fallback
+      if (!cotacaoRamo) {
+        const grupoName = item.grupo || '';
+        regra = getRegraRamo(grupoName);
       }
       
       return {

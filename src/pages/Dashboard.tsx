@@ -633,7 +633,7 @@ const Dashboard = () => {
         if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
           produtorStats[nome].distinctKeysFechadas.add(distinctKey);
           const premio = cotacao.valor_premio || 0;
-          const regra = getRegraRamo(cotacao.ramo?.descricao);
+        const regra = getRegraRamo(cotacao.ramo);
           produtorStats[nome].premioTotal += premio;
           if (regra === 'Recorrente') {
             produtorStats[nome].premioRecorrente += premio;
@@ -652,7 +652,7 @@ const Dashboard = () => {
         } else if (cotacao.status === "Em cotação") {
           produtorStats[nome].distinctKeysEmCotacao.add(distinctKey);
           const premio = cotacao.valor_premio || 0;
-          const regra = getRegraRamo(cotacao.ramo?.descricao);
+          const regra = getRegraRamo(cotacao.ramo);
           produtorStats[nome].premioEmAberto += premio;
           if (regra === 'Recorrente') {
             produtorStats[nome].premioEmAbertoRecorrente += premio;
