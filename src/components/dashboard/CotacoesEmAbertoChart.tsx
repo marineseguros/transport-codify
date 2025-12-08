@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import type { Cotacao } from '@/hooks/useSupabaseData';
 import { supabase } from '@/integrations/supabase/client';
+import DOMPurify from 'dompurify';
 
 interface CotacoesEmAbertoChartProps {
   cotacoes: Cotacao[];
@@ -522,9 +523,11 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: Co
                 <div 
                   className="whitespace-pre-wrap leading-relaxed text-foreground"
                   dangerouslySetInnerHTML={{ 
-                    __html: aiAnalysis
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\n/g, '<br/>') 
+                    __html: DOMPurify.sanitize(
+                      aiAnalysis
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n/g, '<br/>')
+                    )
                   }}
                 />
               ) : (
