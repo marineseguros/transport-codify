@@ -12,6 +12,7 @@ import { RamoModal } from '@/components/RamoModal';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Ramo } from '@/types';
+import { getRegraRamo } from '@/lib/ramoClassification';
 
 // Helper function to get Segmento based on ramo description
 const getSegmento = (descricao: string): string => {
@@ -26,13 +27,9 @@ const getSegmento = (descricao: string): string => {
   return 'Outros';
 };
 
-// Helper function to get Regra based on ramo description
-// Recorrente = RCTR-C, RC-DC, RC-V, NACIONAL (exato)
-// Total = todos os demais ramos
+// Helper function to get Regra based on ramo description using centralized classification
 const getRegra = (descricao: string): string => {
-  const recorrente = ['Nacional', 'RCTR-C', 'RC-DC', 'RC-V'];
-  if (recorrente.some(r => descricao.toUpperCase() === r.toUpperCase())) return 'Recorrente';
-  return 'Total';
+  return getRegraRamo(descricao);
 };
 const Ramos = () => {
   const {
