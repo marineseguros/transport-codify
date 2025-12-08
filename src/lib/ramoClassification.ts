@@ -1,8 +1,10 @@
 /**
  * Centraliza a classificação de ramos como "Recorrente" ou "Total"
  * 
- * Recorrente = negócios dos ramos RCTR-C, RC-DC, RC-V e NACIONAL (exato)
- * Total = negócios dos demais ramos (avulsos, ambiental, garantia, Exportação, Importação, etc.)
+ * Conforme tabela de ramos:
+ * Recorrente = RCTR-C, RC-DC, RC-V, Nacional (apenas esses 4)
+ * Total = Ambiental, Importação, Exportação, Nacional Avulsa, Exportação Avulsa, 
+ *         Importação Avulsa, Garantia Aduaneira, RCTA-C, RCTR-VI
  */
 
 // Lista de ramos considerados recorrentes (case-insensitive, match exato)
@@ -19,14 +21,22 @@ export const getRegraRamo = (ramoDescricao: string | undefined | null): 'Recorre
   const ramoUpper = ramoDescricao.toUpperCase().trim();
   
   // Verifica se é exatamente um dos ramos recorrentes
-  // RCTR-C, RC-DC, RC-V ou NACIONAL (exato, não "NACIONAL AVULSA", não "EXPORTAÇÃO", etc.)
+  // RCTR-C, RC-DC, RC-V ou Nacional (exato)
+  // Importante: "Nacional" é recorrente, mas "Nacional Avulsa" é Total
   for (const recurrentRamo of RECURRENT_RAMOS_EXACT) {
     if (ramoUpper === recurrentRamo.toUpperCase()) {
       return 'Recorrente';
     }
   }
   
+  // Para grupos combinados como "RCTR-C + RC-DC"
+  if (ramoUpper === 'RCTR-C + RC-DC') {
+    return 'Recorrente';
+  }
+  
   // Qualquer outro ramo é classificado como Total
+  // Inclui: Ambiental, Importação, Exportação, Nacional Avulsa, Exportação Avulsa,
+  //         Importação Avulsa, Garantia Aduaneira, RCTA-C, RCTR-VI
   return 'Total';
 };
 
