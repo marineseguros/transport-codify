@@ -35,8 +35,10 @@ export function StatusDetailModal({
   formatCurrency,
   formatDate 
 }: StatusDetailModalProps) {
-  const totalCotacoes = statusData.reduce((sum, s) => sum + s.count, 0);
+  // Total de segurados distintos (soma dos seguradosDistintos de cada categoria)
+  const totalSeguradosDistintos = statusData.reduce((sum, s) => sum + s.seguradosDistintos, 0);
   const totalPremio = statusData.reduce((sum, s) => sum + s.premioTotal, 0);
+  const totalCotacoes = statusData.reduce((sum, s) => sum + s.count, 0);
   
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -81,7 +83,7 @@ export function StatusDetailModal({
               <Card className="bg-muted/30">
                 <CardContent className="pt-4">
                   <div className="text-xs text-muted-foreground">Total Distintos</div>
-                  <div className="text-2xl font-bold">{totalCotacoes}</div>
+                  <div className="text-2xl font-bold">{totalSeguradosDistintos}</div>
                 </CardContent>
               </Card>
               <Card className="bg-muted/30">
