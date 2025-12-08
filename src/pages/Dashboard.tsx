@@ -22,7 +22,10 @@ import {
   BarChart as BarChartIcon,
   ExternalLink,
   Eye,
+  Building2,
 } from "lucide-react";
+import { useDashboardLayout } from "@/hooks/useDashboardLayout";
+import { DashboardEditToolbar } from "@/components/dashboard/DashboardEditToolbar";
 import { TopProdutoresModal } from "@/components/dashboard/TopProdutoresModal";
 import { ProdutorDetailModal } from "@/components/dashboard/ProdutorDetailModal";
 import { StatusDetailModal } from "@/components/dashboard/StatusDetailModal";
@@ -122,6 +125,10 @@ const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [showReminder, setShowReminder] = useState(false);
+  
+  // Admin check for dashboard customization
+  const isAdmin = user?.papel === 'Administrador' || user?.papel === 'Gerente' || user?.papel === 'CEO';
+  const dashboardLayout = useDashboardLayout(isAdmin);
 
   useEffect(() => {
     const checkWeeklyReminder = async () => {
@@ -1120,7 +1127,17 @@ const Dashboard = () => {
           <p className="text-sm text-muted-foreground">Análise completa e KPIs de cotações</p>
         </div>
 
-        <div className="flex flex-wrap gap-2 md:gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap gap-2 md:gap-3 w-full sm:w-auto items-center">
+          {/* Dashboard Edit Toolbar - Admin Only */}
+          <DashboardEditToolbar
+            editMode={dashboardLayout.editMode}
+            setEditMode={dashboardLayout.setEditMode}
+            cards={dashboardLayout.cards}
+            toggleCardVisibility={dashboardLayout.toggleCardVisibility}
+            resetLayout={dashboardLayout.resetLayout}
+            canEdit={dashboardLayout.canEdit}
+          />
+          
           <Button variant="outline" onClick={handleImportCSV} size="sm" className="gap-2 flex-1 sm:flex-none">
             <Upload className="h-4 w-4" />
             <span className="hidden sm:inline">Importar CSV</span>
@@ -1947,56 +1964,134 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Análise de Produtividade */}
+        {/* Análise de Produtividade - Top Produtores com Fechadas destacadas */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Produtores</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Top Produtores
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {topProdutores.slice(0, 5).map((produtor, index) => (
-                <div key={produtor.nome} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-xs font-medium">
-                      {index + 1}
+            <div className="space-y-3">
+              {topProdutoresDetalhado.slice(0, 5).map((produtor, index) => {
+                const premioFormatado = formatCurrency(produtor.premioTotal);
+                return (
+                  <div key={produtor.nome} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                        index === 0 ? 'bg-amber-500 text-amber-950' : 
+                        index === 1 ? 'bg-slate-400 text-slate-950' : 
+                        index === 2 ? 'bg-amber-700 text-amber-100' : 
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <span className="text-sm font-medium truncate max-w-[100px]">{produtor.nome}</span>
                     </div>
-                    <span className="text-sm font-medium">{produtor.nome}</span>
+                    <div className="flex items-center gap-4">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-success">{produtor.fechadasDistinct}</div>
+                        <div className="text-[10px] text-muted-foreground">fechadas</div>
+                      </div>
+                      <div className="text-right min-w-[80px]">
+                        <div className="text-xs font-semibold text-primary">{premioFormatado}</div>
+                        <div className="text-[10px] text-muted-foreground">{produtor.taxaConversao.toFixed(0)}% conv.</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-bold">{produtor.fechadas}</div>
-                    <div className="text-xs text-muted-foreground">fechadas</div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
 
-        {/* Análise de Unidades */}
+        {/* Performance por Unidade - Com dados detalhados */}
         <Card>
           <CardHeader>
-            <CardTitle>Performance por Unidade</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Performance por Unidade
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {Array.from(new Set(filteredCotacoes.map((c) => c.unidade?.descricao).filter(Boolean)))
-                .slice(0, 5)
-                .map((unidadeNome) => {
-                  const unidadeCotacoes = filteredCotacoes.filter((c) => c.unidade?.descricao === unidadeNome);
-                  const fechadas = unidadeCotacoes.filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere").length;
-                  const taxa = unidadeCotacoes.length > 0 ? (fechadas / unidadeCotacoes.length) * 100 : 0;
-                  return (
-                    <div key={unidadeNome} className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
-                      <span className="text-sm font-medium">{unidadeNome}</span>
-                      <div className="text-right">
-                        <div className="text-sm font-bold">
-                          {fechadas}/{unidadeCotacoes.length}
+            <div className="space-y-3">
+              {(() => {
+                // Calcular dados por unidade com distintos
+                const unidadeStats: Record<string, { 
+                  nome: string; 
+                  total: number; 
+                  fechadas: number; 
+                  premio: number;
+                  distinctKeys: Set<string>;
+                  distinctFechadas: Set<string>;
+                }> = {};
+                
+                filteredCotacoes.forEach((c) => {
+                  const nome = c.unidade?.descricao || 'Não informada';
+                  if (!unidadeStats[nome]) {
+                    unidadeStats[nome] = { 
+                      nome, 
+                      total: 0, 
+                      fechadas: 0, 
+                      premio: 0,
+                      distinctKeys: new Set(),
+                      distinctFechadas: new Set(),
+                    };
+                  }
+                  
+                  const branchGroup = getBranchGroup(c.ramo?.descricao);
+                  const key = `${c.cpf_cnpj}_${branchGroup}`;
+                  
+                  unidadeStats[nome].total++;
+                  unidadeStats[nome].distinctKeys.add(key);
+                  
+                  if (c.status === "Negócio fechado" || c.status === "Fechamento congênere") {
+                    unidadeStats[nome].fechadas++;
+                    unidadeStats[nome].distinctFechadas.add(key);
+                    unidadeStats[nome].premio += c.valor_premio || 0;
+                  }
+                });
+                
+                const unidadesOrdenadas = Object.values(unidadeStats)
+                  .map(u => ({
+                    ...u,
+                    distinctTotal: u.distinctKeys.size,
+                    distinctFechadas: u.distinctFechadas.size,
+                    taxa: u.distinctKeys.size > 0 ? (u.distinctFechadas.size / u.distinctKeys.size) * 100 : 0,
+                  }))
+                  .sort((a, b) => b.premio - a.premio)
+                  .slice(0, 5);
+                
+                const maxPremio = unidadesOrdenadas[0]?.premio || 1;
+                
+                return unidadesOrdenadas.map((unidade) => (
+                  <div key={unidade.nome} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">{unidade.nome}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <span className="text-sm font-bold text-success">{unidade.distinctFechadas}</span>
+                          <span className="text-muted-foreground text-xs">/{unidade.distinctTotal}</span>
                         </div>
-                        <div className="text-xs text-muted-foreground">{taxa.toFixed(1)}%</div>
+                        <span className="text-xs text-muted-foreground w-12 text-right">{unidade.taxa.toFixed(1)}%</span>
                       </div>
                     </div>
-                  );
-                })}
+                    {/* Barra de progresso com prêmio */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-secondary rounded-full h-2.5 overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-success to-success-alt h-full transition-all"
+                          style={{ width: `${(unidade.premio / maxPremio) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-primary min-w-[70px] text-right">
+                        {formatCurrency(unidade.premio)}
+                      </span>
+                    </div>
+                  </div>
+                ));
+              })()}
             </div>
           </CardContent>
         </Card>
