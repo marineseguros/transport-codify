@@ -19,7 +19,9 @@ import {
   Building,
   List,
   Grid3X3,
+  ExternalLink,
 } from "lucide-react";
+import { TopProdutoresModal } from "@/components/dashboard/TopProdutoresModal";
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DatePickerWithRange } from "@/components/ui/date-picker";
@@ -486,17 +488,20 @@ const Dashboard = () => {
     return statusData;
   }, [filteredCotacoes]);
 
+  // State for Top Produtores modal
+  const [showTopProdutoresModal, setShowTopProdutoresModal] = useState(false);
+
   // Top produtores com métricas detalhadas consolidadas
-  // Include "Fechamento congênere" in "fechadas" count
+  // Using DISTINCT counting by CNPJ + branch group
   const topProdutoresDetalhado = useMemo(() => {
     const produtorStats: Record<
       string,
       {
         nome: string;
-        total: number;
-        emCotacao: number;
-        fechadas: number;
-        declinadas: number;
+        distinctKeysTotal: Set<string>;
+        distinctKeysEmCotacao: Set<string>;
+        distinctKeysFechadas: Set<string>;
+        distinctKeysDeclinadas: Set<string>;
         premioTotal: number;
         premioEmAberto: number;
         cotacoesFechadas: Cotacao[];
@@ -510,45 +515,65 @@ const Dashboard = () => {
         if (!produtorStats[nome]) {
           produtorStats[nome] = {
             nome,
-            total: 0,
-            emCotacao: 0,
-            fechadas: 0,
-            declinadas: 0,
+            distinctKeysTotal: new Set(),
+            distinctKeysEmCotacao: new Set(),
+            distinctKeysFechadas: new Set(),
+            distinctKeysDeclinadas: new Set(),
             premioTotal: 0,
             premioEmAberto: 0,
             cotacoesFechadas: [],
             cotacoesEmAberto: [],
           };
         }
-        produtorStats[nome].total++;
+        
+        // Create distinct key: CNPJ + branch group
+        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+        const distinctKey = `${cotacao.cpf_cnpj}_${branchGroup}`;
+        
+        // Add to total distinct
+        produtorStats[nome].distinctKeysTotal.add(distinctKey);
         
         if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
-          produtorStats[nome].fechadas++;
+          produtorStats[nome].distinctKeysFechadas.add(distinctKey);
           produtorStats[nome].premioTotal += cotacao.valor_premio || 0;
           produtorStats[nome].cotacoesFechadas.push(cotacao);
         } else if (cotacao.status === "Em cotação") {
-          produtorStats[nome].emCotacao++;
+          produtorStats[nome].distinctKeysEmCotacao.add(distinctKey);
           produtorStats[nome].premioEmAberto += cotacao.valor_premio || 0;
           produtorStats[nome].cotacoesEmAberto.push(cotacao);
         } else if (cotacao.status === "Declinado") {
-          produtorStats[nome].declinadas++;
+          produtorStats[nome].distinctKeysDeclinadas.add(distinctKey);
         }
       }
     });
     
     return Object.values(produtorStats)
-      .map(p => ({
-        ...p,
-        ticketMedio: p.fechadas > 0 ? p.premioTotal / p.fechadas : 0,
-        taxaConversao: p.total > 0 ? (p.fechadas / p.total) * 100 : 0,
-      }))
+      .map(p => {
+        const totalDistinct = p.distinctKeysTotal.size;
+        const fechadasDistinct = p.distinctKeysFechadas.size;
+        const emCotacaoDistinct = p.distinctKeysEmCotacao.size;
+        const declinadasDistinct = p.distinctKeysDeclinadas.size;
+        
+        return {
+          nome: p.nome,
+          totalDistinct,
+          emCotacaoDistinct,
+          fechadasDistinct,
+          declinadasDistinct,
+          premioTotal: p.premioTotal,
+          premioEmAberto: p.premioEmAberto,
+          ticketMedio: fechadasDistinct > 0 ? p.premioTotal / fechadasDistinct : 0,
+          taxaConversao: totalDistinct > 0 ? (fechadasDistinct / totalDistinct) * 100 : 0,
+          cotacoesFechadas: p.cotacoesFechadas,
+          cotacoesEmAberto: p.cotacoesEmAberto,
+        };
+      })
       .sort((a, b) => {
         // Sort by prêmio total first, then by fechadas
         if (b.premioTotal !== a.premioTotal) return b.premioTotal - a.premioTotal;
-        if (b.fechadas !== a.fechadas) return b.fechadas - a.fechadas;
-        return b.total - a.total;
-      })
-      .slice(0, 5);
+        if (b.fechadasDistinct !== a.fechadasDistinct) return b.fechadasDistinct - a.fechadasDistinct;
+        return b.totalDistinct - a.totalDistinct;
+      });
   }, [filteredCotacoes]);
 
   // Clientes fechados para o tooltip - include "Fechamento congênere"
@@ -1143,127 +1168,98 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Top Produtores - Análise Consolidada */}
+        {/* Top Produtores - Formato Tabela Minimalista */}
         <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Top Produtores
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Análise consolidada de performance</p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {topProdutoresDetalhado.length > 0 ? (
-                topProdutoresDetalhado.map((produtor, index) => (
-                  <TooltipProvider key={produtor.nome}>
-                    <UITooltip>
-                      <TooltipTrigger asChild>
-                        <div className="p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-help">
-                          {/* Header: Ranking + Nome */}
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                              index === 0 ? 'bg-amber-500 text-amber-950' : 
-                              index === 1 ? 'bg-slate-400 text-slate-950' : 
-                              index === 2 ? 'bg-amber-700 text-amber-100' : 
-                              'bg-primary text-primary-foreground'
-                            }`}>
-                              {index + 1}
-                            </div>
-                            <div className="flex-1">
-                              <div className="font-semibold">{produtor.nome}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {produtor.total} cotações no período
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm font-bold text-primary">{formatCurrency(produtor.premioTotal)}</div>
-                              <div className="text-xs text-muted-foreground">Prêmio Total</div>
-                            </div>
-                          </div>
-
-                          {/* Métricas principais em grid */}
-                          <div className="grid grid-cols-4 gap-2 text-center">
-                            <div className="p-2 bg-background/50 rounded">
-                              <div className="text-lg font-bold text-success">{produtor.fechadas}</div>
-                              <div className="text-[10px] text-muted-foreground">Fechados</div>
-                            </div>
-                            <div className="p-2 bg-background/50 rounded">
-                              <div className="text-lg font-bold text-brand-orange">{produtor.emCotacao}</div>
-                              <div className="text-[10px] text-muted-foreground">Em Aberto</div>
-                            </div>
-                            <div className="p-2 bg-background/50 rounded">
-                              <div className="text-lg font-bold text-destructive">{produtor.declinadas}</div>
-                              <div className="text-[10px] text-muted-foreground">Declinados</div>
-                            </div>
-                            <div className="p-2 bg-background/50 rounded">
-                              <div className={`text-lg font-bold ${
-                                produtor.taxaConversao >= 50 ? 'text-success' : 
-                                produtor.taxaConversao >= 30 ? 'text-amber-500' : 
-                                'text-destructive'
-                              }`}>
-                                {produtor.taxaConversao.toFixed(0)}%
-                              </div>
-                              <div className="text-[10px] text-muted-foreground">Conversão</div>
-                            </div>
-                          </div>
-
-                          {/* Barra de progresso: Prêmio em aberto */}
-                          {produtor.premioEmAberto > 0 && (
-                            <div className="mt-3 pt-2 border-t border-border/50">
-                              <div className="flex justify-between text-xs mb-1">
-                                <span className="text-muted-foreground">Prêmio em Aberto</span>
-                                <span className="font-medium text-brand-orange">{formatCurrency(produtor.premioEmAberto)}</span>
-                              </div>
-                              <div className="w-full bg-secondary rounded-full h-1.5">
-                                <div 
-                                  className="bg-brand-orange rounded-full h-1.5" 
-                                  style={{ 
-                                    width: `${Math.min((produtor.premioEmAberto / (produtor.premioTotal + produtor.premioEmAberto)) * 100, 100)}%` 
-                                  }} 
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="left" className="max-w-sm">
-                        <div className="space-y-3">
-                          <h4 className="font-semibold border-b pb-1">Detalhes - {produtor.nome}</h4>
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                            <span className="text-muted-foreground">Total Cotações:</span>
-                            <span className="font-medium">{produtor.total}</span>
-                            <span className="text-muted-foreground">Ticket Médio:</span>
-                            <span className="font-medium">{formatCurrency(produtor.ticketMedio)}</span>
-                            <span className="text-muted-foreground">Taxa Conversão:</span>
-                            <span className="font-medium">{produtor.taxaConversao.toFixed(1)}%</span>
-                            <span className="text-muted-foreground">Prêmio Fechado:</span>
-                            <span className="font-medium text-success">{formatCurrency(produtor.premioTotal)}</span>
-                            <span className="text-muted-foreground">Prêmio em Aberto:</span>
-                            <span className="font-medium text-brand-orange">{formatCurrency(produtor.premioEmAberto)}</span>
-                          </div>
-                          {produtor.cotacoesFechadas.length > 0 && (
-                            <div className="pt-2 border-t">
-                              <p className="text-xs text-muted-foreground mb-1">Últimos fechamentos:</p>
-                              {produtor.cotacoesFechadas.slice(0, 3).map(c => (
-                                <div key={c.id} className="text-xs py-1 border-b border-border/30 last:border-0">
-                                  <span className="font-medium">{c.segurado}</span>
-                                  <span className="text-muted-foreground ml-2">{formatCurrency(c.valor_premio)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </TooltipContent>
-                    </UITooltip>
-                  </TooltipProvider>
-                ))
-              ) : (
-                <p className="text-center text-muted-foreground py-8">Nenhum produtor encontrado no período</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Users className="h-4 w-4" />
+                  Top Produtores
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Clientes distintos por período</p>
+              </div>
+              {topProdutoresDetalhado.length > 3 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowTopProdutoresModal(true)}
+                  className="text-xs gap-1"
+                >
+                  Ver todos
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
               )}
             </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {topProdutoresDetalhado.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-xs text-muted-foreground">
+                      <th className="text-left py-2 font-medium">#</th>
+                      <th className="text-left py-2 font-medium">Produtor</th>
+                      <th className="text-center py-2 font-medium text-success">Fech.</th>
+                      <th className="text-center py-2 font-medium text-brand-orange">Aberto</th>
+                      <th className="text-center py-2 font-medium text-destructive">Decl.</th>
+                      <th className="text-right py-2 font-medium">Prêmio</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topProdutoresDetalhado.slice(0, 3).map((produtor, index) => (
+                      <tr key={produtor.nome} className="border-b border-border/50 hover:bg-muted/30">
+                        <td className="py-2">
+                          <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                            index === 0 ? 'bg-amber-500 text-amber-950' : 
+                            index === 1 ? 'bg-slate-400 text-slate-950' : 
+                            index === 2 ? 'bg-amber-700 text-amber-100' : 
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            {index + 1}
+                          </span>
+                        </td>
+                        <td className="py-2">
+                          <div className="font-medium truncate max-w-[120px]">{produtor.nome}</div>
+                        </td>
+                        <td className="py-2 text-center">
+                          <span className="font-semibold text-success">{produtor.fechadasDistinct}</span>
+                        </td>
+                        <td className="py-2 text-center">
+                          <span className="font-semibold text-brand-orange">{produtor.emCotacaoDistinct}</span>
+                        </td>
+                        <td className="py-2 text-center">
+                          <span className="font-semibold text-destructive">{produtor.declinadasDistinct}</span>
+                        </td>
+                        <td className="py-2 text-right">
+                          <span className="font-semibold text-primary text-xs">{formatCurrency(produtor.premioTotal)}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {topProdutoresDetalhado.length > 3 && (
+                  <p className="text-xs text-muted-foreground text-center mt-2">
+                    +{topProdutoresDetalhado.length - 3} produtores
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-4 text-sm">
+                Nenhum produtor encontrado no período
+              </p>
+            )}
           </CardContent>
         </Card>
+
+        {/* Modal de Top Produtores Detalhado */}
+        <TopProdutoresModal
+          open={showTopProdutoresModal}
+          onClose={() => setShowTopProdutoresModal(false)}
+          produtores={topProdutoresDetalhado}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+        />
       </div>
 
       {/* Gráficos e Análises Avançadas */}
