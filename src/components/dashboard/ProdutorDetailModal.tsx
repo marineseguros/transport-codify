@@ -5,7 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Target, DollarSign, FileText, Clock, Calendar, Zap } from "lucide-react";
+import { TrendingUp, TrendingDown, Target, DollarSign, FileText, Clock, Calendar, Zap, RefreshCw } from "lucide-react";
 import { type Cotacao } from "@/hooks/useSupabaseData";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -16,7 +16,9 @@ interface ProdutorStats {
   fechadasDistinct: number;
   declinadasDistinct: number;
   premioTotal: number;
+  premioRecorrente: number;
   premioEmAberto: number;
+  premioEmAbertoRecorrente: number;
   ticketMedio: number;
   taxaConversao: number;
   cotacoesFechadas: Cotacao[];
@@ -116,24 +118,31 @@ export function ProdutorDetailModal({
             </div>
 
             {/* Premium Metrics */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <RefreshCw className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground">Recorrente</span>
+                </div>
+                <p className="text-lg font-bold text-primary">{formatCurrency(produtor.premioRecorrente)}</p>
+              </div>
               <div className="p-3 bg-success/10 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <DollarSign className="h-4 w-4 text-success" />
-                  <span className="text-xs text-muted-foreground">Prêmio Fechado</span>
+                  <span className="text-xs text-muted-foreground">Total Fechado</span>
                 </div>
                 <p className="text-lg font-bold text-success">{formatCurrency(produtor.premioTotal)}</p>
               </div>
               <div className="p-3 bg-brand-orange/10 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <Clock className="h-4 w-4 text-brand-orange" />
-                  <span className="text-xs text-muted-foreground">Prêmio em Aberto</span>
+                  <span className="text-xs text-muted-foreground">Aberto Rec.</span>
                 </div>
-                <p className="text-lg font-bold text-brand-orange">{formatCurrency(produtor.premioEmAberto)}</p>
+                <p className="text-lg font-bold text-brand-orange">{formatCurrency(produtor.premioEmAbertoRecorrente)}</p>
               </div>
-              <div className="p-3 bg-primary/10 rounded-lg">
+              <div className="p-3 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <Target className="h-4 w-4 text-primary" />
+                  <Target className="h-4 w-4 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground">Ticket Médio</span>
                 </div>
                 <p className="text-lg font-bold">{formatCurrency(produtor.ticketMedio)}</p>
