@@ -3,11 +3,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Ramo } from '@/types';
 import { Switch } from '@/components/ui/switch';
 import { logger } from '@/lib/logger';
+
+const SEGMENTO_OPTIONS = ['Transportes', 'Avulso', 'Ambiental', 'RC-V', 'Outros'];
+const REGRA_OPTIONS = ['Recorrente', 'Total'];
 
 interface RamoModalProps {
   ramo: Ramo | null;
@@ -21,6 +25,8 @@ export function RamoModal({ ramo, isOpen, onClose, onSuccess }: RamoModalProps) 
   const [formData, setFormData] = useState({
     codigo: '',
     descricao: '',
+    segmento: '',
+    regra: '',
     ativo: true,
   });
 
@@ -29,12 +35,16 @@ export function RamoModal({ ramo, isOpen, onClose, onSuccess }: RamoModalProps) 
       setFormData({
         codigo: ramo.codigo || '',
         descricao: ramo.descricao || '',
+        segmento: (ramo as any).segmento || '',
+        regra: (ramo as any).regra || '',
         ativo: ramo.ativo ?? true,
       });
     } else {
       setFormData({
         codigo: '',
         descricao: '',
+        segmento: '',
+        regra: '',
         ativo: true,
       });
     }
@@ -52,6 +62,8 @@ export function RamoModal({ ramo, isOpen, onClose, onSuccess }: RamoModalProps) 
           .update({
             codigo: formData.codigo,
             descricao: formData.descricao,
+            segmento: formData.segmento,
+            regra: formData.regra,
             ativo: formData.ativo,
           })
           .eq('id', ramo.id);
@@ -65,6 +77,8 @@ export function RamoModal({ ramo, isOpen, onClose, onSuccess }: RamoModalProps) 
           .insert({
             codigo: formData.codigo,
             descricao: formData.descricao,
+            segmento: formData.segmento,
+            regra: formData.regra,
             ativo: true,
           });
 
@@ -108,6 +122,40 @@ export function RamoModal({ ramo, isOpen, onClose, onSuccess }: RamoModalProps) 
               onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="segmento">Segmento *</Label>
+            <Select
+              value={formData.segmento}
+              onValueChange={(value) => setFormData({ ...formData, segmento: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o segmento" />
+              </SelectTrigger>
+              <SelectContent>
+                {SEGMENTO_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="regra">Regra *</Label>
+            <Select
+              value={formData.regra}
+              onValueChange={(value) => setFormData({ ...formData, regra: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a regra" />
+              </SelectTrigger>
+              <SelectContent>
+                {REGRA_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-center justify-between space-x-2">

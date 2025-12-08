@@ -12,25 +12,6 @@ import { RamoModal } from '@/components/RamoModal';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Ramo } from '@/types';
-import { getRegraRamo } from '@/lib/ramoClassification';
-
-// Helper function to get Segmento based on ramo description
-const getSegmento = (descricao: string): string => {
-  const transportes = ['Nacional', 'Exportação', 'Importação', 'RCTR-C', 'RC-DC', 'RCTR-VI', 'RCTA-C'];
-  const avulso = ['Nacional Avulsa', 'Importação Avulsa', 'Exportação Avulsa', 'Garantia Aduaneira'];
-  const ambiental = ['Ambiental'];
-  const rcv = ['RC-V'];
-  if (avulso.some(r => descricao === r)) return 'Avulso';
-  if (ambiental.some(r => descricao === r)) return 'Ambiental';
-  if (rcv.some(r => descricao === r)) return 'RC-V';
-  if (transportes.some(r => descricao === r)) return 'Transportes';
-  return 'Outros';
-};
-
-// Helper function to get Regra based on ramo description using centralized classification
-const getRegra = (descricao: string): string => {
-  return getRegraRamo(descricao);
-};
 const Ramos = () => {
   const {
     user
@@ -244,11 +225,11 @@ const Ramos = () => {
                   </TableCell>
                   <TableCell className="font-medium">{ramo.descricao}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{getSegmento(ramo.descricao)}</Badge>
+                    <Badge variant="outline">{(ramo as any).segmento || 'Outros'}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getRegra(ramo.descricao) === 'Recorrente' ? 'default' : 'secondary'}>
-                      {getRegra(ramo.descricao)}
+                    <Badge variant={(ramo as any).regra === 'Recorrente' ? 'default' : 'secondary'}>
+                      {(ramo as any).regra || 'Total'}
                     </Badge>
                   </TableCell>
                   <TableCell>
