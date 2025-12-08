@@ -19,6 +19,7 @@ import {
   Building,
   List,
   Grid3X3,
+  BarChart as BarChartIcon,
   ExternalLink,
   Eye,
 } from "lucide-react";
@@ -1113,7 +1114,7 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-            <BarChart className="h-7 w-7 md:h-8 md:w-8" />
+            <BarChartIcon className="h-7 w-7 md:h-8 md:w-8" />
             Dashboard
           </h1>
           <p className="text-sm text-muted-foreground">Análise completa e KPIs de cotações</p>
@@ -1388,18 +1389,6 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
-                        style={{
-                          width: `${percentage}%`,
-                        }}
-                      />
-                    </div>
-                    <span className="text-sm font-medium w-12 text-right">{percentage.toFixed(1)}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Top Produtores - Formato Tabela Minimalista */}
         <Card className="col-span-1">
@@ -1523,89 +1512,77 @@ const Dashboard = () => {
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
         {/* Tendência Mensal */}
         <Card>
-          <CardHeader>
-            <CardTitle>Tendência de Cotações (Últimos 6 Meses)</CardTitle>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Tendência de Cotações (6 Meses)</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setShowTendenciaDetailModal(true)} className="text-xs gap-1">
+                Análise <Eye className="h-3 w-3" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <LineChart data={monthlyTrendData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis />
+                <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip
                   formatter={(value, name) => [
                     value,
-                    name === "fechadas"
-                      ? "Negócios Fechados"
-                      : name === "emCotacao"
-                        ? "Em Cotação"
-                        : name === "total"
-                          ? "Total de Cotações"
-                          : name,
+                    name === "fechadas" ? "Fechadas" : name === "emCotacao" ? "Em Cotação" : "Total",
                   ]}
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--popover))",
+                    border: "1px solid hsl(var(--border))",
+                  }}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="total"
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeWidth={2}
-                  name="Total"
-                  strokeDasharray="5 5"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="emCotacao"
-                  stroke="hsl(var(--brand-orange))"
-                  strokeWidth={2}
-                  name="Em Cotação"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="fechadas"
-                  stroke="hsl(var(--success-alt))"
-                  strokeWidth={2}
-                  name="Fechadas"
-                />
+                <Line type="monotone" dataKey="total" stroke="hsl(var(--muted-foreground))" strokeWidth={2} strokeDasharray="5 5" />
+                <Line type="monotone" dataKey="emCotacao" stroke="hsl(var(--brand-orange))" strokeWidth={2} />
+                <Line type="monotone" dataKey="fechadas" stroke="hsl(var(--success-alt))" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Performance por Seguradora */}
+        {/* Top Seguradoras */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle>Top 5 Seguradoras</CardTitle>
-              <span className="text-xs text-muted-foreground">Últimos 12 meses</span>
+              <div>
+                <CardTitle className="text-base">Top 5 Seguradoras</CardTitle>
+                <p className="text-xs text-muted-foreground">Últimos 12 meses</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowSeguradoraDetailModal(true)} className="text-xs gap-1">
+                Ver todas <Eye className="h-3 w-3" />
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
             {seguradoraData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={seguradoraData}
-                  layout="vertical"
-                  margin={{
-                    left: 20,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="nome" type="category" width={100} />
-                  <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
-                    labelFormatter={(label) => label}
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
-                    }}
-                  />
-                  <Bar dataKey="premio" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="space-y-3">
+                {seguradoraData.map((seg, index) => (
+                  <div key={seg.nome} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                        index === 0 ? 'bg-amber-500 text-amber-950' : 
+                        index === 1 ? 'bg-slate-400 text-slate-950' : 
+                        index === 2 ? 'bg-amber-700 text-amber-100' : 
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {index + 1}
+                      </span>
+                      <span className="font-medium text-sm truncate max-w-[120px]">{seg.nome}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground">{seg.distinctCount} fech.</span>
+                      <span className="font-semibold text-sm text-primary">{formatCurrency(seg.premio)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                Nenhum dado disponível para o período selecionado
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+                Nenhum dado disponível
               </div>
             )}
           </CardContent>
@@ -2139,6 +2116,29 @@ const Dashboard = () => {
           setIsModalOpen(false);
           setSelectedCotacao(null);
         }}
+      />
+      
+      {/* Modais de Análise Detalhada */}
+      <StatusDetailModal
+        open={showStatusDetailModal}
+        onClose={() => setShowStatusDetailModal(false)}
+        statusData={distribuicaoStatusDetalhada}
+        formatCurrency={formatCurrency}
+        formatDate={formatDate}
+      />
+      
+      <TendenciaDetailModal
+        open={showTendenciaDetailModal}
+        onClose={() => setShowTendenciaDetailModal(false)}
+        monthlyData={monthlyTrendDataDetalhada}
+        formatCurrency={formatCurrency}
+      />
+      
+      <SeguradoraDetailModal
+        open={showSeguradoraDetailModal}
+        onClose={() => setShowSeguradoraDetailModal(false)}
+        seguradoras={seguradoraDataDetalhada}
+        formatCurrency={formatCurrency}
       />
       </div>
     </>
