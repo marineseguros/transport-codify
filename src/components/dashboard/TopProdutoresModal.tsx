@@ -5,7 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Users, Target, DollarSign, FileText, Clock, Zap, Eye } from "lucide-react";
+import { TrendingUp, TrendingDown, Users, Target, DollarSign, FileText, Clock, Zap, Eye, RefreshCw } from "lucide-react";
 import { type Cotacao } from "@/hooks/useSupabaseData";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,9 @@ interface ProdutorStats {
   fechadasDistinct: number;
   declinadasDistinct: number;
   premioTotal: number;
+  premioRecorrente: number;
   premioEmAberto: number;
+  premioEmAbertoRecorrente: number;
   ticketMedio: number;
   taxaConversao: number;
   cotacoesFechadas: Cotacao[];
@@ -48,7 +50,9 @@ export function TopProdutoresModal({
 
   // Calculate totals for forecast
   const totalPremioFechado = produtores.reduce((sum, p) => sum + p.premioTotal, 0);
+  const totalPremioRecorrente = produtores.reduce((sum, p) => sum + p.premioRecorrente, 0);
   const totalPremioEmAberto = produtores.reduce((sum, p) => sum + p.premioEmAberto, 0);
+  const totalPremioEmAbertoRecorrente = produtores.reduce((sum, p) => sum + p.premioEmAbertoRecorrente, 0);
   const avgConversao = produtores.length > 0 
     ? produtores.reduce((sum, p) => sum + p.taxaConversao, 0) / produtores.length 
     : 0;
@@ -58,7 +62,7 @@ export function TopProdutoresModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-5xl max-h-[85vh]">
+        <DialogContent className="max-w-6xl max-h-[85vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
@@ -69,21 +73,28 @@ export function TopProdutoresModal({
           <ScrollArea className="max-h-[70vh] pr-4">
             <div className="space-y-4">
               {/* Summary KPIs */}
-              <div className="grid grid-cols-4 gap-3 p-3 bg-muted/30 rounded-lg">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 bg-muted/30 rounded-lg">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-success">{formatCurrency(totalPremioFechado)}</p>
+                  <p className="text-xl font-bold text-primary">{formatCurrency(totalPremioRecorrente)}</p>
+                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    <RefreshCw className="h-3 w-3" />
+                    Recorrente Fechado
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-success">{formatCurrency(totalPremioFechado)}</p>
                   <p className="text-xs text-muted-foreground">Total Fechado</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-brand-orange">{formatCurrency(totalPremioEmAberto)}</p>
+                  <p className="text-xl font-bold text-brand-orange">{formatCurrency(totalPremioEmAberto)}</p>
                   <p className="text-xs text-muted-foreground">Total em Aberto</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold">{avgConversao.toFixed(0)}%</p>
+                  <p className="text-xl font-bold">{avgConversao.toFixed(0)}%</p>
                   <p className="text-xs text-muted-foreground">Média Conversão</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-primary">{produtores.length}</p>
+                  <p className="text-xl font-bold text-muted-foreground">{produtores.length}</p>
                   <p className="text-xs text-muted-foreground">Produtores</p>
                 </div>
               </div>
@@ -99,8 +110,10 @@ export function TopProdutoresModal({
                       <th className="text-center py-2 px-2 font-medium text-brand-orange">Em Aberto</th>
                       <th className="text-center py-2 px-2 font-medium text-destructive">Declinados</th>
                       <th className="text-center py-2 px-2 font-medium">Conversão</th>
-                      <th className="text-right py-2 px-2 font-medium">Prêmio Fechado</th>
-                      <th className="text-right py-2 px-2 font-medium">Prêmio Aberto</th>
+                      <th className="text-right py-2 px-2 font-medium">Recorrente</th>
+                      <th className="text-right py-2 px-2 font-medium">Total</th>
+                      <th className="text-right py-2 px-2 font-medium">Aberto Rec.</th>
+                      <th className="text-right py-2 px-2 font-medium">Aberto Total</th>
                       <th className="text-center py-2 px-2 font-medium">Ação</th>
                     </tr>
                   </thead>
@@ -135,10 +148,16 @@ export function TopProdutoresModal({
                             {produtor.taxaConversao.toFixed(0)}%
                           </Badge>
                         </td>
-                        <td className="py-2 px-2 text-right font-semibold text-success">
+                        <td className="py-2 px-2 text-right font-semibold text-primary">
+                          {formatCurrency(produtor.premioRecorrente)}
+                        </td>
+                        <td className="py-2 px-2 text-right font-medium text-success">
                           {formatCurrency(produtor.premioTotal)}
                         </td>
-                        <td className="py-2 px-2 text-right font-semibold text-brand-orange">
+                        <td className="py-2 px-2 text-right font-medium text-brand-orange/80">
+                          {formatCurrency(produtor.premioEmAbertoRecorrente)}
+                        </td>
+                        <td className="py-2 px-2 text-right font-medium text-brand-orange">
                           {formatCurrency(produtor.premioEmAberto)}
                         </td>
                         <td className="py-2 px-2 text-center">
@@ -166,7 +185,16 @@ export function TopProdutoresModal({
                   <Zap className="h-4 w-4 text-amber-500" />
                   Previsão e Potencial Consolidado
                 </p>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3" />
+                      Recorrente Realizado
+                    </p>
+                    <p className="text-xl font-bold text-primary">
+                      {formatCurrency(totalPremioRecorrente)}
+                    </p>
+                  </div>
                   <div className="p-4 bg-gradient-to-br from-success/10 to-success/5 rounded-lg border border-success/20">
                     <p className="text-xs text-muted-foreground mb-1">Total Realizado</p>
                     <p className="text-xl font-bold text-success">
@@ -182,9 +210,9 @@ export function TopProdutoresModal({
                       {formatCurrency(totalPremioEmAberto)} × {avgConversao.toFixed(0)}%
                     </p>
                   </div>
-                  <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                  <div className="p-4 bg-gradient-to-br from-chart-4/10 to-chart-4/5 rounded-lg border border-chart-4/20">
                     <p className="text-xs text-muted-foreground mb-1">Previsão Total</p>
-                    <p className="text-xl font-bold text-primary">
+                    <p className="text-xl font-bold text-chart-4">
                       {formatCurrency(previsaoGeral)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">

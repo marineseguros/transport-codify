@@ -23,6 +23,10 @@ import {
   ExternalLink,
   Eye,
   Building2,
+  PieChart as PieChartIcon,
+  LineChart as LineChartIcon,
+  Shield,
+  Layers,
 } from "lucide-react";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { DashboardEditToolbar } from "@/components/dashboard/DashboardEditToolbar";
@@ -559,7 +563,9 @@ const Dashboard = () => {
     fechadasDistinct: number;
     declinadasDistinct: number;
     premioTotal: number;
+    premioRecorrente: number;
     premioEmAberto: number;
+    premioEmAbertoRecorrente: number;
     ticketMedio: number;
     taxaConversao: number;
     cotacoesFechadas: Cotacao[];
@@ -568,6 +574,16 @@ const Dashboard = () => {
     distinctEmAbertoList: { segurado: string; grupo: string; cotacoes: Cotacao[] }[];
   } | null>(null);
   const [selectedProdutorRanking, setSelectedProdutorRanking] = useState(0);
+
+  // Helper function to classify if ramo is "Recorrente" or "Total"
+  const getRegraRamo = (ramoDescricao: string | undefined): 'Recorrente' | 'Total' => {
+    if (!ramoDescricao) return 'Total';
+    const ramoUpper = ramoDescricao.toUpperCase();
+    if (ramoUpper.includes('AVULSA') || ramoUpper.includes('GARANTIA ADUANEIRA') || ramoUpper.includes('AMBIENTAL')) {
+      return 'Total';
+    }
+    return 'Recorrente';
+  };
 
   // Top produtores com métricas detalhadas consolidadas
   // Using DISTINCT counting by CNPJ + branch group
@@ -581,7 +597,9 @@ const Dashboard = () => {
         distinctKeysFechadas: Set<string>;
         distinctKeysDeclinadas: Set<string>;
         premioTotal: number;
+        premioRecorrente: number;
         premioEmAberto: number;
+        premioEmAbertoRecorrente: number;
         cotacoesFechadas: Cotacao[];
         cotacoesEmAberto: Cotacao[];
         // Group cotações by segurado+grupo for distinct listing
@@ -601,7 +619,9 @@ const Dashboard = () => {
             distinctKeysFechadas: new Set(),
             distinctKeysDeclinadas: new Set(),
             premioTotal: 0,
+            premioRecorrente: 0,
             premioEmAberto: 0,
+            premioEmAbertoRecorrente: 0,
             cotacoesFechadas: [],
             cotacoesEmAberto: [],
             fechadasByKey: {},
@@ -618,7 +638,12 @@ const Dashboard = () => {
         
         if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
           produtorStats[nome].distinctKeysFechadas.add(distinctKey);
-          produtorStats[nome].premioTotal += cotacao.valor_premio || 0;
+          const premio = cotacao.valor_premio || 0;
+          const regra = getRegraRamo(cotacao.ramo?.descricao);
+          produtorStats[nome].premioTotal += premio;
+          if (regra === 'Recorrente') {
+            produtorStats[nome].premioRecorrente += premio;
+          }
           produtorStats[nome].cotacoesFechadas.push(cotacao);
           
           // Group by segurado+grupo for distinct listing
@@ -632,7 +657,12 @@ const Dashboard = () => {
           produtorStats[nome].fechadasByKey[distinctKey].cotacoes.push(cotacao);
         } else if (cotacao.status === "Em cotação") {
           produtorStats[nome].distinctKeysEmCotacao.add(distinctKey);
-          produtorStats[nome].premioEmAberto += cotacao.valor_premio || 0;
+          const premio = cotacao.valor_premio || 0;
+          const regra = getRegraRamo(cotacao.ramo?.descricao);
+          produtorStats[nome].premioEmAberto += premio;
+          if (regra === 'Recorrente') {
+            produtorStats[nome].premioEmAbertoRecorrente += premio;
+          }
           produtorStats[nome].cotacoesEmAberto.push(cotacao);
           
           // Group by segurado+grupo for distinct listing
@@ -683,7 +713,9 @@ const Dashboard = () => {
           fechadasDistinct,
           declinadasDistinct,
           premioTotal: p.premioTotal,
+          premioRecorrente: p.premioRecorrente,
           premioEmAberto: p.premioEmAberto,
+          premioEmAbertoRecorrente: p.premioEmAbertoRecorrente,
           ticketMedio: fechadasDistinct > 0 ? p.premioTotal / fechadasDistinct : 0,
           taxaConversao: totalDistinct > 0 ? (fechadasDistinct / totalDistinct) * 100 : 0,
           cotacoesFechadas: p.cotacoesFechadas,
@@ -693,7 +725,8 @@ const Dashboard = () => {
         };
       })
       .sort((a, b) => {
-        // Sort by prêmio total first, then by fechadas
+        // Sort by prêmio recorrente first, then total, then fechadas
+        if (b.premioRecorrente !== a.premioRecorrente) return b.premioRecorrente - a.premioRecorrente;
         if (b.premioTotal !== a.premioTotal) return b.premioTotal - a.premioTotal;
         if (b.fechadasDistinct !== a.fechadasDistinct) return b.fechadasDistinct - a.fechadasDistinct;
         return b.totalDistinct - a.totalDistinct;
@@ -1380,7 +1413,10 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Distribuição por Status</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Layers className="h-4 w-4" />
+                Distribuição por Status
+              </CardTitle>
               <Button variant="ghost" size="sm" onClick={() => setShowStatusDetailModal(true)} className="text-xs gap-1">
                 Análise <Eye className="h-3 w-3" />
               </Button>
@@ -1442,7 +1478,8 @@ const Dashboard = () => {
                       <th className="text-center py-2 font-medium text-success">Fech.</th>
                       <th className="text-center py-2 font-medium text-brand-orange">Aberto</th>
                       <th className="text-center py-2 font-medium text-destructive">Decl.</th>
-                      <th className="text-right py-2 font-medium">Prêmio</th>
+                      <th className="text-right py-2 font-medium">Recorrente</th>
+                      <th className="text-right py-2 font-medium">Total</th>
                       <th className="text-center py-2 font-medium"></th>
                     </tr>
                   </thead>
@@ -1460,7 +1497,7 @@ const Dashboard = () => {
                           </span>
                         </td>
                         <td className="py-2">
-                          <div className="font-medium truncate max-w-[120px]">{produtor.nome}</div>
+                          <div className="font-medium truncate max-w-[100px]">{produtor.nome}</div>
                         </td>
                         <td className="py-2 text-center">
                           <span className="font-semibold text-success">{produtor.fechadasDistinct}</span>
@@ -1472,7 +1509,10 @@ const Dashboard = () => {
                           <span className="font-semibold text-destructive">{produtor.declinadasDistinct}</span>
                         </td>
                         <td className="py-2 text-right">
-                          <span className="font-semibold text-primary text-xs">{formatCurrency(produtor.premioTotal)}</span>
+                          <span className="font-semibold text-primary text-xs">{formatCurrency(produtor.premioRecorrente)}</span>
+                        </td>
+                        <td className="py-2 text-right">
+                          <span className="font-medium text-muted-foreground text-xs">{formatCurrency(produtor.premioTotal)}</span>
                         </td>
                         <td className="py-2 text-center">
                           <Button
@@ -1531,7 +1571,10 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Tendência de Cotações (6 Meses)</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <LineChartIcon className="h-4 w-4" />
+                Tendência de Cotações (6 Meses)
+              </CardTitle>
               <Button variant="ghost" size="sm" onClick={() => setShowTendenciaDetailModal(true)} className="text-xs gap-1">
                 Análise <Eye className="h-3 w-3" />
               </Button>
@@ -1566,7 +1609,10 @@ const Dashboard = () => {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base">Top 5 Seguradoras</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Shield className="h-4 w-4" />
+                  Top 5 Seguradoras
+                </CardTitle>
                 <p className="text-xs text-muted-foreground">Últimos 12 meses</p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setShowSeguradoraDetailModal(true)} className="text-xs gap-1">
