@@ -27,12 +27,12 @@ const getSegmento = (descricao: string): string => {
 };
 
 // Helper function to get Regra based on ramo description
+// Recorrente = RCTR-C, RC-DC, RC-V, NACIONAL (exato)
+// Total = todos os demais ramos
 const getRegra = (descricao: string): string => {
-  const recorrente = ['Nacional', 'Exportação', 'Importação', 'RCTR-C', 'RC-DC', 'RCTR-VI', 'RCTA-C', 'RC-V'];
-  const total = ['Nacional Avulsa', 'Importação Avulsa', 'Exportação Avulsa', 'Garantia Aduaneira', 'Ambiental'];
-  if (recorrente.some(r => descricao === r)) return 'Recorrente';
-  if (total.some(r => descricao === r)) return 'Total';
-  return 'Outros';
+  const recorrente = ['Nacional', 'RCTR-C', 'RC-DC', 'RC-V'];
+  if (recorrente.some(r => descricao.toUpperCase() === r.toUpperCase())) return 'Recorrente';
+  return 'Total';
 };
 const Ramos = () => {
   const {

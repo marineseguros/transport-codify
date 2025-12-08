@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Target, DollarSign, FileText, Clock, Calendar, Zap, RefreshCw } from "lucide-react";
 import { type Cotacao } from "@/hooks/useSupabaseData";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getRegraRamo } from "@/lib/ramoClassification";
 
 interface ProdutorStats {
   nome: string;
@@ -50,25 +51,21 @@ export function ProdutorDetailModal({
   const potencialFechamento = produtor.premioEmAberto * (produtor.taxaConversao / 100);
   const previsaoTotal = produtor.premioTotal + potencialFechamento;
 
-  // Helper to determine if a ramo is "Recorrente" or "Total"
-  const getRegraRamo = (descricao: string): 'Recorrente' | 'Total' => {
-    const desc = descricao?.toUpperCase() || '';
-    if (desc.includes('AVULSA') || desc.includes('GARANTIA ADUANEIRA') || desc.includes('AMBIENTAL')) {
-      return 'Total';
-    }
-    return 'Recorrente';
-  };
+  // Using centralized getRegraRamo from lib/ramoClassification.ts
 
   // Get 10 most recent distinct closed (by segurado + grupo)
   const recentFechados = produtor.distinctFechadasList
     .slice(0, 10)
     .map(item => {
       const totalPremio = item.cotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
-      // Determine regra based on grupo - use grupo name pattern
-      const grupoUpper = item.grupo?.toUpperCase() || '';
-      let regra: 'Recorrente' | 'Total' = 'Recorrente';
-      if (grupoUpper.includes('AVULSA') || grupoUpper.includes('GARANTIA') || grupoUpper.includes('AMBIENTAL')) {
-        regra = 'Total';
+      // Determine regra using centralized classification - use the grupo name (which is the ramo description or group)
+      // For grouped ramos like "RCTR-C + RC-DC", check if it contains any recurrent ramo
+      const grupoName = item.grupo || '';
+      let regra: 'Recorrente' | 'Total' = getRegraRamo(grupoName);
+      
+      // Special case: "RCTR-C + RC-DC" is a recurrent group
+      if (grupoName.includes('RCTR-C') || grupoName.includes('RC-DC')) {
+        regra = 'Recorrente';
       }
       
       return {
