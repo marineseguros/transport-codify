@@ -24,6 +24,9 @@ import {
 } from "lucide-react";
 import { TopProdutoresModal } from "@/components/dashboard/TopProdutoresModal";
 import { ProdutorDetailModal } from "@/components/dashboard/ProdutorDetailModal";
+import { StatusDetailModal } from "@/components/dashboard/StatusDetailModal";
+import { TendenciaDetailModal } from "@/components/dashboard/TendenciaDetailModal";
+import { SeguradoraDetailModal } from "@/components/dashboard/SeguradoraDetailModal";
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DatePickerWithRange } from "@/components/ui/date-picker";
@@ -446,14 +449,19 @@ const Dashboard = () => {
     };
   }, [allQuotes, dateFilter, dateRange, produtorFilter, unidadeFilter]);
 
-  // Distribuição por status no período atual
-  // Note: "Fechamento congênere" is counted together with "Negócio fechado"
-  // ALL statuses use distinct counting by CNPJ + branch group
-  const distribuicaoStatus = useMemo(() => {
+  // Distribuição por status com dados detalhados para modal
+  const distribuicaoStatusDetalhada = useMemo(() => {
     const validStatuses = ["Em cotação", "Negócio fechado", "Declinado"];
     
-    // Calculate distinct counts for each status
-    const statusCounts: Record<string, { cotacoes: Cotacao[]; count: number }> = {};
+    const statusCounts: Record<string, { 
+      cotacoes: Cotacao[]; 
+      count: number;
+      premioTotal: number;
+      transportador: number;
+      embarcador: number;
+      ramoBreakdown: Record<string, { count: number; premio: number }>;
+      seguradoraBreakdown: Record<string, { count: number; premio: number }>;
+    }> = {};
     
     validStatuses.forEach((status) => {
       let statusCotacoes: Cotacao[];
@@ -469,29 +477,73 @@ const Dashboard = () => {
         statusCotacoes = filteredCotacoes.filter((cotacao) => cotacao.status === status);
       }
       
-      // Use distinct count by CNPJ + branch group for ALL statuses
       const count = countDistinctByStatus(statusCotacoes, targetStatuses);
-      statusCounts[status] = { cotacoes: statusCotacoes, count };
-    });
-    
-    // Calculate total distinct for percentage calculation
-    const totalDistinct = Object.values(statusCounts).reduce((sum, item) => sum + item.count, 0);
-    
-    const statusData = validStatuses.map((status) => {
-      const { cotacoes: statusCotacoes, count } = statusCounts[status];
-      return {
-        status,
+      const premioTotal = statusCotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+      const transportador = statusCotacoes.filter(c => c.segmento === "Transportador").length;
+      const embarcador = statusCotacoes.filter(c => c.segmento !== "Transportador").length;
+      
+      // Breakdown por ramo
+      const ramoBreakdown: Record<string, { count: number; premio: number }> = {};
+      statusCotacoes.forEach(c => {
+        const ramo = c.ramo?.descricao || "Não informado";
+        if (!ramoBreakdown[ramo]) ramoBreakdown[ramo] = { count: 0, premio: 0 };
+        ramoBreakdown[ramo].count++;
+        ramoBreakdown[ramo].premio += c.valor_premio || 0;
+      });
+      
+      // Breakdown por seguradora
+      const seguradoraBreakdown: Record<string, { count: number; premio: number }> = {};
+      statusCotacoes.forEach(c => {
+        const seg = c.seguradora?.nome || "Não informado";
+        if (!seguradoraBreakdown[seg]) seguradoraBreakdown[seg] = { count: 0, premio: 0 };
+        seguradoraBreakdown[seg].count++;
+        seguradoraBreakdown[seg].premio += c.valor_premio || 0;
+      });
+      
+      statusCounts[status] = { 
+        cotacoes: statusCotacoes, 
         count,
-        seguradosDistintos: new Set(statusCotacoes.map((cotacao) => cotacao.cpf_cnpj)).size,
-        percentage: totalDistinct > 0 ? (count / totalDistinct) * 100 : 0,
+        premioTotal,
+        transportador,
+        embarcador,
+        ramoBreakdown,
+        seguradoraBreakdown,
       };
     });
     
-    return statusData;
+    const totalDistinct = Object.values(statusCounts).reduce((sum, item) => sum + item.count, 0);
+    
+    return validStatuses.map((status) => {
+      const data = statusCounts[status];
+      return {
+        status,
+        count: data.count,
+        seguradosDistintos: new Set(data.cotacoes.map((c) => c.cpf_cnpj)).size,
+        percentage: totalDistinct > 0 ? (data.count / totalDistinct) * 100 : 0,
+        cotacoes: data.cotacoes,
+        premioTotal: data.premioTotal,
+        ticketMedio: data.count > 0 ? data.premioTotal / data.count : 0,
+        transportador: data.transportador,
+        embarcador: data.embarcador,
+        ramoBreakdown: Object.entries(data.ramoBreakdown)
+          .map(([ramo, stats]) => ({ ramo, ...stats }))
+          .sort((a, b) => b.premio - a.premio),
+        seguradoraBreakdown: Object.entries(data.seguradoraBreakdown)
+          .map(([seguradora, stats]) => ({ seguradora, ...stats }))
+          .sort((a, b) => b.premio - a.premio),
+        tempoMedio: 0,
+      };
+    });
   }, [filteredCotacoes]);
+  
+  // Backward compat
+  const distribuicaoStatus = distribuicaoStatusDetalhada;
 
-  // State for Top Produtores modal
+  // State for modals
   const [showTopProdutoresModal, setShowTopProdutoresModal] = useState(false);
+  const [showStatusDetailModal, setShowStatusDetailModal] = useState(false);
+  const [showTendenciaDetailModal, setShowTendenciaDetailModal] = useState(false);
+  const [showSeguradoraDetailModal, setShowSeguradoraDetailModal] = useState(false);
   const [selectedProdutor, setSelectedProdutor] = useState<{
     nome: string;
     totalDistinct: number;
@@ -669,72 +721,80 @@ const Dashboard = () => {
       .slice(0, 10);
   }, [filteredCotacoes]);
 
-  // Monthly trend data for charts (last 6 months) - always shows last 6 months regardless of date filter
-  const monthlyTrendData = useMemo(() => {
+  // Monthly trend data DETALHADA para modal
+  const monthlyTrendDataDetalhada = useMemo(() => {
     const months = [];
     const now = new Date();
 
-    // Apply only producer and unit filters, not date filter
     const trendFilteredCotacoes = allQuotes.filter((cotacao) => {
       const produtorMatch = produtorFilter === "todos" || cotacao.produtor_cotador?.nome === produtorFilter;
       const unidadeMatch = unidadeFilter === "todas" || cotacao.unidade?.descricao === unidadeFilter;
       return produtorMatch && unidadeMatch;
     });
+    
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthName = date.toLocaleDateString("pt-BR", {
-        month: "short",
-      });
+      const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
       const year = date.getFullYear();
       const monthCotacoes = trendFilteredCotacoes.filter((c) => {
         const cotacaoDate = new Date(c.data_cotacao);
         return cotacaoDate.getMonth() === date.getMonth() && cotacaoDate.getFullYear() === date.getFullYear();
       });
+      
       const emCotacao = monthCotacoes.filter((c) => c.status === "Em cotação").length;
       const fechadas = monthCotacoes.filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere").length;
+      const declinadas = monthCotacoes.filter((c) => c.status === "Declinado").length;
+      const premioFechado = monthCotacoes
+        .filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere")
+        .reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+      const premioAberto = monthCotacoes
+        .filter((c) => c.status === "Em cotação")
+        .reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+      const transportador = monthCotacoes.filter(c => c.segmento === "Transportador").length;
+      const embarcador = monthCotacoes.filter(c => c.segmento !== "Transportador").length;
+      const taxaConversao = monthCotacoes.length > 0 ? (fechadas / monthCotacoes.length * 100) : 0;
+      
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
         total: monthCotacoes.length,
         emCotacao,
         fechadas,
+        declinadas,
+        premioFechado,
+        premioAberto,
+        transportador,
+        embarcador,
+        taxaConversao,
       });
     }
     return months;
   }, [allQuotes, produtorFilter, unidadeFilter]);
+  
+  // Backward compat
+  const monthlyTrendData = monthlyTrendDataDetalhada;
 
-  // Top seguradoras data - últimos 12 meses com filtros de produtor e unidade
-  const seguradoraData = useMemo(() => {
-    const seguradoraStats: Record<
-      string,
-      {
-        nome: string;
-        premio: number;
-        count: number;
-      }
-    > = {};
+  // Top seguradoras data DETALHADA - últimos 12 meses
+  const seguradoraDataDetalhada = useMemo(() => {
+    const seguradoraStats: Record<string, {
+      nome: string;
+      premio: number;
+      count: number;
+      distinctKeys: Set<string>;
+      transportador: number;
+      embarcador: number;
+      ramoBreakdown: Record<string, { count: number; premio: number }>;
+    }> = {};
 
-    // Calculate date range for last 12 months
     const now = new Date();
     const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
 
-    // Apply only producer and unit filters, use fixed 12-month period
     const seguradoraFilteredCotacoes = allQuotes.filter((cotacao) => {
       const produtorMatch = produtorFilter === "todos" || cotacao.produtor_cotador?.nome === produtorFilter;
       const unidadeMatch = unidadeFilter === "todas" || cotacao.unidade?.descricao === unidadeFilter;
       const dateMatch = new Date(cotacao.data_cotacao) >= twelveMonthsAgo;
       return produtorMatch && unidadeMatch && dateMatch;
     });
-    logger.log("Seguradoras Debug:", {
-      totalFiltered: seguradoraFilteredCotacoes.length,
-      fechadas: seguradoraFilteredCotacoes.filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere").length,
-      comSeguradora: seguradoraFilteredCotacoes.filter((c) => c.seguradora).length,
-      comPremio: seguradoraFilteredCotacoes.filter((c) => (c.status === "Negócio fechado" || c.status === "Fechamento congênere") && c.valor_premio > 0).length,
-      sample: seguradoraFilteredCotacoes.slice(0, 3).map((c) => ({
-        status: c.status,
-        seguradora: c.seguradora?.nome,
-        premio: c.valor_premio,
-      })),
-    });
+    
     seguradoraFilteredCotacoes.forEach((cotacao) => {
       if (cotacao.seguradora && (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") && cotacao.valor_premio > 0) {
         const nome = cotacao.seguradora.nome;
@@ -743,18 +803,60 @@ const Dashboard = () => {
             nome,
             premio: 0,
             count: 0,
+            distinctKeys: new Set(),
+            transportador: 0,
+            embarcador: 0,
+            ramoBreakdown: {},
           };
         }
+        
+        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+        const distinctKey = `${cotacao.cpf_cnpj}_${branchGroup}`;
+        seguradoraStats[nome].distinctKeys.add(distinctKey);
+        
         seguradoraStats[nome].premio += Number(cotacao.valor_premio);
         seguradoraStats[nome].count++;
+        
+        if (cotacao.segmento === "Transportador") {
+          seguradoraStats[nome].transportador++;
+        } else {
+          seguradoraStats[nome].embarcador++;
+        }
+        
+        // Ramo breakdown
+        const ramo = cotacao.ramo?.descricao || "Não informado";
+        if (!seguradoraStats[nome].ramoBreakdown[ramo]) {
+          seguradoraStats[nome].ramoBreakdown[ramo] = { count: 0, premio: 0 };
+        }
+        seguradoraStats[nome].ramoBreakdown[ramo].count++;
+        seguradoraStats[nome].ramoBreakdown[ramo].premio += cotacao.valor_premio || 0;
       }
     });
-    const result = Object.values(seguradoraStats)
-      .sort((a, b) => b.premio - a.premio)
-      .slice(0, 5);
-    logger.log("Seguradoras Result:", result);
-    return result;
+    
+    const totalPremio = Object.values(seguradoraStats).reduce((sum, s) => sum + s.premio, 0);
+    const totalCount = Object.values(seguradoraStats).reduce((sum, s) => sum + s.distinctKeys.size, 0);
+    
+    return Object.values(seguradoraStats)
+      .map(s => ({
+        nome: s.nome,
+        premio: s.premio,
+        count: s.count,
+        distinctCount: s.distinctKeys.size,
+        ticketMedio: s.distinctKeys.size > 0 ? s.premio / s.distinctKeys.size : 0,
+        percentualPremio: totalPremio > 0 ? (s.premio / totalPremio * 100) : 0,
+        percentualCount: totalCount > 0 ? (s.distinctKeys.size / totalCount * 100) : 0,
+        transportador: s.transportador,
+        embarcador: s.embarcador,
+        topRamos: Object.entries(s.ramoBreakdown)
+          .map(([ramo, stats]) => ({ ramo, ...stats }))
+          .sort((a, b) => b.premio - a.premio)
+          .slice(0, 3),
+      }))
+      .sort((a, b) => b.premio - a.premio);
   }, [allQuotes, produtorFilter, unidadeFilter]);
+  
+  // Backward compat - top 5 only
+  const seguradoraData = seguradoraDataDetalhada.slice(0, 5);
 
   // Pie chart data
   const pieChartData = useMemo(() => {
@@ -1256,26 +1358,36 @@ const Dashboard = () => {
 
       {/* Distribuição por Status e Top Produtores */}
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
-        {/* Distribuição por Status (50% da largura) */}
+        {/* Distribuição por Status */}
         <Card>
-          <CardHeader>
-            <CardTitle>Distribuição por Status</CardTitle>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Distribuição por Status</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setShowStatusDetailModal(true)} className="text-xs gap-1">
+                Análise <Eye className="h-3 w-3" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {distribuicaoStatus.map(({ status, count, seguradosDistintos, percentage }) => (
+            <div className="space-y-3">
+              {distribuicaoStatus.map(({ status, count, premioTotal, percentage }) => (
                 <div key={status} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Badge variant={getStatusBadgeVariant(status)}>{status}</Badge>
-                    <div className="text-sm text-muted-foreground">
-                      <div>{count} cotações</div>
-                      <div>{seguradosDistintos} segurados distintos</div>
-                    </div>
+                    <span className="text-lg font-bold">{count}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-24 bg-secondary rounded-full h-2">
-                      <div
-                        className="bg-primary rounded-full h-2"
+                    <span className="text-xs text-muted-foreground">{formatCurrency(premioTotal)}</span>
+                    <div className="w-20 bg-secondary rounded-full h-2">
+                      <div className="bg-primary rounded-full h-2" style={{ width: `${percentage}%` }} />
+                    </div>
+                    <span className="text-sm font-medium w-12 text-right">{percentage.toFixed(0)}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
                         style={{
                           width: `${percentage}%`,
                         }}
