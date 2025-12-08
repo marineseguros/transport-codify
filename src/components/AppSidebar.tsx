@@ -50,7 +50,6 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={cn(
-      "transition-all duration-300 ease-in-out",
       collapsed ? "w-14" : "w-64"
     )} collapsible="icon">
       {/* Logo da Empresa */}
@@ -59,7 +58,7 @@ export function AppSidebar() {
           src="/marine-logo.png" 
           alt="Marine Seguros Logo" 
           className={cn(
-            "transition-all duration-300 cursor-pointer hover:scale-110 hover:rotate-3",
+            "cursor-pointer",
             collapsed ? "h-10 w-10" : "h-16 w-16"
           )}
         />
@@ -79,16 +78,16 @@ export function AppSidebar() {
                       to={item.url} 
                       end 
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200",
+                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium",
                         isActive
                           ? "bg-primary text-white font-semibold"
                           : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
                       )}
                       aria-current={isActive ? "page" : undefined}
                     >
-                      <item.icon className="h-4 w-4 flex-shrink-0 transition-all duration-200" />
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
                       <span className={cn(
-                        "whitespace-nowrap transition-all duration-300",
+                        "whitespace-nowrap",
                         collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"
                       )}>
                         {item.title}
@@ -113,16 +112,16 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200",
+                        "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium",
                         isActive
                           ? "bg-primary text-white font-semibold"
                           : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
                       )}
                       aria-current={isActive ? "page" : undefined}
                     >
-                      <item.icon className="h-4 w-4 flex-shrink-0 transition-all duration-200" />
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
                       <span className={cn(
-                        "whitespace-nowrap transition-all duration-300",
+                        "whitespace-nowrap",
                         collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"
                       )}>
                         {item.title}
@@ -148,16 +147,16 @@ export function AppSidebar() {
                       <NavLink 
                         to={item.url} 
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200",
+                          "flex w-full items-center gap-2 rounded-lg p-2 text-sm font-medium",
                           isActive
                             ? "bg-primary text-white font-semibold"
                             : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
                         )}
                         aria-current={isActive ? "page" : undefined}
                       >
-                        <item.icon className="h-4 w-4 flex-shrink-0 transition-all duration-200" />
+                        <item.icon className="h-4 w-4 flex-shrink-0" />
                         <span className={cn(
-                          "whitespace-nowrap transition-all duration-300",
+                          "whitespace-nowrap",
                           collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"
                         )}>
                           {item.title}
@@ -176,13 +175,13 @@ export function AppSidebar() {
       <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-50">
         <button
           onClick={toggleSidebar}
-          className="h-6 w-6 rounded-full border bg-background shadow-md flex items-center justify-center hover:bg-accent hover:scale-110 transition-all duration-200"
+          className="h-6 w-6 rounded-full border bg-background shadow-md flex items-center justify-center hover:bg-accent"
           aria-label={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
         >
           {collapsed ? (
-            <ChevronRight className="h-4 w-4 text-foreground transition-transform duration-200" />
+            <ChevronRight className="h-4 w-4 text-foreground" />
           ) : (
-            <ChevronLeft className="h-4 w-4 text-foreground transition-transform duration-200" />
+            <ChevronLeft className="h-4 w-4 text-foreground" />
           )}
         </button>
       </div>
