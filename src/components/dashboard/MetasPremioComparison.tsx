@@ -93,14 +93,22 @@ const getQuarterHeaderColor = (quarter: number) => {
   }
 };
 
-// Ramos recorrentes based on ramo_agrupado
+// Ramos recorrentes baseado na descricao do ramo (não ramo_agrupado)
+// Recorrentes: Nacional, Exportação, Importação, RCTR-C, RC-DC, RCTR-VI, RCTA-C, RC-V
+// Totais (não recorrentes): Nacional Avulsa, Importação Avulsa, Exportação Avulsa, Garantia Aduaneira, Ambiental
 const RECURRENT_RAMOS = [
   'Nacional', 'Exportação', 'Importação', 'RCTR-C', 'RC-DC', 'RCTR-VI', 'RCTA-C', 'RC-V'
 ];
 
 const isRecurrentRamo = (ramo: Ramo | undefined): boolean => {
   if (!ramo) return false;
-  return RECURRENT_RAMOS.includes(ramo.ramo_agrupado || ramo.descricao);
+  // Verifica pela descrição do ramo, não pelo ramo_agrupado
+  // Se contém "Avulsa", "Garantia Aduaneira" ou "Ambiental" -> não é recorrente (é Total)
+  const descricao = ramo.descricao.toUpperCase();
+  if (descricao.includes('AVULSA') || descricao.includes('GARANTIA ADUANEIRA') || descricao.includes('AMBIENTAL')) {
+    return false;
+  }
+  return RECURRENT_RAMOS.some(r => descricao.includes(r.toUpperCase()));
 };
 
 // Calculate monthly prize distribution for a cotacao
