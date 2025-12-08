@@ -3,7 +3,7 @@ import { getRegraRamo } from "@/lib/ramoClassification";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useCotacoesTotais, useProdutores, useUnidades, type Cotacao } from "@/hooks/useSupabaseData";
+import { useCotacoesTotais, useProdutores, useUnidades, useSeguradoras, useRamos, type Cotacao } from "@/hooks/useSupabaseData";
 import { useAuth } from "@/contexts/AuthContext";
 import { WeeklyReminderModal } from "@/components/WeeklyReminderModal";
 import {
@@ -15,7 +15,6 @@ import {
   Target,
   Plus,
   Upload,
-  CalendarIcon,
   Users,
   Building,
   List,
@@ -31,6 +30,7 @@ import {
 } from "lucide-react";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { DashboardEditToolbar } from "@/components/dashboard/DashboardEditToolbar";
+import { DashboardFilters, type DashboardFilterValues } from "@/components/dashboard/DashboardFilters";
 import { TopProdutoresModal } from "@/components/dashboard/TopProdutoresModal";
 import { ProdutorDetailModal } from "@/components/dashboard/ProdutorDetailModal";
 import { StatusDetailModal } from "@/components/dashboard/StatusDetailModal";
@@ -38,9 +38,6 @@ import { TendenciaDetailModal } from "@/components/dashboard/TendenciaDetailModa
 import { SeguradoraDetailModal } from "@/components/dashboard/SeguradoraDetailModal";
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
-import { DatePickerWithRange } from "@/components/ui/date-picker";
-import { DateRange } from "react-day-picker";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ResponsiveContainer,
@@ -121,12 +118,22 @@ const Dashboard = () => {
   const { cotacoes: allQuotes, loading: loadingCotacoes } = useCotacoesTotais();
   const { produtores, loading: loadingProdutores } = useProdutores();
   const { unidades, loading: loadingUnidades } = useUnidades();
-  const loading = loadingCotacoes || loadingProdutores || loadingUnidades;
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [dateFilter, setDateFilter] = useState<string>("mes_atual");
-  const [produtorFilter, setProdutorFilter] = useState<string>("todos");
-  const [unidadeFilter, setUnidadeFilter] = useState<string>("todas");
-  const [compareRange, setCompareRange] = useState<DateRange | undefined>();
+  const { seguradoras, loading: loadingSeguradoras } = useSeguradoras();
+  const { ramos, loading: loadingRamos } = useRamos();
+  const loading = loadingCotacoes || loadingProdutores || loadingUnidades || loadingSeguradoras || loadingRamos;
+  
+  // Unified filter state
+  const [filters, setFilters] = useState<DashboardFilterValues>({
+    dateFilter: "mes_atual",
+    dateRange: undefined,
+    produtorFilter: "todos",
+    seguradoraFilter: "todas",
+    ramoFilter: "todos",
+    segmentoFilter: "todos",
+    regraFilter: "todas",
+    anoEspecifico: "",
+  });
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [showReminder, setShowReminder] = useState(false);
@@ -185,38 +192,44 @@ const Dashboard = () => {
     setIsModalOpen(true);
   };
 
-  // Filter cotacoes by date, produtor and unidade
+  // Filter cotacoes by all filter criteria
   // Use data_cotacao for "Em cotação" and "Declinado"
   // Use data_fechamento for "Negócio fechado" and "Fechamento congênere"
   const filteredCotacoes = useMemo(() => {
     let filtered = allQuotes;
 
     // Apply produtor filter
-    if (produtorFilter !== "todos") {
-      filtered = filtered.filter((cotacao) => cotacao.produtor_cotador?.nome === produtorFilter);
+    if (filters.produtorFilter !== "todos") {
+      filtered = filtered.filter((cotacao) => cotacao.produtor_cotador?.nome === filters.produtorFilter);
     }
 
-    // Apply unidade filter
-    if (unidadeFilter !== "todas") {
-      filtered = filtered.filter((cotacao) => cotacao.unidade?.descricao === unidadeFilter);
+    // Apply seguradora filter
+    if (filters.seguradoraFilter !== "todas") {
+      filtered = filtered.filter((cotacao) => cotacao.seguradora?.nome === filters.seguradoraFilter);
+    }
+
+    // Apply ramo filter
+    if (filters.ramoFilter !== "todos") {
+      filtered = filtered.filter((cotacao) => cotacao.ramo?.descricao === filters.ramoFilter);
+    }
+
+    // Apply segmento filter (from ramo)
+    if (filters.segmentoFilter !== "todos") {
+      filtered = filtered.filter((cotacao) => cotacao.ramo?.segmento === filters.segmentoFilter);
+    }
+
+    // Apply regra filter (from ramo - database field)
+    if (filters.regraFilter !== "todas") {
+      filtered = filtered.filter((cotacao) => cotacao.ramo?.regra === filters.regraFilter);
     }
 
     // Apply date filter
     const now = new Date();
     let startDate: Date;
     let endDate: Date = now;
-    switch (dateFilter) {
-      case "hoje":
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
-      case "7dias":
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
+    switch (filters.dateFilter) {
       case "30dias":
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      case "90dias":
-        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
         break;
       case "mes_atual":
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -230,15 +243,19 @@ const Dashboard = () => {
         startDate = new Date(now.getFullYear(), 0, 1);
         endDate = new Date(now.getFullYear(), 11, 31);
         break;
-      case "personalizado":
-        if (!dateRange?.from) return filtered;
-        startDate = dateRange.from;
-        endDate = dateRange.to || dateRange.from;
+      case "ano_anterior":
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        endDate = new Date(now.getFullYear() - 1, 11, 31);
         break;
-      case "personalizado_comparacao":
-        if (!dateRange?.from) return filtered;
-        startDate = dateRange.from;
-        endDate = dateRange.to || dateRange.from;
+      case "ano_especifico":
+        const year = parseInt(filters.anoEspecifico) || now.getFullYear();
+        startDate = new Date(year, 0, 1);
+        endDate = new Date(year, 11, 31);
+        break;
+      case "personalizado":
+        if (!filters.dateRange?.from) return filtered;
+        startDate = filters.dateRange.from;
+        endDate = filters.dateRange.to || filters.dateRange.from;
         break;
       default:
         return filtered;
@@ -261,7 +278,7 @@ const Dashboard = () => {
       const cotacaoDate = new Date(cotacao.data_cotacao);
       return cotacaoDate >= startDate && cotacaoDate <= endDate;
     });
-  }, [allQuotes, dateFilter, dateRange, produtorFilter, unidadeFilter]);
+  }, [allQuotes, filters]);
 
   // Calculate stats with comparisons based on selected period
   const monthlyStats = useMemo(() => {
@@ -272,33 +289,11 @@ const Dashboard = () => {
     let currentEndDate: Date = now;
     let previousStartDate: Date;
     let previousEndDate: Date;
-    switch (dateFilter) {
-      case "hoje":
-        currentStartDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        previousStartDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        previousEndDate = new Date(
-          previousStartDate.getFullYear(),
-          previousStartDate.getMonth(),
-          previousStartDate.getDate(),
-          23,
-          59,
-          59,
-        );
-        break;
-      case "7dias":
-        currentStartDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        previousStartDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-        previousEndDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
+    switch (filters.dateFilter) {
       case "30dias":
         currentStartDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         previousStartDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
         previousEndDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      case "90dias":
-        currentStartDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-        previousStartDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
-        previousEndDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
         break;
       case "mes_atual":
         currentStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -312,36 +307,34 @@ const Dashboard = () => {
         previousStartDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
         previousEndDate = new Date(now.getFullYear(), now.getMonth() - 1, 0);
         break;
-      case "trimestre_atual":
-        const quarterStart = Math.floor(now.getMonth() / 3) * 3;
-        currentStartDate = new Date(now.getFullYear(), quarterStart, 1);
-        currentEndDate = new Date(now.getFullYear(), quarterStart + 3, 0);
-        previousStartDate = new Date(now.getFullYear(), quarterStart - 3, 1);
-        previousEndDate = new Date(now.getFullYear(), quarterStart, 0);
-        break;
-      case "semestre_atual":
-        const semesterStart = now.getMonth() < 6 ? 0 : 6;
-        currentStartDate = new Date(now.getFullYear(), semesterStart, 1);
-        currentEndDate = new Date(now.getFullYear(), semesterStart + 6, 0);
-        previousStartDate = new Date(now.getFullYear(), semesterStart - 6, 1);
-        previousEndDate = new Date(now.getFullYear(), semesterStart, 0);
-        break;
       case "ano_atual":
         currentStartDate = new Date(now.getFullYear(), 0, 1);
         currentEndDate = new Date(now.getFullYear(), 11, 31);
         previousStartDate = new Date(now.getFullYear() - 1, 0, 1);
         previousEndDate = new Date(now.getFullYear() - 1, 11, 31);
         break;
+      case "ano_anterior":
+        currentStartDate = new Date(now.getFullYear() - 1, 0, 1);
+        currentEndDate = new Date(now.getFullYear() - 1, 11, 31);
+        previousStartDate = new Date(now.getFullYear() - 2, 0, 1);
+        previousEndDate = new Date(now.getFullYear() - 2, 11, 31);
+        break;
+      case "ano_especifico":
+        const year = parseInt(filters.anoEspecifico) || now.getFullYear();
+        currentStartDate = new Date(year, 0, 1);
+        currentEndDate = new Date(year, 11, 31);
+        previousStartDate = new Date(year - 1, 0, 1);
+        previousEndDate = new Date(year - 1, 11, 31);
+        break;
       case "personalizado":
-      case "personalizado_comparacao":
-        if (!dateRange?.from) {
+        if (!filters.dateRange?.from) {
           currentStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
           currentEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
           previousStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
           previousEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
         } else {
-          currentStartDate = dateRange.from;
-          currentEndDate = dateRange.to || dateRange.from;
+          currentStartDate = filters.dateRange.from;
+          currentEndDate = filters.dateRange.to || filters.dateRange.from;
           const daysDiff = Math.floor((currentEndDate.getTime() - currentStartDate.getTime()) / (1000 * 60 * 60 * 24));
           previousEndDate = new Date(currentStartDate.getTime() - 24 * 60 * 60 * 1000);
           previousStartDate = new Date(previousEndDate.getTime() - daysDiff * 24 * 60 * 60 * 1000);
@@ -354,11 +347,14 @@ const Dashboard = () => {
         previousEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
     }
 
-    // Apply produtor and unidade filters consistently for both periods
+    // Apply all filters consistently for both periods
     const baseFilteredQuotes = allQuotes.filter((c) => {
-      const produtorMatch = produtorFilter === "todos" || c.produtor_cotador?.nome === produtorFilter;
-      const unidadeMatch = unidadeFilter === "todas" || c.unidade?.descricao === unidadeFilter;
-      return produtorMatch && unidadeMatch;
+      const produtorMatch = filters.produtorFilter === "todos" || c.produtor_cotador?.nome === filters.produtorFilter;
+      const seguradoraMatch = filters.seguradoraFilter === "todas" || c.seguradora?.nome === filters.seguradoraFilter;
+      const ramoMatch = filters.ramoFilter === "todos" || c.ramo?.descricao === filters.ramoFilter;
+      const segmentoMatch = filters.segmentoFilter === "todos" || c.ramo?.segmento === filters.segmentoFilter;
+      const regraMatch = filters.regraFilter === "todas" || c.ramo?.regra === filters.regraFilter;
+      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch;
     });
     
     // Filter quotations (Em cotação, Declinado) by data_cotacao
@@ -460,7 +456,7 @@ const Dashboard = () => {
       taxaConversao,
       taxaConversaoComp,
     };
-  }, [allQuotes, dateFilter, dateRange, produtorFilter, unidadeFilter]);
+  }, [allQuotes, filters]);
 
   // Distribuição por status com dados detalhados para modal
   const distribuicaoStatusDetalhada = useMemo(() => {
@@ -762,9 +758,12 @@ const Dashboard = () => {
     const now = new Date();
 
     const trendFilteredCotacoes = allQuotes.filter((cotacao) => {
-      const produtorMatch = produtorFilter === "todos" || cotacao.produtor_cotador?.nome === produtorFilter;
-      const unidadeMatch = unidadeFilter === "todas" || cotacao.unidade?.descricao === unidadeFilter;
-      return produtorMatch && unidadeMatch;
+      const produtorMatch = filters.produtorFilter === "todos" || cotacao.produtor_cotador?.nome === filters.produtorFilter;
+      const seguradoraMatch = filters.seguradoraFilter === "todas" || cotacao.seguradora?.nome === filters.seguradoraFilter;
+      const ramoMatch = filters.ramoFilter === "todos" || cotacao.ramo?.descricao === filters.ramoFilter;
+      const segmentoMatch = filters.segmentoFilter === "todos" || cotacao.ramo?.segmento === filters.segmentoFilter;
+      const regraMatch = filters.regraFilter === "todas" || cotacao.ramo?.regra === filters.regraFilter;
+      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch;
     });
     
     for (let i = 5; i >= 0; i--) {
@@ -803,7 +802,7 @@ const Dashboard = () => {
       });
     }
     return months;
-  }, [allQuotes, produtorFilter, unidadeFilter]);
+  }, [allQuotes, filters]);
   
   // Backward compat
   const monthlyTrendData = monthlyTrendDataDetalhada;
@@ -824,10 +823,13 @@ const Dashboard = () => {
     const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
 
     const seguradoraFilteredCotacoes = allQuotes.filter((cotacao) => {
-      const produtorMatch = produtorFilter === "todos" || cotacao.produtor_cotador?.nome === produtorFilter;
-      const unidadeMatch = unidadeFilter === "todas" || cotacao.unidade?.descricao === unidadeFilter;
+      const produtorMatch = filters.produtorFilter === "todos" || cotacao.produtor_cotador?.nome === filters.produtorFilter;
+      const seguradoraMatch = filters.seguradoraFilter === "todas" || cotacao.seguradora?.nome === filters.seguradoraFilter;
+      const ramoMatch = filters.ramoFilter === "todos" || cotacao.ramo?.descricao === filters.ramoFilter;
+      const segmentoMatch = filters.segmentoFilter === "todos" || cotacao.ramo?.segmento === filters.segmentoFilter;
+      const regraMatch = filters.regraFilter === "todas" || cotacao.ramo?.regra === filters.regraFilter;
       const dateMatch = new Date(cotacao.data_cotacao) >= twelveMonthsAgo;
-      return produtorMatch && unidadeMatch && dateMatch;
+      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && dateMatch;
     });
     
     seguradoraFilteredCotacoes.forEach((cotacao) => {
@@ -888,7 +890,7 @@ const Dashboard = () => {
           .slice(0, 3),
       }))
       .sort((a, b) => b.premio - a.premio);
-  }, [allQuotes, produtorFilter, unidadeFilter]);
+  }, [allQuotes, filters]);
   
   // Backward compat - top 5 only
   const seguradoraData = seguradoraDataDetalhada.slice(0, 5);
@@ -1179,102 +1181,13 @@ const Dashboard = () => {
       </div>
 
       {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            Filtros
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
-            <div className="flex-1 min-w-full sm:min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">Período</label>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o período" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hoje">Hoje</SelectItem>
-                  <SelectItem value="7dias">Últimos 7 dias</SelectItem>
-                  <SelectItem value="30dias">Últimos 30 dias</SelectItem>
-                  <SelectItem value="90dias">Últimos 90 dias</SelectItem>
-                  <SelectItem value="mes_atual">Este mês</SelectItem>
-                  <SelectItem value="mes_anterior">Mês passado</SelectItem>
-                  <SelectItem value="ano_atual">Ano atual</SelectItem>
-                  <SelectItem value="personalizado">Período personalizado</SelectItem>
-                  <SelectItem value="personalizado_comparacao">Personalizado com comparação</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {(dateFilter === "personalizado" || dateFilter === "personalizado_comparacao") && (
-              <div className="flex-1 min-w-full sm:min-w-[280px]">
-                <label className="text-sm font-medium mb-2 block">Data personalizada</label>
-                <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
-              </div>
-            )}
-
-            <div className="flex-1 min-w-full sm:min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">Produtor</label>
-              <Select value={produtorFilter} onValueChange={setProdutorFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os produtores" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os produtores</SelectItem>
-                  {produtores
-                    .filter((p) => p.ativo)
-                    .map((produtor) => (
-                      <SelectItem key={produtor.id} value={produtor.nome}>
-                        {produtor.nome}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex-1 min-w-full sm:min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">Unidade</label>
-              <Select value={unidadeFilter} onValueChange={setUnidadeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as unidades" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as unidades</SelectItem>
-                  {unidades.map((unidade) => (
-                    <SelectItem key={unidade.id} value={unidade.descricao}>
-                      {unidade.descricao}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {dateFilter === "personalizado_comparacao" && (
-              <div className="flex-1 min-w-full sm:min-w-[280px]">
-                <label className="text-sm font-medium mb-2 block">Período de comparação</label>
-                <DatePickerWithRange date={compareRange} onDateChange={setCompareRange} />
-              </div>
-            )}
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setDateFilter("mes_atual");
-                setProdutorFilter("todos");
-                setUnidadeFilter("todas");
-                setDateRange(undefined);
-                setCompareRange(undefined);
-              }}
-              className="w-full sm:w-auto"
-            >
-              Limpar filtros
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <DashboardFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        produtores={produtores}
+        seguradoras={seguradoras}
+        ramos={ramos}
+      />
 
       {/* KPIs Mensais com Comparativos */}
       <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -1941,23 +1854,23 @@ const Dashboard = () => {
 
       {/* Seção de Metas */}
       <MetasRealizadoChart
-        dateFilter={dateFilter}
-        dateRange={dateRange}
-        produtorFilter={produtorFilter}
+        dateFilter={filters.dateFilter}
+        dateRange={filters.dateRange}
+        produtorFilter={filters.produtorFilter}
         produtores={produtores}
         fechamentosCount={monthlyStats.fechados}
       />
 
       {/* Batimento de Metas de Prêmio */}
       <MetasPremioComparison
-        dateFilter={dateFilter}
-        dateRange={dateRange}
-        produtorFilter={produtorFilter}
+        dateFilter={filters.dateFilter}
+        dateRange={filters.dateRange}
+        produtorFilter={filters.produtorFilter}
         produtores={produtores}
       />
 
       {/* Cotações em Aberto - Sempre exibe TODAS as cotações "Em cotação", sem filtro de data */}
-      <CotacoesEmAbertoChart cotacoes={allQuotes} produtorFilter={produtorFilter} />
+      <CotacoesEmAbertoChart cotacoes={allQuotes} produtorFilter={filters.produtorFilter} />
 
       {/* Insights Adicionais */}
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
