@@ -50,18 +50,41 @@ export function ProdutorDetailModal({
   const potencialFechamento = produtor.premioEmAberto * (produtor.taxaConversao / 100);
   const previsaoTotal = produtor.premioTotal + potencialFechamento;
 
+  // Helper to determine if a ramo is "Recorrente" or "Total"
+  const getRegraRamo = (descricao: string): 'Recorrente' | 'Total' => {
+    const desc = descricao?.toUpperCase() || '';
+    if (desc.includes('AVULSA') || desc.includes('GARANTIA ADUANEIRA') || desc.includes('AMBIENTAL')) {
+      return 'Total';
+    }
+    return 'Recorrente';
+  };
+
   // Get 10 most recent distinct closed (by segurado + grupo)
   const recentFechados = produtor.distinctFechadasList
     .slice(0, 10)
-    .map(item => ({
-      ...item,
-      latestDate: item.cotacoes.reduce((latest, c) => {
-        const date = c.data_fechamento || c.created_at;
-        return date > latest ? date : latest;
-      }, ''),
-      totalPremio: item.cotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
-    }))
+    .map(item => {
+      const totalPremio = item.cotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+      // Determine regra based on grupo - use grupo name pattern
+      const grupoUpper = item.grupo?.toUpperCase() || '';
+      let regra: 'Recorrente' | 'Total' = 'Recorrente';
+      if (grupoUpper.includes('AVULSA') || grupoUpper.includes('GARANTIA') || grupoUpper.includes('AMBIENTAL')) {
+        regra = 'Total';
+      }
+      
+      return {
+        ...item,
+        latestDate: item.cotacoes.reduce((latest, c) => {
+          const date = c.data_fechamento || c.created_at;
+          return date > latest ? date : latest;
+        }, ''),
+        totalPremio,
+        regra,
+      };
+    })
     .sort((a, b) => new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime());
+
+  // Calculate total premium for % calculation
+  const totalPremioFechados = recentFechados.reduce((sum, item) => sum + item.totalPremio, 0);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -159,13 +182,28 @@ export function ProdutorDetailModal({
                 <div className="space-y-2">
                   {recentFechados.map((item, idx) => {
                     const mainCotacao = item.cotacoes[0];
+                    const percentual = totalPremioFechados > 0 
+                      ? ((item.totalPremio / totalPremioFechados) * 100).toFixed(1)
+                      : '0.0';
                     return (
                       <div
                         key={`${item.segurado}-${item.grupo}-${idx}`}
                         className="flex items-center justify-between text-sm p-2 bg-muted/30 rounded hover:bg-muted/50"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{item.segurado}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{item.segurado}</p>
+                            <Badge 
+                              variant={item.regra === 'Recorrente' ? 'default' : 'secondary'}
+                              className={`text-[10px] px-1.5 py-0 ${
+                                item.regra === 'Recorrente' 
+                                  ? 'bg-primary/20 text-primary border-primary/30' 
+                                  : 'bg-amber-500/20 text-amber-600 border-amber-500/30'
+                              }`}
+                            >
+                              {item.regra}
+                            </Badge>
+                          </div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span>{item.grupo}</span>
                             <span>•</span>
@@ -178,9 +216,14 @@ export function ProdutorDetailModal({
                             )}
                           </div>
                         </div>
-                        <Badge variant="success-alt" className="ml-2 shrink-0">
-                          {formatCurrency(item.totalPremio)}
-                        </Badge>
+                        <div className="flex items-center gap-2 ml-2 shrink-0">
+                          <Badge variant="success-alt">
+                            {formatCurrency(item.totalPremio)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground font-medium">
+                            {percentual}%
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
