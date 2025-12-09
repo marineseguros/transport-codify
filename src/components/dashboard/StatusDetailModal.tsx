@@ -2,8 +2,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { TrendingUp, TrendingDown, Clock, Target, DollarSign, Users, Building, AlertCircle, CheckCircle2, XCircle, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Target, DollarSign, Users, Building, AlertCircle, CheckCircle2, XCircle, BarChart3, ChevronDown, ChevronUp } from "lucide-react";
 import { type Cotacao } from "@/hooks/useSupabaseData";
+import { useState } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
+interface ClienteAgrupado {
+  segurado: string;
+  cpf_cnpj: string;
+  premio: number;
+  count: number;
+  ramos: string[];
+}
 
 interface StatusData {
   status: string;
@@ -35,6 +45,8 @@ export function StatusDetailModal({
   formatCurrency,
   formatDate 
 }: StatusDetailModalProps) {
+  const [expandedStatus, setExpandedStatus] = useState<string | null>(null);
+  
   // Total de segurados distintos (soma dos seguradosDistintos de cada categoria)
   const totalSeguradosDistintos = statusData.reduce((sum, s) => sum + s.seguradosDistintos, 0);
   const totalPremio = statusData.reduce((sum, s) => sum + s.premioTotal, 0);
@@ -64,6 +76,33 @@ export function StatusDetailModal({
       default:
         return "secondary";
     }
+  };
+
+  // Agrupar cotações por cliente para cada status
+  const getClientesAgrupados = (cotacoes: Cotacao[]): ClienteAgrupado[] => {
+    const clienteMap = new Map<string, ClienteAgrupado>();
+    
+    cotacoes.forEach(c => {
+      const key = c.cpf_cnpj;
+      if (clienteMap.has(key)) {
+        const existing = clienteMap.get(key)!;
+        existing.premio += c.valor_premio || 0;
+        existing.count += 1;
+        if (c.ramo?.descricao && !existing.ramos.includes(c.ramo.descricao)) {
+          existing.ramos.push(c.ramo.descricao);
+        }
+      } else {
+        clienteMap.set(key, {
+          segurado: c.segurado,
+          cpf_cnpj: c.cpf_cnpj,
+          premio: c.valor_premio || 0,
+          count: 1,
+          ramos: c.ramo?.descricao ? [c.ramo.descricao] : []
+        });
+      }
+    });
+    
+    return Array.from(clienteMap.values()).sort((a, b) => b.premio - a.premio);
   };
 
   return (
@@ -115,79 +154,142 @@ export function StatusDetailModal({
             </div>
             
             {/* Detalhes por Status */}
-            {statusData.map((status) => (
-              <Card key={status.status} className="border-l-4" style={{ borderLeftColor: `hsl(var(--${getStatusColor(status.status)}))` }}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(status.status)}
-                      <Badge variant={getStatusColor(status.status) as any}>{status.status}</Badge>
-                      <span className="text-2xl font-bold">{status.count}</span>
-                      <span className="text-sm text-muted-foreground">({status.percentage.toFixed(1)}%)</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold">{formatCurrency(status.premioTotal)}</div>
-                      <div className="text-xs text-muted-foreground">Prêmio Total</div>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {/* Métricas */}
-                    <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground">Segurados Distintos</div>
-                      <div className="font-semibold flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {status.seguradosDistintos}
+            {statusData.map((status) => {
+              const clientesAgrupados = getClientesAgrupados(status.cotacoes);
+              const isExpanded = expandedStatus === status.status;
+              
+              return (
+                <Card key={status.status} className="border-l-4" style={{ borderLeftColor: `hsl(var(--${getStatusColor(status.status)}))` }}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(status.status)}
+                        <Badge variant={getStatusColor(status.status) as any}>{status.status}</Badge>
+                        <span className="text-2xl font-bold">{status.count}</span>
+                        <span className="text-sm text-muted-foreground">({status.percentage.toFixed(1)}%)</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold">{formatCurrency(status.premioTotal)}</div>
+                        <div className="text-xs text-muted-foreground">Prêmio Total</div>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {/* Métricas */}
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground">Segurados Distintos</div>
+                        <div className="font-semibold flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {status.seguradosDistintos}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground">Ticket Médio</div>
+                        <div className="font-semibold flex items-center gap-1">
+                          <DollarSign className="h-3 w-3" />
+                          {formatCurrency(status.ticketMedio)}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground">Transportadores</div>
+                        <div className="font-semibold">{status.transportador}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground">Embarcadores</div>
+                        <div className="font-semibold">{status.embarcador}</div>
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground">Ticket Médio</div>
-                      <div className="font-semibold flex items-center gap-1">
-                        <DollarSign className="h-3 w-3" />
-                        {formatCurrency(status.ticketMedio)}
+                    
+                    {/* Breakdown por Ramo (top 3) */}
+                    {status.ramoBreakdown.length > 0 && (
+                      <div className="mt-4">
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Top Ramos</div>
+                        <div className="flex flex-wrap gap-2">
+                          {status.ramoBreakdown.slice(0, 3).map((ramo) => (
+                            <Badge key={ramo.ramo} variant="outline" className="text-xs">
+                              {ramo.ramo}: {ramo.count} ({formatCurrency(ramo.premio)})
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground">Transportadores</div>
-                      <div className="font-semibold">{status.transportador}</div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground">Embarcadores</div>
-                      <div className="font-semibold">{status.embarcador}</div>
-                    </div>
-                  </div>
-                  
-                  {/* Breakdown por Ramo (top 3) */}
-                  {status.ramoBreakdown.length > 0 && (
-                    <div className="mt-4">
-                      <div className="text-xs font-medium text-muted-foreground mb-2">Top Ramos</div>
-                      <div className="flex flex-wrap gap-2">
-                        {status.ramoBreakdown.slice(0, 3).map((ramo) => (
-                          <Badge key={ramo.ramo} variant="outline" className="text-xs">
-                            {ramo.ramo}: {ramo.count} ({formatCurrency(ramo.premio)})
-                          </Badge>
-                        ))}
+                    )}
+                    
+                    {/* Breakdown por Seguradora (top 3) */}
+                    {status.seguradoraBreakdown.length > 0 && (
+                      <div className="mt-3">
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Top Seguradoras</div>
+                        <div className="flex flex-wrap gap-2">
+                          {status.seguradoraBreakdown.slice(0, 3).map((seg) => (
+                            <Badge key={seg.seguradora} variant="secondary" className="text-xs">
+                              {seg.seguradora}: {seg.count} ({formatCurrency(seg.premio)})
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {/* Breakdown por Seguradora (top 3) */}
-                  {status.seguradoraBreakdown.length > 0 && (
-                    <div className="mt-3">
-                      <div className="text-xs font-medium text-muted-foreground mb-2">Top Seguradoras</div>
-                      <div className="flex flex-wrap gap-2">
-                        {status.seguradoraBreakdown.slice(0, 3).map((seg) => (
-                          <Badge key={seg.seguradora} variant="secondary" className="text-xs">
-                            {seg.seguradora}: {seg.count} ({formatCurrency(seg.premio)})
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    )}
+
+                    {/* Lista de Clientes Expandível */}
+                    {clientesAgrupados.length > 0 && (
+                      <Collapsible 
+                        open={isExpanded} 
+                        onOpenChange={() => setExpandedStatus(isExpanded ? null : status.status)}
+                        className="mt-4"
+                      >
+                        <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full justify-between p-2 rounded-md hover:bg-muted/50">
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            Clientes ({clientesAgrupados.length})
+                          </span>
+                          {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-2 border rounded-md overflow-hidden">
+                            <table className="w-full text-xs">
+                              <thead className="bg-muted/50">
+                                <tr>
+                                  <th className="text-left py-2 px-3 font-medium">Cliente</th>
+                                  <th className="text-left py-2 px-3 font-medium hidden sm:table-cell">Ramos</th>
+                                  <th className="text-right py-2 px-3 font-medium">Qtd</th>
+                                  <th className="text-right py-2 px-3 font-medium">Prêmio</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {clientesAgrupados.slice(0, 10).map((cliente, idx) => (
+                                  <tr key={cliente.cpf_cnpj} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                                    <td className="py-2 px-3">
+                                      <div className="font-medium truncate max-w-[150px]">{cliente.segurado}</div>
+                                      <div className="text-muted-foreground text-[10px]">{cliente.cpf_cnpj}</div>
+                                    </td>
+                                    <td className="py-2 px-3 hidden sm:table-cell">
+                                      <div className="flex flex-wrap gap-1">
+                                        {cliente.ramos.slice(0, 2).map(r => (
+                                          <Badge key={r} variant="outline" className="text-[10px] px-1 py-0">{r}</Badge>
+                                        ))}
+                                        {cliente.ramos.length > 2 && (
+                                          <Badge variant="outline" className="text-[10px] px-1 py-0">+{cliente.ramos.length - 2}</Badge>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="py-2 px-3 text-right">{cliente.count}</td>
+                                    <td className="py-2 px-3 text-right font-medium text-primary">{formatCurrency(cliente.premio)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            {clientesAgrupados.length > 10 && (
+                              <div className="text-center py-2 text-xs text-muted-foreground border-t">
+                                +{clientesAgrupados.length - 10} clientes
+                              </div>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
             
             {/* Insights */}
             <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">

@@ -2,9 +2,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Building, DollarSign, TrendingUp, Target, Award, BarChart3, Eye } from "lucide-react";
+import { Building, DollarSign, TrendingUp, Target, Award, BarChart3, Eye, ChevronDown, ChevronUp, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
+interface ClienteData {
+  segurado: string;
+  cpf_cnpj: string;
+  premio: number;
+  ramos: string[];
+}
 
 interface SeguradoraData {
   nome: string;
@@ -17,6 +25,7 @@ interface SeguradoraData {
   transportador: number;
   embarcador: number;
   topRamos: { ramo: string; count: number; premio: number }[];
+  clientes?: ClienteData[];
 }
 
 interface SeguradoraDetailModalProps {
@@ -33,6 +42,7 @@ export function SeguradoraDetailModal({
   formatCurrency 
 }: SeguradoraDetailModalProps) {
   const [expandedSeguradora, setExpandedSeguradora] = useState<string | null>(null);
+  const [showClientsFor, setShowClientsFor] = useState<string | null>(null);
   
   const totalPremio = seguradoras.reduce((sum, s) => sum + s.premio, 0);
   const totalCount = seguradoras.reduce((sum, s) => sum + s.distinctCount, 0);
@@ -91,81 +101,141 @@ export function SeguradoraDetailModal({
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {seguradoras.map((seguradora, index) => (
-                    <div key={seguradora.nome} className="border rounded-lg overflow-hidden">
-                      {/* Header da Seguradora */}
-                      <div 
-                        className={`p-3 flex items-center justify-between cursor-pointer hover:bg-muted/50 ${
-                          index < 3 ? 'bg-gradient-to-r from-primary/5 to-transparent' : ''
-                        }`}
-                        onClick={() => setExpandedSeguradora(expandedSeguradora === seguradora.nome ? null : seguradora.nome)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
-                            index === 0 ? 'bg-amber-500 text-amber-950' : 
-                            index === 1 ? 'bg-slate-400 text-slate-950' : 
-                            index === 2 ? 'bg-amber-700 text-amber-100' : 
-                            'bg-muted text-muted-foreground'
-                          }`}>
-                            {index + 1}
-                          </span>
-                          <div>
-                            <div className="font-medium">{seguradora.nome}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {seguradora.distinctCount} fechamentos distintos
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-6">
-                          <div className="text-right">
-                            <div className="font-semibold text-primary">{formatCurrency(seguradora.premio)}</div>
-                            <div className="text-xs text-muted-foreground">{seguradora.percentualPremio.toFixed(1)}% do total</div>
-                          </div>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {/* Detalhes Expandidos */}
-                      {expandedSeguradora === seguradora.nome && (
-                        <div className="p-4 border-t bg-muted/20">
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  {seguradoras.map((seguradora, index) => {
+                    const isExpanded = expandedSeguradora === seguradora.nome;
+                    const showClients = showClientsFor === seguradora.nome;
+                    
+                    return (
+                      <div key={seguradora.nome} className="border rounded-lg overflow-hidden">
+                        {/* Header da Seguradora */}
+                        <div 
+                          className={`p-3 flex items-center justify-between cursor-pointer hover:bg-muted/50 ${
+                            index < 3 ? 'bg-gradient-to-r from-primary/5 to-transparent' : ''
+                          }`}
+                          onClick={() => setExpandedSeguradora(isExpanded ? null : seguradora.nome)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
+                              index === 0 ? 'bg-amber-500 text-amber-950' : 
+                              index === 1 ? 'bg-slate-400 text-slate-950' : 
+                              index === 2 ? 'bg-amber-700 text-amber-100' : 
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              {index + 1}
+                            </span>
                             <div>
-                              <div className="text-xs text-muted-foreground">Ticket Médio</div>
-                              <div className="font-semibold">{formatCurrency(seguradora.ticketMedio)}</div>
-                            </div>
-                            <div>
-                              <div className="text-xs text-muted-foreground">% Fechamentos</div>
-                              <div className="font-semibold">{seguradora.percentualCount.toFixed(1)}%</div>
-                            </div>
-                            <div>
-                              <div className="text-xs text-muted-foreground">Transportadores</div>
-                              <div className="font-semibold">{seguradora.transportador}</div>
-                            </div>
-                            <div>
-                              <div className="text-xs text-muted-foreground">Embarcadores</div>
-                              <div className="font-semibold">{seguradora.embarcador}</div>
-                            </div>
-                          </div>
-                          
-                          {/* Top Ramos */}
-                          {seguradora.topRamos.length > 0 && (
-                            <div>
-                              <div className="text-xs font-medium text-muted-foreground mb-2">Top Ramos</div>
-                              <div className="flex flex-wrap gap-2">
-                                {seguradora.topRamos.map((ramo) => (
-                                  <Badge key={ramo.ramo} variant="outline" className="text-xs">
-                                    {ramo.ramo}: {ramo.count} ({formatCurrency(ramo.premio)})
-                                  </Badge>
-                                ))}
+                              <div className="font-medium">{seguradora.nome}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {seguradora.distinctCount} fechamentos distintos
                               </div>
                             </div>
-                          )}
+                          </div>
+                          <div className="flex items-center gap-6">
+                            <div className="text-right">
+                              <div className="font-semibold text-primary">{formatCurrency(seguradora.premio)}</div>
+                              <div className="text-xs text-muted-foreground">{seguradora.percentualPremio.toFixed(1)}% do total</div>
+                            </div>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                            </Button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        
+                        {/* Detalhes Expandidos */}
+                        {isExpanded && (
+                          <div className="p-4 border-t bg-muted/20">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                              <div>
+                                <div className="text-xs text-muted-foreground">Ticket Médio</div>
+                                <div className="font-semibold">{formatCurrency(seguradora.ticketMedio)}</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground">% Fechamentos</div>
+                                <div className="font-semibold">{seguradora.percentualCount.toFixed(1)}%</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground">Transportadores</div>
+                                <div className="font-semibold">{seguradora.transportador}</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground">Embarcadores</div>
+                                <div className="font-semibold">{seguradora.embarcador}</div>
+                              </div>
+                            </div>
+                            
+                            {/* Top Ramos */}
+                            {seguradora.topRamos.length > 0 && (
+                              <div className="mb-4">
+                                <div className="text-xs font-medium text-muted-foreground mb-2">Top Ramos</div>
+                                <div className="flex flex-wrap gap-2">
+                                  {seguradora.topRamos.map((ramo) => (
+                                    <Badge key={ramo.ramo} variant="outline" className="text-xs">
+                                      {ramo.ramo}: {ramo.count} ({formatCurrency(ramo.premio)})
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Lista de Clientes */}
+                            {seguradora.clientes && seguradora.clientes.length > 0 && (
+                              <Collapsible 
+                                open={showClients} 
+                                onOpenChange={() => setShowClientsFor(showClients ? null : seguradora.nome)}
+                              >
+                                <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full justify-between p-2 rounded-md hover:bg-muted/50">
+                                  <span className="flex items-center gap-1">
+                                    <Users className="h-3 w-3" />
+                                    Clientes ({seguradora.clientes.length})
+                                  </span>
+                                  {showClients ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <div className="mt-2 border rounded-md overflow-hidden">
+                                    <table className="w-full text-xs">
+                                      <thead className="bg-muted/50">
+                                        <tr>
+                                          <th className="text-left py-2 px-3 font-medium">Cliente</th>
+                                          <th className="text-left py-2 px-3 font-medium hidden sm:table-cell">Ramos</th>
+                                          <th className="text-right py-2 px-3 font-medium">Prêmio</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {seguradora.clientes.slice(0, 10).map((cliente, idx) => (
+                                          <tr key={cliente.cpf_cnpj} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                                            <td className="py-2 px-3">
+                                              <div className="font-medium truncate max-w-[150px]">{cliente.segurado}</div>
+                                              <div className="text-muted-foreground text-[10px]">{cliente.cpf_cnpj}</div>
+                                            </td>
+                                            <td className="py-2 px-3 hidden sm:table-cell">
+                                              <div className="flex flex-wrap gap-1">
+                                                {cliente.ramos.slice(0, 2).map(r => (
+                                                  <Badge key={r} variant="outline" className="text-[10px] px-1 py-0">{r}</Badge>
+                                                ))}
+                                                {cliente.ramos.length > 2 && (
+                                                  <Badge variant="outline" className="text-[10px] px-1 py-0">+{cliente.ramos.length - 2}</Badge>
+                                                )}
+                                              </div>
+                                            </td>
+                                            <td className="py-2 px-3 text-right font-medium text-primary">{formatCurrency(cliente.premio)}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                    {seguradora.clientes.length > 10 && (
+                                      <div className="text-center py-2 text-xs text-muted-foreground border-t">
+                                        +{seguradora.clientes.length - 10} clientes
+                                      </div>
+                                    )}
+                                  </div>
+                                </CollapsibleContent>
+                              </Collapsible>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

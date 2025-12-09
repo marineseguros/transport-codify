@@ -817,6 +817,7 @@ const Dashboard = () => {
       transportador: number;
       embarcador: number;
       ramoBreakdown: Record<string, { count: number; premio: number }>;
+      clientesMap: Map<string, { segurado: string; cpf_cnpj: string; premio: number; ramos: Set<string> }>;
     }> = {};
 
     const now = new Date();
@@ -844,6 +845,7 @@ const Dashboard = () => {
             transportador: 0,
             embarcador: 0,
             ramoBreakdown: {},
+            clientesMap: new Map(),
           };
         }
         
@@ -867,6 +869,21 @@ const Dashboard = () => {
         }
         seguradoraStats[nome].ramoBreakdown[ramo].count++;
         seguradoraStats[nome].ramoBreakdown[ramo].premio += cotacao.valor_premio || 0;
+
+        // Clientes agregados
+        const clienteKey = cotacao.cpf_cnpj;
+        if (seguradoraStats[nome].clientesMap.has(clienteKey)) {
+          const existing = seguradoraStats[nome].clientesMap.get(clienteKey)!;
+          existing.premio += cotacao.valor_premio || 0;
+          if (cotacao.ramo?.descricao) existing.ramos.add(cotacao.ramo.descricao);
+        } else {
+          seguradoraStats[nome].clientesMap.set(clienteKey, {
+            segurado: cotacao.segurado,
+            cpf_cnpj: cotacao.cpf_cnpj,
+            premio: cotacao.valor_premio || 0,
+            ramos: new Set(cotacao.ramo?.descricao ? [cotacao.ramo.descricao] : []),
+          });
+        }
       }
     });
     
@@ -888,6 +905,9 @@ const Dashboard = () => {
           .map(([ramo, stats]) => ({ ramo, ...stats }))
           .sort((a, b) => b.premio - a.premio)
           .slice(0, 3),
+        clientes: Array.from(s.clientesMap.values())
+          .map(c => ({ ...c, ramos: Array.from(c.ramos) }))
+          .sort((a, b) => b.premio - a.premio),
       }))
       .sort((a, b) => b.premio - a.premio);
   }, [allQuotes, filters]);
