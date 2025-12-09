@@ -153,225 +153,60 @@ export function DashboardFilters({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2 pt-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium">
             <Filter className="h-4 w-4" />
             Filtros
           </CardTitle>
           
-          {/* Saved filters dropdown */}
-          {savedFilters.length > 0 && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Bookmark className="h-4 w-4" />
-                  <span className="hidden sm:inline">Filtros Salvos</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64" align="end">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Filtros Salvos</p>
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
-                    {savedFilters.map((saved) => (
-                      <div
-                        key={saved.name}
-                        className="flex items-center justify-between p-2 rounded hover:bg-muted"
-                      >
-                        <button
-                          onClick={() => loadSavedFilter(saved)}
-                          className="text-sm text-left flex-1 truncate"
+          <div className="flex items-center gap-1">
+            {/* Saved filters dropdown */}
+            {savedFilters.length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground">
+                    <Bookmark className="h-3 w-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64" align="end">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Filtros Salvos</p>
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {savedFilters.map((saved) => (
+                        <div
+                          key={saved.name}
+                          className="flex items-center justify-between p-2 rounded hover:bg-muted"
                         >
-                          {saved.name}
-                        </button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => deleteSavedFilter(saved.name)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
+                          <button
+                            onClick={() => loadSavedFilter(saved)}
+                            className="text-sm text-left flex-1 truncate"
+                          >
+                            {saved.name}
+                          </button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => deleteSavedFilter(saved.name)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 items-end">
-          {/* Período */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Período</Label>
-            <Select value={filters.dateFilter} onValueChange={(v) => updateFilter("dateFilter", v)}>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="mes_atual">Este mês</SelectItem>
-                <SelectItem value="mes_anterior">Mês passado</SelectItem>
-                <SelectItem value="ano_atual">Ano atual</SelectItem>
-                <SelectItem value="ano_anterior">Ano anterior</SelectItem>
-                <SelectItem value="30dias">Últimos 30 dias</SelectItem>
-                <SelectItem value="personalizado">Período personalizado</SelectItem>
-                <SelectItem value="ano_especifico">Ano específico</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                </PopoverContent>
+              </Popover>
+            )}
 
-          {/* Custom date range picker */}
-          {filters.dateFilter === "personalizado" && (
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Datas</Label>
-              <DatePickerWithRange
-                date={filters.dateRange}
-                onDateChange={(range) => updateFilter("dateRange", range)}
-              />
-            </div>
-          )}
-
-          {/* Ano específico selector */}
-          {filters.dateFilter === "ano_especifico" && (
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Ano</Label>
-              <Select
-                value={filters.anoEspecifico}
-                onValueChange={(v) => updateFilter("anoEspecifico", v)}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Selecione o ano" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableYears.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Produtor */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Produtor</Label>
-            <Select
-              value={filters.produtorFilter}
-              onValueChange={(v) => updateFilter("produtorFilter", v)}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                {produtores
-                  .filter((p) => p.ativo)
-                  .map((produtor) => (
-                    <SelectItem key={produtor.id} value={produtor.nome}>
-                      {produtor.nome}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Seguradora */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Seguradora</Label>
-            <Select
-              value={filters.seguradoraFilter}
-              onValueChange={(v) => updateFilter("seguradoraFilter", v)}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                {seguradoras
-                  .filter((s) => s.ativo)
-                  .map((seg) => (
-                    <SelectItem key={seg.id} value={seg.nome}>
-                      {seg.nome}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Ramo */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Ramo</Label>
-            <Select value={filters.ramoFilter} onValueChange={(v) => updateFilter("ramoFilter", v)}>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                {ramos
-                  .filter((r) => r.ativo)
-                  .map((ramo) => (
-                    <SelectItem key={ramo.id} value={ramo.descricao}>
-                      {ramo.descricao}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Segmento */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Segmento</Label>
-            <Select
-              value={filters.segmentoFilter}
-              onValueChange={(v) => updateFilter("segmentoFilter", v)}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                {segmentos.map((seg) => (
-                  <SelectItem key={seg} value={seg}>
-                    {seg}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Tipo de Regra */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
-            <Select
-              value={filters.regraFilter}
-              onValueChange={(v) => updateFilter("regraFilter", v)}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                {regras.map((regra) => (
-                  <SelectItem key={regra} value={regra}>
-                    {regra}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 col-span-full lg:col-span-1 xl:col-span-full justify-end mt-2 xl:mt-0">
             {/* Clear filters - discrete */}
             {hasActiveFilters && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={clearFilters}
-                className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
               >
                 <X className="h-3 w-3 mr-1" />
                 Limpar
@@ -381,9 +216,9 @@ export function DashboardFilters({
             {/* Save filters */}
             <Popover open={showSavePopover} onOpenChange={setShowSavePopover}>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 px-3 text-xs gap-1.5">
-                  <Save className="h-3 w-3" />
-                  Salvar filtros
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground">
+                  <Save className="h-3 w-3 mr-1" />
+                  Salvar
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-64" align="end">
@@ -401,6 +236,169 @@ export function DashboardFilters({
                 </div>
               </PopoverContent>
             </Popover>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 pb-3">
+        <div className="flex flex-wrap items-end gap-2">
+          {/* Período */}
+          <div className="space-y-1 min-w-[130px]">
+            <Label className="text-xs text-muted-foreground">Período</Label>
+            <Select value={filters.dateFilter} onValueChange={(v) => updateFilter("dateFilter", v)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mes_atual">Este mês</SelectItem>
+                <SelectItem value="mes_anterior">Mês passado</SelectItem>
+                <SelectItem value="ano_atual">Ano atual</SelectItem>
+                <SelectItem value="ano_anterior">Ano anterior</SelectItem>
+                <SelectItem value="30dias">Últimos 30 dias</SelectItem>
+                <SelectItem value="personalizado">Período personalizado</SelectItem>
+                <SelectItem value="ano_especifico">Ano específico</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Custom date range picker */}
+          {filters.dateFilter === "personalizado" && (
+            <div className="space-y-1 min-w-[200px]">
+              <Label className="text-xs text-muted-foreground">Datas</Label>
+              <DatePickerWithRange
+                date={filters.dateRange}
+                onDateChange={(range) => updateFilter("dateRange", range)}
+              />
+            </div>
+          )}
+
+          {/* Ano específico selector */}
+          {filters.dateFilter === "ano_especifico" && (
+            <div className="space-y-1 min-w-[100px]">
+              <Label className="text-xs text-muted-foreground">Ano</Label>
+              <Select
+                value={filters.anoEspecifico}
+                onValueChange={(v) => updateFilter("anoEspecifico", v)}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableYears.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Produtor */}
+          <div className="space-y-1 min-w-[120px] flex-1 max-w-[180px]">
+            <Label className="text-xs text-muted-foreground">Produtor</Label>
+            <Select
+              value={filters.produtorFilter}
+              onValueChange={(v) => updateFilter("produtorFilter", v)}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                {produtores
+                  .filter((p) => p.ativo)
+                  .map((produtor) => (
+                    <SelectItem key={produtor.id} value={produtor.nome}>
+                      {produtor.nome}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Seguradora */}
+          <div className="space-y-1 min-w-[120px] flex-1 max-w-[180px]">
+            <Label className="text-xs text-muted-foreground">Seguradora</Label>
+            <Select
+              value={filters.seguradoraFilter}
+              onValueChange={(v) => updateFilter("seguradoraFilter", v)}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas</SelectItem>
+                {seguradoras
+                  .filter((s) => s.ativo)
+                  .map((seg) => (
+                    <SelectItem key={seg.id} value={seg.nome}>
+                      {seg.nome}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Ramo */}
+          <div className="space-y-1 min-w-[120px] flex-1 max-w-[180px]">
+            <Label className="text-xs text-muted-foreground">Ramo</Label>
+            <Select value={filters.ramoFilter} onValueChange={(v) => updateFilter("ramoFilter", v)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                {ramos
+                  .filter((r) => r.ativo)
+                  .map((ramo) => (
+                    <SelectItem key={ramo.id} value={ramo.descricao}>
+                      {ramo.descricao}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Segmento */}
+          <div className="space-y-1 min-w-[110px] flex-1 max-w-[150px]">
+            <Label className="text-xs text-muted-foreground">Segmento</Label>
+            <Select
+              value={filters.segmentoFilter}
+              onValueChange={(v) => updateFilter("segmentoFilter", v)}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                {segmentos.map((seg) => (
+                  <SelectItem key={seg} value={seg}>
+                    {seg}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Tipo de Regra */}
+          <div className="space-y-1 min-w-[100px] flex-1 max-w-[140px]">
+            <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
+            <Select
+              value={filters.regraFilter}
+              onValueChange={(v) => updateFilter("regraFilter", v)}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas</SelectItem>
+                {regras.map((regra) => (
+                  <SelectItem key={regra} value={regra}>
+                    {regra}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </CardContent>
