@@ -1527,28 +1527,44 @@ const Dashboard = () => {
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {seguradoraData.length > 0 ? (
-              <div className="space-y-3">
-                {seguradoraData.map((seg, index) => (
-                  <div key={seg.nome} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
-                        index === 0 ? 'bg-amber-500 text-amber-950' : 
-                        index === 1 ? 'bg-slate-400 text-slate-950' : 
-                        index === 2 ? 'bg-amber-700 text-amber-100' : 
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {index + 1}
-                      </span>
-                      <span className="font-medium text-sm truncate max-w-[120px]">{seg.nome}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground">{seg.distinctCount} fech.</span>
-                      <span className="font-semibold text-sm text-primary">{formatCurrency(seg.premio)}</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-xs text-muted-foreground">
+                      <th className="text-left py-2 font-medium">#</th>
+                      <th className="text-left py-2 font-medium">Seguradora</th>
+                      <th className="text-right py-2 font-medium">Fech.</th>
+                      <th className="text-right py-2 font-medium">Prêmio</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {seguradoraData.map((seg, index) => (
+                      <tr key={seg.nome} className="border-b border-border/50 hover:bg-muted/30">
+                        <td className="py-2">
+                          <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                            index === 0 ? 'bg-amber-500 text-amber-950' : 
+                            index === 1 ? 'bg-slate-400 text-slate-950' : 
+                            index === 2 ? 'bg-amber-700 text-amber-100' : 
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            {index + 1}
+                          </span>
+                        </td>
+                        <td className="py-2">
+                          <span className="font-medium truncate max-w-[120px]">{seg.nome}</span>
+                        </td>
+                        <td className="py-2 text-right">
+                          <span className="text-muted-foreground">{seg.distinctCount} fech.</span>
+                        </td>
+                        <td className="py-2 text-right">
+                          <span className="font-semibold text-primary">{formatCurrency(seg.premio)}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
