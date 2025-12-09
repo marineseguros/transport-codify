@@ -240,12 +240,12 @@ export function DashboardFilters({
         </div>
       </CardHeader>
       <CardContent className="pt-0 pb-3">
-        <div className="flex flex-wrap items-end gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
           {/* Período */}
-          <div className="space-y-1 min-w-[130px]">
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Período</Label>
             <Select value={filters.dateFilter} onValueChange={(v) => updateFilter("dateFilter", v)}>
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs w-full">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
@@ -262,7 +262,7 @@ export function DashboardFilters({
 
           {/* Custom date range picker */}
           {filters.dateFilter === "personalizado" && (
-            <div className="space-y-1 min-w-[200px]">
+            <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Datas</Label>
               <DatePickerWithRange
                 date={filters.dateRange}
@@ -273,13 +273,13 @@ export function DashboardFilters({
 
           {/* Ano específico selector */}
           {filters.dateFilter === "ano_especifico" && (
-            <div className="space-y-1 min-w-[100px]">
+            <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Ano</Label>
               <Select
                 value={filters.anoEspecifico}
                 onValueChange={(v) => updateFilter("anoEspecifico", v)}
               >
-                <SelectTrigger className="h-8 text-xs">
+                <SelectTrigger className="h-8 text-xs w-full">
                   <SelectValue placeholder="Ano" />
                 </SelectTrigger>
                 <SelectContent>
@@ -294,13 +294,13 @@ export function DashboardFilters({
           )}
 
           {/* Produtor */}
-          <div className="space-y-1 min-w-[120px] flex-1 max-w-[180px]">
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Produtor</Label>
             <Select
               value={filters.produtorFilter}
               onValueChange={(v) => updateFilter("produtorFilter", v)}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs w-full">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -317,13 +317,13 @@ export function DashboardFilters({
           </div>
 
           {/* Seguradora */}
-          <div className="space-y-1 min-w-[120px] flex-1 max-w-[180px]">
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Seguradora</Label>
             <Select
               value={filters.seguradoraFilter}
               onValueChange={(v) => updateFilter("seguradoraFilter", v)}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs w-full">
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
@@ -340,10 +340,10 @@ export function DashboardFilters({
           </div>
 
           {/* Ramo */}
-          <div className="space-y-1 min-w-[120px] flex-1 max-w-[180px]">
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Ramo</Label>
             <Select value={filters.ramoFilter} onValueChange={(v) => updateFilter("ramoFilter", v)}>
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs w-full">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -360,13 +360,13 @@ export function DashboardFilters({
           </div>
 
           {/* Segmento */}
-          <div className="space-y-1 min-w-[110px] flex-1 max-w-[150px]">
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Segmento</Label>
             <Select
               value={filters.segmentoFilter}
               onValueChange={(v) => updateFilter("segmentoFilter", v)}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs w-full">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -381,13 +381,13 @@ export function DashboardFilters({
           </div>
 
           {/* Tipo de Regra */}
-          <div className="space-y-1 min-w-[100px] flex-1 max-w-[140px]">
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
             <Select
               value={filters.regraFilter}
               onValueChange={(v) => updateFilter("regraFilter", v)}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs w-full">
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
