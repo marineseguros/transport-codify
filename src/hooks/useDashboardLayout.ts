@@ -23,7 +23,9 @@ const DEFAULT_CARDS: DashboardCard[] = [
 
 const STORAGE_KEY = 'dashboard_layout';
 
-export function useDashboardLayout(isAdmin: boolean) {
+export function useDashboardLayout(_isAdmin?: boolean) {
+  // All users can customize dashboard layout (view-only customization)
+  const canEdit = true;
   const [cards, setCards] = useState<DashboardCard[]>(DEFAULT_CARDS);
   const [editMode, setEditMode] = useState(false);
   const [draggedCard, setDraggedCard] = useState<string | null>(null);
@@ -110,16 +112,16 @@ export function useDashboardLayout(isAdmin: boolean) {
   return {
     cards,
     visibleCards,
-    editMode: isAdmin ? editMode : false,
-    setEditMode: isAdmin ? setEditMode : () => {},
-    toggleCardVisibility: isAdmin ? toggleCardVisibility : () => {},
-    changeCardSize: isAdmin ? changeCardSize : () => {},
-    moveCard: isAdmin ? moveCard : () => {},
-    resetLayout: isAdmin ? resetLayout : () => {},
+    editMode,
+    setEditMode,
+    toggleCardVisibility,
+    changeCardSize,
+    moveCard,
+    resetLayout,
     isCardVisible,
     getCardSize,
     draggedCard,
-    setDraggedCard: isAdmin ? setDraggedCard : () => {},
-    canEdit: isAdmin,
+    setDraggedCard,
+    canEdit,
   };
 }
