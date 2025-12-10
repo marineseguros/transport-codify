@@ -138,9 +138,8 @@ const Dashboard = () => {
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [showReminder, setShowReminder] = useState(false);
   
-  // Admin check for dashboard customization
-  const isAdmin = user?.papel === 'Administrador' || user?.papel === 'Gerente' || user?.papel === 'CEO';
-  const dashboardLayout = useDashboardLayout(isAdmin);
+  // Dashboard layout customization - open for all users
+  const dashboardLayout = useDashboardLayout();
 
   useEffect(() => {
     const checkWeeklyReminder = async () => {
