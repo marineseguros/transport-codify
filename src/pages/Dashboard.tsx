@@ -714,10 +714,10 @@ const Dashboard = () => {
         };
       })
       .sort((a, b) => {
-        // Sort by prêmio recorrente first, then total, then fechadas
+        // Sort by fechadas first, then prêmio recorrente, then total
+        if (b.fechadasDistinct !== a.fechadasDistinct) return b.fechadasDistinct - a.fechadasDistinct;
         if (b.premioRecorrente !== a.premioRecorrente) return b.premioRecorrente - a.premioRecorrente;
         if (b.premioTotal !== a.premioTotal) return b.premioTotal - a.premioTotal;
-        if (b.fechadasDistinct !== a.fechadasDistinct) return b.fechadasDistinct - a.fechadasDistinct;
         return b.totalDistinct - a.totalDistinct;
       });
   }, [filteredCotacoes]);
