@@ -34,8 +34,9 @@ const Seguradoras = () => {
   const [selectedSeguradora, setSelectedSeguradora] = useState<Seguradora | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Only Administrators can access this page
-  if (user?.papel !== 'Administrador') {
+  // Administrators, Managers and CEOs can access this page
+  const canAccessPage = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
+  if (!canAccessPage) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">

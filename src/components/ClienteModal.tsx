@@ -351,7 +351,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
           onOpenChange={setShowDuplicateAlert}
           cliente={duplicateClient}
           captacaoDescricao={duplicateCaptacao}
-          canEdit={user?.papel === 'Administrador' || duplicateClient.created_by === user?.user_id}
+          canEdit={['Administrador', 'Gerente', 'CEO'].includes(user?.papel || '') || duplicateClient.created_by === user?.user_id}
           onEdit={() => {
             setShowDuplicateAlert(false);
             setEditingClient(duplicateClient);
