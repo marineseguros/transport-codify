@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface DashboardCard {
   id: string;
@@ -21,19 +22,25 @@ const DEFAULT_CARDS: DashboardCard[] = [
   { id: 'performance-unidade', title: 'Performance por Unidade', visible: true, order: 9, size: 'small' },
 ];
 
-const STORAGE_KEY = 'dashboard_layout';
+const STORAGE_KEY_PREFIX = 'dashboard_layout';
 
 export function useDashboardLayout(_isAdmin?: boolean) {
+  const { user } = useAuth();
   // All users can customize dashboard layout (view-only customization)
   const canEdit = true;
   const [cards, setCards] = useState<DashboardCard[]>(DEFAULT_CARDS);
   const [editMode, setEditMode] = useState(false);
   const [draggedCard, setDraggedCard] = useState<string | null>(null);
 
-  // Load layout from localStorage
+  // User-specific storage key
+  const storageKey = user?.user_id ? `${STORAGE_KEY_PREFIX}_${user.user_id}` : STORAGE_KEY_PREFIX;
+
+  // Load layout from localStorage (per user)
   useEffect(() => {
+    if (!user?.user_id) return;
+    
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         // Merge with defaults to handle new cards
@@ -42,18 +49,20 @@ export function useDashboardLayout(_isAdmin?: boolean) {
           return savedCard ? { ...defaultCard, ...savedCard } : defaultCard;
         });
         setCards(merged);
+      } else {
+        setCards(DEFAULT_CARDS);
       }
     } catch (error) {
       // Use defaults on error
       setCards(DEFAULT_CARDS);
     }
-  }, []);
+  }, [storageKey, user?.user_id]);
 
-  // Save layout to localStorage
+  // Save layout to localStorage (per user)
   const saveLayout = useCallback((newCards: DashboardCard[]) => {
     setCards(newCards);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newCards));
-  }, []);
+    localStorage.setItem(storageKey, JSON.stringify(newCards));
+  }, [storageKey]);
 
   // Toggle card visibility
   const toggleCardVisibility = useCallback((cardId: string) => {

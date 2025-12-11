@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Produtor, Seguradora, Ramo } from "@/hooks/useSupabaseData";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface DashboardFilterValues {
   dateFilter: string;
@@ -35,7 +36,7 @@ interface DashboardFiltersProps {
   ramos: Ramo[];
 }
 
-const STORAGE_KEY = "dashboard_saved_filters";
+const STORAGE_KEY_PREFIX = "dashboard_saved_filters";
 
 // Get unique segmentos from ramos
 const getUniqueSegmentos = (ramos: Ramo[]): string[] => {
@@ -72,21 +73,29 @@ export function DashboardFilters({
   seguradoras,
   ramos,
 }: DashboardFiltersProps) {
+  const { user } = useAuth();
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
   const [newFilterName, setNewFilterName] = useState("");
   const [showSavePopover, setShowSavePopover] = useState(false);
 
-  // Load saved filters from localStorage
+  // User-specific storage key
+  const storageKey = user?.user_id ? `${STORAGE_KEY_PREFIX}_${user.user_id}` : STORAGE_KEY_PREFIX;
+
+  // Load saved filters from localStorage (per user)
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!user?.user_id) return;
+    
+    const stored = localStorage.getItem(storageKey);
     if (stored) {
       try {
         setSavedFilters(JSON.parse(stored));
       } catch (e) {
         console.error("Error loading saved filters:", e);
       }
+    } else {
+      setSavedFilters([]);
     }
-  }, []);
+  }, [storageKey, user?.user_id]);
 
   const updateFilter = <K extends keyof DashboardFilterValues>(
     key: K,
@@ -121,7 +130,7 @@ export function DashboardFilters({
 
     const updated = [...savedFilters.filter(f => f.name !== newSaved.name), newSaved];
     setSavedFilters(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(storageKey, JSON.stringify(updated));
     setNewFilterName("");
     setShowSavePopover(false);
     toast.success(`Filtro "${newSaved.name}" salvo com sucesso`);
@@ -135,7 +144,7 @@ export function DashboardFilters({
   const deleteSavedFilter = (name: string) => {
     const updated = savedFilters.filter(f => f.name !== name);
     setSavedFilters(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(storageKey, JSON.stringify(updated));
     toast.success("Filtro removido");
   };
 
