@@ -420,6 +420,11 @@ const Dashboard = () => {
     const premioTotal = cotacoesFechadas.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
     const ticketMedio = fechados > 0 ? premioTotal / fechados : 0; // Use distinct count
 
+    // Previous period KPIs
+    const cotacoesFechadasAnterior = previousPeriodFechamentos;
+    const premioTotalAnterior = cotacoesFechadasAnterior.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+    const ticketMedioAnterior = fechadosAnterior > 0 ? premioTotalAnterior / fechadosAnterior : 0;
+
     // Tempo médio de fechamento (dias)
     const temposFechamento = cotacoesFechadas
       .filter((c) => c.data_fechamento && c.data_cotacao)
@@ -433,6 +438,19 @@ const Dashboard = () => {
         ? temposFechamento.reduce((sum, tempo) => sum + tempo, 0) / temposFechamento.length
         : 0;
 
+    // Previous period tempo médio
+    const temposFechamentoAnterior = cotacoesFechadasAnterior
+      .filter((c) => c.data_fechamento && c.data_cotacao)
+      .map((c) => {
+        const inicio = new Date(c.data_cotacao).getTime();
+        const fim = new Date(c.data_fechamento!).getTime();
+        return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
+      });
+    const tempoMedioFechamentoAnterior =
+      temposFechamentoAnterior.length > 0
+        ? temposFechamentoAnterior.reduce((sum, tempo) => sum + tempo, 0) / temposFechamentoAnterior.length
+        : 0;
+
     // Taxa de conversão: fechamentos distintos / total distintos de todos os status
     const totalDistinct = emCotacao + declinados + fechados;
     const taxaConversao = totalDistinct > 0 ? (fechados / totalDistinct) * 100 : 0;
@@ -440,6 +458,10 @@ const Dashboard = () => {
     const totalDistinctAnterior = emCotacaoAnterior + declinadosAnterior + fechadosAnterior;
     const taxaConversaoAnterior = totalDistinctAnterior > 0 ? (fechadosAnterior / totalDistinctAnterior) * 100 : 0;
     
+    // Calculate comparisons
+    const premioTotalComp = calculateComparison(premioTotal, premioTotalAnterior);
+    const ticketMedioComp = calculateComparison(ticketMedio, ticketMedioAnterior);
+    const tempoMedioComp = calculateComparison(tempoMedioFechamento, tempoMedioFechamentoAnterior);
     const taxaConversaoComp = calculateComparison(taxaConversao, taxaConversaoAnterior);
     
     return {
@@ -450,8 +472,11 @@ const Dashboard = () => {
       fechadosComp,
       declinadosComp,
       ticketMedio,
+      ticketMedioComp,
       tempoMedioFechamento,
+      tempoMedioComp,
       premioTotal,
+      premioTotalComp,
       taxaConversao,
       taxaConversaoComp,
     };
@@ -1209,7 +1234,7 @@ const Dashboard = () => {
       />
 
       {/* KPIs Mensais com Comparativos */}
-      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Em Cotação</CardTitle>
@@ -1306,7 +1331,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(monthlyStats.ticketMedio)}</div>
-            <p className="text-xs text-muted-foreground">Média mensal</p>
+            {formatComparison(monthlyStats.ticketMedioComp.diff, monthlyStats.ticketMedioComp.percentage)}
           </CardContent>
         </Card>
 
@@ -1317,7 +1342,14 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{Math.round(monthlyStats.tempoMedioFechamento)} dias</div>
-            <p className="text-xs text-muted-foreground">Fechamento</p>
+            {monthlyStats.tempoMedioComp.diff !== 0 ? (
+              <span className={`text-xs flex items-center gap-1 ${monthlyStats.tempoMedioComp.diff < 0 ? "text-success" : monthlyStats.tempoMedioComp.diff > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                {monthlyStats.tempoMedioComp.diff < 0 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                {monthlyStats.tempoMedioComp.diff > 0 ? "+" : ""}{Math.round(monthlyStats.tempoMedioComp.diff)} dias ({monthlyStats.tempoMedioComp.percentage > 0 ? "+" : ""}{monthlyStats.tempoMedioComp.percentage.toFixed(1)}%)
+              </span>
+            ) : (
+              <p className="text-xs text-muted-foreground">Fechamento</p>
+            )}
           </CardContent>
         </Card>
 
@@ -1329,6 +1361,17 @@ const Dashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold text-success-alt">{monthlyStats.taxaConversao.toFixed(1)}%</div>
             {formatComparison(monthlyStats.taxaConversaoComp.diff, monthlyStats.taxaConversaoComp.percentage)}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Prêmio Total</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{formatCurrency(monthlyStats.premioTotal)}</div>
+            {formatComparison(monthlyStats.premioTotalComp.diff, monthlyStats.premioTotalComp.percentage)}
           </CardContent>
         </Card>
       </div>
