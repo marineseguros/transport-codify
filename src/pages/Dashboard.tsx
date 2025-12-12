@@ -464,6 +464,35 @@ const Dashboard = () => {
     const tempoMedioComp = calculateComparison(tempoMedioFechamento, tempoMedioFechamentoAnterior);
     const taxaConversaoComp = calculateComparison(taxaConversao, taxaConversaoAnterior);
     
+    // Stats by segmento
+    const segmentos = ['Transportes', 'Avulso', 'Ambiental', 'RC-V'];
+    const segmentoStats: Record<string, {
+      emCotacao: number;
+      fechados: number;
+      declinados: number;
+      premioTotal: number;
+      previousEmCotacao: number;
+      previousFechados: number;
+      previousPremio: number;
+    }> = {};
+    
+    segmentos.forEach(segmento => {
+      const currentCotacoesSegmento = currentPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
+      const currentFechamentosSegmento = currentPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
+      const previousCotacoesSegmento = previousPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
+      const previousFechamentosSegmento = previousPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
+      
+      segmentoStats[segmento] = {
+        emCotacao: countDistinctByStatus(currentCotacoesSegmento, ["Em cotação"]),
+        fechados: countDistinctByStatus(currentFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]),
+        declinados: countDistinctByStatus(currentCotacoesSegmento, ["Declinado"]),
+        premioTotal: currentFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
+        previousEmCotacao: countDistinctByStatus(previousCotacoesSegmento, ["Em cotação"]),
+        previousFechados: countDistinctByStatus(previousFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]),
+        previousPremio: previousFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
+      };
+    });
+
     return {
       emCotacao,
       fechados,
@@ -479,6 +508,7 @@ const Dashboard = () => {
       premioTotalComp,
       taxaConversao,
       taxaConversaoComp,
+      segmentoStats,
     };
   }, [allQuotes, filters]);
 
@@ -1374,6 +1404,74 @@ const Dashboard = () => {
             {formatComparison(monthlyStats.premioTotalComp.diff, monthlyStats.premioTotalComp.percentage)}
           </CardContent>
         </Card>
+      </div>
+
+      {/* KPIs por Segmento */}
+      <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-4">
+        {['Transportes', 'Avulso', 'Ambiental', 'RC-V'].map((segmento) => {
+          const stats = monthlyStats.segmentoStats[segmento];
+          const premioComp = stats.previousPremio > 0 
+            ? ((stats.premioTotal - stats.previousPremio) / stats.previousPremio) * 100 
+            : 0;
+          const fechadosComp = stats.previousFechados > 0 
+            ? stats.fechados - stats.previousFechados 
+            : 0;
+          
+          const segmentoColors: Record<string, string> = {
+            'Transportes': 'bg-blue-500/10 border-blue-500/30',
+            'Avulso': 'bg-amber-500/10 border-amber-500/30',
+            'Ambiental': 'bg-emerald-500/10 border-emerald-500/30',
+            'RC-V': 'bg-purple-500/10 border-purple-500/30',
+          };
+          
+          const segmentoTextColors: Record<string, string> = {
+            'Transportes': 'text-blue-500',
+            'Avulso': 'text-amber-500',
+            'Ambiental': 'text-emerald-500',
+            'RC-V': 'text-purple-500',
+          };
+          
+          return (
+            <Card key={segmento} className={`border ${segmentoColors[segmento]}`}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
+                <CardTitle className={`text-xs font-semibold ${segmentoTextColors[segmento]}`}>
+                  {segmento}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 px-3 pb-3">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <div className="text-lg font-bold text-success">{stats.fechados}</div>
+                    <div className="text-[10px] text-muted-foreground">Fechados</div>
+                    {fechadosComp !== 0 && (
+                      <div className={`text-[10px] flex items-center justify-center gap-0.5 ${fechadosComp > 0 ? 'text-success' : 'text-destructive'}`}>
+                        {fechadosComp > 0 ? <TrendingUp className="h-2 w-2" /> : <TrendingDown className="h-2 w-2" />}
+                        {fechadosComp > 0 ? '+' : ''}{fechadosComp}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-brand-orange">{stats.emCotacao}</div>
+                    <div className="text-[10px] text-muted-foreground">Aberto</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-destructive">{stats.declinados}</div>
+                    <div className="text-[10px] text-muted-foreground">Decl.</div>
+                  </div>
+                </div>
+                <div className="mt-2 pt-2 border-t border-border/50">
+                  <div className="text-xs font-semibold">{formatCurrency(stats.premioTotal)}</div>
+                  {premioComp !== 0 && (
+                    <div className={`text-[10px] flex items-center gap-0.5 ${premioComp > 0 ? 'text-success' : 'text-destructive'}`}>
+                      {premioComp > 0 ? <TrendingUp className="h-2 w-2" /> : <TrendingDown className="h-2 w-2" />}
+                      {premioComp > 0 ? '+' : ''}{premioComp.toFixed(1)}% vs anterior
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Distribuição por Status e Top Produtores */}
