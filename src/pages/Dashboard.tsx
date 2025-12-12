@@ -464,16 +464,20 @@ const Dashboard = () => {
     const tempoMedioComp = calculateComparison(tempoMedioFechamento, tempoMedioFechamentoAnterior);
     const taxaConversaoComp = calculateComparison(taxaConversao, taxaConversaoAnterior);
     
-    // Stats by segmento
+    // Stats by segmento - use combined period cotacoes and fechamentos
     const segmentos = ['Transportes', 'Avulso', 'Ambiental', 'RC-V'];
     const segmentoStats: Record<string, {
       emCotacao: number;
       fechados: number;
       declinados: number;
       premioTotal: number;
+      tempoMedio: number;
+      taxaConversao: number;
       previousEmCotacao: number;
       previousFechados: number;
       previousPremio: number;
+      previousTempoMedio: number;
+      previousTaxaConversao: number;
     }> = {};
     
     segmentos.forEach(segmento => {
@@ -482,14 +486,51 @@ const Dashboard = () => {
       const previousCotacoesSegmento = previousPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
       const previousFechamentosSegmento = previousPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
       
+      const emCotacaoSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Em cotação"]);
+      const fechadosSegmento = countDistinctByStatus(currentFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
+      const declinadosSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Declinado"]);
+      const totalDistinctSegmento = emCotacaoSegmento + fechadosSegmento + declinadosSegmento;
+      
+      const previousEmCotacaoSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Em cotação"]);
+      const previousFechadosSegmento = countDistinctByStatus(previousFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
+      const previousDeclinadosSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Declinado"]);
+      const previousTotalDistinctSegmento = previousEmCotacaoSegmento + previousFechadosSegmento + previousDeclinadosSegmento;
+      
+      // Tempo médio por segmento
+      const temposFechamentoSegmento = currentFechamentosSegmento
+        .filter((c) => c.data_fechamento && c.data_cotacao)
+        .map((c) => {
+          const inicio = new Date(c.data_cotacao).getTime();
+          const fim = new Date(c.data_fechamento!).getTime();
+          return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
+        });
+      const tempoMedioSegmento = temposFechamentoSegmento.length > 0
+        ? temposFechamentoSegmento.reduce((sum, t) => sum + t, 0) / temposFechamentoSegmento.length
+        : 0;
+      
+      const temposFechamentoPreviousSegmento = previousFechamentosSegmento
+        .filter((c) => c.data_fechamento && c.data_cotacao)
+        .map((c) => {
+          const inicio = new Date(c.data_cotacao).getTime();
+          const fim = new Date(c.data_fechamento!).getTime();
+          return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
+        });
+      const tempoMedioPreviousSegmento = temposFechamentoPreviousSegmento.length > 0
+        ? temposFechamentoPreviousSegmento.reduce((sum, t) => sum + t, 0) / temposFechamentoPreviousSegmento.length
+        : 0;
+      
       segmentoStats[segmento] = {
-        emCotacao: countDistinctByStatus(currentCotacoesSegmento, ["Em cotação"]),
-        fechados: countDistinctByStatus(currentFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]),
-        declinados: countDistinctByStatus(currentCotacoesSegmento, ["Declinado"]),
+        emCotacao: emCotacaoSegmento,
+        fechados: fechadosSegmento,
+        declinados: declinadosSegmento,
         premioTotal: currentFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
-        previousEmCotacao: countDistinctByStatus(previousCotacoesSegmento, ["Em cotação"]),
-        previousFechados: countDistinctByStatus(previousFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]),
+        tempoMedio: tempoMedioSegmento,
+        taxaConversao: totalDistinctSegmento > 0 ? (fechadosSegmento / totalDistinctSegmento) * 100 : 0,
+        previousEmCotacao: previousEmCotacaoSegmento,
+        previousFechados: previousFechadosSegmento,
         previousPremio: previousFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
+        previousTempoMedio: tempoMedioPreviousSegmento,
+        previousTaxaConversao: previousTotalDistinctSegmento > 0 ? (previousFechadosSegmento / previousTotalDistinctSegmento) * 100 : 0,
       };
     });
 
@@ -1416,6 +1457,12 @@ const Dashboard = () => {
           const fechadosComp = stats.previousFechados > 0 
             ? stats.fechados - stats.previousFechados 
             : 0;
+          const tempoMedioComp = stats.previousTempoMedio > 0 
+            ? stats.tempoMedio - stats.previousTempoMedio 
+            : 0;
+          const taxaComp = stats.previousTaxaConversao > 0 
+            ? stats.taxaConversao - stats.previousTaxaConversao 
+            : 0;
           
           const segmentoColors: Record<string, string> = {
             'Transportes': 'bg-blue-500/10 border-blue-500/30',
@@ -1459,6 +1506,32 @@ const Dashboard = () => {
                     <div className="text-[10px] text-muted-foreground">Decl.</div>
                   </div>
                 </div>
+                
+                {/* Tempo Médio e Taxa de Conversão */}
+                <div className="grid grid-cols-2 gap-2 text-center mt-2 pt-2 border-t border-border/50">
+                  <div>
+                    <div className="text-sm font-bold">{Math.round(stats.tempoMedio)} dias</div>
+                    <div className="text-[10px] text-muted-foreground">Tempo Médio</div>
+                    {tempoMedioComp !== 0 && (
+                      <div className={`text-[10px] flex items-center justify-center gap-0.5 ${tempoMedioComp < 0 ? 'text-success' : 'text-destructive'}`}>
+                        {tempoMedioComp < 0 ? <TrendingDown className="h-2 w-2" /> : <TrendingUp className="h-2 w-2" />}
+                        {tempoMedioComp > 0 ? '+' : ''}{Math.round(tempoMedioComp)}d
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-success-alt">{stats.taxaConversao.toFixed(1)}%</div>
+                    <div className="text-[10px] text-muted-foreground">Conversão</div>
+                    {taxaComp !== 0 && (
+                      <div className={`text-[10px] flex items-center justify-center gap-0.5 ${taxaComp > 0 ? 'text-success' : 'text-destructive'}`}>
+                        {taxaComp > 0 ? <TrendingUp className="h-2 w-2" /> : <TrendingDown className="h-2 w-2" />}
+                        {taxaComp > 0 ? '+' : ''}{taxaComp.toFixed(1)}pp
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Prêmio Total */}
                 <div className="mt-2 pt-2 border-t border-border/50">
                   <div className="text-xs font-semibold">{formatCurrency(stats.premioTotal)}</div>
                   {premioComp !== 0 && (
