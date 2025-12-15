@@ -1487,13 +1487,13 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent className="pt-0 px-3 pb-2">
                 {/* Linha 1: Aberto - Fechado - Declinado | Tempo Médio - Conversão */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <div className="text-center">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="text-center min-w-[40px]">
                       <div className="text-base font-bold text-brand-orange">{stats.emCotacao}</div>
                       <div className="text-[9px] text-muted-foreground">Aberto</div>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center min-w-[40px]">
                       <div className="text-base font-bold text-success">{stats.fechados}</div>
                       <div className="text-[9px] text-muted-foreground">Fechado</div>
                       {fechadosComp !== 0 && (
@@ -1502,13 +1502,13 @@ const Dashboard = () => {
                         </div>
                       )}
                     </div>
-                    <div className="text-center">
+                    <div className="text-center min-w-[40px]">
                       <div className="text-base font-bold text-destructive">{stats.declinados}</div>
                       <div className="text-[9px] text-muted-foreground">Decl.</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 border-l border-border/50 pl-3">
-                    <div className="text-center">
+                  <div className="flex items-center gap-4 border-l border-border/50 pl-4">
+                    <div className="text-center min-w-[45px]">
                       <div className="text-sm font-bold">{Math.round(stats.tempoMedio)}d</div>
                       <div className="text-[9px] text-muted-foreground">T. Médio</div>
                       {tempoMedioComp !== 0 && (
@@ -1517,7 +1517,7 @@ const Dashboard = () => {
                         </div>
                       )}
                     </div>
-                    <div className="text-center">
+                    <div className="text-center min-w-[45px]">
                       <div className="text-sm font-bold text-success-alt">{stats.taxaConversao.toFixed(1)}%</div>
                       <div className="text-[9px] text-muted-foreground">Conv.</div>
                       {taxaComp !== 0 && (
@@ -1530,7 +1530,7 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Linha 2: Prêmio Total */}
-                <div className="mt-1.5 pt-1.5 border-t border-border/50 flex items-center justify-between">
+                <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between">
                   <div className="text-xs font-semibold">{formatCurrency(stats.premioTotal)}</div>
                   {premioComp !== 0 && (
                     <div className={`text-[9px] flex items-center gap-0.5 ${premioComp > 0 ? 'text-success' : 'text-destructive'}`}>
