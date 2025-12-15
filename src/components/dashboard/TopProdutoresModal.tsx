@@ -20,6 +20,7 @@ interface ProdutorStats {
   declinadasDistinct: number;
   premioTotal: number;
   premioRecorrente: number;
+  premioRegraTotal: number;
   premioEmAberto: number;
   premioEmAbertoRecorrente: number;
   ticketMedio: number;
