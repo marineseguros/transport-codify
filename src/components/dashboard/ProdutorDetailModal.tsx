@@ -18,6 +18,7 @@ interface ProdutorStats {
   declinadasDistinct: number;
   premioTotal: number;
   premioRecorrente: number;
+  premioRegraTotal: number;
   premioEmAberto: number;
   premioEmAbertoRecorrente: number;
   ticketMedio: number;
@@ -148,12 +149,12 @@ export function ProdutorDetailModal({
                 </div>
                 <p className="text-lg font-bold text-primary">{formatCurrency(produtor.premioRecorrente)}</p>
               </div>
-              <div className="p-3 bg-success/10 rounded-lg">
+              <div className="p-3 bg-amber-500/10 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  <DollarSign className="h-4 w-4 text-success" />
-                  <span className="text-xs text-muted-foreground">Total Fechado</span>
+                  <DollarSign className="h-4 w-4 text-amber-600" />
+                  <span className="text-xs text-muted-foreground">Total</span>
                 </div>
-                <p className="text-lg font-bold text-success">{formatCurrency(produtor.premioTotal)}</p>
+                <p className="text-lg font-bold text-amber-600">{formatCurrency(produtor.premioRegraTotal)}</p>
               </div>
               <div className="p-3 bg-brand-orange/10 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">

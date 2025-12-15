@@ -656,6 +656,7 @@ const Dashboard = () => {
     declinadasDistinct: number;
     premioTotal: number;
     premioRecorrente: number;
+    premioRegraTotal: number;
     premioEmAberto: number;
     premioEmAbertoRecorrente: number;
     ticketMedio: number;
@@ -683,6 +684,7 @@ const Dashboard = () => {
         distinctKeysDeclinadas: Set<string>;
         premioTotal: number;
         premioRecorrente: number;
+        premioRegraTotal: number;
         premioEmAberto: number;
         premioEmAbertoRecorrente: number;
         cotacoesFechadas: Cotacao[];
@@ -703,8 +705,9 @@ const Dashboard = () => {
             distinctKeysEmCotacao: new Set(),
             distinctKeysFechadas: new Set(),
             distinctKeysDeclinadas: new Set(),
-            premioTotal: 0,
-            premioRecorrente: 0,
+          premioTotal: 0,
+          premioRecorrente: 0,
+          premioRegraTotal: 0,
             premioEmAberto: 0,
             premioEmAbertoRecorrente: 0,
             cotacoesFechadas: [],
@@ -728,6 +731,8 @@ const Dashboard = () => {
           produtorStats[nome].premioTotal += premio;
           if (regra === 'Recorrente') {
             produtorStats[nome].premioRecorrente += premio;
+          } else {
+            produtorStats[nome].premioRegraTotal += premio;
           }
           produtorStats[nome].cotacoesFechadas.push(cotacao);
           
@@ -799,6 +804,7 @@ const Dashboard = () => {
           declinadasDistinct,
           premioTotal: p.premioTotal,
           premioRecorrente: p.premioRecorrente,
+          premioRegraTotal: p.premioRegraTotal,
           premioEmAberto: p.premioEmAberto,
           premioEmAbertoRecorrente: p.premioEmAbertoRecorrente,
           ticketMedio: fechadasDistinct > 0 ? p.premioTotal / fechadasDistinct : 0,
