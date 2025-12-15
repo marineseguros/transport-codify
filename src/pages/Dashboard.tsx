@@ -6,28 +6,7 @@ import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger }
 import { useCotacoesTotais, useProdutores, useUnidades, useSeguradoras, useRamos, type Cotacao } from "@/hooks/useSupabaseData";
 import { useAuth } from "@/contexts/AuthContext";
 import { WeeklyReminderModal } from "@/components/WeeklyReminderModal";
-import {
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  FileText,
-  Clock,
-  Target,
-  Plus,
-  Upload,
-  Users,
-  Building,
-  List,
-  Grid3X3,
-  BarChart as BarChartIcon,
-  ExternalLink,
-  Eye,
-  Building2,
-  PieChart as PieChartIcon,
-  LineChart as LineChartIcon,
-  Shield,
-  Layers,
-} from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, Users, Building, List, Grid3X3, BarChart as BarChartIcon, ExternalLink, Eye, Building2, PieChart as PieChartIcon, LineChart as LineChartIcon, Shield, Layers } from "lucide-react";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { DashboardEditToolbar } from "@/components/dashboard/DashboardEditToolbar";
 import { DashboardFilters, type DashboardFilterValues } from "@/components/dashboard/DashboardFilters";
@@ -39,20 +18,7 @@ import { SeguradoraDetailModal } from "@/components/dashboard/SeguradoraDetailMo
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import { CotacaoModal } from "@/components/CotacaoModal";
 import { logger } from "@/lib/logger";
 import { MetasRealizadoChart } from "@/components/dashboard/MetasRealizadoChart";
@@ -62,41 +28,24 @@ import { MetasPremioComparison } from "@/components/dashboard/MetasPremioCompari
 // Helper function to determine branch group
 const getBranchGroup = (ramoDescricao: string | undefined): string => {
   if (!ramoDescricao) return "outros";
-  
   const ramoUpper = ramoDescricao.toUpperCase();
-  
+
   // Group 1: RCTR-C + RC-DC
   if (ramoUpper.includes("RCTR-C") || ramoUpper.includes("RC-DC")) {
     return "grupo_rctr";
   }
-  
+
   // Group 2: All other specific types
-  const group2Types = [
-    "NACIONAL",
-    "EXPORTAÇÃO",
-    "EXPORTACAO",
-    "IMPORTAÇÃO",
-    "IMPORTACAO",
-    "RCTR-VI",
-    "NACIONAL AVULSA",
-    "IMPORTAÇÃO AVULSA",
-    "IMPORTACAO AVULSA",
-    "RCTA-C",
-    "AMBIENTAL",
-    "RC-V"
-  ];
-  
+  const group2Types = ["NACIONAL", "EXPORTAÇÃO", "EXPORTACAO", "IMPORTAÇÃO", "IMPORTACAO", "RCTR-VI", "NACIONAL AVULSA", "IMPORTAÇÃO AVULSA", "IMPORTACAO AVULSA", "RCTA-C", "AMBIENTAL", "RC-V"];
   if (group2Types.some(type => ramoUpper.includes(type))) {
     return "grupo_nacional";
   }
-  
   return "outros";
 };
 
 // Helper function to count distinct quotes by CNPJ + branch group for any status
 const countDistinctByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): number => {
   const distinctKeys = new Set<string>();
-  
   cotacoes.forEach(cotacao => {
     if (targetStatuses.includes(cotacao.status)) {
       const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
@@ -104,7 +53,6 @@ const countDistinctByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): n
       distinctKeys.add(key);
     }
   });
-  
   return distinctKeys.size;
 };
 
@@ -112,16 +60,32 @@ const countDistinctByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): n
 const countDistinctClosings = (cotacoes: Cotacao[]): number => {
   return countDistinctByStatus(cotacoes, ["Negócio fechado", "Fechamento congênere"]);
 };
-
 const Dashboard = () => {
-  const { user } = useAuth();
-  const { cotacoes: allQuotes, loading: loadingCotacoes } = useCotacoesTotais();
-  const { produtores, loading: loadingProdutores } = useProdutores();
-  const { unidades, loading: loadingUnidades } = useUnidades();
-  const { seguradoras, loading: loadingSeguradoras } = useSeguradoras();
-  const { ramos, loading: loadingRamos } = useRamos();
+  const {
+    user
+  } = useAuth();
+  const {
+    cotacoes: allQuotes,
+    loading: loadingCotacoes
+  } = useCotacoesTotais();
+  const {
+    produtores,
+    loading: loadingProdutores
+  } = useProdutores();
+  const {
+    unidades,
+    loading: loadingUnidades
+  } = useUnidades();
+  const {
+    seguradoras,
+    loading: loadingSeguradoras
+  } = useSeguradoras();
+  const {
+    ramos,
+    loading: loadingRamos
+  } = useRamos();
   const loading = loadingCotacoes || loadingProdutores || loadingUnidades || loadingSeguradoras || loadingRamos;
-  
+
   // Unified filter state
   const [filters, setFilters] = useState<DashboardFilterValues>({
     dateFilter: "mes_atual",
@@ -131,16 +95,14 @@ const Dashboard = () => {
     ramoFilter: "todos",
     segmentoFilter: "todos",
     regraFilter: "todas",
-    anoEspecifico: "",
+    anoEspecifico: ""
   });
-  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
   const [showReminder, setShowReminder] = useState(false);
-  
+
   // Dashboard layout customization - open for all users
   const dashboardLayout = useDashboardLayout();
-
   useEffect(() => {
     const checkWeeklyReminder = async () => {
       if (!user?.user_id) return;
@@ -163,13 +125,10 @@ const Dashboard = () => {
 
       // Check if already confirmed in database for today
       try {
-        const { data, error } = await supabase
-          .from("weekly_reminder_confirmations")
-          .select("id")
-          .eq("user_id", user.user_id)
-          .eq("confirmed_date", todayStr)
-          .maybeSingle();
-
+        const {
+          data,
+          error
+        } = await supabase.from("weekly_reminder_confirmations").select("id").eq("user_id", user.user_id).eq("confirmed_date", todayStr).maybeSingle();
         if (error) throw error;
 
         // If not confirmed yet, show reminder
@@ -180,7 +139,6 @@ const Dashboard = () => {
         logger.error("Error checking weekly reminder:", error);
       }
     };
-
     checkWeeklyReminder();
   }, [user]);
   const handleImportCSV = () => {
@@ -199,27 +157,27 @@ const Dashboard = () => {
 
     // Apply produtor filter
     if (filters.produtorFilter !== "todos") {
-      filtered = filtered.filter((cotacao) => cotacao.produtor_cotador?.nome === filters.produtorFilter);
+      filtered = filtered.filter(cotacao => cotacao.produtor_cotador?.nome === filters.produtorFilter);
     }
 
     // Apply seguradora filter
     if (filters.seguradoraFilter !== "todas") {
-      filtered = filtered.filter((cotacao) => cotacao.seguradora?.nome === filters.seguradoraFilter);
+      filtered = filtered.filter(cotacao => cotacao.seguradora?.nome === filters.seguradoraFilter);
     }
 
     // Apply ramo filter
     if (filters.ramoFilter !== "todos") {
-      filtered = filtered.filter((cotacao) => cotacao.ramo?.descricao === filters.ramoFilter);
+      filtered = filtered.filter(cotacao => cotacao.ramo?.descricao === filters.ramoFilter);
     }
 
     // Apply segmento filter (from ramo)
     if (filters.segmentoFilter !== "todos") {
-      filtered = filtered.filter((cotacao) => cotacao.ramo?.segmento === filters.segmentoFilter);
+      filtered = filtered.filter(cotacao => cotacao.ramo?.segmento === filters.segmentoFilter);
     }
 
     // Apply regra filter (from ramo - database field)
     if (filters.regraFilter !== "todas") {
-      filtered = filtered.filter((cotacao) => cotacao.ramo?.regra === filters.regraFilter);
+      filtered = filtered.filter(cotacao => cotacao.ramo?.regra === filters.regraFilter);
     }
 
     // Apply date filter
@@ -259,9 +217,9 @@ const Dashboard = () => {
       default:
         return filtered;
     }
-    
+
     // Filter by correct date field based on status
-    return filtered.filter((cotacao) => {
+    return filtered.filter(cotacao => {
       // Use data_cotacao for "Em cotação" and "Declinado"
       if (cotacao.status === "Em cotação" || cotacao.status === "Declinado") {
         const cotacaoDate = new Date(cotacao.data_cotacao);
@@ -347,7 +305,7 @@ const Dashboard = () => {
     }
 
     // Apply all filters consistently for both periods
-    const baseFilteredQuotes = allQuotes.filter((c) => {
+    const baseFilteredQuotes = allQuotes.filter(c => {
       const produtorMatch = filters.produtorFilter === "todos" || c.produtor_cotador?.nome === filters.produtorFilter;
       const seguradoraMatch = filters.seguradoraFilter === "todas" || c.seguradora?.nome === filters.seguradoraFilter;
       const ramoMatch = filters.ramoFilter === "todos" || c.ramo?.descricao === filters.ramoFilter;
@@ -355,26 +313,25 @@ const Dashboard = () => {
       const regraMatch = filters.regraFilter === "todas" || c.ramo?.regra === filters.regraFilter;
       return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch;
     });
-    
+
     // Filter quotations (Em cotação, Declinado) by data_cotacao
-    const currentPeriodCotacoes = baseFilteredQuotes.filter((c) => {
+    const currentPeriodCotacoes = baseFilteredQuotes.filter(c => {
       if (c.status === "Em cotação" || c.status === "Declinado") {
         const date = new Date(c.data_cotacao);
         return date >= currentStartDate && date <= currentEndDate;
       }
       return false;
     });
-    
-    const previousPeriodCotacoes = baseFilteredQuotes.filter((c) => {
+    const previousPeriodCotacoes = baseFilteredQuotes.filter(c => {
       if (c.status === "Em cotação" || c.status === "Declinado") {
         const date = new Date(c.data_cotacao);
         return date >= previousStartDate && date <= previousEndDate;
       }
       return false;
     });
-    
+
     // Filter closings (Negócio fechado, Fechamento congênere) by data_fechamento
-    const currentPeriodFechamentos = baseFilteredQuotes.filter((c) => {
+    const currentPeriodFechamentos = baseFilteredQuotes.filter(c => {
       if (c.status === "Negócio fechado" || c.status === "Fechamento congênere") {
         if (!c.data_fechamento) return false;
         const date = new Date(c.data_fechamento);
@@ -382,8 +339,7 @@ const Dashboard = () => {
       }
       return false;
     });
-    
-    const previousPeriodFechamentos = baseFilteredQuotes.filter((c) => {
+    const previousPeriodFechamentos = baseFilteredQuotes.filter(c => {
       if (c.status === "Negócio fechado" || c.status === "Fechamento congênere") {
         if (!c.data_fechamento) return false;
         const date = new Date(c.data_fechamento);
@@ -405,10 +361,10 @@ const Dashboard = () => {
     // Calculate differences and percentages
     const calculateComparison = (current: number, previous: number) => {
       const diff = current - previous;
-      const percentage = previous > 0 ? (diff / previous) * 100 : 0;
+      const percentage = previous > 0 ? diff / previous * 100 : 0;
       return {
         diff,
-        percentage,
+        percentage
       };
     };
     const emCotacaoComp = calculateComparison(emCotacao, emCotacaoAnterior);
@@ -426,44 +382,33 @@ const Dashboard = () => {
     const ticketMedioAnterior = fechadosAnterior > 0 ? premioTotalAnterior / fechadosAnterior : 0;
 
     // Tempo médio de fechamento (dias)
-    const temposFechamento = cotacoesFechadas
-      .filter((c) => c.data_fechamento && c.data_cotacao)
-      .map((c) => {
-        const inicio = new Date(c.data_cotacao).getTime();
-        const fim = new Date(c.data_fechamento!).getTime();
-        return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
-      });
-    const tempoMedioFechamento =
-      temposFechamento.length > 0
-        ? temposFechamento.reduce((sum, tempo) => sum + tempo, 0) / temposFechamento.length
-        : 0;
+    const temposFechamento = cotacoesFechadas.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
+      const inicio = new Date(c.data_cotacao).getTime();
+      const fim = new Date(c.data_fechamento!).getTime();
+      return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
+    });
+    const tempoMedioFechamento = temposFechamento.length > 0 ? temposFechamento.reduce((sum, tempo) => sum + tempo, 0) / temposFechamento.length : 0;
 
     // Previous period tempo médio
-    const temposFechamentoAnterior = cotacoesFechadasAnterior
-      .filter((c) => c.data_fechamento && c.data_cotacao)
-      .map((c) => {
-        const inicio = new Date(c.data_cotacao).getTime();
-        const fim = new Date(c.data_fechamento!).getTime();
-        return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
-      });
-    const tempoMedioFechamentoAnterior =
-      temposFechamentoAnterior.length > 0
-        ? temposFechamentoAnterior.reduce((sum, tempo) => sum + tempo, 0) / temposFechamentoAnterior.length
-        : 0;
+    const temposFechamentoAnterior = cotacoesFechadasAnterior.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
+      const inicio = new Date(c.data_cotacao).getTime();
+      const fim = new Date(c.data_fechamento!).getTime();
+      return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
+    });
+    const tempoMedioFechamentoAnterior = temposFechamentoAnterior.length > 0 ? temposFechamentoAnterior.reduce((sum, tempo) => sum + tempo, 0) / temposFechamentoAnterior.length : 0;
 
     // Taxa de conversão: fechamentos distintos / total distintos de todos os status
     const totalDistinct = emCotacao + declinados + fechados;
-    const taxaConversao = totalDistinct > 0 ? (fechados / totalDistinct) * 100 : 0;
-    
+    const taxaConversao = totalDistinct > 0 ? fechados / totalDistinct * 100 : 0;
     const totalDistinctAnterior = emCotacaoAnterior + declinadosAnterior + fechadosAnterior;
-    const taxaConversaoAnterior = totalDistinctAnterior > 0 ? (fechadosAnterior / totalDistinctAnterior) * 100 : 0;
-    
+    const taxaConversaoAnterior = totalDistinctAnterior > 0 ? fechadosAnterior / totalDistinctAnterior * 100 : 0;
+
     // Calculate comparisons
     const premioTotalComp = calculateComparison(premioTotal, premioTotalAnterior);
     const ticketMedioComp = calculateComparison(ticketMedio, ticketMedioAnterior);
     const tempoMedioComp = calculateComparison(tempoMedioFechamento, tempoMedioFechamentoAnterior);
     const taxaConversaoComp = calculateComparison(taxaConversao, taxaConversaoAnterior);
-    
+
     // Stats by segmento - use combined period cotacoes and fechamentos
     const segmentos = ['Transportes', 'Avulso', 'Ambiental', 'RC-V'];
     const segmentoStats: Record<string, {
@@ -479,61 +424,47 @@ const Dashboard = () => {
       previousTempoMedio: number;
       previousTaxaConversao: number;
     }> = {};
-    
     segmentos.forEach(segmento => {
       const currentCotacoesSegmento = currentPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
       const currentFechamentosSegmento = currentPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
       const previousCotacoesSegmento = previousPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
       const previousFechamentosSegmento = previousPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
-      
       const emCotacaoSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Em cotação"]);
       const fechadosSegmento = countDistinctByStatus(currentFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
       const declinadosSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Declinado"]);
       const totalDistinctSegmento = emCotacaoSegmento + fechadosSegmento + declinadosSegmento;
-      
       const previousEmCotacaoSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Em cotação"]);
       const previousFechadosSegmento = countDistinctByStatus(previousFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
       const previousDeclinadosSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Declinado"]);
       const previousTotalDistinctSegmento = previousEmCotacaoSegmento + previousFechadosSegmento + previousDeclinadosSegmento;
-      
+
       // Tempo médio por segmento
-      const temposFechamentoSegmento = currentFechamentosSegmento
-        .filter((c) => c.data_fechamento && c.data_cotacao)
-        .map((c) => {
-          const inicio = new Date(c.data_cotacao).getTime();
-          const fim = new Date(c.data_fechamento!).getTime();
-          return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
-        });
-      const tempoMedioSegmento = temposFechamentoSegmento.length > 0
-        ? temposFechamentoSegmento.reduce((sum, t) => sum + t, 0) / temposFechamentoSegmento.length
-        : 0;
-      
-      const temposFechamentoPreviousSegmento = previousFechamentosSegmento
-        .filter((c) => c.data_fechamento && c.data_cotacao)
-        .map((c) => {
-          const inicio = new Date(c.data_cotacao).getTime();
-          const fim = new Date(c.data_fechamento!).getTime();
-          return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
-        });
-      const tempoMedioPreviousSegmento = temposFechamentoPreviousSegmento.length > 0
-        ? temposFechamentoPreviousSegmento.reduce((sum, t) => sum + t, 0) / temposFechamentoPreviousSegmento.length
-        : 0;
-      
+      const temposFechamentoSegmento = currentFechamentosSegmento.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
+        const inicio = new Date(c.data_cotacao).getTime();
+        const fim = new Date(c.data_fechamento!).getTime();
+        return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
+      });
+      const tempoMedioSegmento = temposFechamentoSegmento.length > 0 ? temposFechamentoSegmento.reduce((sum, t) => sum + t, 0) / temposFechamentoSegmento.length : 0;
+      const temposFechamentoPreviousSegmento = previousFechamentosSegmento.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
+        const inicio = new Date(c.data_cotacao).getTime();
+        const fim = new Date(c.data_fechamento!).getTime();
+        return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
+      });
+      const tempoMedioPreviousSegmento = temposFechamentoPreviousSegmento.length > 0 ? temposFechamentoPreviousSegmento.reduce((sum, t) => sum + t, 0) / temposFechamentoPreviousSegmento.length : 0;
       segmentoStats[segmento] = {
         emCotacao: emCotacaoSegmento,
         fechados: fechadosSegmento,
         declinados: declinadosSegmento,
         premioTotal: currentFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
         tempoMedio: tempoMedioSegmento,
-        taxaConversao: totalDistinctSegmento > 0 ? (fechadosSegmento / totalDistinctSegmento) * 100 : 0,
+        taxaConversao: totalDistinctSegmento > 0 ? fechadosSegmento / totalDistinctSegmento * 100 : 0,
         previousEmCotacao: previousEmCotacaoSegmento,
         previousFechados: previousFechadosSegmento,
         previousPremio: previousFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
         previousTempoMedio: tempoMedioPreviousSegmento,
-        previousTaxaConversao: previousTotalDistinctSegmento > 0 ? (previousFechadosSegmento / previousTotalDistinctSegmento) * 100 : 0,
+        previousTaxaConversao: previousTotalDistinctSegmento > 0 ? previousFechadosSegmento / previousTotalDistinctSegmento * 100 : 0
       };
     });
-
     return {
       emCotacao,
       fechados,
@@ -549,97 +480,108 @@ const Dashboard = () => {
       premioTotalComp,
       taxaConversao,
       taxaConversaoComp,
-      segmentoStats,
+      segmentoStats
     };
   }, [allQuotes, filters]);
 
   // Distribuição por status com dados detalhados para modal
   const distribuicaoStatusDetalhada = useMemo(() => {
     const validStatuses = ["Em cotação", "Negócio fechado", "Declinado"];
-    
-    const statusCounts: Record<string, { 
-      cotacoes: Cotacao[]; 
+    const statusCounts: Record<string, {
+      cotacoes: Cotacao[];
       count: number;
       premioTotal: number;
       transportador: number;
       embarcador: number;
-      ramoBreakdown: Record<string, { count: number; premio: number }>;
-      seguradoraBreakdown: Record<string, { count: number; premio: number }>;
+      ramoBreakdown: Record<string, {
+        count: number;
+        premio: number;
+      }>;
+      seguradoraBreakdown: Record<string, {
+        count: number;
+        premio: number;
+      }>;
     }> = {};
-    
-    validStatuses.forEach((status) => {
+    validStatuses.forEach(status => {
       let statusCotacoes: Cotacao[];
       let targetStatuses: string[];
-      
       if (status === "Negócio fechado") {
         targetStatuses = ["Negócio fechado", "Fechamento congênere"];
-        statusCotacoes = filteredCotacoes.filter(
-          (cotacao) => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere"
-        );
+        statusCotacoes = filteredCotacoes.filter(cotacao => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere");
       } else {
         targetStatuses = [status];
-        statusCotacoes = filteredCotacoes.filter((cotacao) => cotacao.status === status);
+        statusCotacoes = filteredCotacoes.filter(cotacao => cotacao.status === status);
       }
-      
       const count = countDistinctByStatus(statusCotacoes, targetStatuses);
       const premioTotal = statusCotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
       const transportador = statusCotacoes.filter(c => c.segmento === "Transportador").length;
       const embarcador = statusCotacoes.filter(c => c.segmento !== "Transportador").length;
-      
+
       // Breakdown por ramo
-      const ramoBreakdown: Record<string, { count: number; premio: number }> = {};
+      const ramoBreakdown: Record<string, {
+        count: number;
+        premio: number;
+      }> = {};
       statusCotacoes.forEach(c => {
         const ramo = c.ramo?.descricao || "Não informado";
-        if (!ramoBreakdown[ramo]) ramoBreakdown[ramo] = { count: 0, premio: 0 };
+        if (!ramoBreakdown[ramo]) ramoBreakdown[ramo] = {
+          count: 0,
+          premio: 0
+        };
         ramoBreakdown[ramo].count++;
         ramoBreakdown[ramo].premio += c.valor_premio || 0;
       });
-      
+
       // Breakdown por seguradora
-      const seguradoraBreakdown: Record<string, { count: number; premio: number }> = {};
+      const seguradoraBreakdown: Record<string, {
+        count: number;
+        premio: number;
+      }> = {};
       statusCotacoes.forEach(c => {
         const seg = c.seguradora?.nome || "Não informado";
-        if (!seguradoraBreakdown[seg]) seguradoraBreakdown[seg] = { count: 0, premio: 0 };
+        if (!seguradoraBreakdown[seg]) seguradoraBreakdown[seg] = {
+          count: 0,
+          premio: 0
+        };
         seguradoraBreakdown[seg].count++;
         seguradoraBreakdown[seg].premio += c.valor_premio || 0;
       });
-      
-      statusCounts[status] = { 
-        cotacoes: statusCotacoes, 
+      statusCounts[status] = {
+        cotacoes: statusCotacoes,
         count,
         premioTotal,
         transportador,
         embarcador,
         ramoBreakdown,
-        seguradoraBreakdown,
+        seguradoraBreakdown
       };
     });
-    
     const totalDistinct = Object.values(statusCounts).reduce((sum, item) => sum + item.count, 0);
-    
-    return validStatuses.map((status) => {
+    return validStatuses.map(status => {
       const data = statusCounts[status];
       return {
         status,
         count: data.count,
-        seguradosDistintos: new Set(data.cotacoes.map((c) => c.cpf_cnpj)).size,
-        percentage: totalDistinct > 0 ? (data.count / totalDistinct) * 100 : 0,
+        seguradosDistintos: new Set(data.cotacoes.map(c => c.cpf_cnpj)).size,
+        percentage: totalDistinct > 0 ? data.count / totalDistinct * 100 : 0,
         cotacoes: data.cotacoes,
         premioTotal: data.premioTotal,
         ticketMedio: data.count > 0 ? data.premioTotal / data.count : 0,
         transportador: data.transportador,
         embarcador: data.embarcador,
-        ramoBreakdown: Object.entries(data.ramoBreakdown)
-          .map(([ramo, stats]) => ({ ramo, ...stats }))
-          .sort((a, b) => b.premio - a.premio),
-        seguradoraBreakdown: Object.entries(data.seguradoraBreakdown)
-          .map(([seguradora, stats]) => ({ seguradora, ...stats }))
-          .sort((a, b) => b.premio - a.premio),
-        tempoMedio: 0,
+        ramoBreakdown: Object.entries(data.ramoBreakdown).map(([ramo, stats]) => ({
+          ramo,
+          ...stats
+        })).sort((a, b) => b.premio - a.premio),
+        seguradoraBreakdown: Object.entries(data.seguradoraBreakdown).map(([seguradora, stats]) => ({
+          seguradora,
+          ...stats
+        })).sort((a, b) => b.premio - a.premio),
+        tempoMedio: 0
       };
     });
   }, [filteredCotacoes]);
-  
+
   // Backward compat
   const distribuicaoStatus = distribuicaoStatusDetalhada;
 
@@ -663,8 +605,16 @@ const Dashboard = () => {
     taxaConversao: number;
     cotacoesFechadas: Cotacao[];
     cotacoesEmAberto: Cotacao[];
-    distinctFechadasList: { segurado: string; grupo: string; cotacoes: Cotacao[] }[];
-    distinctEmAbertoList: { segurado: string; grupo: string; cotacoes: Cotacao[] }[];
+    distinctFechadasList: {
+      segurado: string;
+      grupo: string;
+      cotacoes: Cotacao[];
+    }[];
+    distinctEmAbertoList: {
+      segurado: string;
+      grupo: string;
+      cotacoes: Cotacao[];
+    }[];
   } | null>(null);
   const [selectedProdutorRanking, setSelectedProdutorRanking] = useState(0);
 
@@ -674,28 +624,32 @@ const Dashboard = () => {
   // Top produtores com métricas detalhadas consolidadas
   // Using DISTINCT counting by CNPJ + branch group
   const topProdutoresDetalhado = useMemo(() => {
-    const produtorStats: Record<
-      string,
-      {
-        nome: string;
-        distinctKeysTotal: Set<string>;
-        distinctKeysEmCotacao: Set<string>;
-        distinctKeysFechadas: Set<string>;
-        distinctKeysDeclinadas: Set<string>;
-        premioTotal: number;
-        premioRecorrente: number;
-        premioRegraTotal: number;
-        premioEmAberto: number;
-        premioEmAbertoRecorrente: number;
-        cotacoesFechadas: Cotacao[];
-        cotacoesEmAberto: Cotacao[];
-        // Group cotações by segurado+grupo for distinct listing
-        fechadasByKey: Record<string, { segurado: string; grupo: string; cotacoes: Cotacao[] }>;
-        emAbertoByKey: Record<string, { segurado: string; grupo: string; cotacoes: Cotacao[] }>;
-      }
-    > = {};
-    
-    filteredCotacoes.forEach((cotacao) => {
+    const produtorStats: Record<string, {
+      nome: string;
+      distinctKeysTotal: Set<string>;
+      distinctKeysEmCotacao: Set<string>;
+      distinctKeysFechadas: Set<string>;
+      distinctKeysDeclinadas: Set<string>;
+      premioTotal: number;
+      premioRecorrente: number;
+      premioRegraTotal: number;
+      premioEmAberto: number;
+      premioEmAbertoRecorrente: number;
+      cotacoesFechadas: Cotacao[];
+      cotacoesEmAberto: Cotacao[];
+      // Group cotações by segurado+grupo for distinct listing
+      fechadasByKey: Record<string, {
+        segurado: string;
+        grupo: string;
+        cotacoes: Cotacao[];
+      }>;
+      emAbertoByKey: Record<string, {
+        segurado: string;
+        grupo: string;
+        cotacoes: Cotacao[];
+      }>;
+    }> = {};
+    filteredCotacoes.forEach(cotacao => {
       if (cotacao.produtor_cotador) {
         const nome = cotacao.produtor_cotador.nome;
         if (!produtorStats[nome]) {
@@ -705,29 +659,28 @@ const Dashboard = () => {
             distinctKeysEmCotacao: new Set(),
             distinctKeysFechadas: new Set(),
             distinctKeysDeclinadas: new Set(),
-          premioTotal: 0,
-          premioRecorrente: 0,
-          premioRegraTotal: 0,
+            premioTotal: 0,
+            premioRecorrente: 0,
+            premioRegraTotal: 0,
             premioEmAberto: 0,
             premioEmAbertoRecorrente: 0,
             cotacoesFechadas: [],
             cotacoesEmAberto: [],
             fechadasByKey: {},
-            emAbertoByKey: {},
+            emAbertoByKey: {}
           };
         }
-        
+
         // Create distinct key: CNPJ + branch group
         const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
         const distinctKey = `${cotacao.cpf_cnpj}_${branchGroup}`;
-        
+
         // Add to total distinct
         produtorStats[nome].distinctKeysTotal.add(distinctKey);
-        
         if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
           produtorStats[nome].distinctKeysFechadas.add(distinctKey);
           const premio = cotacao.valor_premio || 0;
-        const regra = getRegraRamo(cotacao.ramo);
+          const regra = getRegraRamo(cotacao.ramo);
           produtorStats[nome].premioTotal += premio;
           if (regra === 'Recorrente') {
             produtorStats[nome].premioRecorrente += premio;
@@ -735,13 +688,13 @@ const Dashboard = () => {
             produtorStats[nome].premioRegraTotal += premio;
           }
           produtorStats[nome].cotacoesFechadas.push(cotacao);
-          
+
           // Group by segurado+grupo for distinct listing
           if (!produtorStats[nome].fechadasByKey[distinctKey]) {
             produtorStats[nome].fechadasByKey[distinctKey] = {
               segurado: cotacao.segurado,
               grupo: branchGroup,
-              cotacoes: [],
+              cotacoes: []
             };
           }
           produtorStats[nome].fechadasByKey[distinctKey].cotacoes.push(cotacao);
@@ -754,13 +707,13 @@ const Dashboard = () => {
             produtorStats[nome].premioEmAbertoRecorrente += premio;
           }
           produtorStats[nome].cotacoesEmAberto.push(cotacao);
-          
+
           // Group by segurado+grupo for distinct listing
           if (!produtorStats[nome].emAbertoByKey[distinctKey]) {
             produtorStats[nome].emAbertoByKey[distinctKey] = {
               segurado: cotacao.segurado,
               grupo: branchGroup,
-              cotacoes: [],
+              cotacoes: []
             };
           }
           produtorStats[nome].emAbertoByKey[distinctKey].cotacoes.push(cotacao);
@@ -769,78 +722,64 @@ const Dashboard = () => {
         }
       }
     });
-    
-    return Object.values(produtorStats)
-      .map(p => {
-        const totalDistinct = p.distinctKeysTotal.size;
-        const fechadasDistinct = p.distinctKeysFechadas.size;
-        const emCotacaoDistinct = p.distinctKeysEmCotacao.size;
-        const declinadasDistinct = p.distinctKeysDeclinadas.size;
-        
-        // Convert grouped objects to sorted arrays (most recent first)
-        const distinctFechadasList = Object.values(p.fechadasByKey).sort((a, b) => {
-          const dateA = a.cotacoes.reduce((latest, c) => {
-            const d = c.data_fechamento || c.created_at;
-            return d > latest ? d : latest;
-          }, '');
-          const dateB = b.cotacoes.reduce((latest, c) => {
-            const d = c.data_fechamento || c.created_at;
-            return d > latest ? d : latest;
-          }, '');
-          return new Date(dateB).getTime() - new Date(dateA).getTime();
-        });
-        
-        const distinctEmAbertoList = Object.values(p.emAbertoByKey).sort((a, b) => {
-          const dateA = a.cotacoes[0]?.data_cotacao || '';
-          const dateB = b.cotacoes[0]?.data_cotacao || '';
-          return new Date(dateB).getTime() - new Date(dateA).getTime();
-        });
-        
-        return {
-          nome: p.nome,
-          totalDistinct,
-          emCotacaoDistinct,
-          fechadasDistinct,
-          declinadasDistinct,
-          premioTotal: p.premioTotal,
-          premioRecorrente: p.premioRecorrente,
-          premioRegraTotal: p.premioRegraTotal,
-          premioEmAberto: p.premioEmAberto,
-          premioEmAbertoRecorrente: p.premioEmAbertoRecorrente,
-          ticketMedio: fechadasDistinct > 0 ? p.premioTotal / fechadasDistinct : 0,
-          taxaConversao: totalDistinct > 0 ? (fechadasDistinct / totalDistinct) * 100 : 0,
-          cotacoesFechadas: p.cotacoesFechadas,
-          cotacoesEmAberto: p.cotacoesEmAberto,
-          distinctFechadasList,
-          distinctEmAbertoList,
-        };
-      })
-      .sort((a, b) => {
-        // Sort by fechadas first, then prêmio recorrente, then total
-        if (b.fechadasDistinct !== a.fechadasDistinct) return b.fechadasDistinct - a.fechadasDistinct;
-        if (b.premioRecorrente !== a.premioRecorrente) return b.premioRecorrente - a.premioRecorrente;
-        if (b.premioTotal !== a.premioTotal) return b.premioTotal - a.premioTotal;
-        return b.totalDistinct - a.totalDistinct;
+    return Object.values(produtorStats).map(p => {
+      const totalDistinct = p.distinctKeysTotal.size;
+      const fechadasDistinct = p.distinctKeysFechadas.size;
+      const emCotacaoDistinct = p.distinctKeysEmCotacao.size;
+      const declinadasDistinct = p.distinctKeysDeclinadas.size;
+
+      // Convert grouped objects to sorted arrays (most recent first)
+      const distinctFechadasList = Object.values(p.fechadasByKey).sort((a, b) => {
+        const dateA = a.cotacoes.reduce((latest, c) => {
+          const d = c.data_fechamento || c.created_at;
+          return d > latest ? d : latest;
+        }, '');
+        const dateB = b.cotacoes.reduce((latest, c) => {
+          const d = c.data_fechamento || c.created_at;
+          return d > latest ? d : latest;
+        }, '');
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
       });
+      const distinctEmAbertoList = Object.values(p.emAbertoByKey).sort((a, b) => {
+        const dateA = a.cotacoes[0]?.data_cotacao || '';
+        const dateB = b.cotacoes[0]?.data_cotacao || '';
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+      return {
+        nome: p.nome,
+        totalDistinct,
+        emCotacaoDistinct,
+        fechadasDistinct,
+        declinadasDistinct,
+        premioTotal: p.premioTotal,
+        premioRecorrente: p.premioRecorrente,
+        premioRegraTotal: p.premioRegraTotal,
+        premioEmAberto: p.premioEmAberto,
+        premioEmAbertoRecorrente: p.premioEmAbertoRecorrente,
+        ticketMedio: fechadasDistinct > 0 ? p.premioTotal / fechadasDistinct : 0,
+        taxaConversao: totalDistinct > 0 ? fechadasDistinct / totalDistinct * 100 : 0,
+        cotacoesFechadas: p.cotacoesFechadas,
+        cotacoesEmAberto: p.cotacoesEmAberto,
+        distinctFechadasList,
+        distinctEmAbertoList
+      };
+    }).sort((a, b) => {
+      // Sort by fechadas first, then prêmio recorrente, then total
+      if (b.fechadasDistinct !== a.fechadasDistinct) return b.fechadasDistinct - a.fechadasDistinct;
+      if (b.premioRecorrente !== a.premioRecorrente) return b.premioRecorrente - a.premioRecorrente;
+      if (b.premioTotal !== a.premioTotal) return b.premioTotal - a.premioTotal;
+      return b.totalDistinct - a.totalDistinct;
+    });
   }, [filteredCotacoes]);
 
   // Clientes fechados para o tooltip - include "Fechamento congênere"
   const clientesFechados = useMemo(() => {
-    return filteredCotacoes
-      .filter((cotacao) => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere")
-      .sort(
-        (a, b) =>
-          new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime(),
-      )
-      .slice(0, 10);
+    return filteredCotacoes.filter(cotacao => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere").sort((a, b) => new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime()).slice(0, 10);
   }, [filteredCotacoes]);
 
   // Clientes em cotação para o tooltip
   const clientesEmCotacao = useMemo(() => {
-    return filteredCotacoes
-      .filter((cotacao) => cotacao.status === "Em cotação")
-      .sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime())
-      .slice(0, 10);
+    return filteredCotacoes.filter(cotacao => cotacao.status === "Em cotação").sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime()).slice(0, 10);
   }, [filteredCotacoes]);
 
   // View mode state for recent quotes
@@ -848,17 +787,14 @@ const Dashboard = () => {
 
   // Recent quotes for display (last 10)
   const recentQuotes = useMemo(() => {
-    return [...filteredCotacoes]
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 10);
+    return [...filteredCotacoes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
   }, [filteredCotacoes]);
 
   // Monthly trend data DETALHADA para modal
   const monthlyTrendDataDetalhada = useMemo(() => {
     const months = [];
     const now = new Date();
-
-    const trendFilteredCotacoes = allQuotes.filter((cotacao) => {
+    const trendFilteredCotacoes = allQuotes.filter(cotacao => {
       const produtorMatch = filters.produtorFilter === "todos" || cotacao.produtor_cotador?.nome === filters.produtorFilter;
       const seguradoraMatch = filters.seguradoraFilter === "todas" || cotacao.seguradora?.nome === filters.seguradoraFilter;
       const ramoMatch = filters.ramoFilter === "todos" || cotacao.ramo?.descricao === filters.ramoFilter;
@@ -866,29 +802,24 @@ const Dashboard = () => {
       const regraMatch = filters.regraFilter === "todas" || cotacao.ramo?.regra === filters.regraFilter;
       return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch;
     });
-    
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
+      const monthName = date.toLocaleDateString("pt-BR", {
+        month: "short"
+      });
       const year = date.getFullYear();
-      const monthCotacoes = trendFilteredCotacoes.filter((c) => {
+      const monthCotacoes = trendFilteredCotacoes.filter(c => {
         const cotacaoDate = new Date(c.data_cotacao);
         return cotacaoDate.getMonth() === date.getMonth() && cotacaoDate.getFullYear() === date.getFullYear();
       });
-      
-      const emCotacao = monthCotacoes.filter((c) => c.status === "Em cotação").length;
-      const fechadas = monthCotacoes.filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere").length;
-      const declinadas = monthCotacoes.filter((c) => c.status === "Declinado").length;
-      const premioFechado = monthCotacoes
-        .filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere")
-        .reduce((sum, c) => sum + (c.valor_premio || 0), 0);
-      const premioAberto = monthCotacoes
-        .filter((c) => c.status === "Em cotação")
-        .reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+      const emCotacao = monthCotacoes.filter(c => c.status === "Em cotação").length;
+      const fechadas = monthCotacoes.filter(c => c.status === "Negócio fechado" || c.status === "Fechamento congênere").length;
+      const declinadas = monthCotacoes.filter(c => c.status === "Declinado").length;
+      const premioFechado = monthCotacoes.filter(c => c.status === "Negócio fechado" || c.status === "Fechamento congênere").reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+      const premioAberto = monthCotacoes.filter(c => c.status === "Em cotação").reduce((sum, c) => sum + (c.valor_premio || 0), 0);
       const transportador = monthCotacoes.filter(c => c.segmento === "Transportador").length;
       const embarcador = monthCotacoes.filter(c => c.segmento !== "Transportador").length;
-      const taxaConversao = monthCotacoes.length > 0 ? (fechadas / monthCotacoes.length * 100) : 0;
-      
+      const taxaConversao = monthCotacoes.length > 0 ? fechadas / monthCotacoes.length * 100 : 0;
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
         total: monthCotacoes.length,
@@ -899,12 +830,12 @@ const Dashboard = () => {
         premioAberto,
         transportador,
         embarcador,
-        taxaConversao,
+        taxaConversao
       });
     }
     return months;
   }, [allQuotes, filters]);
-  
+
   // Backward compat
   const monthlyTrendData = monthlyTrendDataDetalhada;
 
@@ -917,14 +848,20 @@ const Dashboard = () => {
       distinctKeys: Set<string>;
       transportador: number;
       embarcador: number;
-      ramoBreakdown: Record<string, { count: number; premio: number }>;
-      clientesMap: Map<string, { segurado: string; cpf_cnpj: string; premio: number; ramos: Set<string> }>;
+      ramoBreakdown: Record<string, {
+        count: number;
+        premio: number;
+      }>;
+      clientesMap: Map<string, {
+        segurado: string;
+        cpf_cnpj: string;
+        premio: number;
+        ramos: Set<string>;
+      }>;
     }> = {};
-
     const now = new Date();
     const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
-
-    const seguradoraFilteredCotacoes = allQuotes.filter((cotacao) => {
+    const seguradoraFilteredCotacoes = allQuotes.filter(cotacao => {
       const produtorMatch = filters.produtorFilter === "todos" || cotacao.produtor_cotador?.nome === filters.produtorFilter;
       const seguradoraMatch = filters.seguradoraFilter === "todas" || cotacao.seguradora?.nome === filters.seguradoraFilter;
       const ramoMatch = filters.ramoFilter === "todos" || cotacao.ramo?.descricao === filters.ramoFilter;
@@ -933,8 +870,7 @@ const Dashboard = () => {
       const dateMatch = new Date(cotacao.data_cotacao) >= twelveMonthsAgo;
       return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && dateMatch;
     });
-    
-    seguradoraFilteredCotacoes.forEach((cotacao) => {
+    seguradoraFilteredCotacoes.forEach(cotacao => {
       if (cotacao.seguradora && (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") && cotacao.valor_premio > 0) {
         const nome = cotacao.seguradora.nome;
         if (!seguradoraStats[nome]) {
@@ -946,27 +882,27 @@ const Dashboard = () => {
             transportador: 0,
             embarcador: 0,
             ramoBreakdown: {},
-            clientesMap: new Map(),
+            clientesMap: new Map()
           };
         }
-        
         const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
         const distinctKey = `${cotacao.cpf_cnpj}_${branchGroup}`;
         seguradoraStats[nome].distinctKeys.add(distinctKey);
-        
         seguradoraStats[nome].premio += Number(cotacao.valor_premio);
         seguradoraStats[nome].count++;
-        
         if (cotacao.segmento === "Transportador") {
           seguradoraStats[nome].transportador++;
         } else {
           seguradoraStats[nome].embarcador++;
         }
-        
+
         // Ramo breakdown
         const ramo = cotacao.ramo?.descricao || "Não informado";
         if (!seguradoraStats[nome].ramoBreakdown[ramo]) {
-          seguradoraStats[nome].ramoBreakdown[ramo] = { count: 0, premio: 0 };
+          seguradoraStats[nome].ramoBreakdown[ramo] = {
+            count: 0,
+            premio: 0
+          };
         }
         seguradoraStats[nome].ramoBreakdown[ramo].count++;
         seguradoraStats[nome].ramoBreakdown[ramo].premio += cotacao.valor_premio || 0;
@@ -982,72 +918,61 @@ const Dashboard = () => {
             segurado: cotacao.segurado,
             cpf_cnpj: cotacao.cpf_cnpj,
             premio: cotacao.valor_premio || 0,
-            ramos: new Set(cotacao.ramo?.descricao ? [cotacao.ramo.descricao] : []),
+            ramos: new Set(cotacao.ramo?.descricao ? [cotacao.ramo.descricao] : [])
           });
         }
       }
     });
-    
     const totalPremio = Object.values(seguradoraStats).reduce((sum, s) => sum + s.premio, 0);
     const totalCount = Object.values(seguradoraStats).reduce((sum, s) => sum + s.distinctKeys.size, 0);
-    
-    return Object.values(seguradoraStats)
-      .map(s => ({
-        nome: s.nome,
-        premio: s.premio,
-        count: s.count,
-        distinctCount: s.distinctKeys.size,
-        ticketMedio: s.distinctKeys.size > 0 ? s.premio / s.distinctKeys.size : 0,
-        percentualPremio: totalPremio > 0 ? (s.premio / totalPremio * 100) : 0,
-        percentualCount: totalCount > 0 ? (s.distinctKeys.size / totalCount * 100) : 0,
-        transportador: s.transportador,
-        embarcador: s.embarcador,
-        topRamos: Object.entries(s.ramoBreakdown)
-          .map(([ramo, stats]) => ({ ramo, ...stats }))
-          .sort((a, b) => b.premio - a.premio)
-          .slice(0, 3),
-        clientes: Array.from(s.clientesMap.values())
-          .map(c => ({ ...c, ramos: Array.from(c.ramos) }))
-          .sort((a, b) => b.premio - a.premio),
-      }))
-      .sort((a, b) => b.premio - a.premio);
+    return Object.values(seguradoraStats).map(s => ({
+      nome: s.nome,
+      premio: s.premio,
+      count: s.count,
+      distinctCount: s.distinctKeys.size,
+      ticketMedio: s.distinctKeys.size > 0 ? s.premio / s.distinctKeys.size : 0,
+      percentualPremio: totalPremio > 0 ? s.premio / totalPremio * 100 : 0,
+      percentualCount: totalCount > 0 ? s.distinctKeys.size / totalCount * 100 : 0,
+      transportador: s.transportador,
+      embarcador: s.embarcador,
+      topRamos: Object.entries(s.ramoBreakdown).map(([ramo, stats]) => ({
+        ramo,
+        ...stats
+      })).sort((a, b) => b.premio - a.premio).slice(0, 3),
+      clientes: Array.from(s.clientesMap.values()).map(c => ({
+        ...c,
+        ramos: Array.from(c.ramos)
+      })).sort((a, b) => b.premio - a.premio)
+    })).sort((a, b) => b.premio - a.premio);
   }, [allQuotes, filters]);
-  
+
   // Backward compat - top 5 only
   const seguradoraData = seguradoraDataDetalhada.slice(0, 5);
 
   // Pie chart data
   const pieChartData = useMemo(() => {
-    return distribuicaoStatus.map((item) => ({
+    return distribuicaoStatus.map(item => ({
       name: item.status,
       value: item.count,
-      color:
-        item.status === "Em cotação"
-          ? "hsl(var(--brand-orange))"
-          : item.status === "Negócio fechado"
-            ? "hsl(var(--success-alt))"
-            : "hsl(var(--destructive))",
+      color: item.status === "Em cotação" ? "hsl(var(--brand-orange))" : item.status === "Negócio fechado" ? "hsl(var(--success-alt))" : "hsl(var(--destructive))"
     }));
   }, [distribuicaoStatus]);
 
   // Top produtores
   const topProdutores = useMemo(() => {
-    const produtorStats: Record<
-      string,
-      {
-        nome: string;
-        total: number;
-        fechadas: number;
-      }
-    > = {};
-    filteredCotacoes.forEach((cotacao) => {
+    const produtorStats: Record<string, {
+      nome: string;
+      total: number;
+      fechadas: number;
+    }> = {};
+    filteredCotacoes.forEach(cotacao => {
       if (cotacao.produtor_cotador) {
         const nome = cotacao.produtor_cotador.nome;
         if (!produtorStats[nome]) {
           produtorStats[nome] = {
             nome,
             total: 0,
-            fechadas: 0,
+            fechadas: 0
           };
         }
         produtorStats[nome].total++;
@@ -1061,42 +986,37 @@ const Dashboard = () => {
 
   // Análise por tipo de cliente (Transportador/Embarcador) - cotações em aberto
   const cotacoesPorTipoCliente = useMemo(() => {
-    const tipoStats: Record<string, { 
-      transportador: Set<string>; 
+    const tipoStats: Record<string, {
+      transportador: Set<string>;
       embarcador: Set<string>;
       transportadorCotacoes: Cotacao[];
       embarcadorCotacoes: Cotacao[];
       premioTransportador: number;
       premioEmbarcador: number;
     }> = {
-      "Em Aberto": { 
-        transportador: new Set(), 
+      "Em Aberto": {
+        transportador: new Set(),
         embarcador: new Set(),
         transportadorCotacoes: [],
         embarcadorCotacoes: [],
         premioTransportador: 0,
-        premioEmbarcador: 0,
+        premioEmbarcador: 0
       }
     };
-    
-    filteredCotacoes
-      .filter((c) => c.status === "Em cotação" || c.status === "Em análise")
-      .forEach((cotacao) => {
-        const segmento = cotacao.segmento || "Não informado";
-        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
-        const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
-        
-        if (segmento === "Transportador") {
-          tipoStats["Em Aberto"].transportador.add(key);
-          tipoStats["Em Aberto"].transportadorCotacoes.push(cotacao);
-          tipoStats["Em Aberto"].premioTransportador += Number(cotacao.valor_premio) || 0;
-        } else {
-          tipoStats["Em Aberto"].embarcador.add(key);
-          tipoStats["Em Aberto"].embarcadorCotacoes.push(cotacao);
-          tipoStats["Em Aberto"].premioEmbarcador += Number(cotacao.valor_premio) || 0;
-        }
-      });
-    
+    filteredCotacoes.filter(c => c.status === "Em cotação" || c.status === "Em análise").forEach(cotacao => {
+      const segmento = cotacao.segmento || "Não informado";
+      const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+      const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
+      if (segmento === "Transportador") {
+        tipoStats["Em Aberto"].transportador.add(key);
+        tipoStats["Em Aberto"].transportadorCotacoes.push(cotacao);
+        tipoStats["Em Aberto"].premioTransportador += Number(cotacao.valor_premio) || 0;
+      } else {
+        tipoStats["Em Aberto"].embarcador.add(key);
+        tipoStats["Em Aberto"].embarcadorCotacoes.push(cotacao);
+        tipoStats["Em Aberto"].premioEmbarcador += Number(cotacao.valor_premio) || 0;
+      }
+    });
     return {
       transportador: tipoStats["Em Aberto"].transportador.size,
       embarcador: tipoStats["Em Aberto"].embarcador.size,
@@ -1104,7 +1024,7 @@ const Dashboard = () => {
       transportadorCotacoes: tipoStats["Em Aberto"].transportadorCotacoes,
       embarcadorCotacoes: tipoStats["Em Aberto"].embarcadorCotacoes,
       premioTransportador: tipoStats["Em Aberto"].premioTransportador,
-      premioEmbarcador: tipoStats["Em Aberto"].premioEmbarcador,
+      premioEmbarcador: tipoStats["Em Aberto"].premioEmbarcador
     };
   }, [filteredCotacoes]);
 
@@ -1116,27 +1036,22 @@ const Dashboard = () => {
       transportadorCotacoes: [] as Cotacao[],
       embarcadorCotacoes: [] as Cotacao[],
       premioTransportador: 0,
-      premioEmbarcador: 0,
+      premioEmbarcador: 0
     };
-    
-    filteredCotacoes
-      .filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere")
-      .forEach((cotacao) => {
-        const segmento = cotacao.segmento || "Não informado";
-        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
-        const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
-        
-        if (segmento === "Transportador") {
-          tipoStats.transportador.add(key);
-          tipoStats.transportadorCotacoes.push(cotacao);
-          tipoStats.premioTransportador += Number(cotacao.valor_premio) || 0;
-        } else {
-          tipoStats.embarcador.add(key);
-          tipoStats.embarcadorCotacoes.push(cotacao);
-          tipoStats.premioEmbarcador += Number(cotacao.valor_premio) || 0;
-        }
-      });
-    
+    filteredCotacoes.filter(c => c.status === "Negócio fechado" || c.status === "Fechamento congênere").forEach(cotacao => {
+      const segmento = cotacao.segmento || "Não informado";
+      const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+      const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
+      if (segmento === "Transportador") {
+        tipoStats.transportador.add(key);
+        tipoStats.transportadorCotacoes.push(cotacao);
+        tipoStats.premioTransportador += Number(cotacao.valor_premio) || 0;
+      } else {
+        tipoStats.embarcador.add(key);
+        tipoStats.embarcadorCotacoes.push(cotacao);
+        tipoStats.premioEmbarcador += Number(cotacao.valor_premio) || 0;
+      }
+    });
     return {
       transportador: tipoStats.transportador.size,
       embarcador: tipoStats.embarcador.size,
@@ -1144,7 +1059,7 @@ const Dashboard = () => {
       transportadorCotacoes: tipoStats.transportadorCotacoes,
       embarcadorCotacoes: tipoStats.embarcadorCotacoes,
       premioTransportador: tipoStats.premioTransportador,
-      premioEmbarcador: tipoStats.premioEmbarcador,
+      premioEmbarcador: tipoStats.premioEmbarcador
     };
   }, [filteredCotacoes]);
 
@@ -1156,27 +1071,22 @@ const Dashboard = () => {
       transportadorCotacoes: [] as Cotacao[],
       embarcadorCotacoes: [] as Cotacao[],
       premioTransportador: 0,
-      premioEmbarcador: 0,
+      premioEmbarcador: 0
     };
-    
-    filteredCotacoes
-      .filter((c) => c.status === "Declinado")
-      .forEach((cotacao) => {
-        const segmento = cotacao.segmento || "Não informado";
-        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
-        const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
-        
-        if (segmento === "Transportador") {
-          tipoStats.transportador.add(key);
-          tipoStats.transportadorCotacoes.push(cotacao);
-          tipoStats.premioTransportador += Number(cotacao.valor_premio) || 0;
-        } else {
-          tipoStats.embarcador.add(key);
-          tipoStats.embarcadorCotacoes.push(cotacao);
-          tipoStats.premioEmbarcador += Number(cotacao.valor_premio) || 0;
-        }
-      });
-    
+    filteredCotacoes.filter(c => c.status === "Declinado").forEach(cotacao => {
+      const segmento = cotacao.segmento || "Não informado";
+      const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+      const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
+      if (segmento === "Transportador") {
+        tipoStats.transportador.add(key);
+        tipoStats.transportadorCotacoes.push(cotacao);
+        tipoStats.premioTransportador += Number(cotacao.valor_premio) || 0;
+      } else {
+        tipoStats.embarcador.add(key);
+        tipoStats.embarcadorCotacoes.push(cotacao);
+        tipoStats.premioEmbarcador += Number(cotacao.valor_premio) || 0;
+      }
+    });
     return {
       transportador: tipoStats.transportador.size,
       embarcador: tipoStats.embarcador.size,
@@ -1184,44 +1094,39 @@ const Dashboard = () => {
       transportadorCotacoes: tipoStats.transportadorCotacoes,
       embarcadorCotacoes: tipoStats.embarcadorCotacoes,
       premioTransportador: tipoStats.premioTransportador,
-      premioEmbarcador: tipoStats.premioEmbarcador,
+      premioEmbarcador: tipoStats.premioEmbarcador
     };
   }, [filteredCotacoes]);
 
   // Dados combinados para o gráfico empilhado
   const segmentoStackedData = useMemo(() => {
-    return [
-      {
-        name: "Em Aberto",
-        transportador: cotacoesPorTipoCliente.transportador,
-        embarcador: cotacoesPorTipoCliente.embarcador,
-        total: cotacoesPorTipoCliente.total,
-        premioTransportador: cotacoesPorTipoCliente.premioTransportador,
-        premioEmbarcador: cotacoesPorTipoCliente.premioEmbarcador,
-      },
-      {
-        name: "Fechados",
-        transportador: fechamentosPorTipoCliente.transportador,
-        embarcador: fechamentosPorTipoCliente.embarcador,
-        total: fechamentosPorTipoCliente.total,
-        premioTransportador: fechamentosPorTipoCliente.premioTransportador,
-        premioEmbarcador: fechamentosPorTipoCliente.premioEmbarcador,
-      },
-      {
-        name: "Declinados",
-        transportador: declinadosPorTipoCliente.transportador,
-        embarcador: declinadosPorTipoCliente.embarcador,
-        total: declinadosPorTipoCliente.total,
-        premioTransportador: declinadosPorTipoCliente.premioTransportador,
-        premioEmbarcador: declinadosPorTipoCliente.premioEmbarcador,
-      }
-    ];
+    return [{
+      name: "Em Aberto",
+      transportador: cotacoesPorTipoCliente.transportador,
+      embarcador: cotacoesPorTipoCliente.embarcador,
+      total: cotacoesPorTipoCliente.total,
+      premioTransportador: cotacoesPorTipoCliente.premioTransportador,
+      premioEmbarcador: cotacoesPorTipoCliente.premioEmbarcador
+    }, {
+      name: "Fechados",
+      transportador: fechamentosPorTipoCliente.transportador,
+      embarcador: fechamentosPorTipoCliente.embarcador,
+      total: fechamentosPorTipoCliente.total,
+      premioTransportador: fechamentosPorTipoCliente.premioTransportador,
+      premioEmbarcador: fechamentosPorTipoCliente.premioEmbarcador
+    }, {
+      name: "Declinados",
+      transportador: declinadosPorTipoCliente.transportador,
+      embarcador: declinadosPorTipoCliente.embarcador,
+      total: declinadosPorTipoCliente.total,
+      premioTransportador: declinadosPorTipoCliente.premioTransportador,
+      premioEmbarcador: declinadosPorTipoCliente.premioEmbarcador
+    }];
   }, [cotacoesPorTipoCliente, fechamentosPorTipoCliente, declinadosPorTipoCliente]);
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
+  const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  }).format(value);
   const formatDate = (dateString: string) => {
     // Parse the date from the database (which is stored as timestamptz in UTC)
     const date = new Date(dateString);
@@ -1249,22 +1154,15 @@ const Dashboard = () => {
     const sign = diff > 0 ? "+" : "";
     const icon = diff > 0 ? <TrendingUp className="h-3 w-3" /> : diff < 0 ? <TrendingDown className="h-3 w-3" /> : null;
     const color = diff > 0 ? "text-success" : diff < 0 ? "text-destructive" : "text-muted-foreground";
-    return (
-      <span className={`text-xs flex items-center gap-1 ${color}`}>
+    return <span className={`text-xs flex items-center gap-1 ${color}`}>
         {icon}
         {sign}
         {diff} ({sign}
         {percentage.toFixed(1)}%)
-      </span>
-    );
+      </span>;
   };
-  return (
-    <>
-      <WeeklyReminderModal
-        open={showReminder}
-        onClose={() => setShowReminder(false)}
-        userId={user?.user_id || ""}
-      />
+  return <>
+      <WeeklyReminderModal open={showReminder} onClose={() => setShowReminder(false)} userId={user?.user_id || ""} />
       
       <div className="space-y-6">
       {/* Header */}
@@ -1279,14 +1177,7 @@ const Dashboard = () => {
 
         <div className="flex flex-wrap gap-2 md:gap-3 w-full sm:w-auto items-center">
           {/* Dashboard Edit Toolbar - Admin Only */}
-          <DashboardEditToolbar
-            editMode={dashboardLayout.editMode}
-            setEditMode={dashboardLayout.setEditMode}
-            cards={dashboardLayout.cards}
-            toggleCardVisibility={dashboardLayout.toggleCardVisibility}
-            resetLayout={dashboardLayout.resetLayout}
-            canEdit={dashboardLayout.canEdit}
-          />
+          <DashboardEditToolbar editMode={dashboardLayout.editMode} setEditMode={dashboardLayout.setEditMode} cards={dashboardLayout.cards} toggleCardVisibility={dashboardLayout.toggleCardVisibility} resetLayout={dashboardLayout.resetLayout} canEdit={dashboardLayout.canEdit} />
           
           <Button variant="outline" onClick={handleImportCSV} size="sm" className="gap-2 flex-1 sm:flex-none">
             <Upload className="h-4 w-4" />
@@ -1302,13 +1193,7 @@ const Dashboard = () => {
       </div>
 
       {/* Filtros */}
-      <DashboardFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        produtores={produtores}
-        seguradoras={seguradoras}
-        ramos={ramos}
-      />
+      <DashboardFilters filters={filters} onFiltersChange={setFilters} produtores={produtores} seguradoras={seguradoras} ramos={ramos} />
 
       {/* KPIs Mensais com Comparativos */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
@@ -1329,21 +1214,15 @@ const Dashboard = () => {
                 <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
                   <div className="space-y-2">
                     <h4 className="font-semibold">Clientes em Cotação no Período</h4>
-                    {clientesEmCotacao.length > 0 ? (
-                      <div className="space-y-1">
-                        {clientesEmCotacao.map((cotacao) => (
-                          <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
+                    {clientesEmCotacao.length > 0 ? <div className="space-y-1">
+                        {clientesEmCotacao.map(cotacao => <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
                             <div className="font-medium">{cotacao.segurado}</div>
                             <div className="text-muted-foreground">
                               Data Cotação: {formatDate(cotacao.data_cotacao)}
                             </div>
                             <div className="text-muted-foreground">Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">Nenhum cliente em cotação no período</p>
-                    )}
+                          </div>)}
+                      </div> : <p className="text-xs text-muted-foreground">Nenhum cliente em cotação no período</p>}
                   </div>
                 </TooltipContent>
               </UITooltip>
@@ -1368,21 +1247,15 @@ const Dashboard = () => {
                 <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
                   <div className="space-y-2">
                     <h4 className="font-semibold">Clientes Fechados no Período</h4>
-                    {clientesFechados.length > 0 ? (
-                      <div className="space-y-1">
-                        {clientesFechados.map((cotacao, index) => (
-                          <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
+                    {clientesFechados.length > 0 ? <div className="space-y-1">
+                        {clientesFechados.map((cotacao, index) => <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
                             <div className="font-medium">{cotacao.segurado}</div>
                             <div className="text-muted-foreground">
                               Fechamento: {cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : "N/A"}
                             </div>
                             <div className="text-muted-foreground">Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">Nenhum cliente fechado no período</p>
-                    )}
+                          </div>)}
+                      </div> : <p className="text-xs text-muted-foreground">Nenhum cliente fechado no período</p>}
                   </div>
                 </TooltipContent>
               </UITooltip>
@@ -1419,14 +1292,10 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{Math.round(monthlyStats.tempoMedioFechamento)} dias</div>
-            {monthlyStats.tempoMedioComp.diff !== 0 ? (
-              <span className={`text-xs flex items-center gap-1 ${monthlyStats.tempoMedioComp.diff < 0 ? "text-success" : monthlyStats.tempoMedioComp.diff > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+            {monthlyStats.tempoMedioComp.diff !== 0 ? <span className={`text-xs flex items-center gap-1 ${monthlyStats.tempoMedioComp.diff < 0 ? "text-success" : monthlyStats.tempoMedioComp.diff > 0 ? "text-destructive" : "text-muted-foreground"}`}>
                 {monthlyStats.tempoMedioComp.diff < 0 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
                 {monthlyStats.tempoMedioComp.diff > 0 ? "+" : ""}{Math.round(monthlyStats.tempoMedioComp.diff)} dias ({monthlyStats.tempoMedioComp.percentage > 0 ? "+" : ""}{monthlyStats.tempoMedioComp.percentage.toFixed(1)}%)
-              </span>
-            ) : (
-              <p className="text-xs text-muted-foreground">Fechamento</p>
-            )}
+              </span> : <p className="text-xs text-muted-foreground">Fechamento</p>}
           </CardContent>
         </Card>
 
@@ -1455,37 +1324,25 @@ const Dashboard = () => {
 
       {/* KPIs por Segmento */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-4">
-        {['Transportes', 'Avulso', 'Ambiental', 'RC-V'].map((segmento) => {
+        {['Transportes', 'Avulso', 'Ambiental', 'RC-V'].map(segmento => {
           const stats = monthlyStats.segmentoStats[segmento];
-          const premioComp = stats.previousPremio > 0 
-            ? ((stats.premioTotal - stats.previousPremio) / stats.previousPremio) * 100 
-            : 0;
-          const fechadosComp = stats.previousFechados > 0 
-            ? stats.fechados - stats.previousFechados 
-            : 0;
-          const tempoMedioComp = stats.previousTempoMedio > 0 
-            ? stats.tempoMedio - stats.previousTempoMedio 
-            : 0;
-          const taxaComp = stats.previousTaxaConversao > 0 
-            ? stats.taxaConversao - stats.previousTaxaConversao 
-            : 0;
-          
+          const premioComp = stats.previousPremio > 0 ? (stats.premioTotal - stats.previousPremio) / stats.previousPremio * 100 : 0;
+          const fechadosComp = stats.previousFechados > 0 ? stats.fechados - stats.previousFechados : 0;
+          const tempoMedioComp = stats.previousTempoMedio > 0 ? stats.tempoMedio - stats.previousTempoMedio : 0;
+          const taxaComp = stats.previousTaxaConversao > 0 ? stats.taxaConversao - stats.previousTaxaConversao : 0;
           const segmentoColors: Record<string, string> = {
             'Transportes': 'bg-blue-500/10 border-blue-500/30',
             'Avulso': 'bg-amber-500/10 border-amber-500/30',
             'Ambiental': 'bg-emerald-500/10 border-emerald-500/30',
-            'RC-V': 'bg-purple-500/10 border-purple-500/30',
+            'RC-V': 'bg-purple-500/10 border-purple-500/30'
           };
-          
           const segmentoTextColors: Record<string, string> = {
             'Transportes': 'text-blue-500',
             'Avulso': 'text-amber-500',
             'Ambiental': 'text-emerald-500',
-            'RC-V': 'text-purple-500',
+            'RC-V': 'text-purple-500'
           };
-          
-          return (
-            <Card key={segmento} className={`border ${segmentoColors[segmento]}`}>
+          return <Card key={segmento} className={`border ${segmentoColors[segmento]}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
                 <CardTitle className={`text-xs font-semibold ${segmentoTextColors[segmento]}`}>
                   {segmento}
@@ -1501,11 +1358,9 @@ const Dashboard = () => {
                   <div className="text-center flex-1">
                     <div className="text-base font-bold text-success">{stats.fechados}</div>
                     <div className="text-[9px] text-muted-foreground">Fechado</div>
-                    {fechadosComp !== 0 && (
-                      <div className={`text-[9px] flex items-center justify-center gap-0.5 ${fechadosComp > 0 ? 'text-success' : 'text-destructive'}`}>
+                    {fechadosComp !== 0 && <div className={`text-[9px] flex items-center justify-center gap-0.5 ${fechadosComp > 0 ? 'text-success' : 'text-destructive'}`}>
                         {fechadosComp > 0 ? '+' : ''}{fechadosComp}
-                      </div>
-                    )}
+                      </div>}
                   </div>
                   <div className="text-center flex-1">
                     <div className="text-base font-bold text-destructive">{stats.declinados}</div>
@@ -1517,36 +1372,29 @@ const Dashboard = () => {
                   <div className="text-center flex-1">
                     <div className="text-sm font-bold">{Math.round(stats.tempoMedio)}d</div>
                     <div className="text-[9px] text-muted-foreground">T. Médio</div>
-                    {tempoMedioComp !== 0 && (
-                      <div className={`text-[9px] flex items-center justify-center gap-0.5 ${tempoMedioComp < 0 ? 'text-success' : 'text-destructive'}`}>
+                    {tempoMedioComp !== 0 && <div className={`text-[9px] flex items-center justify-center gap-0.5 ${tempoMedioComp < 0 ? 'text-success' : 'text-destructive'}`}>
                         {tempoMedioComp > 0 ? '+' : ''}{Math.round(tempoMedioComp)}d
-                      </div>
-                    )}
+                      </div>}
                   </div>
                   <div className="text-center flex-1">
                     <div className="text-sm font-bold text-success-alt">{stats.taxaConversao.toFixed(1)}%</div>
                     <div className="text-[9px] text-muted-foreground">Conv.</div>
-                    {taxaComp !== 0 && (
-                      <div className={`text-[9px] flex items-center justify-center gap-0.5 ${taxaComp > 0 ? 'text-success' : 'text-destructive'}`}>
+                    {taxaComp !== 0 && <div className={`text-[9px] flex items-center justify-center gap-0.5 ${taxaComp > 0 ? 'text-success' : 'text-destructive'}`}>
                         {taxaComp > 0 ? '+' : ''}{taxaComp.toFixed(1)}pp
-                      </div>
-                    )}
+                      </div>}
                   </div>
                 </div>
                 
                 {/* Linha 2: Prêmio Total */}
                 <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between">
                   <div className="text-xs font-semibold">{formatCurrency(stats.premioTotal)}</div>
-                  {premioComp !== 0 && (
-                    <div className={`text-[9px] flex items-center gap-0.5 ${premioComp > 0 ? 'text-success' : 'text-destructive'}`}>
+                  {premioComp !== 0 && <div className={`text-[9px] flex items-center gap-0.5 ${premioComp > 0 ? 'text-success' : 'text-destructive'}`}>
                       {premioComp > 0 ? <TrendingUp className="h-2 w-2" /> : <TrendingDown className="h-2 w-2" />}
                       {premioComp > 0 ? '+' : ''}{premioComp.toFixed(1)}%
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </CardContent>
-            </Card>
-          );
+            </Card>;
         })}
       </div>
 
@@ -1567,8 +1415,12 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {distribuicaoStatus.map(({ status, count, premioTotal, percentage }) => (
-                <div key={status} className="flex items-center justify-between">
+              {distribuicaoStatus.map(({
+                status,
+                count,
+                premioTotal,
+                percentage
+              }) => <div key={status} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Badge variant={getStatusBadgeVariant(status)}>{status}</Badge>
                     <span className="text-lg font-bold">{count}</span>
@@ -1576,12 +1428,13 @@ const Dashboard = () => {
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground">{formatCurrency(premioTotal)}</span>
                     <div className="w-20 bg-secondary rounded-full h-2">
-                      <div className="bg-primary rounded-full h-2" style={{ width: `${percentage}%` }} />
+                      <div className="bg-primary rounded-full h-2" style={{
+                      width: `${percentage}%`
+                    }} />
                     </div>
                     <span className="text-sm font-medium w-12 text-right">{percentage.toFixed(0)}%</span>
                   </div>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
         </Card>
@@ -1597,22 +1450,14 @@ const Dashboard = () => {
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">Clientes distintos por período</p>
               </div>
-              {topProdutoresDetalhado.length > 3 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowTopProdutoresModal(true)}
-                  className="text-xs gap-1"
-                >
+              {topProdutoresDetalhado.length > 3 && <Button variant="ghost" size="sm" onClick={() => setShowTopProdutoresModal(true)} className="text-xs gap-1">
                   Ver todos
                   <ExternalLink className="h-3 w-3" />
-                </Button>
-              )}
+                </Button>}
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            {topProdutoresDetalhado.length > 0 ? (
-              <div className="overflow-x-auto">
+            {topProdutoresDetalhado.length > 0 ? <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-xs text-muted-foreground">
@@ -1627,15 +1472,9 @@ const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {topProdutoresDetalhado.slice(0, 3).map((produtor, index) => (
-                      <tr key={produtor.nome} className="border-b border-border/50 hover:bg-muted/30">
+                    {topProdutoresDetalhado.slice(0, 3).map((produtor, index) => <tr key={produtor.nome} className="border-b border-border/50 hover:bg-muted/30">
                         <td className="py-2">
-                          <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
-                            index === 0 ? 'bg-amber-500 text-amber-950' : 
-                            index === 1 ? 'bg-slate-400 text-slate-950' : 
-                            index === 2 ? 'bg-amber-700 text-amber-100' : 
-                            'bg-muted text-muted-foreground'
-                          }`}>
+                          <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${index === 0 ? 'bg-amber-500 text-amber-950' : index === 1 ? 'bg-slate-400 text-slate-950' : index === 2 ? 'bg-amber-700 text-amber-100' : 'bg-muted text-muted-foreground'}`}>
                             {index + 1}
                           </span>
                         </td>
@@ -1658,54 +1497,30 @@ const Dashboard = () => {
                           <span className="font-medium text-muted-foreground text-xs">{formatCurrency(produtor.premioTotal)}</span>
                         </td>
                         <td className="py-2 text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => {
-                              setSelectedProdutor(produtor);
-                              setSelectedProdutorRanking(index + 1);
-                            }}
-                          >
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => {
+                        setSelectedProdutor(produtor);
+                        setSelectedProdutorRanking(index + 1);
+                      }}>
                             <Eye className="h-3 w-3" />
                           </Button>
                         </td>
-                      </tr>
-                    ))}
+                      </tr>)}
                   </tbody>
                 </table>
-                {topProdutoresDetalhado.length > 3 && (
-                  <p className="text-xs text-muted-foreground text-center mt-2">
+                {topProdutoresDetalhado.length > 3 && <p className="text-xs text-muted-foreground text-center mt-2">
                     +{topProdutoresDetalhado.length - 3} produtores
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground py-4 text-sm">
+                  </p>}
+              </div> : <p className="text-center text-muted-foreground py-4 text-sm">
                 Nenhum produtor encontrado no período
-              </p>
-            )}
+              </p>}
           </CardContent>
         </Card>
 
         {/* Modal de Top Produtores Detalhado */}
-        <TopProdutoresModal
-          open={showTopProdutoresModal}
-          onClose={() => setShowTopProdutoresModal(false)}
-          produtores={topProdutoresDetalhado}
-          formatCurrency={formatCurrency}
-          formatDate={formatDate}
-        />
+        <TopProdutoresModal open={showTopProdutoresModal} onClose={() => setShowTopProdutoresModal(false)} produtores={topProdutoresDetalhado} formatCurrency={formatCurrency} formatDate={formatDate} />
 
         {/* Modal Individual de Produtor */}
-        <ProdutorDetailModal
-          open={!!selectedProdutor}
-          onClose={() => setSelectedProdutor(null)}
-          produtor={selectedProdutor}
-          formatCurrency={formatCurrency}
-          formatDate={formatDate}
-          ranking={selectedProdutorRanking}
-        />
+        <ProdutorDetailModal open={!!selectedProdutor} onClose={() => setSelectedProdutor(null)} produtor={selectedProdutor} formatCurrency={formatCurrency} formatDate={formatDate} ranking={selectedProdutorRanking} />
       </div>
 
       {/* Gráficos e Análises Avançadas */}
@@ -1727,18 +1542,16 @@ const Dashboard = () => {
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={monthlyTrendData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip
-                  formatter={(value, name) => [
-                    value,
-                    name === "fechadas" ? "Fechadas" : name === "emCotacao" ? "Em Cotação" : "Total",
-                  ]}
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
-                  }}
-                />
+                <XAxis dataKey="mes" tick={{
+                  fontSize: 11
+                }} />
+                <YAxis tick={{
+                  fontSize: 11
+                }} />
+                <Tooltip formatter={(value, name) => [value, name === "fechadas" ? "Fechadas" : name === "emCotacao" ? "Em Cotação" : "Total"]} contentStyle={{
+                  backgroundColor: "hsl(var(--popover))",
+                  border: "1px solid hsl(var(--border))"
+                }} />
                 <Line type="monotone" dataKey="total" stroke="hsl(var(--muted-foreground))" strokeWidth={2} strokeDasharray="5 5" />
                 <Line type="monotone" dataKey="emCotacao" stroke="hsl(var(--brand-orange))" strokeWidth={2} />
                 <Line type="monotone" dataKey="fechadas" stroke="hsl(var(--success-alt))" strokeWidth={2} />
@@ -1764,8 +1577,7 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            {seguradoraData.length > 0 ? (
-              <div className="overflow-x-auto">
+            {seguradoraData.length > 0 ? <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-xs text-muted-foreground">
@@ -1776,15 +1588,9 @@ const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {seguradoraData.map((seg, index) => (
-                      <tr key={seg.nome} className="border-b border-border/50 hover:bg-muted/30">
+                    {seguradoraData.map((seg, index) => <tr key={seg.nome} className="border-b border-border/50 hover:bg-muted/30">
                         <td className="py-2">
-                          <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
-                            index === 0 ? 'bg-amber-500 text-amber-950' : 
-                            index === 1 ? 'bg-slate-400 text-slate-950' : 
-                            index === 2 ? 'bg-amber-700 text-amber-100' : 
-                            'bg-muted text-muted-foreground'
-                          }`}>
+                          <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${index === 0 ? 'bg-amber-500 text-amber-950' : index === 1 ? 'bg-slate-400 text-slate-950' : index === 2 ? 'bg-amber-700 text-amber-100' : 'bg-muted text-muted-foreground'}`}>
                             {index + 1}
                           </span>
                         </td>
@@ -1797,16 +1603,12 @@ const Dashboard = () => {
                         <td className="py-2 text-right">
                           <span className="font-semibold text-primary">{formatCurrency(seg.premio)}</span>
                         </td>
-                      </tr>
-                    ))}
+                      </tr>)}
                   </tbody>
                 </table>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+              </div> : <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
                 Nenhum dado disponível
-              </div>
-            )}
+              </div>}
           </CardContent>
         </Card>
       </div>
@@ -1828,30 +1630,19 @@ const Dashboard = () => {
                     <span className="font-medium">Total</span>
                     <span className="font-bold text-brand-orange">{cotacoesPorTipoCliente.total}</span>
                   </div>
-                  {cotacoesPorTipoCliente.total > 0 ? (
-                    <UITooltip>
+                  {cotacoesPorTipoCliente.total > 0 ? <UITooltip>
                       <TooltipTrigger asChild>
                         <div className="w-full bg-secondary rounded-full h-10 flex items-center overflow-hidden cursor-help">
-                          {cotacoesPorTipoCliente.transportador > 0 && (
-                            <div
-                              className="bg-brand-orange h-10 flex items-center justify-center text-xs font-medium text-white"
-                              style={{
-                                width: `${(cotacoesPorTipoCliente.transportador / cotacoesPorTipoCliente.total) * 100}%`,
-                              }}
-                            >
+                          {cotacoesPorTipoCliente.transportador > 0 && <div className="bg-brand-orange h-10 flex items-center justify-center text-xs font-medium text-white" style={{
+                          width: `${cotacoesPorTipoCliente.transportador / cotacoesPorTipoCliente.total * 100}%`
+                        }}>
                               {cotacoesPorTipoCliente.transportador}
-                            </div>
-                          )}
-                          {cotacoesPorTipoCliente.embarcador > 0 && (
-                            <div
-                              className="bg-chart-2 h-10 flex items-center justify-center text-xs font-medium text-white"
-                              style={{
-                                width: `${(cotacoesPorTipoCliente.embarcador / cotacoesPorTipoCliente.total) * 100}%`,
-                              }}
-                            >
+                            </div>}
+                          {cotacoesPorTipoCliente.embarcador > 0 && <div className="bg-chart-2 h-10 flex items-center justify-center text-xs font-medium text-white" style={{
+                          width: `${cotacoesPorTipoCliente.embarcador / cotacoesPorTipoCliente.total * 100}%`
+                        }}>
                               {cotacoesPorTipoCliente.embarcador}
-                            </div>
-                          )}
+                            </div>}
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-sm">
@@ -1872,12 +1663,9 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </TooltipContent>
-                    </UITooltip>
-                  ) : (
-                    <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
+                    </UITooltip> : <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
                       Nenhuma cotação
-                    </div>
-                  )}
+                    </div>}
                 </div>
                 
                 {/* Legenda e insights */}
@@ -1895,15 +1683,9 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Insight */}
-                {cotacoesPorTipoCliente.total > 0 && (
-                  <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
-                    {cotacoesPorTipoCliente.transportador > cotacoesPorTipoCliente.embarcador
-                      ? `Foco em Transportadores: ${((cotacoesPorTipoCliente.transportador / cotacoesPorTipoCliente.total) * 100).toFixed(0)}% do pipeline`
-                      : cotacoesPorTipoCliente.embarcador > cotacoesPorTipoCliente.transportador
-                      ? `Foco em Embarcadores: ${((cotacoesPorTipoCliente.embarcador / cotacoesPorTipoCliente.total) * 100).toFixed(0)}% do pipeline`
-                      : "Pipeline equilibrado entre segmentos"}
-                  </div>
-                )}
+                {cotacoesPorTipoCliente.total > 0 && <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                    {cotacoesPorTipoCliente.transportador > cotacoesPorTipoCliente.embarcador ? `Foco em Transportadores: ${(cotacoesPorTipoCliente.transportador / cotacoesPorTipoCliente.total * 100).toFixed(0)}% do pipeline` : cotacoesPorTipoCliente.embarcador > cotacoesPorTipoCliente.transportador ? `Foco em Embarcadores: ${(cotacoesPorTipoCliente.embarcador / cotacoesPorTipoCliente.total * 100).toFixed(0)}% do pipeline` : "Pipeline equilibrado entre segmentos"}
+                  </div>}
               </div>
             </TooltipProvider>
           </CardContent>
@@ -1924,30 +1706,19 @@ const Dashboard = () => {
                     <span className="font-medium">Total</span>
                     <span className="font-bold text-success-alt">{fechamentosPorTipoCliente.total}</span>
                   </div>
-                  {fechamentosPorTipoCliente.total > 0 ? (
-                    <UITooltip>
+                  {fechamentosPorTipoCliente.total > 0 ? <UITooltip>
                       <TooltipTrigger asChild>
                         <div className="w-full bg-secondary rounded-full h-10 flex items-center overflow-hidden cursor-help">
-                          {fechamentosPorTipoCliente.transportador > 0 && (
-                            <div
-                              className="bg-success-alt h-10 flex items-center justify-center text-xs font-medium text-white"
-                              style={{
-                                width: `${(fechamentosPorTipoCliente.transportador / fechamentosPorTipoCliente.total) * 100}%`,
-                              }}
-                            >
+                          {fechamentosPorTipoCliente.transportador > 0 && <div className="bg-success-alt h-10 flex items-center justify-center text-xs font-medium text-white" style={{
+                          width: `${fechamentosPorTipoCliente.transportador / fechamentosPorTipoCliente.total * 100}%`
+                        }}>
                               {fechamentosPorTipoCliente.transportador}
-                            </div>
-                          )}
-                          {fechamentosPorTipoCliente.embarcador > 0 && (
-                            <div
-                              className="bg-chart-4 h-10 flex items-center justify-center text-xs font-medium text-white"
-                              style={{
-                                width: `${(fechamentosPorTipoCliente.embarcador / fechamentosPorTipoCliente.total) * 100}%`,
-                              }}
-                            >
+                            </div>}
+                          {fechamentosPorTipoCliente.embarcador > 0 && <div className="bg-chart-4 h-10 flex items-center justify-center text-xs font-medium text-white" style={{
+                          width: `${fechamentosPorTipoCliente.embarcador / fechamentosPorTipoCliente.total * 100}%`
+                        }}>
                               {fechamentosPorTipoCliente.embarcador}
-                            </div>
-                          )}
+                            </div>}
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-sm">
@@ -1968,12 +1739,9 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </TooltipContent>
-                    </UITooltip>
-                  ) : (
-                    <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
+                    </UITooltip> : <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
                       Nenhum fechamento
-                    </div>
-                  )}
+                    </div>}
                 </div>
                 
                 {/* Legenda e insights */}
@@ -1991,8 +1759,7 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Ticket médio */}
-                {fechamentosPorTipoCliente.total > 0 && (
-                  <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded space-y-1">
+                {fechamentosPorTipoCliente.total > 0 && <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded space-y-1">
                     <div className="flex justify-between">
                       <span>Ticket médio Transp.:</span>
                       <span className="font-medium">{fechamentosPorTipoCliente.transportador > 0 ? formatCurrency(fechamentosPorTipoCliente.premioTransportador / fechamentosPorTipoCliente.transportador) : '-'}</span>
@@ -2001,8 +1768,7 @@ const Dashboard = () => {
                       <span>Ticket médio Embarc.:</span>
                       <span className="font-medium">{fechamentosPorTipoCliente.embarcador > 0 ? formatCurrency(fechamentosPorTipoCliente.premioEmbarcador / fechamentosPorTipoCliente.embarcador) : '-'}</span>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </div>
             </TooltipProvider>
           </CardContent>
@@ -2023,30 +1789,19 @@ const Dashboard = () => {
                     <span className="font-medium">Total</span>
                     <span className="font-bold text-destructive">{declinadosPorTipoCliente.total}</span>
                   </div>
-                  {declinadosPorTipoCliente.total > 0 ? (
-                    <UITooltip>
+                  {declinadosPorTipoCliente.total > 0 ? <UITooltip>
                       <TooltipTrigger asChild>
                         <div className="w-full bg-secondary rounded-full h-10 flex items-center overflow-hidden cursor-help">
-                          {declinadosPorTipoCliente.transportador > 0 && (
-                            <div
-                              className="bg-destructive h-10 flex items-center justify-center text-xs font-medium text-white"
-                              style={{
-                                width: `${(declinadosPorTipoCliente.transportador / declinadosPorTipoCliente.total) * 100}%`,
-                              }}
-                            >
+                          {declinadosPorTipoCliente.transportador > 0 && <div className="bg-destructive h-10 flex items-center justify-center text-xs font-medium text-white" style={{
+                          width: `${declinadosPorTipoCliente.transportador / declinadosPorTipoCliente.total * 100}%`
+                        }}>
                               {declinadosPorTipoCliente.transportador}
-                            </div>
-                          )}
-                          {declinadosPorTipoCliente.embarcador > 0 && (
-                            <div
-                              className="bg-chart-5 h-10 flex items-center justify-center text-xs font-medium text-white"
-                              style={{
-                                width: `${(declinadosPorTipoCliente.embarcador / declinadosPorTipoCliente.total) * 100}%`,
-                              }}
-                            >
+                            </div>}
+                          {declinadosPorTipoCliente.embarcador > 0 && <div className="bg-chart-5 h-10 flex items-center justify-center text-xs font-medium text-white" style={{
+                          width: `${declinadosPorTipoCliente.embarcador / declinadosPorTipoCliente.total * 100}%`
+                        }}>
                               {declinadosPorTipoCliente.embarcador}
-                            </div>
-                          )}
+                            </div>}
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-sm">
@@ -2067,12 +1822,9 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </TooltipContent>
-                    </UITooltip>
-                  ) : (
-                    <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
+                    </UITooltip> : <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
                       Nenhum declinado
-                    </div>
-                  )}
+                    </div>}
                 </div>
                 
                 {/* Legenda e insights */}
@@ -2090,14 +1842,9 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Taxa de declínio */}
-                {(cotacoesPorTipoCliente.total + fechamentosPorTipoCliente.total + declinadosPorTipoCliente.total) > 0 && (
-                  <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
-                    Taxa de declínio: {(
-                      (declinadosPorTipoCliente.total / 
-                      (cotacoesPorTipoCliente.total + fechamentosPorTipoCliente.total + declinadosPorTipoCliente.total)) * 100
-                    ).toFixed(1)}% do total de cotações
-                  </div>
-                )}
+                {cotacoesPorTipoCliente.total + fechamentosPorTipoCliente.total + declinadosPorTipoCliente.total > 0 && <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                    Taxa de declínio: {(declinadosPorTipoCliente.total / (cotacoesPorTipoCliente.total + fechamentosPorTipoCliente.total + declinadosPorTipoCliente.total) * 100).toFixed(1)}% do total de cotações
+                  </div>}
               </div>
             </TooltipProvider>
           </CardContent>
@@ -2105,21 +1852,10 @@ const Dashboard = () => {
       </div>
 
       {/* Seção de Metas */}
-      <MetasRealizadoChart
-        dateFilter={filters.dateFilter}
-        dateRange={filters.dateRange}
-        produtorFilter={filters.produtorFilter}
-        produtores={produtores}
-        fechamentosCount={monthlyStats.fechados}
-      />
+      <MetasRealizadoChart dateFilter={filters.dateFilter} dateRange={filters.dateRange} produtorFilter={filters.produtorFilter} produtores={produtores} fechamentosCount={monthlyStats.fechados} />
 
       {/* Batimento de Metas de Prêmio */}
-      <MetasPremioComparison
-        dateFilter={filters.dateFilter}
-        dateRange={filters.dateRange}
-        produtorFilter={filters.produtorFilter}
-        produtores={produtores}
-      />
+      <MetasPremioComparison dateFilter={filters.dateFilter} dateRange={filters.dateRange} produtorFilter={filters.produtorFilter} produtores={produtores} />
 
       {/* Cotações em Aberto - Sempre exibe TODAS as cotações "Em cotação", sem filtro de data */}
       <CotacoesEmAbertoChart cotacoes={allQuotes} produtorFilter={filters.produtorFilter} />
@@ -2127,89 +1863,10 @@ const Dashboard = () => {
       {/* Insights Adicionais */}
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {/* Gráfico de Pizza - Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribuição Atual</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="mt-4 space-y-2">
-              {pieChartData.map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{
-                      backgroundColor: item.color,
-                    }}
-                  ></div>
-                  <span className="text-sm">
-                    {item.name}: {item.value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        
 
         {/* Análise de Produtividade - Top Produtores com Fechadas destacadas */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Top Produtores
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {topProdutoresDetalhado.slice(0, 5).map((produtor, index) => {
-                const premioFormatado = formatCurrency(produtor.premioTotal);
-                return (
-                  <div key={produtor.nome} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                        index === 0 ? 'bg-amber-500 text-amber-950' : 
-                        index === 1 ? 'bg-slate-400 text-slate-950' : 
-                        index === 2 ? 'bg-amber-700 text-amber-100' : 
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {index + 1}
-                      </div>
-                      <span className="text-sm font-medium truncate max-w-[100px]">{produtor.nome}</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-success">{produtor.fechadasDistinct}</div>
-                        <div className="text-[10px] text-muted-foreground">fechadas</div>
-                      </div>
-                      <div className="text-right min-w-[80px]">
-                        <div className="text-xs font-semibold text-primary">{premioFormatado}</div>
-                        <div className="text-[10px] text-muted-foreground">{produtor.taxaConversao.toFixed(0)}% conv.</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        
 
         {/* Performance por Unidade - Com dados detalhados */}
         <Card>
@@ -2223,55 +1880,44 @@ const Dashboard = () => {
             <div className="space-y-3">
               {(() => {
                 // Calcular dados por unidade com distintos
-                const unidadeStats: Record<string, { 
-                  nome: string; 
-                  total: number; 
-                  fechadas: number; 
+                const unidadeStats: Record<string, {
+                  nome: string;
+                  total: number;
+                  fechadas: number;
                   premio: number;
                   distinctKeys: Set<string>;
                   distinctFechadas: Set<string>;
                 }> = {};
-                
-                filteredCotacoes.forEach((c) => {
+                filteredCotacoes.forEach(c => {
                   const nome = c.unidade?.descricao || 'Não informada';
                   if (!unidadeStats[nome]) {
-                    unidadeStats[nome] = { 
-                      nome, 
-                      total: 0, 
-                      fechadas: 0, 
+                    unidadeStats[nome] = {
+                      nome,
+                      total: 0,
+                      fechadas: 0,
                       premio: 0,
                       distinctKeys: new Set(),
-                      distinctFechadas: new Set(),
+                      distinctFechadas: new Set()
                     };
                   }
-                  
                   const branchGroup = getBranchGroup(c.ramo?.descricao);
                   const key = `${c.cpf_cnpj}_${branchGroup}`;
-                  
                   unidadeStats[nome].total++;
                   unidadeStats[nome].distinctKeys.add(key);
-                  
                   if (c.status === "Negócio fechado" || c.status === "Fechamento congênere") {
                     unidadeStats[nome].fechadas++;
                     unidadeStats[nome].distinctFechadas.add(key);
                     unidadeStats[nome].premio += c.valor_premio || 0;
                   }
                 });
-                
-                const unidadesOrdenadas = Object.values(unidadeStats)
-                  .map(u => ({
-                    ...u,
-                    distinctTotal: u.distinctKeys.size,
-                    distinctFechadas: u.distinctFechadas.size,
-                    taxa: u.distinctKeys.size > 0 ? (u.distinctFechadas.size / u.distinctKeys.size) * 100 : 0,
-                  }))
-                  .sort((a, b) => b.premio - a.premio)
-                  .slice(0, 5);
-                
+                const unidadesOrdenadas = Object.values(unidadeStats).map(u => ({
+                  ...u,
+                  distinctTotal: u.distinctKeys.size,
+                  distinctFechadas: u.distinctFechadas.size,
+                  taxa: u.distinctKeys.size > 0 ? u.distinctFechadas.size / u.distinctKeys.size * 100 : 0
+                })).sort((a, b) => b.premio - a.premio).slice(0, 5);
                 const maxPremio = unidadesOrdenadas[0]?.premio || 1;
-                
-                return unidadesOrdenadas.map((unidade) => (
-                  <div key={unidade.nome} className="space-y-2">
+                return unidadesOrdenadas.map(unidade => <div key={unidade.nome} className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">{unidade.nome}</span>
                       <div className="flex items-center gap-3">
@@ -2285,17 +1931,15 @@ const Dashboard = () => {
                     {/* Barra de progresso com prêmio */}
                     <div className="flex items-center gap-2">
                       <div className="flex-1 bg-secondary rounded-full h-2.5 overflow-hidden">
-                        <div 
-                          className="bg-gradient-to-r from-success to-success-alt h-full transition-all"
-                          style={{ width: `${(unidade.premio / maxPremio) * 100}%` }}
-                        />
+                        <div className="bg-gradient-to-r from-success to-success-alt h-full transition-all" style={{
+                        width: `${unidade.premio / maxPremio * 100}%`
+                      }} />
                       </div>
                       <span className="text-xs font-medium text-primary min-w-[70px] text-right">
                         {formatCurrency(unidade.premio)}
                       </span>
                     </div>
-                  </div>
-                ));
+                  </div>);
               })()}
             </div>
           </CardContent>
@@ -2303,145 +1947,20 @@ const Dashboard = () => {
       </div>
 
       {/* Cotações Recentes */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Cotações Recentes</CardTitle>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant={recentQuotesViewMode === "list" ? "default" : "outline"}
-              onClick={() => setRecentQuotesViewMode("list")}
-              className="gap-2"
-            >
-              <List className="h-4 w-4" />
-              Lista
-            </Button>
-            <Button
-              size="sm"
-              variant={recentQuotesViewMode === "cards" ? "default" : "outline"}
-              onClick={() => setRecentQuotesViewMode("cards")}
-              className="gap-2"
-            >
-              <Grid3X3 className="h-4 w-4" />
-              Cards
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {recentQuotesViewMode === "list" ? (
-            <div className="space-y-3 overflow-x-auto">
-              {recentQuotes.length > 0 ? (
-                <div className="space-y-2 min-w-[800px]">
-                  {/* Header */}
-                  <div className="grid grid-cols-12 gap-4 pb-2 border-b text-sm font-medium text-muted-foreground">
-                    <div className="col-span-2">Status</div>
-                    <div className="col-span-3">Segurado</div>
-                    <div className="col-span-2">Seguradora</div>
-                    <div className="col-span-2">Ramo</div>
-                    <div className="col-span-2">Produtor</div>
-                    <div className="col-span-1 text-right">Valor</div>
-                  </div>
-                  {/* Rows */}
-                  {recentQuotes.map((cotacao) => (
-                    <div
-                      key={cotacao.id}
-                      className="grid grid-cols-12 gap-4 py-2 rounded-lg hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="col-span-2">
-                        <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
-                          {cotacao.status}
-                        </Badge>
-                      </div>
-                      <div className="col-span-3">
-                        <p className="font-medium text-sm">{cotacao.segurado}</p>
-                        <p className="text-xs text-muted-foreground">{formatDate(cotacao.created_at)}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-sm">{cotacao.seguradora?.nome || "-"}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-sm">{cotacao.ramo?.descricao || "-"}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-sm">{cotacao.produtor_origem?.nome || "-"}</p>
-                      </div>
-                      <div className="col-span-1 text-right">
-                        <span className="text-sm font-bold text-quote-value">
-                          {formatCurrency(cotacao.valor_premio)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">Nenhuma cotação recente encontrada.</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {recentQuotes.length > 0 ? (
-                recentQuotes.map((cotacao) => (
-                  <div key={cotacao.id} className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                    <div className="flex items-start justify-between mb-2">
-                      <Badge variant={getStatusBadgeVariant(cotacao.status)} className="text-xs">
-                        {cotacao.status}
-                      </Badge>
-                      <span className="text-sm font-bold text-quote-value">{formatCurrency(cotacao.valor_premio)}</span>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="font-medium text-sm">{cotacao.segurado}</p>
-                      <p className="text-xs text-muted-foreground">{cotacao.seguradora?.nome}</p>
-                      <p className="text-xs text-muted-foreground">{cotacao.ramo?.descricao}</p>
-                      <p className="text-xs text-muted-foreground">Produtor: {cotacao.produtor_origem?.nome}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(cotacao.created_at)}</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8 col-span-full">
-                  <p className="text-sm text-muted-foreground">Nenhuma cotação recente encontrada.</p>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      
 
-      <CotacaoModal
-        cotacao={selectedCotacao}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedCotacao(null);
-        }}
-      />
+      <CotacaoModal cotacao={selectedCotacao} isOpen={isModalOpen} onClose={() => {
+        setIsModalOpen(false);
+        setSelectedCotacao(null);
+      }} />
       
       {/* Modais de Análise Detalhada */}
-      <StatusDetailModal
-        open={showStatusDetailModal}
-        onClose={() => setShowStatusDetailModal(false)}
-        statusData={distribuicaoStatusDetalhada}
-        formatCurrency={formatCurrency}
-        formatDate={formatDate}
-      />
+      <StatusDetailModal open={showStatusDetailModal} onClose={() => setShowStatusDetailModal(false)} statusData={distribuicaoStatusDetalhada} formatCurrency={formatCurrency} formatDate={formatDate} />
       
-      <TendenciaDetailModal
-        open={showTendenciaDetailModal}
-        onClose={() => setShowTendenciaDetailModal(false)}
-        monthlyData={monthlyTrendDataDetalhada}
-        formatCurrency={formatCurrency}
-      />
+      <TendenciaDetailModal open={showTendenciaDetailModal} onClose={() => setShowTendenciaDetailModal(false)} monthlyData={monthlyTrendDataDetalhada} formatCurrency={formatCurrency} />
       
-      <SeguradoraDetailModal
-        open={showSeguradoraDetailModal}
-        onClose={() => setShowSeguradoraDetailModal(false)}
-        seguradoras={seguradoraDataDetalhada}
-        formatCurrency={formatCurrency}
-      />
+      <SeguradoraDetailModal open={showSeguradoraDetailModal} onClose={() => setShowSeguradoraDetailModal(false)} seguradoras={seguradoraDataDetalhada} formatCurrency={formatCurrency} />
       </div>
-    </>
-  );
+    </>;
 };
 export default Dashboard;
