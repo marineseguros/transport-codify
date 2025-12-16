@@ -157,7 +157,7 @@ const Dashboard = () => {
 
     // Apply produtor filter
     if (filters.produtorFilter !== "todos") {
-      filtered = filtered.filter(cotacao => cotacao.produtor_cotador?.nome === filters.produtorFilter);
+      filtered = filtered.filter(cotacao => cotacao.produtor_origem?.nome === filters.produtorFilter);
     }
 
     // Apply seguradora filter
@@ -306,7 +306,7 @@ const Dashboard = () => {
 
     // Apply all filters consistently for both periods
     const baseFilteredQuotes = allQuotes.filter(c => {
-      const produtorMatch = filters.produtorFilter === "todos" || c.produtor_cotador?.nome === filters.produtorFilter;
+      const produtorMatch = filters.produtorFilter === "todos" || c.produtor_origem?.nome === filters.produtorFilter;
       const seguradoraMatch = filters.seguradoraFilter === "todas" || c.seguradora?.nome === filters.seguradoraFilter;
       const ramoMatch = filters.ramoFilter === "todos" || c.ramo?.descricao === filters.ramoFilter;
       const segmentoMatch = filters.segmentoFilter === "todos" || c.ramo?.segmento === filters.segmentoFilter;
@@ -650,8 +650,8 @@ const Dashboard = () => {
       }>;
     }> = {};
     filteredCotacoes.forEach(cotacao => {
-      if (cotacao.produtor_cotador) {
-        const nome = cotacao.produtor_cotador.nome;
+      if (cotacao.produtor_origem) {
+        const nome = cotacao.produtor_origem.nome;
         if (!produtorStats[nome]) {
           produtorStats[nome] = {
             nome,
@@ -795,7 +795,7 @@ const Dashboard = () => {
     const months = [];
     const now = new Date();
     const trendFilteredCotacoes = allQuotes.filter(cotacao => {
-      const produtorMatch = filters.produtorFilter === "todos" || cotacao.produtor_cotador?.nome === filters.produtorFilter;
+      const produtorMatch = filters.produtorFilter === "todos" || cotacao.produtor_origem?.nome === filters.produtorFilter;
       const seguradoraMatch = filters.seguradoraFilter === "todas" || cotacao.seguradora?.nome === filters.seguradoraFilter;
       const ramoMatch = filters.ramoFilter === "todos" || cotacao.ramo?.descricao === filters.ramoFilter;
       const segmentoMatch = filters.segmentoFilter === "todos" || cotacao.ramo?.segmento === filters.segmentoFilter;
@@ -862,7 +862,7 @@ const Dashboard = () => {
     const now = new Date();
     const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
     const seguradoraFilteredCotacoes = allQuotes.filter(cotacao => {
-      const produtorMatch = filters.produtorFilter === "todos" || cotacao.produtor_cotador?.nome === filters.produtorFilter;
+      const produtorMatch = filters.produtorFilter === "todos" || cotacao.produtor_origem?.nome === filters.produtorFilter;
       const seguradoraMatch = filters.seguradoraFilter === "todas" || cotacao.seguradora?.nome === filters.seguradoraFilter;
       const ramoMatch = filters.ramoFilter === "todos" || cotacao.ramo?.descricao === filters.ramoFilter;
       const segmentoMatch = filters.segmentoFilter === "todos" || cotacao.ramo?.segmento === filters.segmentoFilter;

@@ -50,7 +50,7 @@ interface Cotacao {
   data_fechamento: string | null;
   inicio_vigencia: string | null;
   ramo_id: string | null;
-  produtor_cotador?: { nome: string; email: string } | null;
+  produtor_origem?: { nome: string; email: string } | null;
 }
 
 interface MetasPremioComparisonProps {
@@ -363,7 +363,7 @@ export const MetasPremioComparison = ({
 
         const { data: cotacoesData, error: cotacoesError } = await supabase
           .from('cotacoes')
-          .select(`id, valor_premio, status, data_fechamento, inicio_vigencia, ramo_id, produtor_cotador:produtores!cotacoes_produtor_cotador_id_fkey(nome, email)`)
+          .select(`id, valor_premio, status, data_fechamento, inicio_vigencia, ramo_id, produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(nome, email)`)
           .in('status', ['Negócio fechado', 'Fechamento congênere'])
           .gte('data_fechamento', yearStart)
           .lte('data_fechamento', yearEnd);
@@ -389,7 +389,7 @@ export const MetasPremioComparison = ({
     if (selectedProdutorId) {
       const selectedProdutor = produtores.find(p => p.id === selectedProdutorId);
       if (selectedProdutor) {
-        filteredCotacoes = cotacoes.filter(c => c.produtor_cotador?.email === selectedProdutor.email);
+        filteredCotacoes = cotacoes.filter(c => c.produtor_origem?.email === selectedProdutor.email);
       }
     }
 
