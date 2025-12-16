@@ -153,7 +153,7 @@ const CustomTooltip = ({ active, payload, viewType }: any) => {
         </div>
         {representativeGroup?.produtorCotador && (
           <div>
-            <span className="text-muted-foreground">Produtor Cotador: </span>
+            <span className="text-muted-foreground">Produtor Origem: </span>
             <span className="font-medium text-foreground">{representativeGroup.produtorCotador}</span>
           </div>
         )}
@@ -205,11 +205,7 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: Co
     
     // Aplicar filtro de produtor (único filtro permitido além do seletor Recorrente/Total)
     if (produtorFilter !== 'todos') {
-      emCotacao = emCotacao.filter(c => 
-        c.produtor_cotador?.nome === produtorFilter ||
-        c.produtor_negociador?.nome === produtorFilter ||
-        c.produtor_origem?.nome === produtorFilter
-      );
+      emCotacao = emCotacao.filter(c => c.produtor_origem?.nome === produtorFilter);
     }
     const groupedBySegurado = new Map<string, SeguradoData>();
     
@@ -247,7 +243,7 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: Co
         premio,
         regra,
         dataCotacao: cotacao.data_cotacao,
-        produtorCotador: cotacao.produtor_cotador?.nome || null,
+        produtorCotador: cotacao.produtor_origem?.nome || null,
       };
       
       // Agrupar por ramoGroup para somar RCTR-C + RC-DC
@@ -259,7 +255,7 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: Co
           segmento,
           premioTotal: 0,
           dataMaisAntiga: cotacao.data_cotacao,
-          produtorCotador: cotacao.produtor_cotador?.nome || null,
+          produtorCotador: cotacao.produtor_origem?.nome || null,
           cotacoes: [],
         });
       }
