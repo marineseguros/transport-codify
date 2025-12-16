@@ -155,9 +155,16 @@ const Dashboard = () => {
   const filteredCotacoes = useMemo(() => {
     let filtered = allQuotes;
 
-    // Apply produtor filter
+    // Apply produtor filter with mixed logic:
+    // - "Em cotação" uses produtor_cotador
+    // - "Fechados" and "Declinado" uses produtor_origem
     if (filters.produtorFilter !== "todos") {
-      filtered = filtered.filter(cotacao => cotacao.produtor_origem?.nome === filters.produtorFilter);
+      filtered = filtered.filter(cotacao => {
+        if (cotacao.status === "Em cotação") {
+          return cotacao.produtor_cotador?.nome === filters.produtorFilter;
+        }
+        return cotacao.produtor_origem?.nome === filters.produtorFilter;
+      });
     }
 
     // Apply seguradora filter
@@ -304,9 +311,17 @@ const Dashboard = () => {
         previousEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
     }
 
-    // Apply all filters consistently for both periods
+    // Apply all filters consistently for both periods with mixed produtor logic
     const baseFilteredQuotes = allQuotes.filter(c => {
-      const produtorMatch = filters.produtorFilter === "todos" || c.produtor_origem?.nome === filters.produtorFilter;
+      // Produtor filter: cotador for "Em cotação", origem for others
+      let produtorMatch = true;
+      if (filters.produtorFilter !== "todos") {
+        if (c.status === "Em cotação") {
+          produtorMatch = c.produtor_cotador?.nome === filters.produtorFilter;
+        } else {
+          produtorMatch = c.produtor_origem?.nome === filters.produtorFilter;
+        }
+      }
       const seguradoraMatch = filters.seguradoraFilter === "todas" || c.seguradora?.nome === filters.seguradoraFilter;
       const ramoMatch = filters.ramoFilter === "todos" || c.ramo?.descricao === filters.ramoFilter;
       const segmentoMatch = filters.segmentoFilter === "todos" || c.ramo?.segmento === filters.segmentoFilter;
@@ -650,8 +665,16 @@ const Dashboard = () => {
       }>;
     }> = {};
     filteredCotacoes.forEach(cotacao => {
-      if (cotacao.produtor_origem) {
-        const nome = cotacao.produtor_origem.nome;
+      // Use produtor_cotador for "Em cotação", produtor_origem for others
+      let produtorNome: string | null = null;
+      if (cotacao.status === "Em cotação") {
+        produtorNome = cotacao.produtor_cotador?.nome || null;
+      } else {
+        produtorNome = cotacao.produtor_origem?.nome || null;
+      }
+      
+      if (produtorNome) {
+        const nome = produtorNome;
         if (!produtorStats[nome]) {
           produtorStats[nome] = {
             nome,
@@ -795,7 +818,15 @@ const Dashboard = () => {
     const months = [];
     const now = new Date();
     const trendFilteredCotacoes = allQuotes.filter(cotacao => {
-      const produtorMatch = filters.produtorFilter === "todos" || cotacao.produtor_origem?.nome === filters.produtorFilter;
+      // Mixed produtor logic: cotador for "Em cotação", origem for others
+      let produtorMatch = true;
+      if (filters.produtorFilter !== "todos") {
+        if (cotacao.status === "Em cotação") {
+          produtorMatch = cotacao.produtor_cotador?.nome === filters.produtorFilter;
+        } else {
+          produtorMatch = cotacao.produtor_origem?.nome === filters.produtorFilter;
+        }
+      }
       const seguradoraMatch = filters.seguradoraFilter === "todas" || cotacao.seguradora?.nome === filters.seguradoraFilter;
       const ramoMatch = filters.ramoFilter === "todos" || cotacao.ramo?.descricao === filters.ramoFilter;
       const segmentoMatch = filters.segmentoFilter === "todos" || cotacao.ramo?.segmento === filters.segmentoFilter;
