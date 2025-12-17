@@ -4,22 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePickerWithRange } from "@/components/ui/date-picker";
 import { DateRange } from "react-day-picker";
-import { CalendarIcon, Filter, X, Save, Bookmark } from "lucide-react";
+import { Filter, X, Save, Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Produtor, Seguradora, Ramo } from "@/hooks/useSupabaseData";
+import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select";
+import type { Produtor, Seguradora, Ramo, Unidade } from "@/hooks/useSupabaseData";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface DashboardFilterValues {
   dateFilter: string;
   dateRange?: DateRange;
-  produtorFilter: string;
-  seguradoraFilter: string;
-  ramoFilter: string;
-  segmentoFilter: string;
-  regraFilter: string;
+  produtorFilter: string[];
+  seguradoraFilter: string[];
+  ramoFilter: string[];
+  segmentoFilter: string[];
+  regraFilter: string[];
+  unidadeFilter: string[];
   anoEspecifico: string;
 }
 
@@ -34,6 +36,7 @@ interface DashboardFiltersProps {
   produtores: Produtor[];
   seguradoras: Seguradora[];
   ramos: Ramo[];
+  unidades: Unidade[];
 }
 
 const STORAGE_KEY_PREFIX = "dashboard_saved_filters";
@@ -72,6 +75,7 @@ export function DashboardFilters({
   produtores,
   seguradoras,
   ramos,
+  unidades,
 }: DashboardFiltersProps) {
   const { user } = useAuth();
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
@@ -88,7 +92,13 @@ export function DashboardFilters({
     const stored = localStorage.getItem(storageKey);
     if (stored) {
       try {
-        setSavedFilters(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        // Migrate old single-value filters to arrays
+        const migrated = parsed.map((saved: SavedFilter) => ({
+          ...saved,
+          filters: migrateFiltersToArray(saved.filters)
+        }));
+        setSavedFilters(migrated);
       } catch (e) {
         console.error("Error loading saved filters:", e);
       }
@@ -96,6 +106,45 @@ export function DashboardFilters({
       setSavedFilters([]);
     }
   }, [storageKey, user?.user_id]);
+
+  // Migration helper for old single-value filters
+  const migrateFiltersToArray = (oldFilters: any): DashboardFilterValues => {
+    return {
+      dateFilter: oldFilters.dateFilter || "mes_atual",
+      dateRange: oldFilters.dateRange,
+      produtorFilter: Array.isArray(oldFilters.produtorFilter) 
+        ? oldFilters.produtorFilter 
+        : oldFilters.produtorFilter && oldFilters.produtorFilter !== "todos" 
+          ? [oldFilters.produtorFilter] 
+          : [],
+      seguradoraFilter: Array.isArray(oldFilters.seguradoraFilter)
+        ? oldFilters.seguradoraFilter
+        : oldFilters.seguradoraFilter && oldFilters.seguradoraFilter !== "todas"
+          ? [oldFilters.seguradoraFilter]
+          : [],
+      ramoFilter: Array.isArray(oldFilters.ramoFilter)
+        ? oldFilters.ramoFilter
+        : oldFilters.ramoFilter && oldFilters.ramoFilter !== "todos"
+          ? [oldFilters.ramoFilter]
+          : [],
+      segmentoFilter: Array.isArray(oldFilters.segmentoFilter)
+        ? oldFilters.segmentoFilter
+        : oldFilters.segmentoFilter && oldFilters.segmentoFilter !== "todos"
+          ? [oldFilters.segmentoFilter]
+          : [],
+      regraFilter: Array.isArray(oldFilters.regraFilter)
+        ? oldFilters.regraFilter
+        : oldFilters.regraFilter && oldFilters.regraFilter !== "todas"
+          ? [oldFilters.regraFilter]
+          : [],
+      unidadeFilter: Array.isArray(oldFilters.unidadeFilter)
+        ? oldFilters.unidadeFilter
+        : oldFilters.unidadeFilter && oldFilters.unidadeFilter !== "todas"
+          ? [oldFilters.unidadeFilter]
+          : [],
+      anoEspecifico: oldFilters.anoEspecifico || "",
+    };
+  };
 
   const updateFilter = <K extends keyof DashboardFilterValues>(
     key: K,
@@ -108,11 +157,12 @@ export function DashboardFilters({
     onFiltersChange({
       dateFilter: "mes_atual",
       dateRange: undefined,
-      produtorFilter: "todos",
-      seguradoraFilter: "todas",
-      ramoFilter: "todos",
-      segmentoFilter: "todos",
-      regraFilter: "todas",
+      produtorFilter: [],
+      seguradoraFilter: [],
+      ramoFilter: [],
+      segmentoFilter: [],
+      regraFilter: [],
+      unidadeFilter: [],
       anoEspecifico: "",
     });
   };
@@ -137,7 +187,7 @@ export function DashboardFilters({
   };
 
   const loadSavedFilter = (saved: SavedFilter) => {
-    onFiltersChange(saved.filters);
+    onFiltersChange(migrateFiltersToArray(saved.filters));
     toast.success(`Filtro "${saved.name}" aplicado`);
   };
 
@@ -154,11 +204,39 @@ export function DashboardFilters({
 
   const hasActiveFilters =
     filters.dateFilter !== "mes_atual" ||
-    filters.produtorFilter !== "todos" ||
-    filters.seguradoraFilter !== "todas" ||
-    filters.ramoFilter !== "todos" ||
-    filters.segmentoFilter !== "todos" ||
-    filters.regraFilter !== "todas";
+    filters.produtorFilter.length > 0 ||
+    filters.seguradoraFilter.length > 0 ||
+    filters.ramoFilter.length > 0 ||
+    filters.segmentoFilter.length > 0 ||
+    filters.regraFilter.length > 0 ||
+    filters.unidadeFilter.length > 0;
+
+  // Build options for multiselect
+  const produtorOptions: MultiSelectOption[] = produtores
+    .filter((p) => p.ativo)
+    .map((p) => ({ value: p.nome, label: p.nome }));
+
+  const seguradoraOptions: MultiSelectOption[] = seguradoras
+    .filter((s) => s.ativo)
+    .map((s) => ({ value: s.nome, label: s.nome }));
+
+  const ramoOptions: MultiSelectOption[] = ramos
+    .filter((r) => r.ativo)
+    .map((r) => ({ value: r.descricao, label: r.descricao }));
+
+  const segmentoOptions: MultiSelectOption[] = segmentos.map((s) => ({
+    value: s,
+    label: s,
+  }));
+
+  const regraOptions: MultiSelectOption[] = regras.map((r) => ({
+    value: r,
+    label: r,
+  }));
+
+  const unidadeOptions: MultiSelectOption[] = unidades
+    .filter((u) => u.ativo)
+    .map((u) => ({ value: u.descricao, label: u.descricao }));
 
   return (
     <Card>
@@ -249,7 +327,7 @@ export function DashboardFilters({
         </div>
       </CardHeader>
       <CardContent className="pt-0 pb-3">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 xl:grid-cols-9 gap-2">
           {/* Período */}
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Período</Label>
@@ -302,112 +380,70 @@ export function DashboardFilters({
             </div>
           )}
 
-          {/* Produtor */}
+          {/* Produtor - Multiselect */}
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Produtor</Label>
-            <Select
-              value={filters.produtorFilter}
-              onValueChange={(v) => updateFilter("produtorFilter", v)}
-            >
-              <SelectTrigger className="h-8 text-xs w-full">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                {produtores
-                  .filter((p) => p.ativo)
-                  .map((produtor) => (
-                    <SelectItem key={produtor.id} value={produtor.nome}>
-                      {produtor.nome}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={produtorOptions}
+              selected={filters.produtorFilter}
+              onChange={(v) => updateFilter("produtorFilter", v)}
+              placeholder="Todos"
+            />
           </div>
 
-          {/* Seguradora */}
+          {/* Seguradora - Multiselect */}
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Seguradora</Label>
-            <Select
-              value={filters.seguradoraFilter}
-              onValueChange={(v) => updateFilter("seguradoraFilter", v)}
-            >
-              <SelectTrigger className="h-8 text-xs w-full">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                {seguradoras
-                  .filter((s) => s.ativo)
-                  .map((seg) => (
-                    <SelectItem key={seg.id} value={seg.nome}>
-                      {seg.nome}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={seguradoraOptions}
+              selected={filters.seguradoraFilter}
+              onChange={(v) => updateFilter("seguradoraFilter", v)}
+              placeholder="Todas"
+            />
           </div>
 
-          {/* Ramo */}
+          {/* Ramo - Multiselect */}
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Ramo</Label>
-            <Select value={filters.ramoFilter} onValueChange={(v) => updateFilter("ramoFilter", v)}>
-              <SelectTrigger className="h-8 text-xs w-full">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                {ramos
-                  .filter((r) => r.ativo)
-                  .map((ramo) => (
-                    <SelectItem key={ramo.id} value={ramo.descricao}>
-                      {ramo.descricao}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={ramoOptions}
+              selected={filters.ramoFilter}
+              onChange={(v) => updateFilter("ramoFilter", v)}
+              placeholder="Todos"
+            />
           </div>
 
-          {/* Segmento */}
+          {/* Segmento - Multiselect */}
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Segmento</Label>
-            <Select
-              value={filters.segmentoFilter}
-              onValueChange={(v) => updateFilter("segmentoFilter", v)}
-            >
-              <SelectTrigger className="h-8 text-xs w-full">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                {segmentos.map((seg) => (
-                  <SelectItem key={seg} value={seg}>
-                    {seg}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={segmentoOptions}
+              selected={filters.segmentoFilter}
+              onChange={(v) => updateFilter("segmentoFilter", v)}
+              placeholder="Todos"
+            />
           </div>
 
-          {/* Tipo de Regra */}
+          {/* Tipo de Regra - Multiselect */}
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
-            <Select
-              value={filters.regraFilter}
-              onValueChange={(v) => updateFilter("regraFilter", v)}
-            >
-              <SelectTrigger className="h-8 text-xs w-full">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                {regras.map((regra) => (
-                  <SelectItem key={regra} value={regra}>
-                    {regra}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={regraOptions}
+              selected={filters.regraFilter}
+              onChange={(v) => updateFilter("regraFilter", v)}
+              placeholder="Todas"
+            />
+          </div>
+
+          {/* Unidade - Multiselect */}
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Unidade</Label>
+            <MultiSelect
+              options={unidadeOptions}
+              selected={filters.unidadeFilter}
+              onChange={(v) => updateFilter("unidadeFilter", v)}
+              placeholder="Todas"
+            />
           </div>
         </div>
       </CardContent>

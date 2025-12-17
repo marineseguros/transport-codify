@@ -90,11 +90,12 @@ const Dashboard = () => {
   const [filters, setFilters] = useState<DashboardFilterValues>({
     dateFilter: "mes_atual",
     dateRange: undefined,
-    produtorFilter: "todos",
-    seguradoraFilter: "todas",
-    ramoFilter: "todos",
-    segmentoFilter: "todos",
-    regraFilter: "todas",
+    produtorFilter: [],
+    seguradoraFilter: [],
+    ramoFilter: [],
+    segmentoFilter: [],
+    regraFilter: [],
+    unidadeFilter: [],
     anoEspecifico: ""
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -158,33 +159,38 @@ const Dashboard = () => {
     // Apply produtor filter with mixed logic:
     // - "Em cotação" uses produtor_cotador
     // - "Fechados" and "Declinado" uses produtor_origem
-    if (filters.produtorFilter !== "todos") {
+    if (filters.produtorFilter.length > 0) {
       filtered = filtered.filter(cotacao => {
         if (cotacao.status === "Em cotação") {
-          return cotacao.produtor_cotador?.nome === filters.produtorFilter;
+          return cotacao.produtor_cotador?.nome && filters.produtorFilter.includes(cotacao.produtor_cotador.nome);
         }
-        return cotacao.produtor_origem?.nome === filters.produtorFilter;
+        return cotacao.produtor_origem?.nome && filters.produtorFilter.includes(cotacao.produtor_origem.nome);
       });
     }
 
     // Apply seguradora filter
-    if (filters.seguradoraFilter !== "todas") {
-      filtered = filtered.filter(cotacao => cotacao.seguradora?.nome === filters.seguradoraFilter);
+    if (filters.seguradoraFilter.length > 0) {
+      filtered = filtered.filter(cotacao => cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
     }
 
     // Apply ramo filter
-    if (filters.ramoFilter !== "todos") {
-      filtered = filtered.filter(cotacao => cotacao.ramo?.descricao === filters.ramoFilter);
+    if (filters.ramoFilter.length > 0) {
+      filtered = filtered.filter(cotacao => cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
     }
 
     // Apply segmento filter (from ramo)
-    if (filters.segmentoFilter !== "todos") {
-      filtered = filtered.filter(cotacao => cotacao.ramo?.segmento === filters.segmentoFilter);
+    if (filters.segmentoFilter.length > 0) {
+      filtered = filtered.filter(cotacao => cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
     }
 
     // Apply regra filter (from ramo - database field)
-    if (filters.regraFilter !== "todas") {
-      filtered = filtered.filter(cotacao => cotacao.ramo?.regra === filters.regraFilter);
+    if (filters.regraFilter.length > 0) {
+      filtered = filtered.filter(cotacao => cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
+    }
+
+    // Apply unidade filter
+    if (filters.unidadeFilter.length > 0) {
+      filtered = filtered.filter(cotacao => cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
     }
 
     // Apply date filter
@@ -315,18 +321,19 @@ const Dashboard = () => {
     const baseFilteredQuotes = allQuotes.filter(c => {
       // Produtor filter: cotador for "Em cotação", origem for others
       let produtorMatch = true;
-      if (filters.produtorFilter !== "todos") {
+      if (filters.produtorFilter.length > 0) {
         if (c.status === "Em cotação") {
-          produtorMatch = c.produtor_cotador?.nome === filters.produtorFilter;
+          produtorMatch = c.produtor_cotador?.nome ? filters.produtorFilter.includes(c.produtor_cotador.nome) : false;
         } else {
-          produtorMatch = c.produtor_origem?.nome === filters.produtorFilter;
+          produtorMatch = c.produtor_origem?.nome ? filters.produtorFilter.includes(c.produtor_origem.nome) : false;
         }
       }
-      const seguradoraMatch = filters.seguradoraFilter === "todas" || c.seguradora?.nome === filters.seguradoraFilter;
-      const ramoMatch = filters.ramoFilter === "todos" || c.ramo?.descricao === filters.ramoFilter;
-      const segmentoMatch = filters.segmentoFilter === "todos" || c.ramo?.segmento === filters.segmentoFilter;
-      const regraMatch = filters.regraFilter === "todas" || c.ramo?.regra === filters.regraFilter;
-      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch;
+      const seguradoraMatch = filters.seguradoraFilter.length === 0 || (c.seguradora?.nome && filters.seguradoraFilter.includes(c.seguradora.nome));
+      const ramoMatch = filters.ramoFilter.length === 0 || (c.ramo?.descricao && filters.ramoFilter.includes(c.ramo.descricao));
+      const segmentoMatch = filters.segmentoFilter.length === 0 || (c.ramo?.segmento && filters.segmentoFilter.includes(c.ramo.segmento));
+      const regraMatch = filters.regraFilter.length === 0 || (c.ramo?.regra && filters.regraFilter.includes(c.ramo.regra));
+      const unidadeMatch = filters.unidadeFilter.length === 0 || (c.unidade?.descricao && filters.unidadeFilter.includes(c.unidade.descricao));
+      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
     });
 
     // Filter quotations (Em cotação, Declinado) by data_cotacao
@@ -820,18 +827,19 @@ const Dashboard = () => {
     const trendFilteredCotacoes = allQuotes.filter(cotacao => {
       // Mixed produtor logic: cotador for "Em cotação", origem for others
       let produtorMatch = true;
-      if (filters.produtorFilter !== "todos") {
+      if (filters.produtorFilter.length > 0) {
         if (cotacao.status === "Em cotação") {
-          produtorMatch = cotacao.produtor_cotador?.nome === filters.produtorFilter;
+          produtorMatch = cotacao.produtor_cotador?.nome ? filters.produtorFilter.includes(cotacao.produtor_cotador.nome) : false;
         } else {
-          produtorMatch = cotacao.produtor_origem?.nome === filters.produtorFilter;
+          produtorMatch = cotacao.produtor_origem?.nome ? filters.produtorFilter.includes(cotacao.produtor_origem.nome) : false;
         }
       }
-      const seguradoraMatch = filters.seguradoraFilter === "todas" || cotacao.seguradora?.nome === filters.seguradoraFilter;
-      const ramoMatch = filters.ramoFilter === "todos" || cotacao.ramo?.descricao === filters.ramoFilter;
-      const segmentoMatch = filters.segmentoFilter === "todos" || cotacao.ramo?.segmento === filters.segmentoFilter;
-      const regraMatch = filters.regraFilter === "todas" || cotacao.ramo?.regra === filters.regraFilter;
-      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch;
+      const seguradoraMatch = filters.seguradoraFilter.length === 0 || (cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
+      const ramoMatch = filters.ramoFilter.length === 0 || (cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
+      const segmentoMatch = filters.segmentoFilter.length === 0 || (cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
+      const regraMatch = filters.regraFilter.length === 0 || (cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
+      const unidadeMatch = filters.unidadeFilter.length === 0 || (cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
+      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
     });
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -893,13 +901,14 @@ const Dashboard = () => {
     const now = new Date();
     const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
     const seguradoraFilteredCotacoes = allQuotes.filter(cotacao => {
-      const produtorMatch = filters.produtorFilter === "todos" || cotacao.produtor_origem?.nome === filters.produtorFilter;
-      const seguradoraMatch = filters.seguradoraFilter === "todas" || cotacao.seguradora?.nome === filters.seguradoraFilter;
-      const ramoMatch = filters.ramoFilter === "todos" || cotacao.ramo?.descricao === filters.ramoFilter;
-      const segmentoMatch = filters.segmentoFilter === "todos" || cotacao.ramo?.segmento === filters.segmentoFilter;
-      const regraMatch = filters.regraFilter === "todas" || cotacao.ramo?.regra === filters.regraFilter;
+      const produtorMatch = filters.produtorFilter.length === 0 || (cotacao.produtor_origem?.nome && filters.produtorFilter.includes(cotacao.produtor_origem.nome));
+      const seguradoraMatch = filters.seguradoraFilter.length === 0 || (cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
+      const ramoMatch = filters.ramoFilter.length === 0 || (cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
+      const segmentoMatch = filters.segmentoFilter.length === 0 || (cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
+      const regraMatch = filters.regraFilter.length === 0 || (cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
+      const unidadeMatch = filters.unidadeFilter.length === 0 || (cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
       const dateMatch = new Date(cotacao.data_cotacao) >= twelveMonthsAgo;
-      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && dateMatch;
+      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch && dateMatch;
     });
     seguradoraFilteredCotacoes.forEach(cotacao => {
       if (cotacao.seguradora && (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") && cotacao.valor_premio > 0) {
@@ -1224,7 +1233,7 @@ const Dashboard = () => {
       </div>
 
       {/* Filtros */}
-      <DashboardFilters filters={filters} onFiltersChange={setFilters} produtores={produtores} seguradoras={seguradoras} ramos={ramos} />
+      <DashboardFilters filters={filters} onFiltersChange={setFilters} produtores={produtores} seguradoras={seguradoras} ramos={ramos} unidades={unidades} />
 
       {/* KPIs Mensais com Comparativos */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
