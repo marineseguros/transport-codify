@@ -56,7 +56,7 @@ interface Cotacao {
 interface MetasPremioComparisonProps {
   dateFilter: string;
   dateRange: DateRange | undefined;
-  produtorFilter: string;
+  produtorFilter: string[];
   produtores: { id: string; nome: string; email: string }[];
 }
 
@@ -319,11 +319,12 @@ export const MetasPremioComparison = ({
     };
   }, [dateFilter, dateRange]);
 
-  // Get selected produtor ID
-  const selectedProdutorId = useMemo(() => {
-    if (produtorFilter === "todos") return null;
-    const produtor = produtores.find(p => p.nome === produtorFilter);
-    return produtor?.id || null;
+  // Get selected produtor ID - supports multiple selection
+  const selectedProdutorIds = useMemo(() => {
+    if (produtorFilter.length === 0) return [];
+    return produtores
+      .filter(p => produtorFilter.includes(p.nome))
+      .map(p => p.id);
   }, [produtorFilter, produtores]);
 
   // Fetch data
@@ -350,8 +351,8 @@ export const MetasPremioComparison = ({
           .select(`*, produtor:produtores(id, nome, email)`)
           .eq('ano', targetYear);
 
-        if (selectedProdutorId) {
-          metasQuery = metasQuery.eq('produtor_id', selectedProdutorId);
+        if (selectedProdutorIds.length > 0) {
+          metasQuery = metasQuery.in('produtor_id', selectedProdutorIds);
         }
 
         const { data: metasData, error: metasError } = await metasQuery;
@@ -380,17 +381,17 @@ export const MetasPremioComparison = ({
     };
 
     fetchData();
-  }, [targetYear, selectedProdutorId]);
+  }, [targetYear, selectedProdutorIds]);
 
   // Calculate monthly prizes using recurrent logic
   const monthlyPrizes = useMemo(() => {
     // Filter cotacoes by produtor if needed
     let filteredCotacoes = cotacoes;
-    if (selectedProdutorId) {
-      const selectedProdutor = produtores.find(p => p.id === selectedProdutorId);
-      if (selectedProdutor) {
-        filteredCotacoes = cotacoes.filter(c => c.produtor_origem?.email === selectedProdutor.email);
-      }
+    if (selectedProdutorIds.length > 0) {
+      const selectedProdutoresEmails = produtores
+        .filter(p => selectedProdutorIds.includes(p.id))
+        .map(p => p.email);
+      filteredCotacoes = cotacoes.filter(c => c.produtor_origem?.email && selectedProdutoresEmails.includes(c.produtor_origem.email));
     }
 
     // Calculate FIRST INVOICE only for "Realizado" mensal (primeiras faturas)
@@ -426,7 +427,7 @@ export const MetasPremioComparison = ({
     });
 
     return { monthly: totalMonthlyFirstInvoice, accumulated };
-  }, [cotacoes, ramos, targetYear, selectedProdutorId, produtores]);
+  }, [cotacoes, ramos, targetYear, selectedProdutorIds, produtores]);
 
   // Calculate monthly comparison
   const monthlyComparison = useMemo(() => {
@@ -436,11 +437,10 @@ export const MetasPremioComparison = ({
     const monthKey = MONTHS[targetMonth].key as keyof MetaPremio;
     let metaMensal = 0;
 
-    if (selectedProdutorId) {
-      const produtorMeta = metasPremio.find(m => m.produtor_id === selectedProdutorId);
-      if (produtorMeta) {
-        metaMensal = produtorMeta[monthKey] as number;
-      }
+    if (selectedProdutorIds.length > 0) {
+      metasPremio.filter(m => selectedProdutorIds.includes(m.produtor_id)).forEach(m => {
+        metaMensal += (m[monthKey] as number || 0);
+      });
     } else {
       metaMensal = metasPremio.reduce((sum, m) => sum + (m[monthKey] as number || 0), 0);
     }
@@ -453,7 +453,7 @@ export const MetasPremioComparison = ({
       percentual,
       mesLabel: MONTHS[targetMonth].label,
     };
-  }, [monthlyPrizes, metasPremio, targetMonth, selectedProdutorId]);
+  }, [monthlyPrizes, metasPremio, targetMonth, selectedProdutorIds]);
 
   // Calculate accumulated comparison (escadinha)
   const accumulatedComparison = useMemo(() => {
@@ -462,12 +462,11 @@ export const MetasPremioComparison = ({
     // Get accumulated meta (escadinha) for the target month
     let metaAcumulada = 0;
 
-    if (selectedProdutorId) {
-      const produtorMeta = metasPremio.find(m => m.produtor_id === selectedProdutorId);
-      if (produtorMeta) {
-        const accumulated = calculateAccumulatedMetas(produtorMeta);
-        metaAcumulada = accumulated[targetMonth];
-      }
+    if (selectedProdutorIds.length > 0) {
+      metasPremio.filter(m => selectedProdutorIds.includes(m.produtor_id)).forEach(m => {
+        const accumulated = calculateAccumulatedMetas(m);
+        metaAcumulada += accumulated[targetMonth];
+      });
     } else {
       // Sum all produtors' accumulated metas
       metasPremio.forEach(m => {
@@ -483,7 +482,7 @@ export const MetasPremioComparison = ({
       metaAcumulada,
       percentual,
     };
-  }, [monthlyPrizes, metasPremio, targetMonth, selectedProdutorId]);
+  }, [monthlyPrizes, metasPremio, targetMonth, selectedProdutorIds]);
 
   // Calculate full year month-by-month comparison for table
   const monthlyTableData = useMemo(() => {
@@ -494,13 +493,12 @@ export const MetasPremioComparison = ({
       let metaMensal = 0;
       let metaAcumulada = 0;
       
-      if (selectedProdutorId) {
-        const produtorMeta = metasPremio.find(m => m.produtor_id === selectedProdutorId);
-        if (produtorMeta) {
-          metaMensal = produtorMeta[monthKey] as number;
-          const accumulated = calculateAccumulatedMetas(produtorMeta);
-          metaAcumulada = accumulated[index];
-        }
+      if (selectedProdutorIds.length > 0) {
+        metasPremio.filter(m => selectedProdutorIds.includes(m.produtor_id)).forEach(m => {
+          metaMensal += (m[monthKey] as number || 0);
+          const accumulated = calculateAccumulatedMetas(m);
+          metaAcumulada += accumulated[index];
+        });
       } else {
         metasPremio.forEach(m => {
           metaMensal += (m[monthKey] as number || 0);
@@ -527,13 +525,13 @@ export const MetasPremioComparison = ({
         isCurrent: index === targetMonth,
       };
     });
-  }, [metasPremio, monthlyPrizes, selectedProdutorId, targetMonth]);
+  }, [metasPremio, monthlyPrizes, selectedProdutorIds, targetMonth]);
 
   // Get selected meta for escadinha (only when a single produtor is selected)
   const selectedMeta = useMemo(() => {
-    if (!selectedProdutorId) return null;
-    return metasPremio.find(m => m.produtor_id === selectedProdutorId) || null;
-  }, [metasPremio, selectedProdutorId]);
+    if (selectedProdutorIds.length !== 1) return null;
+    return metasPremio.find(m => m.produtor_id === selectedProdutorIds[0]) || null;
+  }, [metasPremio, selectedProdutorIds]);
 
   // Calculate escadinha rows for visualization
   const escadinhaData = useMemo(() => {

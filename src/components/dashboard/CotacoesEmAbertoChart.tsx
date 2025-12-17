@@ -18,7 +18,7 @@ import DOMPurify from 'dompurify';
 
 interface CotacoesEmAbertoChartProps {
   cotacoes: Cotacao[];
-  produtorFilter?: string;
+  produtorFilter?: string[];
 }
 
 type ViewType = 'Recorrente' | 'Total';
@@ -189,7 +189,7 @@ const renderCustomLabel = (props: any) => {
   );
 };
 
-export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: CotacoesEmAbertoChartProps) => {
+export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: CotacoesEmAbertoChartProps) => {
   const [viewType, setViewType] = useState<ViewType>('Recorrente');
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [isLoadingAI, setIsLoadingAI] = useState(false);
@@ -204,8 +204,8 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = 'todos' }: Co
     let emCotacao = cotacoes.filter(c => c.status === 'Em cotação');
     
     // Aplicar filtro de produtor_cotador (para "Em cotação" usa produtor_cotador)
-    if (produtorFilter !== 'todos') {
-      emCotacao = emCotacao.filter(c => c.produtor_cotador?.nome === produtorFilter);
+    if (produtorFilter.length > 0) {
+      emCotacao = emCotacao.filter(c => c.produtor_cotador?.nome && produtorFilter.includes(c.produtor_cotador.nome));
     }
     const groupedBySegurado = new Map<string, SeguradoData>();
     

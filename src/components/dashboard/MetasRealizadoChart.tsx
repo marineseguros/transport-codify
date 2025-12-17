@@ -50,7 +50,7 @@ interface CotacaoForCount {
 interface MetasRealizadoChartProps {
   dateFilter: string;
   dateRange?: { from?: Date; to?: Date };
-  produtorFilter: string;
+  produtorFilter: string[];
   produtores: Produtor[];
   // Fechamentos count from cotacoes (passed from parent to avoid duplicate queries)
   fechamentosCount: number;
@@ -231,11 +231,12 @@ export const MetasRealizadoChart = ({
     };
   }, [dateFilter, dateRange]);
 
-  // Find the produtor_id from the selected producer name
-  const selectedProdutorId = useMemo(() => {
-    if (produtorFilter === 'todos') return null;
-    const produtor = produtores.find(p => p.nome === produtorFilter);
-    return produtor?.id || null;
+  // Find the produtor_id from the selected producer names
+  const selectedProdutorIds = useMemo(() => {
+    if (produtorFilter.length === 0) return [];
+    return produtores
+      .filter(p => produtorFilter.includes(p.nome))
+      .map(p => p.id);
   }, [produtores, produtorFilter]);
 
   // Fetch produtos, metas, and cotações count
@@ -309,7 +310,7 @@ export const MetasRealizadoChart = ({
     };
 
     fetchData();
-  }, [startDate, endDate, targetYear, isYearFilter, selectedProdutorId]);
+  }, [startDate, endDate, targetYear, isYearFilter, selectedProdutorIds]);
 
   // Calculate realized counts from produtos
   const realizadoPorAtividade = useMemo(() => {
@@ -317,9 +318,9 @@ export const MetasRealizadoChart = ({
     ACTIVITIES.forEach(act => counts[act] = 0);
 
     // Filter by produtor if needed (using consultor field)
-    const filteredProdutos = produtorFilter === 'todos' 
+    const filteredProdutos = produtorFilter.length === 0 
       ? produtos 
-      : produtos.filter(p => p.consultor === produtorFilter);
+      : produtos.filter(p => produtorFilter.includes(p.consultor));
 
     filteredProdutos.forEach(produto => {
       // Get all activities this produto counts for
@@ -335,10 +336,10 @@ export const MetasRealizadoChart = ({
     counts['Fechamento'] = fechamentosCount;
 
     // Use distinct cotações count (CNPJ + Ramo group)
-    counts['Cotação'] = countDistinctCotacoes(cotacoesData, selectedProdutorId);
+    counts['Cotação'] = countDistinctCotacoes(cotacoesData, selectedProdutorIds.length > 0 ? selectedProdutorIds[0] : null);
 
     return counts;
-  }, [produtos, produtorFilter, fechamentosCount, cotacoesData, selectedProdutorId]);
+  }, [produtos, produtorFilter, fechamentosCount, cotacoesData, selectedProdutorIds]);
 
   // Calculate metas totals by activity type - FILTERED BY PRODUTOR
   // Each producer should only see their own metas, never sum across producers
@@ -346,10 +347,10 @@ export const MetasRealizadoChart = ({
     const totals: Record<string, number> = {};
     ACTIVITIES.forEach(act => totals[act] = 0);
 
-    // Filter metas by produtor_id if a specific one is selected
-    const filteredMetas = !selectedProdutorId 
+    // Filter metas by produtor_id if specific ones are selected
+    const filteredMetas = selectedProdutorIds.length === 0 
       ? metas 
-      : metas.filter(meta => meta.produtor_id === selectedProdutorId);
+      : metas.filter(meta => selectedProdutorIds.includes(meta.produtor_id));
 
     filteredMetas.forEach(meta => {
       if (meta.tipo_meta?.descricao) {
@@ -361,7 +362,7 @@ export const MetasRealizadoChart = ({
     });
 
     return totals;
-  }, [metas, selectedProdutorId]);
+  }, [metas, selectedProdutorIds]);
 
   // Prepare chart data
   const chartData = useMemo(() => {
