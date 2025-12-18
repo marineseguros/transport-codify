@@ -799,7 +799,7 @@ export const MetasPremioComparison = ({
               <Calendar className="h-5 w-5 text-primary" />
               {showEscadinha ? 'Visualização Escadinha' : 'Análise Mensal de Prêmio'} - {targetYear}
             </CardTitle>
-            {selectedProdutorId && escadinhaData && (
+            {selectedProdutorIds.length === 1 && escadinhaData && (
               <Button
                 variant="outline"
                 size="sm"
