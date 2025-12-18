@@ -16,14 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProdutores } from '@/hooks/useSupabaseData';
 import { logger } from '@/lib/logger';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Check } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface TipoMeta {
   id: string;
@@ -74,7 +75,7 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
 
   // Generate available months (12 months back + current + 12 months forward)
   const availableMonths = useMemo(() => {
-    const months: { value: string; label: string }[] = [];
+    const months: { value: string; label: string; shortLabel: string }[] = [];
     const now = new Date();
     
     // 12 months back + current month + 12 months forward = 25 months total
@@ -84,7 +85,8 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const value = `${year}-${month}`;
       const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-      months.push({ value, label });
+      const shortLabel = date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+      months.push({ value, label, shortLabel });
     }
     
     return months;
@@ -403,62 +405,70 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
     );
   }
 
-  // Create mode - batch form
+  // Create mode - batch form with improved UI
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Nova Meta (Criação em Lote)</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmitBatch}>
           <ScrollArea className="max-h-[60vh] pr-4">
-            <div className="space-y-6 py-4">
-              {/* Produtores - Multi-select */}
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">Produtores *</Label>
-                <div className="border rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
-                  {activeProdutores.map(produtor => (
-                    <div key={produtor.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`produtor-${produtor.id}`}
-                        checked={selectedProdutores.includes(produtor.id)}
-                        onCheckedChange={() => handleToggleProdutor(produtor.id)}
-                      />
-                      <label
-                        htmlFor={`produtor-${produtor.id}`}
-                        className="text-sm cursor-pointer flex-1"
+            <div className="space-y-5 py-4">
+              {/* Produtores - Badge Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Produtores *</Label>
+                <div className="flex flex-wrap gap-2">
+                  {activeProdutores.map(produtor => {
+                    const isSelected = selectedProdutores.includes(produtor.id);
+                    return (
+                      <Badge
+                        key={produtor.id}
+                        variant={isSelected ? "default" : "outline"}
+                        className={cn(
+                          "cursor-pointer transition-all px-3 py-1.5 text-sm",
+                          isSelected 
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                            : "hover:bg-accent"
+                        )}
+                        onClick={() => handleToggleProdutor(produtor.id)}
                       >
+                        {isSelected && <Check className="h-3 w-3 mr-1" />}
                         {produtor.nome}
-                      </label>
-                    </div>
-                  ))}
+                      </Badge>
+                    );
+                  })}
                 </div>
                 {selectedProdutores.length > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {selectedProdutores.length} produtor(es) selecionado(s)
+                    {selectedProdutores.length} selecionado(s)
                   </p>
                 )}
               </div>
 
-              {/* Meses - Multi-select */}
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">Meses *</Label>
-                <div className="border rounded-lg p-3 grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-                  {availableMonths.map(({ value, label }) => (
-                    <div key={value} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`mes-${value}`}
-                        checked={selectedMeses.includes(value)}
-                        onCheckedChange={() => handleToggleMes(value)}
-                      />
-                      <label
-                        htmlFor={`mes-${value}`}
-                        className="text-sm cursor-pointer capitalize"
+              {/* Meses - Badge Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Meses *</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableMonths.map(({ value, shortLabel }) => {
+                    const isSelected = selectedMeses.includes(value);
+                    return (
+                      <Badge
+                        key={value}
+                        variant={isSelected ? "default" : "outline"}
+                        className={cn(
+                          "cursor-pointer transition-all px-2 py-1 text-xs capitalize",
+                          isSelected 
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                            : "hover:bg-accent"
+                        )}
+                        onClick={() => handleToggleMes(value)}
                       >
-                        {label}
-                      </label>
-                    </div>
-                  ))}
+                        {isSelected && <Check className="h-2.5 w-2.5 mr-0.5" />}
+                        {shortLabel}
+                      </Badge>
+                    );
+                  })}
                 </div>
                 {selectedMeses.length > 0 && (
                   <p className="text-xs text-muted-foreground">
@@ -468,35 +478,36 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
               </div>
 
               {/* Tipos de Meta com Quantidade Individual */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-base font-semibold">Quantidade por Tipo de Meta *</Label>
+                  <Label className="text-sm font-medium">Quantidade por Tipo *</Label>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={() => setShowNewTipoInput(true)}
-                    className="h-8"
+                    className="h-7 text-xs"
                   >
-                    <Plus className="h-4 w-4 mr-1" />
+                    <Plus className="h-3 w-3 mr-1" />
                     Novo Tipo
                   </Button>
                 </div>
 
                 {showNewTipoInput && (
-                  <div className="flex gap-2 p-3 border rounded-lg bg-muted/50">
+                  <div className="flex gap-2 p-2 border rounded-lg bg-muted/50">
                     <Input
                       value={newTipoMeta}
                       onChange={(e) => setNewTipoMeta(e.target.value)}
                       placeholder="Nome do novo tipo"
                       disabled={creatingTipo}
-                      className="flex-1"
+                      className="flex-1 h-8 text-sm"
                     />
                     <Button
                       type="button"
                       onClick={handleCreateTipoMeta}
                       disabled={creatingTipo}
                       size="sm"
+                      className="h-8"
                     >
                       {creatingTipo ? 'Salvando...' : 'Salvar'}
                     </Button>
@@ -504,6 +515,7 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
                       type="button"
                       variant="ghost"
                       size="icon"
+                      className="h-8 w-8"
                       onClick={() => {
                         setShowNewTipoInput(false);
                         setNewTipoMeta('');
@@ -514,22 +526,25 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
                   </div>
                 )}
 
-                <div className="border rounded-lg divide-y">
+                <div className="grid grid-cols-2 gap-2">
                   {activeTiposMeta.map(tipo => (
-                    <div key={tipo.id} className="flex items-center justify-between p-3">
-                      <span className="text-sm font-medium">{tipo.descricao}</span>
+                    <div 
+                      key={tipo.id} 
+                      className="flex items-center justify-between p-2 border rounded-lg bg-card"
+                    >
+                      <span className="text-sm font-medium truncate mr-2">{tipo.descricao}</span>
                       <Input
                         type="number"
                         min="0"
                         value={quantidadesPorTipo[tipo.id] || 0}
                         onChange={(e) => handleQuantidadeChange(tipo.id, parseInt(e.target.value) || 0)}
-                        className="w-24 text-center"
+                        className="w-16 h-8 text-center text-sm"
                       />
                     </div>
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Apenas tipos com quantidade maior que 0 serão criados
+                  Apenas tipos com quantidade {'>'}  0 serão criados
                 </p>
               </div>
             </div>
@@ -540,7 +555,7 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
               Cancelar
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : `Criar Metas`}
+              {loading ? 'Criando...' : 'Criar Metas'}
             </Button>
           </DialogFooter>
         </form>
