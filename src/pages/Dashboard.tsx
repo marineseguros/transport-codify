@@ -56,6 +56,12 @@ const countDistinctByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): n
   return distinctKeys.size;
 };
 
+// Helper function to count total records by status (without distinct logic)
+// Used for top card to match sum of segment cards
+const countTotalByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): number => {
+  return cotacoes.filter(cotacao => targetStatuses.includes(cotacao.status)).length;
+};
+
 // Helper function to count distinct closings (backward compatibility wrapper)
 const countDistinctClosings = (cotacoes: Cotacao[]): number => {
   return countDistinctByStatus(cotacoes, ["Negócio fechado", "Fechamento congênere"]);
@@ -370,14 +376,16 @@ const Dashboard = () => {
       return false;
     });
 
-    // Current period stats - use distinct count (CNPJ + branch group) for ALL statuses
+    // Current period stats
+    // Em cotação and Declinado use distinct count (CNPJ + branch group)
+    // Fechados use total count to match sum of segment cards
     const emCotacao = countDistinctByStatus(currentPeriodCotacoes, ["Em cotação"]);
-    const fechados = countDistinctByStatus(currentPeriodFechamentos, ["Negócio fechado", "Fechamento congênere"]);
+    const fechados = countTotalByStatus(currentPeriodFechamentos, ["Negócio fechado", "Fechamento congênere"]);
     const declinados = countDistinctByStatus(currentPeriodCotacoes, ["Declinado"]);
 
-    // Previous period stats - use distinct count for ALL statuses
+    // Previous period stats
     const emCotacaoAnterior = countDistinctByStatus(previousPeriodCotacoes, ["Em cotação"]);
-    const fechadosAnterior = countDistinctByStatus(previousPeriodFechamentos, ["Negócio fechado", "Fechamento congênere"]);
+    const fechadosAnterior = countTotalByStatus(previousPeriodFechamentos, ["Negócio fechado", "Fechamento congênere"]);
     const declinadosAnterior = countDistinctByStatus(previousPeriodCotacoes, ["Declinado"]);
 
     // Calculate differences and percentages
@@ -452,11 +460,11 @@ const Dashboard = () => {
       const previousCotacoesSegmento = previousPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
       const previousFechamentosSegmento = previousPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
       const emCotacaoSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Em cotação"]);
-      const fechadosSegmento = countDistinctByStatus(currentFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
+      const fechadosSegmento = countTotalByStatus(currentFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
       const declinadosSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Declinado"]);
       const totalDistinctSegmento = emCotacaoSegmento + fechadosSegmento + declinadosSegmento;
       const previousEmCotacaoSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Em cotação"]);
-      const previousFechadosSegmento = countDistinctByStatus(previousFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
+      const previousFechadosSegmento = countTotalByStatus(previousFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
       const previousDeclinadosSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Declinado"]);
       const previousTotalDistinctSegmento = previousEmCotacaoSegmento + previousFechadosSegmento + previousDeclinadosSegmento;
 
