@@ -70,7 +70,7 @@ export function MultiSelect({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "h-9 w-full justify-between text-sm font-normal bg-background border-input",
+            "h-8 w-full justify-between text-xs font-normal bg-background border-input",
             selected.length === 0 && "text-muted-foreground",
             className
           )}
