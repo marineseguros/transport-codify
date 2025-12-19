@@ -56,12 +56,6 @@ const countDistinctByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): n
   return distinctKeys.size;
 };
 
-// Helper function to count total records by status (without distinct logic)
-// Used for top card to match sum of segment cards
-const countTotalByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): number => {
-  return cotacoes.filter(cotacao => targetStatuses.includes(cotacao.status)).length;
-};
-
 // Helper function to count distinct closings (backward compatibility wrapper)
 const countDistinctClosings = (cotacoes: Cotacao[]): number => {
   return countDistinctByStatus(cotacoes, ["Negócio fechado", "Fechamento congênere"]);
@@ -376,16 +370,12 @@ const Dashboard = () => {
       return false;
     });
 
-    // Current period stats
-    // Em cotação and Declinado use distinct count (CNPJ + branch group)
-    // Fechados use total count to match sum of segment cards
+    // Current period stats - use distinct count (CNPJ + branch group)
     const emCotacao = countDistinctByStatus(currentPeriodCotacoes, ["Em cotação"]);
-    const fechados = countTotalByStatus(currentPeriodFechamentos, ["Negócio fechado", "Fechamento congênere"]);
     const declinados = countDistinctByStatus(currentPeriodCotacoes, ["Declinado"]);
 
-    // Previous period stats
+    // Previous period stats - use distinct count (CNPJ + branch group)
     const emCotacaoAnterior = countDistinctByStatus(previousPeriodCotacoes, ["Em cotação"]);
-    const fechadosAnterior = countTotalByStatus(previousPeriodFechamentos, ["Negócio fechado", "Fechamento congênere"]);
     const declinadosAnterior = countDistinctByStatus(previousPeriodCotacoes, ["Declinado"]);
 
     // Calculate differences and percentages
@@ -397,6 +387,70 @@ const Dashboard = () => {
         percentage
       };
     };
+
+    // Stats by segmento - calculate FIRST so we can sum for top card
+    const segmentos = ['Transportes', 'Avulso', 'Ambiental', 'RC-V'];
+    const segmentoStats: Record<string, {
+      emCotacao: number;
+      fechados: number;
+      declinados: number;
+      premioTotal: number;
+      tempoMedio: number;
+      taxaConversao: number;
+      previousEmCotacao: number;
+      previousFechados: number;
+      previousPremio: number;
+      previousTempoMedio: number;
+      previousTaxaConversao: number;
+    }> = {};
+    segmentos.forEach(segmento => {
+      const currentCotacoesSegmento = currentPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
+      const currentFechamentosSegmento = currentPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
+      const previousCotacoesSegmento = previousPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
+      const previousFechamentosSegmento = previousPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
+      
+      // Use distinct count (CNPJ + branchGroup) per segment - this is the correct business logic
+      const emCotacaoSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Em cotação"]);
+      const fechadosSegmento = countDistinctByStatus(currentFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
+      const declinadosSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Declinado"]);
+      const totalDistinctSegmento = emCotacaoSegmento + fechadosSegmento + declinadosSegmento;
+      const previousEmCotacaoSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Em cotação"]);
+      const previousFechadosSegmento = countDistinctByStatus(previousFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
+      const previousDeclinadosSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Declinado"]);
+      const previousTotalDistinctSegmento = previousEmCotacaoSegmento + previousFechadosSegmento + previousDeclinadosSegmento;
+
+      // Tempo médio por segmento
+      const temposFechamentoSegmento = currentFechamentosSegmento.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
+        const inicio = new Date(c.data_cotacao).getTime();
+        const fim = new Date(c.data_fechamento!).getTime();
+        return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
+      });
+      const tempoMedioSegmento = temposFechamentoSegmento.length > 0 ? temposFechamentoSegmento.reduce((sum, t) => sum + t, 0) / temposFechamentoSegmento.length : 0;
+      const temposFechamentoPreviousSegmento = previousFechamentosSegmento.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
+        const inicio = new Date(c.data_cotacao).getTime();
+        const fim = new Date(c.data_fechamento!).getTime();
+        return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
+      });
+      const tempoMedioPreviousSegmento = temposFechamentoPreviousSegmento.length > 0 ? temposFechamentoPreviousSegmento.reduce((sum, t) => sum + t, 0) / temposFechamentoPreviousSegmento.length : 0;
+      segmentoStats[segmento] = {
+        emCotacao: emCotacaoSegmento,
+        fechados: fechadosSegmento,
+        declinados: declinadosSegmento,
+        premioTotal: currentFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
+        tempoMedio: tempoMedioSegmento,
+        taxaConversao: totalDistinctSegmento > 0 ? fechadosSegmento / totalDistinctSegmento * 100 : 0,
+        previousEmCotacao: previousEmCotacaoSegmento,
+        previousFechados: previousFechadosSegmento,
+        previousPremio: previousFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
+        previousTempoMedio: tempoMedioPreviousSegmento,
+        previousTaxaConversao: previousTotalDistinctSegmento > 0 ? previousFechadosSegmento / previousTotalDistinctSegmento * 100 : 0
+      };
+    });
+
+    // Top card fechados = sum of segment cards (ensures alignment)
+    const fechados = segmentos.reduce((sum, seg) => sum + (segmentoStats[seg]?.fechados || 0), 0);
+    const fechadosAnterior = segmentos.reduce((sum, seg) => sum + (segmentoStats[seg]?.previousFechados || 0), 0);
+
     const emCotacaoComp = calculateComparison(emCotacao, emCotacaoAnterior);
     const fechadosComp = calculateComparison(fechados, fechadosAnterior);
     const declinadosComp = calculateComparison(declinados, declinadosAnterior);
@@ -438,63 +492,6 @@ const Dashboard = () => {
     const ticketMedioComp = calculateComparison(ticketMedio, ticketMedioAnterior);
     const tempoMedioComp = calculateComparison(tempoMedioFechamento, tempoMedioFechamentoAnterior);
     const taxaConversaoComp = calculateComparison(taxaConversao, taxaConversaoAnterior);
-
-    // Stats by segmento - use combined period cotacoes and fechamentos
-    const segmentos = ['Transportes', 'Avulso', 'Ambiental', 'RC-V'];
-    const segmentoStats: Record<string, {
-      emCotacao: number;
-      fechados: number;
-      declinados: number;
-      premioTotal: number;
-      tempoMedio: number;
-      taxaConversao: number;
-      previousEmCotacao: number;
-      previousFechados: number;
-      previousPremio: number;
-      previousTempoMedio: number;
-      previousTaxaConversao: number;
-    }> = {};
-    segmentos.forEach(segmento => {
-      const currentCotacoesSegmento = currentPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
-      const currentFechamentosSegmento = currentPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
-      const previousCotacoesSegmento = previousPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
-      const previousFechamentosSegmento = previousPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
-      const emCotacaoSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Em cotação"]);
-      const fechadosSegmento = countTotalByStatus(currentFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
-      const declinadosSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Declinado"]);
-      const totalDistinctSegmento = emCotacaoSegmento + fechadosSegmento + declinadosSegmento;
-      const previousEmCotacaoSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Em cotação"]);
-      const previousFechadosSegmento = countTotalByStatus(previousFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
-      const previousDeclinadosSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Declinado"]);
-      const previousTotalDistinctSegmento = previousEmCotacaoSegmento + previousFechadosSegmento + previousDeclinadosSegmento;
-
-      // Tempo médio por segmento
-      const temposFechamentoSegmento = currentFechamentosSegmento.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
-        const inicio = new Date(c.data_cotacao).getTime();
-        const fim = new Date(c.data_fechamento!).getTime();
-        return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
-      });
-      const tempoMedioSegmento = temposFechamentoSegmento.length > 0 ? temposFechamentoSegmento.reduce((sum, t) => sum + t, 0) / temposFechamentoSegmento.length : 0;
-      const temposFechamentoPreviousSegmento = previousFechamentosSegmento.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
-        const inicio = new Date(c.data_cotacao).getTime();
-        const fim = new Date(c.data_fechamento!).getTime();
-        return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
-      });
-      const tempoMedioPreviousSegmento = temposFechamentoPreviousSegmento.length > 0 ? temposFechamentoPreviousSegmento.reduce((sum, t) => sum + t, 0) / temposFechamentoPreviousSegmento.length : 0;
-      segmentoStats[segmento] = {
-        emCotacao: emCotacaoSegmento,
-        fechados: fechadosSegmento,
-        declinados: declinadosSegmento,
-        premioTotal: currentFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
-        tempoMedio: tempoMedioSegmento,
-        taxaConversao: totalDistinctSegmento > 0 ? fechadosSegmento / totalDistinctSegmento * 100 : 0,
-        previousEmCotacao: previousEmCotacaoSegmento,
-        previousFechados: previousFechadosSegmento,
-        previousPremio: previousFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
-        previousTempoMedio: tempoMedioPreviousSegmento,
-        previousTaxaConversao: previousTotalDistinctSegmento > 0 ? previousFechadosSegmento / previousTotalDistinctSegmento * 100 : 0
-      };
-    });
     return {
       emCotacao,
       fechados,
