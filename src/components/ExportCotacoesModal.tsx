@@ -392,10 +392,10 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
             <div className="space-y-2">
               <Label>Critério de Data</Label>
               <Select value={criterio} onValueChange={setCriterio}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione o critério" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" sideOffset={4}>
                   <SelectItem value="data_fechamento">Ano/Mês de Fechamento</SelectItem>
                   <SelectItem value="inicio_vigencia">Ano/Mês de Início de Vigência</SelectItem>
                 </SelectContent>
@@ -407,10 +407,10 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
               <div className="space-y-2">
                 <Label>Ano</Label>
                 <Select value={ano} onValueChange={setAno}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" sideOffset={4}>
                     <SelectItem value="todos">Todos</SelectItem>
                     {anos.map((a) => (
                       <SelectItem key={a} value={String(a)}>
@@ -424,10 +424,10 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
               <div className="space-y-2">
                 <Label>Mês</Label>
                 <Select value={mes} onValueChange={setMes} disabled={!ano || ano === "todos"}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" sideOffset={4}>
                     <SelectItem value="todos">Todos</SelectItem>
                     {meses.map((m) => (
                       <SelectItem key={m.value} value={m.value}>
@@ -443,10 +443,10 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
             <div className="space-y-2">
               <Label>Produtor</Label>
               <Select value={produtorId} onValueChange={setProdutorId}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Todos os produtores" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" sideOffset={4}>
                   <SelectItem value="todos">Todos os produtores</SelectItem>
                   {produtores.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
@@ -461,10 +461,10 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
             <div className="space-y-2">
               <Label>Unidade</Label>
               <Select value={unidadeId} onValueChange={setUnidadeId}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Todas as unidades" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" sideOffset={4}>
                   <SelectItem value="todos">Todas as unidades</SelectItem>
                   {unidades.map((u) => (
                     <SelectItem key={u.id} value={u.id}>
