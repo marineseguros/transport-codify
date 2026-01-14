@@ -68,29 +68,39 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
 
   // Batch creation mode data
   const [selectedProdutores, setSelectedProdutores] = useState<string[]>([]);
+  const [selectedAno, setSelectedAno] = useState<number>(new Date().getFullYear());
   const [selectedMeses, setSelectedMeses] = useState<string[]>([]);
   const [quantidadesPorTipo, setQuantidadesPorTipo] = useState<Record<string, number>>({});
 
   const isEditMode = !!meta;
 
-  // Generate available months (12 months back + current + 12 months forward)
-  const availableMonths = useMemo(() => {
-    const months: { value: string; label: string; shortLabel: string }[] = [];
-    const now = new Date();
-    
-    // 12 months back + current month + 12 months forward = 25 months total
-    for (let i = -12; i <= 12; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const value = `${year}-${month}`;
-      const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-      const shortLabel = date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
-      months.push({ value, label, shortLabel });
-    }
-    
-    return months;
+  // Generate available years (current year - 1 to current year + 2)
+  const availableYears = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return [currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
   }, []);
+
+  // Generate months for the selected year
+  const monthsForYear = useMemo(() => {
+    const months = [
+      { value: '01', label: 'Janeiro', shortLabel: 'Jan' },
+      { value: '02', label: 'Fevereiro', shortLabel: 'Fev' },
+      { value: '03', label: 'Março', shortLabel: 'Mar' },
+      { value: '04', label: 'Abril', shortLabel: 'Abr' },
+      { value: '05', label: 'Maio', shortLabel: 'Mai' },
+      { value: '06', label: 'Junho', shortLabel: 'Jun' },
+      { value: '07', label: 'Julho', shortLabel: 'Jul' },
+      { value: '08', label: 'Agosto', shortLabel: 'Ago' },
+      { value: '09', label: 'Setembro', shortLabel: 'Set' },
+      { value: '10', label: 'Outubro', shortLabel: 'Out' },
+      { value: '11', label: 'Novembro', shortLabel: 'Nov' },
+      { value: '12', label: 'Dezembro', shortLabel: 'Dez' },
+    ];
+    return months.map(m => ({
+      ...m,
+      fullValue: `${selectedAno}-${m.value}`,
+    }));
+  }, [selectedAno]);
 
   useEffect(() => {
     if (meta) {
@@ -120,6 +130,7 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
         quantidade: 0,
       });
       setSelectedProdutores([]);
+      setSelectedAno(year);
       setSelectedMeses([`${year}-${month}`]);
       // Initialize quantities for all active tipos_meta
       const initialQuantities: Record<string, number> = {};
@@ -387,6 +398,7 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
                   value={formData.quantidade}
                   onChange={(e) => setFormData(prev => ({ ...prev, quantidade: parseInt(e.target.value) || 0 }))}
                   required
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
             </div>
@@ -446,15 +458,45 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
                 )}
               </div>
 
+              {/* Ano Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Ano *</Label>
+                <div className="flex flex-wrap gap-2">
+                  {availableYears.map(year => {
+                    const isSelected = selectedAno === year;
+                    return (
+                      <Badge
+                        key={year}
+                        variant={isSelected ? "default" : "outline"}
+                        className={cn(
+                          "cursor-pointer transition-all px-3 py-1.5 text-sm",
+                          isSelected 
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                            : "hover:bg-accent"
+                        )}
+                        onClick={() => {
+                          setSelectedAno(year);
+                          // Clear selected months when year changes
+                          setSelectedMeses([]);
+                        }}
+                      >
+                        {isSelected && <Check className="h-3 w-3 mr-1" />}
+                        {year}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Meses - Badge Selection */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Meses *</Label>
                 <div className="flex flex-wrap gap-1.5">
-                  {availableMonths.map(({ value, shortLabel }) => {
-                    const isSelected = selectedMeses.includes(value);
+                  {monthsForYear.map(({ fullValue, shortLabel }) => {
+                    const isSelected = selectedMeses.includes(fullValue);
                     return (
                       <Badge
-                        key={value}
+                        key={fullValue}
                         variant={isSelected ? "default" : "outline"}
                         className={cn(
                           "cursor-pointer transition-all px-2 py-1 text-xs capitalize",
@@ -462,7 +504,7 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
                             ? "bg-primary text-primary-foreground hover:bg-primary/90" 
                             : "hover:bg-accent"
                         )}
-                        onClick={() => handleToggleMes(value)}
+                        onClick={() => handleToggleMes(fullValue)}
                       >
                         {isSelected && <Check className="h-2.5 w-2.5 mr-0.5" />}
                         {shortLabel}
@@ -538,7 +580,7 @@ const MetaModal = ({ meta, isOpen, onClose, onSuccess, tiposMeta, onTiposMetaCha
                         min="0"
                         value={quantidadesPorTipo[tipo.id] || 0}
                         onChange={(e) => handleQuantidadeChange(tipo.id, parseInt(e.target.value) || 0)}
-                        className="w-16 h-8 text-center text-sm"
+                        className="w-16 h-8 text-center text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                   ))}
