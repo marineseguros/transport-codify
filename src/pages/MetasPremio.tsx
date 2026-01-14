@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Search, DollarSign, Filter, Save } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, DollarSign, Filter, Save, Check } from 'lucide-react';
 import EscadinhaVisualization from '@/components/EscadinhaVisualization';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -43,6 +44,8 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProdutores } from '@/hooks/useSupabaseData';
 import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MetaPremio {
   id: string;
@@ -148,6 +151,9 @@ const MetasPremio = () => {
     meta_dez: 0,
   });
 
+  // Batch creation - multiple producers
+  const [selectedProdutores, setSelectedProdutores] = useState<string[]>([]);
+
   const canManage = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
 
   const fetchMetas = async () => {
@@ -177,6 +183,7 @@ const MetasPremio = () => {
 
   const handleCreate = () => {
     setEditingMeta(null);
+    setSelectedProdutores([]);
     setFormData({
       produtor_id: '',
       ano: new Date().getFullYear(),
@@ -194,6 +201,14 @@ const MetasPremio = () => {
       meta_dez: 0,
     });
     setIsModalOpen(true);
+  };
+
+  const handleToggleProdutor = (produtorId: string) => {
+    setSelectedProdutores(prev => 
+      prev.includes(produtorId) 
+        ? prev.filter(id => id !== produtorId)
+        : [...prev, produtorId]
+    );
   };
 
   const handleEdit = (meta: MetaPremio) => {
@@ -245,15 +260,24 @@ const MetasPremio = () => {
   };
 
   const handleSave = async () => {
-    if (!formData.produtor_id) {
-      toast.error('Selecione um produtor');
-      return;
+    if (editingMeta) {
+      // Edit mode - single producer
+      if (!formData.produtor_id) {
+        toast.error('Selecione um produtor');
+        return;
+      }
+    } else {
+      // Create mode - multiple producers
+      if (selectedProdutores.length === 0) {
+        toast.error('Selecione pelo menos um produtor');
+        return;
+      }
     }
 
     setSaving(true);
     try {
       if (editingMeta) {
-        // Update
+        // Update single record
         const { error } = await supabase
           .from('metas_premio')
           .update({
@@ -275,35 +299,37 @@ const MetasPremio = () => {
         if (error) throw error;
         toast.success('Meta de prêmio atualizada com sucesso!');
       } else {
-        // Insert
+        // Insert for all selected producers
+        const metasToInsert = selectedProdutores.map(produtorId => ({
+          produtor_id: produtorId,
+          ano: formData.ano,
+          meta_jan: formData.meta_jan,
+          meta_fev: formData.meta_fev,
+          meta_mar: formData.meta_mar,
+          meta_abr: formData.meta_abr,
+          meta_mai: formData.meta_mai,
+          meta_jun: formData.meta_jun,
+          meta_jul: formData.meta_jul,
+          meta_ago: formData.meta_ago,
+          meta_set: formData.meta_set,
+          meta_out: formData.meta_out,
+          meta_nov: formData.meta_nov,
+          meta_dez: formData.meta_dez,
+          modulo: user?.modulo || 'Transportes',
+        }));
+
         const { error } = await supabase
           .from('metas_premio')
-          .insert({
-            produtor_id: formData.produtor_id,
-            ano: formData.ano,
-            meta_jan: formData.meta_jan,
-            meta_fev: formData.meta_fev,
-            meta_mar: formData.meta_mar,
-            meta_abr: formData.meta_abr,
-            meta_mai: formData.meta_mai,
-            meta_jun: formData.meta_jun,
-            meta_jul: formData.meta_jul,
-            meta_ago: formData.meta_ago,
-            meta_set: formData.meta_set,
-            meta_out: formData.meta_out,
-            meta_nov: formData.meta_nov,
-            meta_dez: formData.meta_dez,
-            modulo: user?.modulo || 'Transportes',
-          });
+          .insert(metasToInsert);
 
         if (error) {
           if (error.code === '23505') {
-            toast.error('Já existe uma meta para este produtor/ano');
+            toast.error('Já existe uma meta para algum produtor/ano selecionado');
             return;
           }
           throw error;
         }
-        toast.success('Meta de prêmio criada com sucesso!');
+        toast.success(`${metasToInsert.length} meta(s) de prêmio criada(s) com sucesso!`);
       }
 
       setIsModalOpen(false);
@@ -575,97 +601,164 @@ const MetasPremio = () => {
 
       {/* Create/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>
               {editingMeta ? 'Editar Meta de Prêmio' : 'Nova Meta de Prêmio'}
             </DialogTitle>
             <DialogDescription>
-              Defina as metas mensais de prêmio para o produtor
+              {editingMeta 
+                ? 'Edite as metas mensais de prêmio para o produtor'
+                : 'Defina as metas mensais de prêmio para os produtores selecionados'
+              }
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
-            {/* Produtor and Year */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Produtor *</Label>
-                <Select 
-                  value={formData.produtor_id} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, produtor_id: value }))}
-                  disabled={!!editingMeta}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o produtor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {produtores?.filter(p => p.ativo).map(produtor => (
-                      <SelectItem key={produtor.id} value={produtor.id}>
-                        {produtor.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Ano *</Label>
-                <Select 
-                  value={formData.ano.toString()} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, ano: parseInt(value) }))}
-                  disabled={!!editingMeta}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o ano" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[...Array(5)].map((_, i) => {
-                      const year = new Date().getFullYear() + 1 - i;
-                      return (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Monthly Metas */}
-            <div className="space-y-2">
-              <Label>Metas Mensais (R$)</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {MONTHS.map(m => (
-                  <div key={m.key} className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">{m.label}</Label>
-                    <Input
-                      type="number"
-                      value={formData[m.key as keyof typeof formData] || ''}
-                      onChange={(e) => handleMonthChange(m.key, e.target.value)}
-                      placeholder="0"
-                      className="text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-6 py-4">
+              {/* Produtor - Badge Selection for create, Select for edit */}
+              {editingMeta ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Produtor *</Label>
+                    <Select 
+                      value={formData.produtor_id} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, produtor_id: value }))}
+                      disabled
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o produtor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {produtores?.filter(p => p.ativo).map(produtor => (
+                          <SelectItem key={produtor.id} value={produtor.id}>
+                            {produtor.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Preview of Accumulated */}
-            <div className="space-y-2">
-              <Label>Preview - Meta Acumulada (Escadinha)</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {MONTHS.map((m, index) => (
-                  <div key={`acum-${m.key}`} className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Acum {m.label}</Label>
-                    <div className="p-2 bg-muted rounded-md text-right text-sm font-medium">
-                      {formatCurrency(formAccumulated[index])}
+                  <div className="space-y-2">
+                    <Label>Ano *</Label>
+                    <Select 
+                      value={formData.ano.toString()} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, ano: parseInt(value) }))}
+                      disabled
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o ano" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[...Array(5)].map((_, i) => {
+                          const year = new Date().getFullYear() + 1 - i;
+                          return (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Produtores - Badge Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Produtores *</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {produtores?.filter(p => p.ativo).map(produtor => {
+                        const isSelected = selectedProdutores.includes(produtor.id);
+                        return (
+                          <Badge
+                            key={produtor.id}
+                            variant={isSelected ? "default" : "outline"}
+                            className={cn(
+                              "cursor-pointer transition-all px-3 py-1.5 text-sm",
+                              isSelected 
+                                ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                                : "hover:bg-accent"
+                            )}
+                            onClick={() => handleToggleProdutor(produtor.id)}
+                          >
+                            {isSelected && <Check className="h-3 w-3 mr-1" />}
+                            {produtor.nome}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                    {selectedProdutores.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {selectedProdutores.length} produtor(es) selecionado(s)
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Ano Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Ano *</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {[...Array(5)].map((_, i) => {
+                        const year = new Date().getFullYear() + 1 - i;
+                        const isSelected = formData.ano === year;
+                        return (
+                          <Badge
+                            key={year}
+                            variant={isSelected ? "default" : "outline"}
+                            className={cn(
+                              "cursor-pointer transition-all px-3 py-1.5 text-sm",
+                              isSelected 
+                                ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                                : "hover:bg-accent"
+                            )}
+                            onClick={() => setFormData(prev => ({ ...prev, ano: year }))}
+                          >
+                            {isSelected && <Check className="h-3 w-3 mr-1" />}
+                            {year}
+                          </Badge>
+                        );
+                      })}
                     </div>
                   </div>
-                ))}
+                </>
+              )}
+
+              {/* Monthly Metas */}
+              <div className="space-y-2">
+                <Label>Metas Mensais (R$)</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {MONTHS.map(m => (
+                    <div key={m.key} className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">{m.label}</Label>
+                      <Input
+                        type="number"
+                        value={formData[m.key as keyof typeof formData] || ''}
+                        onChange={(e) => handleMonthChange(m.key, e.target.value)}
+                        placeholder="0"
+                        className="text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Preview of Accumulated */}
+              <div className="space-y-2">
+                <Label>Preview - Meta Acumulada (Escadinha)</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {MONTHS.map((m, index) => (
+                    <div key={`acum-${m.key}`} className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Acum {m.label}</Label>
+                      <div className="p-2 bg-muted rounded-md text-right text-sm font-medium">
+                        {formatCurrency(formAccumulated[index])}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          </ScrollArea>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
