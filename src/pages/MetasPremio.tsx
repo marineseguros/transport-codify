@@ -644,7 +644,7 @@ const MetasPremio = () => {
                       value={formData[m.key as keyof typeof formData] || ''}
                       onChange={(e) => handleMonthChange(m.key, e.target.value)}
                       placeholder="0"
-                      className="text-right"
+                      className="text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                 ))}
