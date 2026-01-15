@@ -101,11 +101,18 @@ const COLUMN_GROUPS = {
 // Get all column keys
 const ALL_COLUMN_KEYS = Object.values(COLUMN_GROUPS).flatMap(cols => cols.map(c => c.key));
 
-type TipoRelatorio = "geral" | "em_cotacao" | "declinados";
+type TipoRelatorio = "negocio_fechado" | "em_cotacao" | "declinados";
 
 export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalProps) {
-  const [tipoRelatorio, setTipoRelatorio] = useState<TipoRelatorio>("geral");
+  const [tipoRelatorio, setTipoRelatorio] = useState<TipoRelatorio>("negocio_fechado");
   const [criterio, setCriterio] = useState<string>("data_fechamento");
+
+  // When report type changes, update criteria accordingly
+  React.useEffect(() => {
+    if (tipoRelatorio === "em_cotacao" || tipoRelatorio === "declinados") {
+      setCriterio("data_cotacao");
+    }
+  }, [tipoRelatorio]);
   const [tipoPeriodo, setTipoPeriodo] = useState<string>("mes_ano");
   const [ano, setAno] = useState<string>("");
   const [mes, setMes] = useState<string>("");
@@ -278,7 +285,9 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
         `);
 
       // Apply status filter based on report type
-      if (tipoRelatorio === "em_cotacao") {
+      if (tipoRelatorio === "negocio_fechado") {
+        query = query.eq("status", "Negócio fechado");
+      } else if (tipoRelatorio === "em_cotacao") {
         query = query.eq("status", "Em Cotação");
       } else if (tipoRelatorio === "declinados") {
         query = query.eq("status", "Declinado");
@@ -364,20 +373,20 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
       ws["!cols"] = colWidths;
 
       // Get sheet name based on report type
-      const sheetName = tipoRelatorio === "em_cotacao" 
-        ? "Em Cotação" 
-        : tipoRelatorio === "declinados" 
-          ? "Declinados" 
-          : "Cotações";
+      const sheetName = tipoRelatorio === "negocio_fechado" 
+        ? "Negócio Fechado" 
+        : tipoRelatorio === "em_cotacao" 
+          ? "Em Cotação" 
+          : "Declinados";
 
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
       // Generate filename
-      const tipoLabel = tipoRelatorio === "em_cotacao" 
-        ? "EmCotacao" 
-        : tipoRelatorio === "declinados" 
-          ? "Declinados" 
-          : "Geral";
+      const tipoLabel = tipoRelatorio === "negocio_fechado" 
+        ? "NegocioFechado" 
+        : tipoRelatorio === "em_cotacao" 
+          ? "EmCotacao" 
+          : "Declinados";
       const criterioLabel = criterio === "data_fechamento" 
         ? "Fechamento" 
         : criterio === "inicio_vigencia" 
@@ -444,26 +453,32 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent position="popper" sideOffset={4}>
-                  <SelectItem value="geral">Relatório Geral</SelectItem>
+                  <SelectItem value="negocio_fechado">Negócio Fechado</SelectItem>
                   <SelectItem value="em_cotacao">Em Cotação</SelectItem>
                   <SelectItem value="declinados">Declinados</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Critério */}
+            {/* Critério - Only show options based on report type */}
             <div className="space-y-2">
               <Label>Critério de Data</Label>
-              <Select value={criterio} onValueChange={setCriterio}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o critério" />
-                </SelectTrigger>
-                <SelectContent position="popper" sideOffset={4}>
-                  <SelectItem value="data_cotacao">Data da Cotação</SelectItem>
-                  <SelectItem value="data_fechamento">Data de Fechamento</SelectItem>
-                  <SelectItem value="inicio_vigencia">Início de Vigência</SelectItem>
-                </SelectContent>
-              </Select>
+              {tipoRelatorio === "negocio_fechado" ? (
+                <Select value={criterio} onValueChange={setCriterio}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o critério" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" sideOffset={4}>
+                    <SelectItem value="data_cotacao">Data da Cotação</SelectItem>
+                    <SelectItem value="data_fechamento">Data de Fechamento</SelectItem>
+                    <SelectItem value="inicio_vigencia">Início de Vigência</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  Data da Cotação
+                </div>
+              )}
             </div>
 
             {/* Tipo de Período */}
