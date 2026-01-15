@@ -24,72 +24,31 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-interface ExportCotacoesModalProps {
+interface ExportProdutosModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-// Define all available columns grouped by category
+// Define all available columns
 const COLUMN_GROUPS = {
   "Dados Principais": [
-    { key: "numero_cotacao", label: "Número Cotação" },
-    { key: "data_cotacao", label: "Data Cotação" },
-    { key: "data_fechamento", label: "Data Fechamento" },
-    { key: "inicio_vigencia", label: "Início Vigência" },
-    { key: "fim_vigencia", label: "Fim Vigência" },
     { key: "segurado", label: "Segurado" },
-    { key: "cpf_cnpj", label: "CPF/CNPJ" },
-    { key: "status", label: "Status" },
-    { key: "valor_premio", label: "Valor Prêmio" },
-    { key: "segmento", label: "Segmento" },
+    { key: "consultor", label: "Consultor" },
+    { key: "data_registro", label: "Data do Registro" },
     { key: "tipo", label: "Tipo" },
-    { key: "num_proposta", label: "Nº Proposta" },
-    { key: "motivo_recusa", label: "Motivo Recusa" },
-    { key: "observacoes", label: "Observações" },
-    { key: "comentarios", label: "Comentários" },
+    { key: "subtipo", label: "Subtipo" },
+    { key: "observacao", label: "Observação" },
   ],
-  "Unidade": [
-    { key: "unidade_codigo", label: "Unidade Código" },
-    { key: "unidade_descricao", label: "Unidade Descrição" },
+  "Indicação": [
+    { key: "tipo_indicacao", label: "Tipo de Indicação" },
+    { key: "cliente_indicado", label: "Cliente Indicado" },
   ],
-  "Produtor Origem": [
-    { key: "produtor_origem_nome", label: "Produtor Origem" },
-    { key: "produtor_origem_email", label: "Produtor Origem Email" },
-    { key: "produtor_origem_codigo", label: "Produtor Origem Código" },
-  ],
-  "Produtor Negociador": [
-    { key: "produtor_negociador_nome", label: "Produtor Negociador" },
-    { key: "produtor_negociador_email", label: "Produtor Negociador Email" },
-    { key: "produtor_negociador_codigo", label: "Produtor Negociador Código" },
-  ],
-  "Produtor Cotador": [
-    { key: "produtor_cotador_nome", label: "Produtor Cotador" },
-    { key: "produtor_cotador_email", label: "Produtor Cotador Email" },
-    { key: "produtor_cotador_codigo", label: "Produtor Cotador Código" },
-  ],
-  "Seguradora": [
-    { key: "seguradora_nome", label: "Seguradora" },
-    { key: "seguradora_codigo", label: "Seguradora Código" },
-  ],
-  "Ramo": [
-    { key: "ramo_codigo", label: "Ramo Código" },
-    { key: "ramo_descricao", label: "Ramo Descrição" },
-    { key: "ramo_agrupado", label: "Ramo Agrupado" },
-    { key: "ramo_segmento", label: "Ramo Segmento" },
-  ],
-  "Captação e Status": [
-    { key: "captacao", label: "Captação" },
-    { key: "status_seguradora_descricao", label: "Status Seguradora" },
-    { key: "status_seguradora_codigo", label: "Status Seguradora Código" },
-  ],
-  "Cliente": [
-    { key: "cliente_email", label: "Cliente Email" },
-    { key: "cliente_telefone", label: "Cliente Telefone" },
-    { key: "cliente_endereco", label: "Cliente Endereço" },
-    { key: "cliente_cidade", label: "Cliente Cidade" },
-    { key: "cliente_uf", label: "Cliente UF" },
-    { key: "cliente_cep", label: "Cliente CEP" },
+  "Visita/Vídeo": [
+    { key: "cidade", label: "Cidade" },
+    { key: "data_realizada", label: "Data Realizada" },
   ],
   "Metadados": [
     { key: "created_at", label: "Criado em" },
@@ -101,41 +60,39 @@ const COLUMN_GROUPS = {
 // Get all column keys
 const ALL_COLUMN_KEYS = Object.values(COLUMN_GROUPS).flatMap(cols => cols.map(c => c.key));
 
-type TipoRelatorio = "geral" | "em_cotacao" | "declinados";
+type TipoRelatorio = "geral" | "coleta" | "indicacao" | "novos_crm" | "visita_video";
 
-export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalProps) {
+export function ExportProdutosModal({ open, onOpenChange }: ExportProdutosModalProps) {
   const [tipoRelatorio, setTipoRelatorio] = useState<TipoRelatorio>("geral");
-  const [criterio, setCriterio] = useState<string>("data_fechamento");
   const [tipoPeriodo, setTipoPeriodo] = useState<string>("mes_ano");
   const [ano, setAno] = useState<string>("");
   const [mes, setMes] = useState<string>("");
   const [dataInicio, setDataInicio] = useState<string>("");
   const [dataFim, setDataFim] = useState<string>("");
-  const [produtorId, setProdutorId] = useState<string>("todos");
-  const [unidadeId, setUnidadeId] = useState<string>("todos");
+  const [consultor, setConsultor] = useState<string>("todos");
   const [loading, setLoading] = useState(false);
-  const [produtores, setProdutores] = useState<{ id: string; nome: string }[]>([]);
-  const [unidades, setUnidades] = useState<{ id: string; descricao: string }[]>([]);
+  const [consultores, setConsultores] = useState<string[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<Set<string>>(new Set(ALL_COLUMN_KEYS));
   const [columnsExpanded, setColumnsExpanded] = useState(false);
 
-  // Load produtores and unidades on mount
+  // Load consultores on mount
   React.useEffect(() => {
     if (open) {
       loadFilters();
-      // Reset columns to all selected when modal opens
       setSelectedColumns(new Set(ALL_COLUMN_KEYS));
     }
   }, [open]);
 
   const loadFilters = async () => {
-    const [produtoresRes, unidadesRes] = await Promise.all([
-      supabase.from("produtores").select("id, nome").eq("ativo", true).order("nome"),
-      supabase.from("unidades").select("id, descricao").eq("ativo", true).order("descricao"),
-    ]);
-
-    if (produtoresRes.data) setProdutores(produtoresRes.data);
-    if (unidadesRes.data) setUnidades(unidadesRes.data);
+    const { data } = await supabase
+      .from("produtos")
+      .select("consultor")
+      .order("consultor");
+    
+    if (data) {
+      const uniqueConsultores = [...new Set(data.map(p => p.consultor))];
+      setConsultores(uniqueConsultores);
+    }
   };
 
   // Generate years (current year and 5 years back)
@@ -195,52 +152,39 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
     setSelectedColumns(new Set());
   };
 
-  const getColumnValue = (cotacao: any, key: string): string => {
+  const formatDateValue = (dateString?: string | null) => {
+    if (!dateString) return "";
+    try {
+      return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatDateTime = (dateString?: string | null) => {
+    if (!dateString) return "";
+    try {
+      return new Date(dateString).toLocaleString("pt-BR");
+    } catch {
+      return dateString;
+    }
+  };
+
+  const getColumnValue = (produto: any, key: string): string => {
     const map: Record<string, () => string> = {
-      numero_cotacao: () => cotacao.numero_cotacao,
-      data_cotacao: () => formatDate(cotacao.data_cotacao),
-      data_fechamento: () => formatDate(cotacao.data_fechamento),
-      inicio_vigencia: () => formatDate(cotacao.inicio_vigencia),
-      fim_vigencia: () => formatDate(cotacao.fim_vigencia),
-      segurado: () => cotacao.segurado,
-      cpf_cnpj: () => cotacao.cpf_cnpj,
-      status: () => cotacao.status,
-      valor_premio: () => cotacao.valor_premio?.toString() || "",
-      segmento: () => cotacao.segmento || "",
-      tipo: () => cotacao.tipo || "",
-      num_proposta: () => cotacao.num_proposta || "",
-      motivo_recusa: () => cotacao.motivo_recusa || "",
-      observacoes: () => cotacao.observacoes || "",
-      comentarios: () => cotacao.comentarios || "",
-      unidade_codigo: () => cotacao.unidade?.codigo || "",
-      unidade_descricao: () => cotacao.unidade?.descricao || "",
-      produtor_origem_nome: () => cotacao.produtor_origem?.nome || "",
-      produtor_origem_email: () => cotacao.produtor_origem?.email || "",
-      produtor_origem_codigo: () => cotacao.produtor_origem?.codigo_prod || "",
-      produtor_negociador_nome: () => cotacao.produtor_negociador?.nome || "",
-      produtor_negociador_email: () => cotacao.produtor_negociador?.email || "",
-      produtor_negociador_codigo: () => cotacao.produtor_negociador?.codigo_prod || "",
-      produtor_cotador_nome: () => cotacao.produtor_cotador?.nome || "",
-      produtor_cotador_email: () => cotacao.produtor_cotador?.email || "",
-      produtor_cotador_codigo: () => cotacao.produtor_cotador?.codigo_prod || "",
-      seguradora_nome: () => cotacao.seguradora?.nome || "",
-      seguradora_codigo: () => cotacao.seguradora?.codigo || "",
-      ramo_codigo: () => cotacao.ramo?.codigo || "",
-      ramo_descricao: () => cotacao.ramo?.descricao || "",
-      ramo_agrupado: () => cotacao.ramo?.ramo_agrupado || "",
-      ramo_segmento: () => cotacao.ramo?.segmento || "",
-      captacao: () => cotacao.captacao?.descricao || "",
-      status_seguradora_descricao: () => cotacao.status_seguradora?.descricao || "",
-      status_seguradora_codigo: () => cotacao.status_seguradora?.codigo || "",
-      cliente_email: () => cotacao.cliente?.email || "",
-      cliente_telefone: () => cotacao.cliente?.telefone || "",
-      cliente_endereco: () => cotacao.cliente?.endereco || "",
-      cliente_cidade: () => cotacao.cliente?.cidade || "",
-      cliente_uf: () => cotacao.cliente?.uf || "",
-      cliente_cep: () => cotacao.cliente?.cep || "",
-      created_at: () => formatDateTime(cotacao.created_at),
-      updated_at: () => formatDateTime(cotacao.updated_at),
-      modulo: () => cotacao.modulo || "",
+      segurado: () => produto.segurado || "",
+      consultor: () => produto.consultor || "",
+      data_registro: () => formatDateValue(produto.data_registro),
+      tipo: () => produto.tipo || "",
+      subtipo: () => produto.subtipo || "",
+      observacao: () => produto.observacao || "",
+      tipo_indicacao: () => produto.tipo_indicacao || "",
+      cliente_indicado: () => produto.cliente_indicado || "",
+      cidade: () => produto.cidade || "",
+      data_realizada: () => formatDateValue(produto.data_realizada),
+      created_at: () => formatDateTime(produto.created_at),
+      updated_at: () => formatDateTime(produto.updated_at),
+      modulo: () => produto.modulo || "",
     };
     return map[key]?.() || "";
   };
@@ -261,83 +205,48 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
 
     setLoading(true);
     try {
-      // Build query
       let query = supabase
-        .from("cotacoes")
-        .select(`
-          *,
-          produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(id, nome, email, telefone, codigo_prod),
-          produtor_negociador:produtores!cotacoes_produtor_negociador_id_fkey(id, nome, email, telefone, codigo_prod),
-          produtor_cotador:produtores!cotacoes_produtor_cotador_id_fkey(id, nome, email, telefone, codigo_prod),
-          seguradora:seguradoras(id, nome, codigo),
-          cliente:clientes(id, segurado, cpf_cnpj, email, telefone, endereco, cidade, uf, cep),
-          ramo:ramos(id, codigo, descricao, ramo_agrupado, segmento),
-          captacao:captacao(id, descricao),
-          status_seguradora:status_seguradora(id, descricao, codigo),
-          unidade:unidades(id, codigo, descricao)
-        `);
+        .from("produtos")
+        .select("*");
 
-      // Apply status filter based on report type
-      if (tipoRelatorio === "em_cotacao") {
-        query = query.eq("status", "Em Cotação");
-      } else if (tipoRelatorio === "declinados") {
-        query = query.eq("status", "Declinado");
+      // Apply tipo filter based on report type
+      if (tipoRelatorio === "coleta") {
+        query = query.eq("tipo", "Coleta");
+      } else if (tipoRelatorio === "indicacao") {
+        query = query.eq("tipo", "Indicação");
+      } else if (tipoRelatorio === "novos_crm") {
+        query = query.eq("tipo", "Novos CRM");
+      } else if (tipoRelatorio === "visita_video") {
+        query = query.eq("tipo", "Visita/Video");
       }
 
-      // Apply date filter based on period type
+      // Apply date filter
       if (tipoPeriodo === "personalizado" && dataInicio && dataFim) {
-        if (criterio === "data_fechamento") {
-          query = query.gte("data_fechamento", dataInicio).lte("data_fechamento", dataFim);
-        } else if (criterio === "inicio_vigencia") {
-          query = query.gte("inicio_vigencia", dataInicio).lte("inicio_vigencia", dataFim);
-        } else if (criterio === "data_cotacao") {
-          query = query.gte("data_cotacao", dataInicio).lte("data_cotacao", dataFim);
-        }
+        query = query.gte("data_registro", dataInicio).lte("data_registro", dataFim);
       } else if (tipoPeriodo === "mes_ano") {
-        if (ano && mes) {
+        if (ano && mes && ano !== "todos") {
           const startDate = `${ano}-${mes}-01`;
           const lastDay = new Date(parseInt(ano), parseInt(mes), 0).getDate();
           const endDate = `${ano}-${mes}-${String(lastDay).padStart(2, "0")}`;
-
-          if (criterio === "data_fechamento") {
-            query = query.gte("data_fechamento", startDate).lte("data_fechamento", endDate);
-          } else if (criterio === "inicio_vigencia") {
-            query = query.gte("inicio_vigencia", startDate).lte("inicio_vigencia", endDate);
-          } else if (criterio === "data_cotacao") {
-            query = query.gte("data_cotacao", startDate).lte("data_cotacao", endDate);
-          }
+          query = query.gte("data_registro", startDate).lte("data_registro", endDate);
         } else if (ano && ano !== "todos") {
           const startDate = `${ano}-01-01`;
           const endDate = `${ano}-12-31`;
-
-          if (criterio === "data_fechamento") {
-            query = query.gte("data_fechamento", startDate).lte("data_fechamento", endDate);
-          } else if (criterio === "inicio_vigencia") {
-            query = query.gte("inicio_vigencia", startDate).lte("inicio_vigencia", endDate);
-          } else if (criterio === "data_cotacao") {
-            query = query.gte("data_cotacao", startDate).lte("data_cotacao", endDate);
-          }
+          query = query.gte("data_registro", startDate).lte("data_registro", endDate);
         }
       }
 
-      // Apply produtor filter (check all three produtor fields)
-      if (produtorId && produtorId !== "todos") {
-        query = query.or(
-          `produtor_origem_id.eq.${produtorId},produtor_negociador_id.eq.${produtorId},produtor_cotador_id.eq.${produtorId}`
-        );
+      // Apply consultor filter
+      if (consultor && consultor !== "todos") {
+        query = query.eq("consultor", consultor);
       }
 
-      // Apply unidade filter
-      if (unidadeId && unidadeId !== "todos") {
-        query = query.eq("unidade_id", unidadeId);
-      }
-
-      const { data, error } = await query.order("numero_cotacao", { ascending: false });
+      const { data, error } = await query.order("data_registro", { ascending: false });
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        toast.warning("Nenhuma cotação encontrada com os filtros selecionados");
+        toast.warning("Nenhum produto encontrado com os filtros selecionados");
         setLoading(false);
         return;
       }
@@ -345,10 +254,10 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
       // Format data for Excel - only include selected columns
       const orderedKeys = ALL_COLUMN_KEYS.filter(key => selectedColumns.has(key));
       
-      const excelData = data.map((cotacao) => {
+      const excelData = data.map((produto) => {
         const row: Record<string, string> = {};
         orderedKeys.forEach(key => {
-          row[getColumnLabel(key)] = getColumnValue(cotacao, key);
+          row[getColumnLabel(key)] = getColumnValue(produto, key);
         });
         return row;
       });
@@ -364,58 +273,42 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
       ws["!cols"] = colWidths;
 
       // Get sheet name based on report type
-      const sheetName = tipoRelatorio === "em_cotacao" 
-        ? "Em Cotação" 
-        : tipoRelatorio === "declinados" 
-          ? "Declinados" 
-          : "Cotações";
+      const sheetNames: Record<TipoRelatorio, string> = {
+        geral: "Produtos",
+        coleta: "Coleta",
+        indicacao: "Indicação",
+        novos_crm: "Novos CRM",
+        visita_video: "Visita-Video",
+      };
 
-      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      XLSX.utils.book_append_sheet(wb, ws, sheetNames[tipoRelatorio]);
 
       // Generate filename
-      const tipoLabel = tipoRelatorio === "em_cotacao" 
-        ? "EmCotacao" 
-        : tipoRelatorio === "declinados" 
-          ? "Declinados" 
-          : "Geral";
-      const criterioLabel = criterio === "data_fechamento" 
-        ? "Fechamento" 
-        : criterio === "inicio_vigencia" 
-          ? "InicioVigencia" 
-          : "DataCotacao";
+      const tipoLabels: Record<TipoRelatorio, string> = {
+        geral: "Geral",
+        coleta: "Coleta",
+        indicacao: "Indicacao",
+        novos_crm: "NovosCRM",
+        visita_video: "VisitaVideo",
+      };
       const periodoLabel = tipoPeriodo === "personalizado" 
         ? `${dataInicio}_${dataFim}` 
         : ano && ano !== "todos" 
           ? (mes ? `${ano}-${mes}` : ano) 
           : "Todos";
-      const filename = `Cotacoes_${tipoLabel}_${criterioLabel}_${periodoLabel}_${new Date().toISOString().split("T")[0]}.xlsx`;
+      const filename = `Produtos_${tipoLabels[tipoRelatorio]}_${periodoLabel}_${new Date().toISOString().split("T")[0]}.xlsx`;
 
       // Download
       XLSX.writeFile(wb, filename);
 
-      toast.success(`${data.length} cotações exportadas com sucesso!`);
+      toast.success(`${data.length} produtos exportados com sucesso!`);
       onOpenChange(false);
     } catch (error) {
       console.error("Erro ao exportar:", error);
-      toast.error("Erro ao exportar cotações");
+      toast.error("Erro ao exportar produtos");
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    const day = String(date.getUTCDate()).padStart(2, "0");
-    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-    const year = date.getUTCFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  const formatDateTime = (dateString?: string | null) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleString("pt-BR");
   };
 
   const selectedCount = selectedColumns.size;
@@ -427,7 +320,7 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
-            Exportar Cotações
+            Exportar Produtos
           </DialogTitle>
           <DialogDescription>
             Selecione o tipo de relatório, filtros e colunas para exportar
@@ -445,23 +338,10 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
                 </SelectTrigger>
                 <SelectContent position="popper" sideOffset={4}>
                   <SelectItem value="geral">Relatório Geral</SelectItem>
-                  <SelectItem value="em_cotacao">Em Cotação</SelectItem>
-                  <SelectItem value="declinados">Declinados</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Critério */}
-            <div className="space-y-2">
-              <Label>Critério de Data</Label>
-              <Select value={criterio} onValueChange={setCriterio}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o critério" />
-                </SelectTrigger>
-                <SelectContent position="popper" sideOffset={4}>
-                  <SelectItem value="data_cotacao">Data da Cotação</SelectItem>
-                  <SelectItem value="data_fechamento">Data de Fechamento</SelectItem>
-                  <SelectItem value="inicio_vigencia">Início de Vigência</SelectItem>
+                  <SelectItem value="coleta">Coleta</SelectItem>
+                  <SelectItem value="indicacao">Indicação</SelectItem>
+                  <SelectItem value="novos_crm">Novos CRM</SelectItem>
+                  <SelectItem value="visita_video">Visita/Vídeo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -549,36 +429,18 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
               </div>
             )}
 
-            {/* Produtor */}
+            {/* Consultor */}
             <div className="space-y-2">
-              <Label>Produtor</Label>
-              <Select value={produtorId} onValueChange={setProdutorId}>
+              <Label>Consultor</Label>
+              <Select value={consultor} onValueChange={setConsultor}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Todos os produtores" />
+                  <SelectValue placeholder="Todos os consultores" />
                 </SelectTrigger>
                 <SelectContent position="popper" sideOffset={4}>
-                  <SelectItem value="todos">Todos os produtores</SelectItem>
-                  {produtores.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Unidade */}
-            <div className="space-y-2">
-              <Label>Unidade</Label>
-              <Select value={unidadeId} onValueChange={setUnidadeId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Todas as unidades" />
-                </SelectTrigger>
-                <SelectContent position="popper" sideOffset={4}>
-                  <SelectItem value="todos">Todas as unidades</SelectItem>
-                  {unidades.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.descricao}
+                  <SelectItem value="todos">Todos os consultores</SelectItem>
+                  {consultores.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -621,7 +483,7 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
                         <div key={groupName} className="space-y-1.5">
                           <div className="flex items-center gap-2">
                             <Checkbox
-                              id={`group-${groupName}`}
+                              id={`group-produtos-${groupName}`}
                               checked={allSelected}
                               ref={(el) => {
                                 if (el) {
@@ -631,7 +493,7 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
                               onCheckedChange={() => toggleGroup(groupName)}
                             />
                             <Label
-                              htmlFor={`group-${groupName}`}
+                              htmlFor={`group-produtos-${groupName}`}
                               className="text-sm font-medium cursor-pointer"
                             >
                               {groupName}
@@ -641,12 +503,12 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
                             {columns.map((col) => (
                               <div key={col.key} className="flex items-center gap-2">
                                 <Checkbox
-                                  id={col.key}
+                                  id={`produtos-${col.key}`}
                                   checked={selectedColumns.has(col.key)}
                                   onCheckedChange={() => toggleColumn(col.key)}
                                 />
                                 <Label
-                                  htmlFor={col.key}
+                                  htmlFor={`produtos-${col.key}`}
                                   className="text-xs cursor-pointer text-muted-foreground"
                                 >
                                   {col.label}
