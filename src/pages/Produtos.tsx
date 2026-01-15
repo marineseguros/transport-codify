@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import * as XLSX from 'xlsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -12,7 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ProdutoModal from "@/components/ProdutoModal";
+import { ExportProdutosModal } from "@/components/ExportProdutosModal";
 import { logger } from "@/lib/logger";
+
 interface Produto {
   id: string;
   segurado: string;
@@ -30,6 +31,7 @@ export default function Produtos() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [selectedProduto, setSelectedProduto] = useState<Produto | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [produtoToDelete, setProdutoToDelete] = useState<string | null>(null);
@@ -163,76 +165,6 @@ export default function Produtos() {
     }
   };
 
-  // Exportar para Excel
-  const handleExportToExcel = () => {
-    try {
-      // Preparar dados para exportação
-      const dataToExport = filteredProdutos.map(produto => ({
-        "Segurado": produto.segurado,
-        "Consultor": produto.consultor,
-        "Data do Registro": format(new Date(produto.data_registro), "dd/MM/yyyy", {
-          locale: ptBR
-        }),
-        "Tipo": produto.tipo,
-        "Subtipo/Indicação": produto.tipo === "Indicação" && produto.tipo_indicacao ? produto.tipo_indicacao : produto.tipo === "Visita/Video" && produto.subtipo ? produto.subtipo : "-",
-        "Detalhes": produto.tipo === "Indicação" && produto.cliente_indicado ? produto.cliente_indicado : produto.tipo === "Visita/Video" && produto.subtipo === "Visita" && produto.cidade ? produto.cidade : produto.tipo === "Visita/Video" && produto.subtipo === "Vídeo" && produto.data_realizada ? format(new Date(produto.data_realizada), "dd/MM/yyyy", {
-          locale: ptBR
-        }) : "-",
-        "Observação": produto.observacao || "-"
-      }));
-
-      // Criar workbook e worksheet
-      const ws = XLSX.utils.json_to_sheet(dataToExport);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Produtos");
-
-      // Ajustar largura das colunas
-      const colWidths = [{
-        wch: 30
-      },
-      // Segurado
-      {
-        wch: 20
-      },
-      // Consultor
-      {
-        wch: 15
-      },
-      // Data
-      {
-        wch: 15
-      },
-      // Tipo
-      {
-        wch: 20
-      },
-      // Subtipo/Indicação
-      {
-        wch: 25
-      },
-      // Detalhes
-      {
-        wch: 30
-      } // Observação
-      ];
-      ws['!cols'] = colWidths;
-
-      // Gerar arquivo
-      const fileName = `produtos_${format(new Date(), "dd-MM-yyyy_HH-mm")}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-      toast({
-        title: "Exportação concluída",
-        description: `${filteredProdutos.length} registro(s) exportado(s)`
-      });
-    } catch (error: any) {
-      logger.error("Error exporting to Excel:", error);
-      toast({
-        title: "Erro ao exportar",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
   return <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
@@ -249,9 +181,9 @@ export default function Produtos() {
               <Trash2 className="mr-2 h-4 w-4" />
               Excluir {selectedIds.length} selecionado(s)
             </Button>}
-          <Button variant="outline" onClick={handleExportToExcel} disabled={filteredProdutos.length === 0}>
+          <Button variant="outline" onClick={() => setIsExportModalOpen(true)}>
             <Download className="mr-2 h-4 w-4" />
-            Exportar Excel
+            Exportar
           </Button>
           <Button onClick={() => setIsModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -378,6 +310,8 @@ export default function Produtos() {
       </div>
 
       <ProdutoModal isOpen={isModalOpen} onClose={handleModalClose} produto={selectedProduto} />
+      
+      <ExportProdutosModal open={isExportModalOpen} onOpenChange={setIsExportModalOpen} />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
