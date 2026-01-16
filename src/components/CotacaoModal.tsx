@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePickerInputString } from "@/components/ui/date-picker-input";
 import { toast } from "sonner";
 import { Save, X, FileText, MessageSquare, History, Paperclip, Upload, Plus, Trash2, CalendarIcon } from "lucide-react";
 import { formatCPFCNPJ } from "@/utils/csvUtils";
@@ -1102,37 +1101,11 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
 
                 <div>
                   <Label htmlFor="data_cotacao">Data da Cotação *</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        disabled={isReadOnly}
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !formData.data_cotacao && "text-muted-foreground"
-                        )}
-                      >
-                        {safeFormatDate(formData.data_cotacao) || <span>Selecione uma data</span>}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={safeParseDateString(formData.data_cotacao)}
-                        onSelect={(date) => {
-                          if (date) {
-                            const year = date.getFullYear();
-                            const month = String(date.getMonth() + 1).padStart(2, '0');
-                            const day = String(date.getDate()).padStart(2, '0');
-                            handleInputChange("data_cotacao", `${year}-${month}-${day}`);
-                          }
-                        }}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <DatePickerInputString
+                    value={formData.data_cotacao}
+                    onChange={(date) => handleInputChange("data_cotacao", date || "")}
+                    disabled={isReadOnly}
+                  />
                 </div>
               </div>
 
@@ -1185,107 +1158,29 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                   <div className="grid gap-4 md:grid-cols-3">
                     <div>
                       <Label htmlFor="data_fechamento">Data de Fechamento *</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            disabled={isReadOnly}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !formData.data_fechamento && "text-muted-foreground"
-                            )}
-                          >
-                            {safeFormatDate(formData.data_fechamento) || <span>Selecione uma data</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={safeParseDateString(formData.data_fechamento)}
-                            onSelect={(date) => {
-                              if (date) {
-                                const year = date.getFullYear();
-                                const month = String(date.getMonth() + 1).padStart(2, '0');
-                                const day = String(date.getDate()).padStart(2, '0');
-                                handleInputChange("data_fechamento", `${year}-${month}-${day}`);
-                              }
-                            }}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <DatePickerInputString
+                        value={formData.data_fechamento}
+                        onChange={(date) => handleInputChange("data_fechamento", date || "")}
+                        disabled={isReadOnly}
+                      />
                     </div>
 
                     <div>
                       <Label htmlFor="inicio_vigencia">Início da Vigência</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            disabled={isReadOnly}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !formData.inicio_vigencia && "text-muted-foreground"
-                            )}
-                          >
-                            {safeFormatDate(formData.inicio_vigencia) || <span>Selecione uma data</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={safeParseDateString(formData.inicio_vigencia)}
-                            onSelect={(date) => {
-                              if (date) {
-                                const year = date.getFullYear();
-                                const month = String(date.getMonth() + 1).padStart(2, '0');
-                                const day = String(date.getDate()).padStart(2, '0');
-                                handleInputChange("inicio_vigencia", `${year}-${month}-${day}`);
-                              }
-                            }}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <DatePickerInputString
+                        value={formData.inicio_vigencia}
+                        onChange={(date) => handleInputChange("inicio_vigencia", date || "")}
+                        disabled={isReadOnly}
+                      />
                     </div>
 
                     <div>
                       <Label htmlFor="fim_vigencia">Fim da Vigência</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            disabled={isReadOnly}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !formData.fim_vigencia && "text-muted-foreground"
-                            )}
-                          >
-                            {safeFormatDate(formData.fim_vigencia) || <span>Selecione uma data</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={safeParseDateString(formData.fim_vigencia)}
-                            onSelect={(date) => {
-                              if (date) {
-                                const year = date.getFullYear();
-                                const month = String(date.getMonth() + 1).padStart(2, '0');
-                                const day = String(date.getDate()).padStart(2, '0');
-                                handleInputChange("fim_vigencia", `${year}-${month}-${day}`);
-                              }
-                            }}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <DatePickerInputString
+                        value={formData.fim_vigencia}
+                        onChange={(date) => handleInputChange("fim_vigencia", date || "")}
+                        disabled={isReadOnly}
+                      />
                     </div>
                   </div>
                 </>

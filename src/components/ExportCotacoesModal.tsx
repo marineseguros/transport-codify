@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
+import { DatePickerInputString } from "@/components/ui/date-picker-input";
 
 interface ExportCotacoesModalProps {
   open: boolean;
@@ -542,11 +542,9 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
                     <Calendar className="h-3.5 w-3.5" />
                     Data Início
                   </Label>
-                  <Input
-                    type="date"
+                  <DatePickerInputString
                     value={dataInicio}
-                    onChange={(e) => setDataInicio(e.target.value)}
-                    className="w-full"
+                    onChange={(date) => setDataInicio(date || "")}
                   />
                 </div>
                 <div className="space-y-2">
@@ -554,11 +552,9 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
                     <Calendar className="h-3.5 w-3.5" />
                     Data Fim
                   </Label>
-                  <Input
-                    type="date"
+                  <DatePickerInputString
                     value={dataFim}
-                    onChange={(e) => setDataFim(e.target.value)}
-                    className="w-full"
+                    onChange={(date) => setDataFim(date || "")}
                   />
                 </div>
               </div>
