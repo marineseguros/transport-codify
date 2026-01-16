@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Search, Target, Filter } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Target, Filter, Download, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +37,8 @@ import MetaModal from '@/components/MetaModal';
 import { format, parse, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { logger } from '@/lib/logger';
+import MetasProdutosComparison from '@/components/dashboard/MetasProdutosComparison';
+import ExportMetasProdutosModal from '@/components/ExportMetasProdutosModal';
 
 interface TipoMeta {
   id: string;
@@ -70,6 +72,8 @@ const Metas = () => {
   const [selectedMeta, setSelectedMeta] = useState<Meta | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [metaToDelete, setMetaToDelete] = useState<Meta | null>(null);
+  const [showVisualization, setShowVisualization] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const canManage = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
 
@@ -223,12 +227,30 @@ const Metas = () => {
             </p>
           </div>
         </div>
-        {canManage && (
-          <Button onClick={handleCreate} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Nova Meta
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowVisualization(!showVisualization)}
+            className="gap-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            {showVisualization ? 'Ver Tabela' : 'Ver Análise'}
           </Button>
-        )}
+          <Button 
+            variant="outline" 
+            onClick={() => setIsExportModalOpen(true)}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Exportar
+          </Button>
+          {canManage && (
+            <Button onClick={handleCreate} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Nova Meta
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -307,91 +329,104 @@ const Metas = () => {
         </CardContent>
       </Card>
 
-      {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Produtor</TableHead>
-                  <TableHead>Mês</TableHead>
-                  <TableHead>Tipo de Meta</TableHead>
-                  <TableHead className="text-center">Quantidade</TableHead>
-                  {canManage && <TableHead className="text-right">Ações</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={canManage ? 5 : 4} className="text-center py-8">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                    </TableCell>
-                  </TableRow>
-                ) : filteredMetas.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={canManage ? 5 : 4} className="text-center py-8 text-muted-foreground">
-                      {hasActiveFilters ? 'Nenhuma meta encontrada com os filtros aplicados.' : 'Nenhuma meta cadastrada.'}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredMetas.map((meta) => (
-                    <TableRow key={meta.id}>
-                      <TableCell className="font-medium">
-                        {meta.produtor?.nome || '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {formatMonth(meta.mes)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {meta.tipo_meta?.descricao || '-'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="font-semibold text-primary">
-                          {meta.quantidade}
-                        </span>
-                      </TableCell>
-                      {canManage && (
-                        <TableCell className="text-right">
-                          <div className="flex gap-1 justify-end">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(meta)}
-                              title="Editar"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteClick(meta)}
-                              title="Excluir"
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
+      {/* Visualization or Table */}
+      {showVisualization ? (
+        <MetasProdutosComparison
+          filterAno={filterMes !== 'all' ? filterMes.split('-')[0] : 'all'}
+          filterProdutor={filterProdutor}
+          metas={metas}
+          tiposMeta={tiposMeta}
+          produtorNome={produtores?.find(p => p.id === filterProdutor)?.nome || ''}
+        />
+      ) : (
+        <>
+          {/* Table */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Produtor</TableHead>
+                      <TableHead>Mês</TableHead>
+                      <TableHead>Tipo de Meta</TableHead>
+                      <TableHead className="text-center">Quantidade</TableHead>
+                      {canManage && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={canManage ? 5 : 4} className="text-center py-8">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredMetas.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={canManage ? 5 : 4} className="text-center py-8 text-muted-foreground">
+                          {hasActiveFilters ? 'Nenhuma meta encontrada com os filtros aplicados.' : 'Nenhuma meta cadastrada.'}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredMetas.map((meta) => (
+                        <TableRow key={meta.id}>
+                          <TableCell className="font-medium">
+                            {meta.produtor?.nome || '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">
+                              {formatMonth(meta.mes)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {meta.tipo_meta?.descricao || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="font-semibold text-primary">
+                              {meta.quantidade}
+                            </span>
+                          </TableCell>
+                          {canManage && (
+                            <TableCell className="text-right">
+                              <div className="flex gap-1 justify-end">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEdit(meta)}
+                                  title="Editar"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteClick(meta)}
+                                  title="Excluir"
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Summary */}
-      {filteredMetas.length > 0 && (
-        <div className="text-sm text-muted-foreground text-center">
-          Exibindo {filteredMetas.length} de {metas.length} metas
-        </div>
+          {/* Summary */}
+          {filteredMetas.length > 0 && (
+            <div className="text-sm text-muted-foreground text-center">
+              Exibindo {filteredMetas.length} de {metas.length} metas
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal */}
@@ -423,6 +458,13 @@ const Metas = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Export Modal */}
+      <ExportMetasProdutosModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        metas={metas}
+      />
     </div>
   );
 };

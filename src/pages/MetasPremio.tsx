@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Search, DollarSign, Filter, Save, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, DollarSign, Filter, Save, Check, Download } from 'lucide-react';
 import EscadinhaVisualization from '@/components/EscadinhaVisualization';
+import ExportMetasPremioModal from '@/components/ExportMetasPremioModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -132,6 +133,7 @@ const MetasPremio = () => {
   const [editingMeta, setEditingMeta] = useState<MetaPremio | null>(null);
   const [saving, setSaving] = useState(false);
   const [showAccumulated, setShowAccumulated] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Form state for new/edit
   const [formData, setFormData] = useState({
@@ -413,6 +415,14 @@ const MetasPremio = () => {
             onClick={() => setShowAccumulated(!showAccumulated)}
           >
             {showAccumulated ? 'Ver Mensal' : 'Ver Acumulado'}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsExportModalOpen(true)}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Exportar
           </Button>
           {canManage && (
             <Button onClick={handleCreate} className="flex items-center gap-2">
@@ -795,6 +805,13 @@ const MetasPremio = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Export Modal */}
+      <ExportMetasPremioModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        metas={metas}
+      />
     </div>
   );
 };
