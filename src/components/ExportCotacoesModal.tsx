@@ -286,9 +286,9 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
 
       // Apply status filter based on report type
       if (tipoRelatorio === "negocio_fechado") {
-        query = query.eq("status", "Negócio fechado");
+        query = query.in("status", ["Negócio fechado", "Fechamento congênere"]);
       } else if (tipoRelatorio === "em_cotacao") {
-        query = query.eq("status", "Em Cotação");
+        query = query.eq("status", "Em cotação");
       } else if (tipoRelatorio === "declinados") {
         query = query.eq("status", "Declinado");
       }
