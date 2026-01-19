@@ -12,14 +12,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Download, BarChart3, FileSpreadsheet, TrendingUp, TrendingDown, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Download, BarChart3, FileSpreadsheet, TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, RefreshCw, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getRamoGroup, getRegraRamo } from "@/lib/ramoClassification";
-import { format, parseISO, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 
 interface CotacoesAnalysisModalProps {
   open: boolean;
@@ -50,6 +51,12 @@ interface GroupedCotacao {
 const STATUS_FINALIZADOS = ["Negócio fechado", "Fechamento congênere", "Declinado"];
 const STATUS_EM_ABERTO = ["Em cotação"];
 
+// Available years for selection (last 5 years)
+const getAvailableYears = () => {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: 5 }, (_, i) => currentYear - i);
+};
+
 export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisModalProps) {
   const [analysisType, setAnalysisType] = useState<AnalysisType>("finalizadas");
   const [periodoFilter, setPeriodoFilter] = useState("ano_atual");
@@ -57,6 +64,9 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
   const [ramoFilter, setRamoFilter] = useState("todos");
   const [grupoFilter, setGrupoFilter] = useState("todos");
   const [recorrenciaFilter, setRecorrenciaFilter] = useState("todos");
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
   // Calculate date range based on period filter
   const dateRange = useMemo(() => {
@@ -71,12 +81,25 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
         return { start: startOfMonth(subMonths(now, 2)), end: endOfMonth(now) };
       case "ultimos_6_meses":
         return { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(now) };
+      case "ultimos_12_meses":
+        return { start: startOfMonth(subMonths(now, 11)), end: endOfMonth(now) };
       case "ano_atual":
         return { start: startOfYear(now), end: endOfYear(now) };
+      case "ano_anterior":
+        const prevYear = subYears(now, 1);
+        return { start: startOfYear(prevYear), end: endOfYear(prevYear) };
+      case "ano_especifico":
+        const year = parseInt(selectedYear);
+        return { start: new Date(year, 0, 1), end: new Date(year, 11, 31) };
+      case "personalizado":
+        return { 
+          start: customStartDate || startOfYear(now), 
+          end: customEndDate || endOfYear(now) 
+        };
       default:
         return { start: startOfYear(now), end: endOfYear(now) };
     }
-  }, [periodoFilter]);
+  }, [periodoFilter, customStartDate, customEndDate, selectedYear]);
 
   // Fetch all quotations with related data
   const { data: cotacoes = [], isLoading } = useQuery({
@@ -343,13 +366,27 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
     switch (status) {
       case "Negócio fechado":
       case "Fechamento congênere":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-emerald-500" />;
       case "Declinado":
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircle className="h-4 w-4 text-rose-500" />;
       case "Em cotação":
-        return <Clock className="h-4 w-4 text-orange-500" />;
+        return <Clock className="h-4 w-4 text-amber-500" />;
       default:
         return <Clock className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case "Negócio fechado":
+      case "Fechamento congênere":
+        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400";
+      case "Declinado":
+        return "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400";
+      case "Em cotação":
+        return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
     }
   };
 
@@ -358,7 +395,7 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
       <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
+            <BarChart3 className="h-5 w-5 text-primary" />
             Análise de Cotações
           </DialogTitle>
         </DialogHeader>
@@ -386,7 +423,11 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                 <SelectItem value="mes_anterior">Mês Anterior</SelectItem>
                 <SelectItem value="ultimos_3_meses">Últimos 3 Meses</SelectItem>
                 <SelectItem value="ultimos_6_meses">Últimos 6 Meses</SelectItem>
+                <SelectItem value="ultimos_12_meses">Últimos 12 Meses</SelectItem>
                 <SelectItem value="ano_atual">Ano Atual</SelectItem>
+                <SelectItem value="ano_anterior">Ano Anterior</SelectItem>
+                <SelectItem value="ano_especifico">Ano Específico</SelectItem>
+                <SelectItem value="personalizado">Período Personalizado</SelectItem>
               </SelectContent>
             </Select>
 
@@ -438,36 +479,81 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
             </Select>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <Card>
+          {/* Custom date range picker */}
+          {periodoFilter === "personalizado" && (
+            <div className="flex flex-wrap items-center gap-3 pb-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">De:</span>
+                <DatePickerInput
+                  value={customStartDate}
+                  onChange={setCustomStartDate}
+                  placeholder="Data início"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Até:</span>
+                <DatePickerInput
+                  value={customEndDate}
+                  onChange={setCustomEndDate}
+                  placeholder="Data fim"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Year selector */}
+          {periodoFilter === "ano_especifico" && (
+            <div className="flex items-center gap-3 pb-4">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Ano:</span>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAvailableYears().map((year) => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Summary Cards - Reorganized with colors */}
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
+            {/* Total - Blue */}
+            <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/20">
               <CardContent className="p-3">
-                <div className="text-sm text-muted-foreground">Total Cotações</div>
-                <div className="text-2xl font-bold">{summary.totalCotacoes}</div>
-                <div className="text-xs text-muted-foreground">(CNPJ + Ramo distintos)</div>
+                <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">Total Cotações</div>
+                <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{summary.totalCotacoes}</div>
+                <div className="text-xs text-blue-500/70">(CNPJ + Ramo distintos)</div>
               </CardContent>
             </Card>
             
             {analysisType === "finalizadas" && (
               <>
-                <Card>
+                {/* Negócio Fechado - Green */}
+                <Card className="border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50 to-transparent dark:from-emerald-950/20">
                   <CardContent className="p-3">
-                    <div className="text-sm text-muted-foreground flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3 text-green-500" />
+                    <div className="text-sm text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                      <TrendingUp className="h-3 w-3" />
                       Negócio Fechado
                     </div>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
                       {(summary.byStatus["Negócio fechado"] || 0) + (summary.byStatus["Fechamento congênere"] || 0)}
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                
+                {/* Declinado - Rose */}
+                <Card className="border-l-4 border-l-rose-500 bg-gradient-to-r from-rose-50 to-transparent dark:from-rose-950/20">
                   <CardContent className="p-3">
-                    <div className="text-sm text-muted-foreground flex items-center gap-1">
-                      <TrendingDown className="h-3 w-3 text-red-500" />
+                    <div className="text-sm text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1">
+                      <TrendingDown className="h-3 w-3" />
                       Declinado
                     </div>
-                    <div className="text-2xl font-bold text-red-600">
+                    <div className="text-2xl font-bold text-rose-700 dark:text-rose-300">
                       {summary.byStatus["Declinado"] || 0}
                     </div>
                   </CardContent>
@@ -475,17 +561,22 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
               </>
             )}
 
-            <Card>
+            {/* Recorrentes - Purple */}
+            <Card className="border-l-4 border-l-violet-500 bg-gradient-to-r from-violet-50 to-transparent dark:from-violet-950/20">
               <CardContent className="p-3">
-                <div className="text-sm text-muted-foreground">Recorrentes</div>
-                <div className="text-2xl font-bold">{summary.byRecorrencia.Recorrente}</div>
+                <div className="text-sm text-violet-600 dark:text-violet-400 font-medium flex items-center gap-1">
+                  <RefreshCw className="h-3 w-3" />
+                  Recorrentes
+                </div>
+                <div className="text-2xl font-bold text-violet-700 dark:text-violet-300">{summary.byRecorrencia.Recorrente}</div>
               </CardContent>
             </Card>
 
-            <Card>
+            {/* Não Recorrentes - Amber */}
+            <Card className="border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50 to-transparent dark:from-amber-950/20">
               <CardContent className="p-3">
-                <div className="text-sm text-muted-foreground">Não Recorrentes</div>
-                <div className="text-2xl font-bold">{summary.byRecorrencia.Total}</div>
+                <div className="text-sm text-amber-600 dark:text-amber-400 font-medium">Não Recorrentes</div>
+                <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">{summary.byRecorrencia.Total}</div>
               </CardContent>
             </Card>
           </div>
@@ -503,7 +594,7 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                 </Button>
               </CardHeader>
               <CardContent className="flex-1 overflow-hidden p-0">
-                <ScrollArea className="h-[300px]">
+                <ScrollArea className="h-[280px]">
                   {isLoading ? (
                     <div className="flex items-center justify-center h-32">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -516,7 +607,7 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                   ) : (
                     <Table>
                       <TableHeader>
-                        <TableRow>
+                        <TableRow className="bg-muted/50">
                           <TableHead>Mês Início</TableHead>
                           <TableHead>Segurado</TableHead>
                           <TableHead>CNPJ</TableHead>
@@ -530,17 +621,19 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                       </TableHeader>
                       <TableBody>
                         {groupedData.map((item, idx) => (
-                          <TableRow key={`${item.cpf_cnpj}-${item.ramo_group}-${idx}`}>
+                          <TableRow key={`${item.cpf_cnpj}-${item.ramo_group}-${idx}`} className="hover:bg-muted/30">
                             <TableCell className="font-medium">
-                              {format(parseISO(item.mes_inicio + "-01"), "MMM/yy", { locale: ptBR })}
+                              <Badge variant="outline" className="bg-slate-100 dark:bg-slate-800">
+                                {format(parseISO(item.mes_inicio + "-01"), "MMM/yy", { locale: ptBR })}
+                              </Badge>
                             </TableCell>
                             <TableCell className="max-w-[150px] truncate" title={item.segurado}>
                               {item.segurado}
                             </TableCell>
-                            <TableCell className="text-xs font-mono">{item.cpf_cnpj}</TableCell>
+                            <TableCell className="text-xs font-mono text-muted-foreground">{item.cpf_cnpj}</TableCell>
                             <TableCell>
                               <div className="flex flex-col">
-                                <span className="text-sm">{item.ramo_descricao}</span>
+                                <span className="text-sm font-medium">{item.ramo_descricao}</span>
                                 {item.ramo_group !== item.ramo_descricao && (
                                   <span className="text-xs text-muted-foreground">{item.ramo_group}</span>
                                 )}
@@ -548,22 +641,34 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                             </TableCell>
                             <TableCell>{item.produtor_cotador_nome}</TableCell>
                             <TableCell>
-                              <Badge variant={item.recorrencia === "Recorrente" ? "default" : "secondary"}>
-                                {item.recorrencia}
+                              <Badge 
+                                variant="outline"
+                                className={item.recorrencia === "Recorrente" 
+                                  ? "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400 border-violet-300" 
+                                  : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300"
+                                }
+                              >
+                                {item.recorrencia === "Recorrente" ? "Recorrente" : "Não Recorrente"}
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1.5">
                                 {getStatusIcon(item.status_final)}
-                                <span className="text-sm">{item.status_final}</span>
+                                <Badge className={getStatusBadgeClass(item.status_final)}>
+                                  {item.status_final}
+                                </Badge>
                               </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1 max-w-[200px]">
                                 {item.seguradoras.length > 0 ? (
-                                  <span className="text-xs" title={item.seguradoras.join(" | ")}>
+                                  <span className="text-xs text-muted-foreground" title={item.seguradoras.join(" | ")}>
                                     {item.seguradoras.slice(0, 2).join(" | ")}
-                                    {item.seguradoras.length > 2 && ` +${item.seguradoras.length - 2}`}
+                                    {item.seguradoras.length > 2 && (
+                                      <Badge variant="secondary" className="ml-1 text-[10px] px-1">
+                                        +{item.seguradoras.length - 2}
+                                      </Badge>
+                                    )}
                                   </span>
                                 ) : (
                                   <span className="text-muted-foreground text-xs">-</span>
@@ -573,7 +678,9 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                             {analysisType === "finalizadas" && (
                               <TableCell>
                                 {item.dias_ate_fechamento !== null ? (
-                                  <span className="text-sm">{item.dias_ate_fechamento}d</span>
+                                  <Badge variant="outline" className="bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400">
+                                    {item.dias_ate_fechamento}d
+                                  </Badge>
                                 ) : (
                                   <span className="text-muted-foreground">-</span>
                                 )}
@@ -592,10 +699,10 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
 
         {/* Summary by dimensions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          {/* By Month */}
-          <Card>
-            <CardHeader className="py-2">
-              <CardTitle className="text-sm">Por Mês</CardTitle>
+          {/* By Month - Cyan */}
+          <Card className="border-t-4 border-t-cyan-500">
+            <CardHeader className="py-2 bg-gradient-to-r from-cyan-50 to-transparent dark:from-cyan-950/20">
+              <CardTitle className="text-sm text-cyan-700 dark:text-cyan-400">Por Mês</CardTitle>
             </CardHeader>
             <CardContent className="p-2">
               <ScrollArea className="h-[120px]">
@@ -606,9 +713,9 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                     {Object.entries(summary.byMes)
                       .sort((a, b) => b[1] - a[1])
                       .map(([mes, count]) => (
-                        <div key={mes} className="flex justify-between text-sm">
-                          <span>{mes}</span>
-                          <Badge variant="outline">{count}</Badge>
+                        <div key={mes} className="flex justify-between text-sm items-center px-2 py-1 hover:bg-muted/50 rounded">
+                          <span className="capitalize">{mes}</span>
+                          <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400">{count}</Badge>
                         </div>
                       ))}
                   </div>
@@ -617,10 +724,10 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
             </CardContent>
           </Card>
 
-          {/* By Produtor */}
-          <Card>
-            <CardHeader className="py-2">
-              <CardTitle className="text-sm">Por Produtor</CardTitle>
+          {/* By Produtor - Indigo */}
+          <Card className="border-t-4 border-t-indigo-500">
+            <CardHeader className="py-2 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-950/20">
+              <CardTitle className="text-sm text-indigo-700 dark:text-indigo-400">Por Produtor</CardTitle>
             </CardHeader>
             <CardContent className="p-2">
               <ScrollArea className="h-[120px]">
@@ -632,9 +739,9 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                       .sort((a, b) => b[1] - a[1])
                       .slice(0, 10)
                       .map(([produtor, count]) => (
-                        <div key={produtor} className="flex justify-between text-sm">
+                        <div key={produtor} className="flex justify-between text-sm items-center px-2 py-1 hover:bg-muted/50 rounded">
                           <span className="truncate max-w-[150px]" title={produtor}>{produtor}</span>
-                          <Badge variant="outline">{count}</Badge>
+                          <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">{count}</Badge>
                         </div>
                       ))}
                   </div>
@@ -643,10 +750,10 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
             </CardContent>
           </Card>
 
-          {/* By Ramo Group */}
-          <Card>
-            <CardHeader className="py-2">
-              <CardTitle className="text-sm">Por Grupo/Ramo</CardTitle>
+          {/* By Ramo Group - Teal */}
+          <Card className="border-t-4 border-t-teal-500">
+            <CardHeader className="py-2 bg-gradient-to-r from-teal-50 to-transparent dark:from-teal-950/20">
+              <CardTitle className="text-sm text-teal-700 dark:text-teal-400">Por Grupo/Ramo</CardTitle>
             </CardHeader>
             <CardContent className="p-2">
               <ScrollArea className="h-[120px]">
@@ -657,9 +764,9 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                     {Object.entries(summary.byRamoGroup)
                       .sort((a, b) => b[1] - a[1])
                       .map(([grupo, count]) => (
-                        <div key={grupo} className="flex justify-between text-sm">
+                        <div key={grupo} className="flex justify-between text-sm items-center px-2 py-1 hover:bg-muted/50 rounded">
                           <span className="truncate max-w-[150px]" title={grupo}>{grupo}</span>
-                          <Badge variant="outline">{count}</Badge>
+                          <Badge className="bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400">{count}</Badge>
                         </div>
                       ))}
                   </div>
