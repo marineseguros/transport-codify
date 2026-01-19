@@ -28,10 +28,12 @@ import {
   History,
   CalendarIcon,
   Eye,
+  BarChart3,
 } from "lucide-react";
 import { CotacaoModal } from "@/components/CotacaoModal";
 import { HistoricoGeralModal } from "@/components/HistoricoGeralModal";
 import { ExportCotacoesModal } from "@/components/ExportCotacoesModal";
+import { CotacoesAnalysisModal } from "@/components/CotacoesAnalysisModal";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCotacoes, useAllCotacoesAuditLog, type Cotacao } from "@/hooks/useSupabaseData";
@@ -82,6 +84,7 @@ const Cotacoes = () => {
   const [dateFilter, setDateFilter] = useState<string>("todos");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
 
   // Hook para buscar todo o histórico de alterações
   const { auditLog, loading: auditLogLoading } = useAllCotacoesAuditLog();
@@ -371,6 +374,10 @@ const Cotacoes = () => {
               <span className="md:hidden">Excluir ({selectedIds.size})</span>
             </Button>
           )}
+          <Button onClick={() => setAnalysisModalOpen(true)} variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Análise</span>
+          </Button>
           <Button onClick={() => setExportModalOpen(true)} variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Exportar</span>
@@ -643,6 +650,11 @@ const Cotacoes = () => {
       <ExportCotacoesModal
         open={exportModalOpen}
         onOpenChange={setExportModalOpen}
+      />
+
+      <CotacoesAnalysisModal
+        open={analysisModalOpen}
+        onOpenChange={setAnalysisModalOpen}
       />
 
       {/* Delete Confirmation Dialog */}
