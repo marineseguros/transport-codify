@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Download, BarChart3, FileSpreadsheet, TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, RefreshCw, Calendar } from "lucide-react";
+import { Download, BarChart3, FileSpreadsheet, TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, RefreshCw, Calendar, ListFilter } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getRamoGroup, getRegraRamo } from "@/lib/ramoClassification";
@@ -27,7 +27,7 @@ interface CotacoesAnalysisModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type AnalysisType = "finalizadas" | "em_aberto";
+type AnalysisType = "finalizadas" | "em_aberto" | "geral";
 
 interface GroupedCotacao {
   cpf_cnpj: string;
@@ -50,6 +50,7 @@ interface GroupedCotacao {
 // Status categories
 const STATUS_FINALIZADOS = ["Negócio fechado", "Fechamento congênere", "Declinado"];
 const STATUS_EM_ABERTO = ["Em cotação"];
+const STATUS_TODOS = [...STATUS_FINALIZADOS, ...STATUS_EM_ABERTO];
 
 // Available years for selection (last 5 years)
 const getAvailableYears = () => {
@@ -177,7 +178,14 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
   // Filter and group cotações based on analysis type
   const groupedData = useMemo(() => {
     // Filter by status type
-    const statusFilter = analysisType === "finalizadas" ? STATUS_FINALIZADOS : STATUS_EM_ABERTO;
+    let statusFilter: string[];
+    if (analysisType === "finalizadas") {
+      statusFilter = STATUS_FINALIZADOS;
+    } else if (analysisType === "em_aberto") {
+      statusFilter = STATUS_EM_ABERTO;
+    } else {
+      statusFilter = STATUS_TODOS;
+    }
     
     let filtered = cotacoes.filter((c) => statusFilter.includes(c.status));
 
@@ -356,7 +364,7 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
     const summaryWs = XLSX.utils.json_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, summaryWs, "Resumo");
 
-    const tipoLabel = analysisType === "finalizadas" ? "Finalizadas" : "EmAberto";
+    const tipoLabel = analysisType === "finalizadas" ? "Finalizadas" : analysisType === "em_aberto" ? "EmAberto" : "Geral";
     const fileName = `Analise_Cotacoes_${tipoLabel}_${format(new Date(), "yyyy-MM-dd")}.xlsx`;
     XLSX.writeFile(wb, fileName);
     toast.success("Relatório exportado com sucesso!");
@@ -366,13 +374,13 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
     switch (status) {
       case "Negócio fechado":
       case "Fechamento congênere":
-        return <CheckCircle className="h-4 w-4 text-emerald-500" />;
+        return <CheckCircle className="h-3 w-3 text-emerald-500" />;
       case "Declinado":
-        return <XCircle className="h-4 w-4 text-rose-500" />;
+        return <XCircle className="h-3 w-3 text-rose-500" />;
       case "Em cotação":
-        return <Clock className="h-4 w-4 text-amber-500" />;
+        return <Clock className="h-3 w-3 text-amber-500" />;
       default:
-        return <Clock className="h-4 w-4 text-muted-foreground" />;
+        return <Clock className="h-3 w-3 text-muted-foreground" />;
     }
   };
 
@@ -390,32 +398,39 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
     }
   };
 
+  const showDaysColumn = analysisType === "finalizadas" || analysisType === "geral";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-hidden flex flex-col p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             <BarChart3 className="h-5 w-5 text-primary" />
             Análise de Cotações
           </DialogTitle>
         </DialogHeader>
 
         <Tabs value={analysisType} onValueChange={(v) => setAnalysisType(v as AnalysisType)} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="finalizadas" className="gap-2">
-              <CheckCircle className="h-4 w-4" />
+          {/* Tabs - 3 columns */}
+          <TabsList className="grid w-full grid-cols-3 h-9">
+            <TabsTrigger value="finalizadas" className="gap-1.5 text-sm font-semibold">
+              <CheckCircle className="h-3.5 w-3.5" />
               Finalizadas
             </TabsTrigger>
-            <TabsTrigger value="em_aberto" className="gap-2">
-              <Clock className="h-4 w-4" />
+            <TabsTrigger value="em_aberto" className="gap-1.5 text-sm font-semibold">
+              <Clock className="h-3.5 w-3.5" />
               Em Aberto
+            </TabsTrigger>
+            <TabsTrigger value="geral" className="gap-1.5 text-sm font-semibold">
+              <ListFilter className="h-3.5 w-3.5" />
+              Geral
             </TabsTrigger>
           </TabsList>
 
-          {/* Filters */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 py-4">
+          {/* All Filters on same line */}
+          <div className="flex flex-wrap items-center gap-2 py-2">
             <Select value={periodoFilter} onValueChange={setPeriodoFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="h-8 w-[140px] text-xs font-medium border-2 bg-background shadow-sm">
                 <SelectValue placeholder="Período" />
               </SelectTrigger>
               <SelectContent>
@@ -431,8 +446,44 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
               </SelectContent>
             </Select>
 
+            {periodoFilter === "ano_especifico" && (
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="h-8 w-[90px] text-xs font-medium border-2 bg-background shadow-sm">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAvailableYears().map((year) => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {periodoFilter === "personalizado" && (
+              <>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                  <DatePickerInput
+                    value={customStartDate}
+                    onChange={setCustomStartDate}
+                    placeholder="Início"
+                    className="h-8 w-[110px] text-xs"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">até</span>
+                <DatePickerInput
+                  value={customEndDate}
+                  onChange={setCustomEndDate}
+                  placeholder="Fim"
+                  className="h-8 w-[110px] text-xs"
+                />
+              </>
+            )}
+
+            <div className="h-4 w-px bg-border" />
+
             <Select value={produtorFilter} onValueChange={setProdutorFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="h-8 w-[130px] text-xs font-medium border-2 bg-background shadow-sm">
                 <SelectValue placeholder="Produtor" />
               </SelectTrigger>
               <SelectContent>
@@ -444,7 +495,7 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
             </Select>
 
             <Select value={ramoFilter} onValueChange={setRamoFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="h-8 w-[120px] text-xs font-medium border-2 bg-background shadow-sm">
                 <SelectValue placeholder="Ramo" />
               </SelectTrigger>
               <SelectContent>
@@ -456,7 +507,7 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
             </Select>
 
             <Select value={grupoFilter} onValueChange={setGrupoFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="h-8 w-[120px] text-xs font-medium border-2 bg-background shadow-sm">
                 <SelectValue placeholder="Grupo" />
               </SelectTrigger>
               <SelectContent>
@@ -468,7 +519,7 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
             </Select>
 
             <Select value={recorrenciaFilter} onValueChange={setRecorrenciaFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="h-8 w-[110px] text-xs font-medium border-2 bg-background shadow-sm">
                 <SelectValue placeholder="Recorrência" />
               </SelectTrigger>
               <SelectContent>
@@ -479,81 +530,40 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
             </Select>
           </div>
 
-          {/* Custom date range picker */}
-          {periodoFilter === "personalizado" && (
-            <div className="flex flex-wrap items-center gap-3 pb-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">De:</span>
-                <DatePickerInput
-                  value={customStartDate}
-                  onChange={setCustomStartDate}
-                  placeholder="Data início"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Até:</span>
-                <DatePickerInput
-                  value={customEndDate}
-                  onChange={setCustomEndDate}
-                  placeholder="Data fim"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Year selector */}
-          {periodoFilter === "ano_especifico" && (
-            <div className="flex items-center gap-3 pb-4">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Ano:</span>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Ano" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getAvailableYears().map((year) => (
-                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Summary Cards - Reorganized with colors */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
+          {/* Summary Cards - All on same line, compact */}
+          <div className="flex flex-wrap gap-2 mb-2">
             {/* Total - Blue */}
-            <Card className="border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/20">
-              <CardContent className="p-3">
-                <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">Total Cotações</div>
-                <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{summary.totalCotacoes}</div>
-                <div className="text-xs text-blue-500/70">(CNPJ + Ramo distintos)</div>
+            <Card className="flex-1 min-w-[120px] border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/20">
+              <CardContent className="p-2">
+                <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold">Total Cotações</div>
+                <div className="text-xl font-bold text-blue-700 dark:text-blue-300">{summary.totalCotacoes}</div>
+                <div className="text-[10px] text-blue-500/70">(CNPJ + Ramo distintos)</div>
               </CardContent>
             </Card>
             
-            {analysisType === "finalizadas" && (
+            {(analysisType === "finalizadas" || analysisType === "geral") && (
               <>
                 {/* Negócio Fechado - Green */}
-                <Card className="border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50 to-transparent dark:from-emerald-950/20">
-                  <CardContent className="p-3">
-                    <div className="text-sm text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                <Card className="flex-1 min-w-[100px] border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50 to-transparent dark:from-emerald-950/20">
+                  <CardContent className="p-2">
+                    <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                       <TrendingUp className="h-3 w-3" />
                       Negócio Fechado
                     </div>
-                    <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                    <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
                       {(summary.byStatus["Negócio fechado"] || 0) + (summary.byStatus["Fechamento congênere"] || 0)}
                     </div>
                   </CardContent>
                 </Card>
                 
                 {/* Declinado - Rose */}
-                <Card className="border-l-4 border-l-rose-500 bg-gradient-to-r from-rose-50 to-transparent dark:from-rose-950/20">
-                  <CardContent className="p-3">
-                    <div className="text-sm text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1">
+                <Card className="flex-1 min-w-[100px] border-l-4 border-l-rose-500 bg-gradient-to-r from-rose-50 to-transparent dark:from-rose-950/20">
+                  <CardContent className="p-2">
+                    <div className="text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
                       <TrendingDown className="h-3 w-3" />
                       Declinado
                     </div>
-                    <div className="text-2xl font-bold text-rose-700 dark:text-rose-300">
+                    <div className="text-xl font-bold text-rose-700 dark:text-rose-300">
                       {summary.byStatus["Declinado"] || 0}
                     </div>
                   </CardContent>
@@ -561,128 +571,142 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
               </>
             )}
 
+            {analysisType === "geral" && (
+              <Card className="flex-1 min-w-[100px] border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50 to-transparent dark:from-amber-950/20">
+                <CardContent className="p-2">
+                  <div className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Em Cotação
+                  </div>
+                  <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
+                    {summary.byStatus["Em cotação"] || 0}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Recorrentes - Purple */}
-            <Card className="border-l-4 border-l-violet-500 bg-gradient-to-r from-violet-50 to-transparent dark:from-violet-950/20">
-              <CardContent className="p-3">
-                <div className="text-sm text-violet-600 dark:text-violet-400 font-medium flex items-center gap-1">
+            <Card className="flex-1 min-w-[100px] border-l-4 border-l-violet-500 bg-gradient-to-r from-violet-50 to-transparent dark:from-violet-950/20">
+              <CardContent className="p-2">
+                <div className="text-xs text-violet-600 dark:text-violet-400 font-semibold flex items-center gap-1">
                   <RefreshCw className="h-3 w-3" />
                   Recorrentes
                 </div>
-                <div className="text-2xl font-bold text-violet-700 dark:text-violet-300">{summary.byRecorrencia.Recorrente}</div>
+                <div className="text-xl font-bold text-violet-700 dark:text-violet-300">{summary.byRecorrencia.Recorrente}</div>
               </CardContent>
             </Card>
 
-            {/* Não Recorrentes - Amber */}
-            <Card className="border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50 to-transparent dark:from-amber-950/20">
-              <CardContent className="p-3">
-                <div className="text-sm text-amber-600 dark:text-amber-400 font-medium">Não Recorrentes</div>
-                <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">{summary.byRecorrencia.Total}</div>
+            {/* Não Recorrentes - Orange */}
+            <Card className="flex-1 min-w-[100px] border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-transparent dark:from-orange-950/20">
+              <CardContent className="p-2">
+                <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold">Não Recorrentes</div>
+                <div className="text-xl font-bold text-orange-700 dark:text-orange-300">{summary.byRecorrencia.Total}</div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Data Table */}
+          {/* Data Table - Expanded */}
           <TabsContent value={analysisType} className="flex-1 overflow-hidden mt-0">
-            <Card className="h-full flex flex-col">
-              <CardHeader className="flex flex-row items-center justify-between py-3">
-                <CardTitle className="text-base">
-                  {analysisType === "finalizadas" ? "Cotações Finalizadas" : "Cotações em Aberto"} por Período
+            <Card className="h-full flex flex-col border-2">
+              <CardHeader className="flex flex-row items-center justify-between py-2 px-3 border-b">
+                <CardTitle className="text-sm font-semibold">
+                  {analysisType === "finalizadas" ? "Cotações Finalizadas" : analysisType === "em_aberto" ? "Cotações em Aberto" : "Todas as Cotações"} por Período
                 </CardTitle>
-                <Button onClick={handleExport} variant="outline" size="sm" className="gap-2">
-                  <Download className="h-4 w-4" />
+                <Button onClick={handleExport} variant="outline" size="sm" className="h-7 gap-1.5 text-xs font-semibold shadow-sm">
+                  <Download className="h-3.5 w-3.5" />
                   Exportar Excel
                 </Button>
               </CardHeader>
               <CardContent className="flex-1 overflow-hidden p-0">
-                <ScrollArea className="h-[280px]">
+                <ScrollArea className="h-[calc(100vh-520px)] min-h-[200px]">
                   {isLoading ? (
                     <div className="flex items-center justify-center h-32">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     </div>
                   ) : groupedData.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
-                      <FileSpreadsheet className="h-8 w-8 mb-2" />
-                      <p>Nenhuma cotação encontrada para os filtros selecionados</p>
+                      <FileSpreadsheet className="h-6 w-6 mb-2" />
+                      <p className="text-sm">Nenhuma cotação encontrada para os filtros selecionados</p>
                     </div>
                   ) : (
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead>Mês Início</TableHead>
-                          <TableHead>Segurado</TableHead>
-                          <TableHead>CNPJ</TableHead>
-                          <TableHead>Ramo/Grupo</TableHead>
-                          <TableHead>Produtor</TableHead>
-                          <TableHead>Recorrência</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Seguradoras</TableHead>
-                          {analysisType === "finalizadas" && <TableHead>Dias</TableHead>}
+                        <TableRow className="bg-muted/50 h-8">
+                          <TableHead className="text-xs py-1">Mês Início</TableHead>
+                          <TableHead className="text-xs py-1">Segurado</TableHead>
+                          <TableHead className="text-xs py-1">CNPJ</TableHead>
+                          <TableHead className="text-xs py-1">Ramo/Grupo</TableHead>
+                          <TableHead className="text-xs py-1">Produtor</TableHead>
+                          <TableHead className="text-xs py-1">Recorrência</TableHead>
+                          <TableHead className="text-xs py-1">Status</TableHead>
+                          <TableHead className="text-xs py-1">Seguradoras</TableHead>
+                          {showDaysColumn && <TableHead className="text-xs py-1">Dias</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {groupedData.map((item, idx) => (
-                          <TableRow key={`${item.cpf_cnpj}-${item.ramo_group}-${idx}`} className="hover:bg-muted/30">
-                            <TableCell className="font-medium">
-                              <Badge variant="outline" className="bg-slate-100 dark:bg-slate-800">
+                          <TableRow key={`${item.cpf_cnpj}-${item.ramo_group}-${idx}`} className="hover:bg-muted/30 h-8">
+                            <TableCell className="py-1 text-xs">
+                              <Badge variant="outline" className="bg-slate-100 dark:bg-slate-800 text-[10px] px-1.5 py-0">
                                 {format(parseISO(item.mes_inicio + "-01"), "MMM/yy", { locale: ptBR })}
                               </Badge>
                             </TableCell>
-                            <TableCell className="max-w-[150px] truncate" title={item.segurado}>
+                            <TableCell className="max-w-[130px] truncate py-1 text-xs" title={item.segurado}>
                               {item.segurado}
                             </TableCell>
-                            <TableCell className="text-xs font-mono text-muted-foreground">{item.cpf_cnpj}</TableCell>
-                            <TableCell>
+                            <TableCell className="text-[10px] font-mono text-muted-foreground py-1">{item.cpf_cnpj}</TableCell>
+                            <TableCell className="py-1">
                               <div className="flex flex-col">
-                                <span className="text-sm font-medium">{item.ramo_descricao}</span>
+                                <span className="text-xs font-medium leading-tight">{item.ramo_descricao}</span>
                                 {item.ramo_group !== item.ramo_descricao && (
-                                  <span className="text-xs text-muted-foreground">{item.ramo_group}</span>
+                                  <span className="text-[10px] text-muted-foreground leading-tight">{item.ramo_group}</span>
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell>{item.produtor_cotador_nome}</TableCell>
-                            <TableCell>
+                            <TableCell className="py-1 text-xs">{item.produtor_cotador_nome}</TableCell>
+                            <TableCell className="py-1">
                               <Badge 
                                 variant="outline"
-                                className={item.recorrencia === "Recorrente" 
+                                className={`text-[10px] px-1.5 py-0 ${item.recorrencia === "Recorrente" 
                                   ? "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400 border-violet-300" 
-                                  : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300"
-                                }
+                                  : "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-300"
+                                }`}
                               >
-                                {item.recorrencia === "Recorrente" ? "Recorrente" : "Não Recorrente"}
+                                {item.recorrencia === "Recorrente" ? "Recorrente" : "Não Recorr."}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1.5">
+                            <TableCell className="py-1">
+                              <div className="flex items-center gap-1">
                                 {getStatusIcon(item.status_final)}
-                                <Badge className={getStatusBadgeClass(item.status_final)}>
+                                <Badge className={`text-[10px] px-1.5 py-0 ${getStatusBadgeClass(item.status_final)}`}>
                                   {item.status_final}
                                 </Badge>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1 max-w-[200px]">
+                            <TableCell className="py-1">
+                              <div className="flex flex-wrap gap-0.5 max-w-[150px]">
                                 {item.seguradoras.length > 0 ? (
-                                  <span className="text-xs text-muted-foreground" title={item.seguradoras.join(" | ")}>
+                                  <span className="text-[10px] text-muted-foreground" title={item.seguradoras.join(" | ")}>
                                     {item.seguradoras.slice(0, 2).join(" | ")}
                                     {item.seguradoras.length > 2 && (
-                                      <Badge variant="secondary" className="ml-1 text-[10px] px-1">
+                                      <Badge variant="secondary" className="ml-0.5 text-[9px] px-1 py-0">
                                         +{item.seguradoras.length - 2}
                                       </Badge>
                                     )}
                                   </span>
                                 ) : (
-                                  <span className="text-muted-foreground text-xs">-</span>
+                                  <span className="text-muted-foreground text-[10px]">-</span>
                                 )}
                               </div>
                             </TableCell>
-                            {analysisType === "finalizadas" && (
-                              <TableCell>
+                            {showDaysColumn && (
+                              <TableCell className="py-1">
                                 {item.dias_ate_fechamento !== null ? (
-                                  <Badge variant="outline" className="bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400">
+                                  <Badge variant="outline" className="bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400 text-[10px] px-1.5 py-0">
                                     {item.dias_ate_fechamento}d
                                   </Badge>
                                 ) : (
-                                  <span className="text-muted-foreground">-</span>
+                                  <span className="text-muted-foreground text-[10px]">-</span>
                                 )}
                               </TableCell>
                             )}
@@ -697,25 +721,25 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
           </TabsContent>
         </Tabs>
 
-        {/* Summary by dimensions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        {/* Summary by dimensions - Compact */}
+        <div className="grid grid-cols-3 gap-2 mt-2">
           {/* By Month - Cyan */}
-          <Card className="border-t-4 border-t-cyan-500">
-            <CardHeader className="py-2 bg-gradient-to-r from-cyan-50 to-transparent dark:from-cyan-950/20">
-              <CardTitle className="text-sm text-cyan-700 dark:text-cyan-400">Por Mês</CardTitle>
+          <Card className="border-t-2 border-t-cyan-500">
+            <CardHeader className="py-1 px-2 bg-gradient-to-r from-cyan-50 to-transparent dark:from-cyan-950/20">
+              <CardTitle className="text-xs text-cyan-700 dark:text-cyan-400 font-semibold">Por Mês</CardTitle>
             </CardHeader>
-            <CardContent className="p-2">
-              <ScrollArea className="h-[120px]">
+            <CardContent className="p-1">
+              <ScrollArea className="h-[80px]">
                 {Object.entries(summary.byMes).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">Sem dados</p>
+                  <p className="text-xs text-muted-foreground text-center py-2">Sem dados</p>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {Object.entries(summary.byMes)
                       .sort((a, b) => b[1] - a[1])
                       .map(([mes, count]) => (
-                        <div key={mes} className="flex justify-between text-sm items-center px-2 py-1 hover:bg-muted/50 rounded">
+                        <div key={mes} className="flex justify-between text-xs items-center px-1.5 py-0.5 hover:bg-muted/50 rounded">
                           <span className="capitalize">{mes}</span>
-                          <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400">{count}</Badge>
+                          <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400 text-[10px] px-1.5 py-0">{count}</Badge>
                         </div>
                       ))}
                   </div>
@@ -725,23 +749,23 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
           </Card>
 
           {/* By Produtor - Indigo */}
-          <Card className="border-t-4 border-t-indigo-500">
-            <CardHeader className="py-2 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-950/20">
-              <CardTitle className="text-sm text-indigo-700 dark:text-indigo-400">Por Produtor</CardTitle>
+          <Card className="border-t-2 border-t-indigo-500">
+            <CardHeader className="py-1 px-2 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-950/20">
+              <CardTitle className="text-xs text-indigo-700 dark:text-indigo-400 font-semibold">Por Produtor</CardTitle>
             </CardHeader>
-            <CardContent className="p-2">
-              <ScrollArea className="h-[120px]">
+            <CardContent className="p-1">
+              <ScrollArea className="h-[80px]">
                 {Object.entries(summary.byProdutor).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">Sem dados</p>
+                  <p className="text-xs text-muted-foreground text-center py-2">Sem dados</p>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {Object.entries(summary.byProdutor)
                       .sort((a, b) => b[1] - a[1])
                       .slice(0, 10)
                       .map(([produtor, count]) => (
-                        <div key={produtor} className="flex justify-between text-sm items-center px-2 py-1 hover:bg-muted/50 rounded">
-                          <span className="truncate max-w-[150px]" title={produtor}>{produtor}</span>
-                          <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">{count}</Badge>
+                        <div key={produtor} className="flex justify-between text-xs items-center px-1.5 py-0.5 hover:bg-muted/50 rounded">
+                          <span className="truncate max-w-[120px]" title={produtor}>{produtor}</span>
+                          <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 text-[10px] px-1.5 py-0">{count}</Badge>
                         </div>
                       ))}
                   </div>
@@ -751,22 +775,22 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
           </Card>
 
           {/* By Ramo Group - Teal */}
-          <Card className="border-t-4 border-t-teal-500">
-            <CardHeader className="py-2 bg-gradient-to-r from-teal-50 to-transparent dark:from-teal-950/20">
-              <CardTitle className="text-sm text-teal-700 dark:text-teal-400">Por Grupo/Ramo</CardTitle>
+          <Card className="border-t-2 border-t-teal-500">
+            <CardHeader className="py-1 px-2 bg-gradient-to-r from-teal-50 to-transparent dark:from-teal-950/20">
+              <CardTitle className="text-xs text-teal-700 dark:text-teal-400 font-semibold">Por Grupo/Ramo</CardTitle>
             </CardHeader>
-            <CardContent className="p-2">
-              <ScrollArea className="h-[120px]">
+            <CardContent className="p-1">
+              <ScrollArea className="h-[80px]">
                 {Object.entries(summary.byRamoGroup).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">Sem dados</p>
+                  <p className="text-xs text-muted-foreground text-center py-2">Sem dados</p>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {Object.entries(summary.byRamoGroup)
                       .sort((a, b) => b[1] - a[1])
                       .map(([grupo, count]) => (
-                        <div key={grupo} className="flex justify-between text-sm items-center px-2 py-1 hover:bg-muted/50 rounded">
-                          <span className="truncate max-w-[150px]" title={grupo}>{grupo}</span>
-                          <Badge className="bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400">{count}</Badge>
+                        <div key={grupo} className="flex justify-between text-xs items-center px-1.5 py-0.5 hover:bg-muted/50 rounded">
+                          <span className="truncate max-w-[120px]" title={grupo}>{grupo}</span>
+                          <Badge className="bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400 text-[10px] px-1.5 py-0">{count}</Badge>
                         </div>
                       ))}
                   </div>
