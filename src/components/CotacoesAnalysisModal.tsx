@@ -21,6 +21,7 @@ import { ptBR } from "date-fns/locale";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 interface CotacoesAnalysisModalProps {
   open: boolean;
@@ -61,10 +62,10 @@ const getAvailableYears = () => {
 export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisModalProps) {
   const [analysisType, setAnalysisType] = useState<AnalysisType>("finalizadas");
   const [periodoFilter, setPeriodoFilter] = useState("ano_atual");
-  const [produtorFilter, setProdutorFilter] = useState("todos");
-  const [ramoFilter, setRamoFilter] = useState("todos");
-  const [grupoFilter, setGrupoFilter] = useState("todos");
-  const [recorrenciaFilter, setRecorrenciaFilter] = useState("todos");
+  const [produtorFilter, setProdutorFilter] = useState<string[]>([]);
+  const [ramoFilter, setRamoFilter] = useState<string[]>([]);
+  const [grupoFilter, setGrupoFilter] = useState<string[]>([]);
+  const [recorrenciaFilter, setRecorrenciaFilter] = useState<string[]>([]);
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
@@ -189,30 +190,30 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
     
     let filtered = cotacoes.filter((c) => statusFilter.includes(c.status));
 
-    // Apply produtor filter
-    if (produtorFilter !== "todos") {
-      filtered = filtered.filter((c) => c.produtor_cotador_id === produtorFilter);
+    // Apply produtor filter (multi-select)
+    if (produtorFilter.length > 0) {
+      filtered = filtered.filter((c) => c.produtor_cotador_id && produtorFilter.includes(c.produtor_cotador_id));
     }
 
-    // Apply ramo filter
-    if (ramoFilter !== "todos") {
-      filtered = filtered.filter((c) => c.ramo_id === ramoFilter);
+    // Apply ramo filter (multi-select)
+    if (ramoFilter.length > 0) {
+      filtered = filtered.filter((c) => c.ramo_id && ramoFilter.includes(c.ramo_id));
     }
 
-    // Apply grupo filter
-    if (grupoFilter !== "todos") {
+    // Apply grupo filter (multi-select)
+    if (grupoFilter.length > 0) {
       filtered = filtered.filter((c) => {
         const ramo = c.ramo as any;
-        return ramo?.ramo_agrupado === grupoFilter;
+        return ramo?.ramo_agrupado && grupoFilter.includes(ramo.ramo_agrupado);
       });
     }
 
-    // Apply recorrência filter
-    if (recorrenciaFilter !== "todos") {
+    // Apply recorrência filter (multi-select)
+    if (recorrenciaFilter.length > 0) {
       filtered = filtered.filter((c) => {
         const ramo = c.ramo as any;
         const recorrencia = getRegraRamo(ramo);
-        return recorrencia === recorrenciaFilter;
+        return recorrenciaFilter.includes(recorrencia);
       });
     }
 
@@ -411,124 +412,120 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
         </DialogHeader>
 
         <Tabs value={analysisType} onValueChange={(v) => setAnalysisType(v as AnalysisType)} className="flex-1 flex flex-col overflow-hidden">
-          {/* Tabs - 3 columns */}
-          <TabsList className="grid w-full grid-cols-3 h-9">
-            <TabsTrigger value="finalizadas" className="gap-1.5 text-sm font-semibold">
-              <CheckCircle className="h-3.5 w-3.5" />
+          {/* Tabs - styled buttons */}
+          <TabsList className="grid w-full grid-cols-3 h-10 gap-1 p-1 bg-muted/50">
+            <TabsTrigger 
+              value="finalizadas" 
+              className="gap-1.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
+              <CheckCircle className="h-4 w-4" />
               Finalizadas
             </TabsTrigger>
-            <TabsTrigger value="em_aberto" className="gap-1.5 text-sm font-semibold">
-              <Clock className="h-3.5 w-3.5" />
+            <TabsTrigger 
+              value="em_aberto" 
+              className="gap-1.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
+              <Clock className="h-4 w-4" />
               Em Aberto
             </TabsTrigger>
-            <TabsTrigger value="geral" className="gap-1.5 text-sm font-semibold">
-              <ListFilter className="h-3.5 w-3.5" />
+            <TabsTrigger 
+              value="geral" 
+              className="gap-1.5 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
+              <ListFilter className="h-4 w-4" />
               Geral
             </TabsTrigger>
           </TabsList>
 
-          {/* All Filters on same line */}
-          <div className="flex flex-wrap items-center gap-2 py-2">
-            <Select value={periodoFilter} onValueChange={setPeriodoFilter}>
-              <SelectTrigger className="h-8 w-[140px] text-xs font-medium border-2 bg-background shadow-sm">
-                <SelectValue placeholder="Período" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="mes_atual">Mês Atual</SelectItem>
-                <SelectItem value="mes_anterior">Mês Anterior</SelectItem>
-                <SelectItem value="ultimos_3_meses">Últimos 3 Meses</SelectItem>
-                <SelectItem value="ultimos_6_meses">Últimos 6 Meses</SelectItem>
-                <SelectItem value="ultimos_12_meses">Últimos 12 Meses</SelectItem>
-                <SelectItem value="ano_atual">Ano Atual</SelectItem>
-                <SelectItem value="ano_anterior">Ano Anterior</SelectItem>
-                <SelectItem value="ano_especifico">Ano Específico</SelectItem>
-                <SelectItem value="personalizado">Período Personalizado</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {periodoFilter === "ano_especifico" && (
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="h-8 w-[90px] text-xs font-medium border-2 bg-background shadow-sm">
-                  <SelectValue placeholder="Ano" />
+          {/* All Filters on same line - responsive with flex grow */}
+          <div className="grid grid-cols-[minmax(120px,1fr)_repeat(4,minmax(100px,1fr))] gap-2 py-2 items-center">
+            <div className="flex items-center gap-2">
+              <Select value={periodoFilter} onValueChange={setPeriodoFilter}>
+                <SelectTrigger className="h-8 text-xs font-medium border-2 bg-background shadow-sm">
+                  <SelectValue placeholder="Período" />
                 </SelectTrigger>
                 <SelectContent>
-                  {getAvailableYears().map((year) => (
-                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                  ))}
+                  <SelectItem value="mes_atual">Mês Atual</SelectItem>
+                  <SelectItem value="mes_anterior">Mês Anterior</SelectItem>
+                  <SelectItem value="ultimos_3_meses">Últimos 3 Meses</SelectItem>
+                  <SelectItem value="ultimos_6_meses">Últimos 6 Meses</SelectItem>
+                  <SelectItem value="ultimos_12_meses">Últimos 12 Meses</SelectItem>
+                  <SelectItem value="ano_atual">Ano Atual</SelectItem>
+                  <SelectItem value="ano_anterior">Ano Anterior</SelectItem>
+                  <SelectItem value="ano_especifico">Ano Específico</SelectItem>
+                  <SelectItem value="personalizado">Período Personalizado</SelectItem>
                 </SelectContent>
               </Select>
-            )}
 
-            {periodoFilter === "personalizado" && (
-              <>
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  <DatePickerInput
-                    value={customStartDate}
-                    onChange={setCustomStartDate}
-                    placeholder="Início"
-                    className="h-8 w-[110px] text-xs"
-                  />
-                </div>
-                <span className="text-xs text-muted-foreground">até</span>
-                <DatePickerInput
-                  value={customEndDate}
-                  onChange={setCustomEndDate}
-                  placeholder="Fim"
-                  className="h-8 w-[110px] text-xs"
-                />
-              </>
-            )}
+              {periodoFilter === "ano_especifico" && (
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger className="h-8 w-[80px] text-xs font-medium border-2 bg-background shadow-sm">
+                    <SelectValue placeholder="Ano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableYears().map((year) => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
 
-            <div className="h-4 w-px bg-border" />
+            <MultiSelect
+              options={produtores.map((p) => ({ value: p.id, label: p.nome }))}
+              selected={produtorFilter}
+              onChange={setProdutorFilter}
+              placeholder="Produtores"
+              className="h-8 text-xs font-medium border-2 shadow-sm"
+            />
 
-            <Select value={produtorFilter} onValueChange={setProdutorFilter}>
-              <SelectTrigger className="h-8 w-[130px] text-xs font-medium border-2 bg-background shadow-sm">
-                <SelectValue placeholder="Produtor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos Produtores</SelectItem>
-                {produtores.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={ramos.map((r) => ({ value: r.id, label: r.descricao }))}
+              selected={ramoFilter}
+              onChange={setRamoFilter}
+              placeholder="Ramos"
+              className="h-8 text-xs font-medium border-2 shadow-sm"
+            />
 
-            <Select value={ramoFilter} onValueChange={setRamoFilter}>
-              <SelectTrigger className="h-8 w-[120px] text-xs font-medium border-2 bg-background shadow-sm">
-                <SelectValue placeholder="Ramo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos Ramos</SelectItem>
-                {ramos.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>{r.descricao}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={grupos.map((g) => ({ value: g, label: g }))}
+              selected={grupoFilter}
+              onChange={setGrupoFilter}
+              placeholder="Grupos"
+              className="h-8 text-xs font-medium border-2 shadow-sm"
+            />
 
-            <Select value={grupoFilter} onValueChange={setGrupoFilter}>
-              <SelectTrigger className="h-8 w-[120px] text-xs font-medium border-2 bg-background shadow-sm">
-                <SelectValue placeholder="Grupo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos Grupos</SelectItem>
-                {grupos.map((g) => (
-                  <SelectItem key={g} value={g}>{g}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={recorrenciaFilter} onValueChange={setRecorrenciaFilter}>
-              <SelectTrigger className="h-8 w-[110px] text-xs font-medium border-2 bg-background shadow-sm">
-                <SelectValue placeholder="Recorrência" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todas</SelectItem>
-                <SelectItem value="Recorrente">Recorrente</SelectItem>
-                <SelectItem value="Total">Não Recorrente</SelectItem>
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={[
+                { value: "Recorrente", label: "Recorrente" },
+                { value: "Total", label: "Não Recorrente" },
+              ]}
+              selected={recorrenciaFilter}
+              onChange={setRecorrenciaFilter}
+              placeholder="Recorrência"
+              className="h-8 text-xs font-medium border-2 shadow-sm"
+            />
           </div>
+
+          {/* Custom date pickers in separate row when needed */}
+          {periodoFilter === "personalizado" && (
+            <div className="flex items-center gap-2 pb-2">
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              <DatePickerInput
+                value={customStartDate}
+                onChange={setCustomStartDate}
+                placeholder="Início"
+                className="h-8 w-[130px] text-xs"
+              />
+              <span className="text-xs text-muted-foreground">até</span>
+              <DatePickerInput
+                value={customEndDate}
+                onChange={setCustomEndDate}
+                placeholder="Fim"
+                className="h-8 w-[130px] text-xs"
+              />
+            </div>
+          )}
 
           {/* Summary Cards - All on same line, compact */}
           <div className="flex flex-wrap gap-2 mb-2">
