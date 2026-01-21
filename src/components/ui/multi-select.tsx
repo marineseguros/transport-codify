@@ -1,12 +1,11 @@
 import * as React from "react";
-import { Check, ChevronDown, X } from "lucide-react";
+import { Check, ChevronDown, X, CheckSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
@@ -28,6 +27,7 @@ interface MultiSelectProps {
   placeholder?: string;
   emptyMessage?: string;
   className?: string;
+  showSelectAll?: boolean;
 }
 
 export function MultiSelect({
@@ -37,6 +37,7 @@ export function MultiSelect({
   placeholder = "Todos",
   emptyMessage = "Nenhum item encontrado.",
   className,
+  showSelectAll = true,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -45,6 +46,14 @@ export function MultiSelect({
       onChange(selected.filter((item) => item !== value));
     } else {
       onChange([...selected, value]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selected.length === options.length) {
+      onChange([]);
+    } else {
+      onChange(options.map((opt) => opt.value));
     }
   };
 
@@ -59,8 +68,13 @@ export function MultiSelect({
       const label = options.find((opt) => opt.value === selected[0])?.label;
       return label || placeholder;
     }
+    if (selected.length === options.length && options.length > 0) {
+      return "Todos";
+    }
     return `${selected.length} selecionados`;
   };
+
+  const allSelected = selected.length === options.length && options.length > 0;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -89,10 +103,27 @@ export function MultiSelect({
       </PopoverTrigger>
       <PopoverContent className="w-[220px] p-0 bg-popover border shadow-md z-50" align="start">
         <Command>
-          <CommandInput placeholder="Buscar..." className="h-9" />
           <CommandList className="max-h-[300px]">
             <CommandEmpty className="py-3 text-center text-sm">{emptyMessage}</CommandEmpty>
             <CommandGroup>
+              {showSelectAll && options.length > 0 && (
+                <CommandItem
+                  onSelect={handleSelectAll}
+                  className="cursor-pointer font-medium border-b mb-1"
+                >
+                  <div className={cn(
+                    "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                    allSelected
+                      ? "bg-primary text-primary-foreground"
+                      : "opacity-50"
+                  )}>
+                    {allSelected && (
+                      <Check className="h-3 w-3" />
+                    )}
+                  </div>
+                  <span>Selecionar todos</span>
+                </CommandItem>
+              )}
               {options.map((option) => (
                 <CommandItem
                   key={option.value}

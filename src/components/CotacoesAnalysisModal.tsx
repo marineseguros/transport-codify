@@ -530,57 +530,52 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
           {/* Summary Cards - All on same line, compact */}
           <div className="flex flex-wrap gap-2 mb-2">
             {/* Total - Blue */}
-            <Card className="flex-1 min-w-[120px] border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/20">
+            <Card className="flex-1 min-w-[100px] border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-950/20">
               <CardContent className="p-2">
                 <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold">Total Cotações</div>
-                <div className="text-xl font-bold text-blue-700 dark:text-blue-300">{summary.totalCotacoes}</div>
+                <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{summary.totalCotacoes}</div>
                 <div className="text-[10px] text-blue-500/70">(CNPJ + Ramo distintos)</div>
               </CardContent>
             </Card>
             
-            {(analysisType === "finalizadas" || analysisType === "geral") && (
-              <>
-                {/* Negócio Fechado - Green */}
-                <Card className="flex-1 min-w-[100px] border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50 to-transparent dark:from-emerald-950/20">
-                  <CardContent className="p-2">
-                    <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      Negócio Fechado
-                    </div>
-                    <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
-                      {(summary.byStatus["Negócio fechado"] || 0) + (summary.byStatus["Fechamento congênere"] || 0)}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                {/* Declinado - Rose */}
-                <Card className="flex-1 min-w-[100px] border-l-4 border-l-rose-500 bg-gradient-to-r from-rose-50 to-transparent dark:from-rose-950/20">
-                  <CardContent className="p-2">
-                    <div className="text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
-                      <TrendingDown className="h-3 w-3" />
-                      Declinado
-                    </div>
-                    <div className="text-xl font-bold text-rose-700 dark:text-rose-300">
-                      {summary.byStatus["Declinado"] || 0}
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
+            {/* Negócio Fechado - Green */}
+            <Card className="flex-1 min-w-[100px] border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50 to-transparent dark:from-emerald-950/20">
+              <CardContent className="p-2">
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" />
+                  Negócio Fechado
+                </div>
+                <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                  {(summary.byStatus["Negócio fechado"] || 0) + (summary.byStatus["Fechamento congênere"] || 0)}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Declinado - Rose */}
+            <Card className="flex-1 min-w-[100px] border-l-4 border-l-rose-500 bg-gradient-to-r from-rose-50 to-transparent dark:from-rose-950/20">
+              <CardContent className="p-2">
+                <div className="text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
+                  <TrendingDown className="h-3 w-3" />
+                  Declinado
+                </div>
+                <div className="text-2xl font-bold text-rose-700 dark:text-rose-300">
+                  {summary.byStatus["Declinado"] || 0}
+                </div>
+              </CardContent>
+            </Card>
 
-            {analysisType === "geral" && (
-              <Card className="flex-1 min-w-[100px] border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50 to-transparent dark:from-amber-950/20">
-                <CardContent className="p-2">
-                  <div className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Em Cotação
-                  </div>
-                  <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
-                    {summary.byStatus["Em cotação"] || 0}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Em Cotação - Amber */}
+            <Card className="flex-1 min-w-[100px] border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50 to-transparent dark:from-amber-950/20">
+              <CardContent className="p-2">
+                <div className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Em Cotação
+                </div>
+                <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                  {summary.byStatus["Em cotação"] || 0}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Recorrentes - Purple */}
             <Card className="flex-1 min-w-[100px] border-l-4 border-l-violet-500 bg-gradient-to-r from-violet-50 to-transparent dark:from-violet-950/20">
@@ -589,7 +584,7 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                   <RefreshCw className="h-3 w-3" />
                   Recorrentes
                 </div>
-                <div className="text-xl font-bold text-violet-700 dark:text-violet-300">{summary.byRecorrencia.Recorrente}</div>
+                <div className="text-2xl font-bold text-violet-700 dark:text-violet-300">{summary.byRecorrencia.Recorrente}</div>
               </CardContent>
             </Card>
 
@@ -597,7 +592,7 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
             <Card className="flex-1 min-w-[100px] border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-transparent dark:from-orange-950/20">
               <CardContent className="p-2">
                 <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold">Não Recorrentes</div>
-                <div className="text-xl font-bold text-orange-700 dark:text-orange-300">{summary.byRecorrencia.Total}</div>
+                <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{summary.byRecorrencia.Total}</div>
               </CardContent>
             </Card>
           </div>
@@ -628,43 +623,43 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                   ) : (
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-muted/50 h-8">
-                          <TableHead className="text-xs py-1">Mês Início</TableHead>
-                          <TableHead className="text-xs py-1">Segurado</TableHead>
-                          <TableHead className="text-xs py-1">CNPJ</TableHead>
-                          <TableHead className="text-xs py-1">Ramo/Grupo</TableHead>
-                          <TableHead className="text-xs py-1">Produtor</TableHead>
-                          <TableHead className="text-xs py-1">Recorrência</TableHead>
-                          <TableHead className="text-xs py-1">Status</TableHead>
-                          <TableHead className="text-xs py-1">Seguradoras</TableHead>
-                          {showDaysColumn && <TableHead className="text-xs py-1">Dias</TableHead>}
+                        <TableRow className="bg-muted/50 h-9">
+                          <TableHead className="text-xs py-1.5">Mês Início</TableHead>
+                          <TableHead className="text-xs py-1.5">Segurado</TableHead>
+                          <TableHead className="text-xs py-1.5">CNPJ</TableHead>
+                          <TableHead className="text-xs py-1.5">Ramo/Grupo</TableHead>
+                          <TableHead className="text-xs py-1.5">Produtor</TableHead>
+                          <TableHead className="text-xs py-1.5">Recorrência</TableHead>
+                          <TableHead className="text-xs py-1.5">Status</TableHead>
+                          <TableHead className="text-xs py-1.5">Seguradoras</TableHead>
+                          {showDaysColumn && <TableHead className="text-xs py-1.5">Dias</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {groupedData.map((item, idx) => (
-                          <TableRow key={`${item.cpf_cnpj}-${item.ramo_group}-${idx}`} className="hover:bg-muted/30 h-8">
-                            <TableCell className="py-1 text-xs">
-                              <Badge variant="outline" className="bg-slate-100 dark:bg-slate-800 text-[10px] px-1.5 py-0">
+                          <TableRow key={`${item.cpf_cnpj}-${item.ramo_group}-${idx}`} className="hover:bg-muted/30 h-9">
+                            <TableCell className="py-1.5 text-xs">
+                              <Badge variant="outline" className="bg-slate-100 dark:bg-slate-800 text-[11px] px-2 py-0.5">
                                 {format(parseISO(item.mes_inicio + "-01"), "MMM/yy", { locale: ptBR })}
                               </Badge>
                             </TableCell>
-                            <TableCell className="max-w-[130px] truncate py-1 text-xs" title={item.segurado}>
+                            <TableCell className="max-w-[150px] truncate py-1.5 text-xs" title={item.segurado}>
                               {item.segurado}
                             </TableCell>
-                            <TableCell className="text-[10px] font-mono text-muted-foreground py-1">{item.cpf_cnpj}</TableCell>
-                            <TableCell className="py-1">
+                            <TableCell className="text-[11px] font-mono text-muted-foreground py-1.5">{item.cpf_cnpj}</TableCell>
+                            <TableCell className="py-1.5">
                               <div className="flex flex-col">
                                 <span className="text-xs font-medium leading-tight">{item.ramo_descricao}</span>
                                 {item.ramo_group !== item.ramo_descricao && (
-                                  <span className="text-[10px] text-muted-foreground leading-tight">{item.ramo_group}</span>
+                                  <span className="text-[11px] text-muted-foreground leading-tight">{item.ramo_group}</span>
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="py-1 text-xs">{item.produtor_cotador_nome}</TableCell>
-                            <TableCell className="py-1">
+                            <TableCell className="py-1.5 text-xs">{item.produtor_cotador_nome}</TableCell>
+                            <TableCell className="py-1.5">
                               <Badge 
                                 variant="outline"
-                                className={`text-[10px] px-1.5 py-0 ${item.recorrencia === "Recorrente" 
+                                className={`text-[11px] px-2 py-0.5 ${item.recorrencia === "Recorrente" 
                                   ? "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400 border-violet-300" 
                                   : "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-300"
                                 }`}
@@ -672,38 +667,38 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
                                 {item.recorrencia === "Recorrente" ? "Recorrente" : "Não Recorr."}
                               </Badge>
                             </TableCell>
-                            <TableCell className="py-1">
+                            <TableCell className="py-1.5">
                               <div className="flex items-center gap-1">
                                 {getStatusIcon(item.status_final)}
-                                <Badge className={`text-[10px] px-1.5 py-0 ${getStatusBadgeClass(item.status_final)}`}>
+                                <Badge className={`text-[11px] px-2 py-0.5 ${getStatusBadgeClass(item.status_final)}`}>
                                   {item.status_final}
                                 </Badge>
                               </div>
                             </TableCell>
-                            <TableCell className="py-1">
+                            <TableCell className="py-1.5">
                               <div className="flex flex-wrap gap-0.5 max-w-[150px]">
                                 {item.seguradoras.length > 0 ? (
-                                  <span className="text-[10px] text-muted-foreground" title={item.seguradoras.join(" | ")}>
+                                  <span className="text-[11px] text-muted-foreground" title={item.seguradoras.join(" | ")}>
                                     {item.seguradoras.slice(0, 2).join(" | ")}
                                     {item.seguradoras.length > 2 && (
-                                      <Badge variant="secondary" className="ml-0.5 text-[9px] px-1 py-0">
+                                      <Badge variant="secondary" className="ml-0.5 text-[10px] px-1 py-0">
                                         +{item.seguradoras.length - 2}
                                       </Badge>
                                     )}
                                   </span>
                                 ) : (
-                                  <span className="text-muted-foreground text-[10px]">-</span>
+                                  <span className="text-muted-foreground text-[11px]">-</span>
                                 )}
                               </div>
                             </TableCell>
                             {showDaysColumn && (
-                              <TableCell className="py-1">
+                              <TableCell className="py-1.5">
                                 {item.dias_ate_fechamento !== null ? (
-                                  <Badge variant="outline" className="bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400 text-[10px] px-1.5 py-0">
+                                  <Badge variant="outline" className="bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400 text-[11px] px-2 py-0.5">
                                     {item.dias_ate_fechamento}d
                                   </Badge>
                                 ) : (
-                                  <span className="text-muted-foreground text-[10px]">-</span>
+                                  <span className="text-muted-foreground text-[11px]">-</span>
                                 )}
                               </TableCell>
                             )}
@@ -718,25 +713,25 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
           </TabsContent>
         </Tabs>
 
-        {/* Summary by dimensions - Compact */}
+        {/* Summary by dimensions - Increased height */}
         <div className="grid grid-cols-3 gap-2 mt-2">
           {/* By Month - Cyan */}
           <Card className="border-t-2 border-t-cyan-500">
-            <CardHeader className="py-1 px-2 bg-gradient-to-r from-cyan-50 to-transparent dark:from-cyan-950/20">
-              <CardTitle className="text-xs text-cyan-700 dark:text-cyan-400 font-semibold">Por Mês</CardTitle>
+            <CardHeader className="py-1.5 px-3 bg-gradient-to-r from-cyan-50 to-transparent dark:from-cyan-950/20">
+              <CardTitle className="text-sm text-cyan-700 dark:text-cyan-400 font-semibold">Por Mês</CardTitle>
             </CardHeader>
-            <CardContent className="p-1">
-              <ScrollArea className="h-[80px]">
+            <CardContent className="p-2">
+              <ScrollArea className="h-[100px]">
                 {Object.entries(summary.byMes).length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-2">Sem dados</p>
+                  <p className="text-sm text-muted-foreground text-center py-2">Sem dados</p>
                 ) : (
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     {Object.entries(summary.byMes)
                       .sort((a, b) => b[1] - a[1])
                       .map(([mes, count]) => (
-                        <div key={mes} className="flex justify-between text-xs items-center px-1.5 py-0.5 hover:bg-muted/50 rounded">
+                        <div key={mes} className="flex justify-between text-sm items-center px-2 py-1 hover:bg-muted/50 rounded">
                           <span className="capitalize">{mes}</span>
-                          <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400 text-[10px] px-1.5 py-0">{count}</Badge>
+                          <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400 text-xs px-2 py-0.5">{count}</Badge>
                         </div>
                       ))}
                   </div>
@@ -747,22 +742,22 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
 
           {/* By Produtor - Indigo */}
           <Card className="border-t-2 border-t-indigo-500">
-            <CardHeader className="py-1 px-2 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-950/20">
-              <CardTitle className="text-xs text-indigo-700 dark:text-indigo-400 font-semibold">Por Produtor</CardTitle>
+            <CardHeader className="py-1.5 px-3 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-950/20">
+              <CardTitle className="text-sm text-indigo-700 dark:text-indigo-400 font-semibold">Por Produtor</CardTitle>
             </CardHeader>
-            <CardContent className="p-1">
-              <ScrollArea className="h-[80px]">
+            <CardContent className="p-2">
+              <ScrollArea className="h-[100px]">
                 {Object.entries(summary.byProdutor).length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-2">Sem dados</p>
+                  <p className="text-sm text-muted-foreground text-center py-2">Sem dados</p>
                 ) : (
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     {Object.entries(summary.byProdutor)
                       .sort((a, b) => b[1] - a[1])
                       .slice(0, 10)
                       .map(([produtor, count]) => (
-                        <div key={produtor} className="flex justify-between text-xs items-center px-1.5 py-0.5 hover:bg-muted/50 rounded">
-                          <span className="truncate max-w-[120px]" title={produtor}>{produtor}</span>
-                          <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 text-[10px] px-1.5 py-0">{count}</Badge>
+                        <div key={produtor} className="flex justify-between text-sm items-center px-2 py-1 hover:bg-muted/50 rounded">
+                          <span className="truncate max-w-[140px]" title={produtor}>{produtor}</span>
+                          <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 text-xs px-2 py-0.5">{count}</Badge>
                         </div>
                       ))}
                   </div>
@@ -773,21 +768,21 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
 
           {/* By Ramo Group - Teal */}
           <Card className="border-t-2 border-t-teal-500">
-            <CardHeader className="py-1 px-2 bg-gradient-to-r from-teal-50 to-transparent dark:from-teal-950/20">
-              <CardTitle className="text-xs text-teal-700 dark:text-teal-400 font-semibold">Por Grupo/Ramo</CardTitle>
+            <CardHeader className="py-1.5 px-3 bg-gradient-to-r from-teal-50 to-transparent dark:from-teal-950/20">
+              <CardTitle className="text-sm text-teal-700 dark:text-teal-400 font-semibold">Por Grupo/Ramo</CardTitle>
             </CardHeader>
-            <CardContent className="p-1">
-              <ScrollArea className="h-[80px]">
+            <CardContent className="p-2">
+              <ScrollArea className="h-[100px]">
                 {Object.entries(summary.byRamoGroup).length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-2">Sem dados</p>
+                  <p className="text-sm text-muted-foreground text-center py-2">Sem dados</p>
                 ) : (
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     {Object.entries(summary.byRamoGroup)
                       .sort((a, b) => b[1] - a[1])
                       .map(([grupo, count]) => (
-                        <div key={grupo} className="flex justify-between text-xs items-center px-1.5 py-0.5 hover:bg-muted/50 rounded">
-                          <span className="truncate max-w-[120px]" title={grupo}>{grupo}</span>
-                          <Badge className="bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400 text-[10px] px-1.5 py-0">{count}</Badge>
+                        <div key={grupo} className="flex justify-between text-sm items-center px-2 py-1 hover:bg-muted/50 rounded">
+                          <span className="truncate max-w-[140px]" title={grupo}>{grupo}</span>
+                          <Badge className="bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400 text-xs px-2 py-0.5">{count}</Badge>
                         </div>
                       ))}
                   </div>
