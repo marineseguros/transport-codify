@@ -103,8 +103,8 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
     }
   }, [periodoFilter, customStartDate, customEndDate, selectedYear]);
 
-  // Fetch all quotations with related data
-  const { data: cotacoes = [], isLoading } = useQuery({
+  // Fetch all quotations with related data - fetch wider range to include closings
+  const { data: allCotacoes = [], isLoading } = useQuery({
     queryKey: ["cotacoes-analysis", dateRange.start, dateRange.end],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -125,8 +125,6 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
           produtor_origem_id,
           produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(id, nome)
         `)
-        .gte("data_cotacao", dateRange.start.toISOString())
-        .lte("data_cotacao", dateRange.end.toISOString())
         .order("data_cotacao", { ascending: false });
 
       if (error) throw error;
@@ -134,6 +132,26 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
     },
     enabled: open,
   });
+
+  // Filter cotações using same logic as Dashboard:
+  // - "Negócio fechado" and "Fechamento congênere" use data_fechamento
+  // - Other statuses use data_cotacao
+  const cotacoes = useMemo(() => {
+    const startDate = dateRange.start;
+    const endDate = dateRange.end;
+    
+    return allCotacoes.filter((cotacao) => {
+      // For closed deals, use data_fechamento
+      if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
+        if (!cotacao.data_fechamento) return false;
+        const fechamentoDate = new Date(cotacao.data_fechamento);
+        return fechamentoDate >= startDate && fechamentoDate <= endDate;
+      }
+      // For other statuses, use data_cotacao
+      const cotacaoDate = new Date(cotacao.data_cotacao);
+      return cotacaoDate >= startDate && cotacaoDate <= endDate;
+    });
+  }, [allCotacoes, dateRange]);
 
   // Fetch produtores for filter
   const { data: produtores = [] } = useQuery({
