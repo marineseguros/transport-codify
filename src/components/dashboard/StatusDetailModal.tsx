@@ -5,12 +5,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Users, DollarSign, Eye, RefreshCw, Zap } from "lucide-react";
+import { Users, Eye, RefreshCw, Zap } from "lucide-react";
 import { type Cotacao } from "@/hooks/useSupabaseData";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { ProdutorDetailModal } from "./ProdutorDetailModal";
+import { ClientesStatusDetailPopup } from "./ClientesStatusDetailPopup";
 
 interface StatusData {
   status: string;
@@ -46,6 +47,8 @@ interface ProdutorStats {
   taxaConversao: number;
   cotacoesFechadas: Cotacao[];
   cotacoesEmAberto: Cotacao[];
+  cotacoesDeclinadas?: Cotacao[];
+  cotacoesEmAbertoTotal?: Cotacao[];
   distinctFechadasList: { segurado: string; grupo: string; cotacoes: Cotacao[] }[];
   distinctEmAbertoList: { segurado: string; grupo: string; cotacoes: Cotacao[] }[];
 }
@@ -59,6 +62,14 @@ interface StatusDetailModalProps {
   produtores?: ProdutorStats[];
 }
 
+type StatusPopupType = 'fechados' | 'aberto_mes' | 'aberto_total' | 'declinados';
+
+interface SelectedStatusDetail {
+  produtorNome: string;
+  statusType: StatusPopupType;
+  cotacoes: Cotacao[];
+}
+
 export function StatusDetailModal({ 
   open, 
   onClose, 
@@ -69,6 +80,7 @@ export function StatusDetailModal({
 }: StatusDetailModalProps) {
   const [selectedProdutor, setSelectedProdutor] = useState<ProdutorStats | null>(null);
   const [selectedRanking, setSelectedRanking] = useState(0);
+  const [statusDetail, setStatusDetail] = useState<SelectedStatusDetail | null>(null);
 
   // Calculate totals for forecast
   const totalPremioFechado = produtores.reduce((sum, p) => sum + p.premioTotal, 0);
@@ -158,16 +170,56 @@ export function StatusDetailModal({
                         </td>
                         <td className="py-2 px-1 font-medium truncate max-w-[120px]">{produtor.nome}</td>
                         <td className="py-2 px-1 text-center">
-                          <span className="font-semibold text-success">{produtor.fechadasDistinct}</span>
+                          <button
+                            className="font-semibold text-success hover:underline cursor-pointer"
+                            onClick={() => setStatusDetail({
+                              produtorNome: produtor.nome,
+                              statusType: 'fechados',
+                              cotacoes: produtor.cotacoesFechadas
+                            })}
+                            disabled={produtor.fechadasDistinct === 0}
+                          >
+                            {produtor.fechadasDistinct}
+                          </button>
                         </td>
                         <td className="py-2 px-1 text-center">
-                          <span className="font-semibold text-brand-orange">{produtor.emCotacaoDistinct}</span>
+                          <button
+                            className="font-semibold text-brand-orange hover:underline cursor-pointer"
+                            onClick={() => setStatusDetail({
+                              produtorNome: produtor.nome,
+                              statusType: 'aberto_mes',
+                              cotacoes: produtor.cotacoesEmAberto
+                            })}
+                            disabled={produtor.emCotacaoDistinct === 0}
+                          >
+                            {produtor.emCotacaoDistinct}
+                          </button>
                         </td>
                         <td className="py-2 px-1 text-center">
-                          <span className="font-semibold text-chart-4">{produtor.emAbertoTotalDistinct || 0}</span>
+                          <button
+                            className="font-semibold text-chart-4 hover:underline cursor-pointer"
+                            onClick={() => setStatusDetail({
+                              produtorNome: produtor.nome,
+                              statusType: 'aberto_total',
+                              cotacoes: produtor.cotacoesEmAbertoTotal || []
+                            })}
+                            disabled={!produtor.emAbertoTotalDistinct}
+                          >
+                            {produtor.emAbertoTotalDistinct || 0}
+                          </button>
                         </td>
                         <td className="py-2 px-1 text-center">
-                          <span className="font-semibold text-destructive">{produtor.declinadasDistinct}</span>
+                          <button
+                            className="font-semibold text-destructive hover:underline cursor-pointer"
+                            onClick={() => setStatusDetail({
+                              produtorNome: produtor.nome,
+                              statusType: 'declinados',
+                              cotacoes: produtor.cotacoesDeclinadas || []
+                            })}
+                            disabled={produtor.declinadasDistinct === 0}
+                          >
+                            {produtor.declinadasDistinct}
+                          </button>
                         </td>
                         <td className="py-2 px-1 text-center">
                           <Badge 
@@ -261,6 +313,17 @@ export function StatusDetailModal({
         formatDate={formatDate}
         ranking={selectedRanking}
         statusData={statusData}
+      />
+
+      {/* Status Detail Popup */}
+      <ClientesStatusDetailPopup
+        open={!!statusDetail}
+        onClose={() => setStatusDetail(null)}
+        produtorNome={statusDetail?.produtorNome || ''}
+        statusType={statusDetail?.statusType || 'fechados'}
+        cotacoes={statusDetail?.cotacoes || []}
+        formatCurrency={formatCurrency}
+        formatDate={formatDate}
       />
     </>
   );
