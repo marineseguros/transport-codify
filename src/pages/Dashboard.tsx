@@ -648,6 +648,62 @@ const Dashboard = () => {
   // Import centralized classification from lib
   // Using centralized getRegraRamo from lib/ramoClassification.ts
 
+  // Calculate TOTAL open quotes ignoring date filters (for "Em Aberto Total" column)
+  const totalEmAbertoByProdutor = useMemo(() => {
+    const stats: Record<string, {
+      distinctKeys: Set<string>;
+      premio: number;
+      premioRecorrente: number;
+    }> = {};
+
+    // Use allQuotes (unfiltered) but apply non-date filters
+    allQuotes
+      .filter(cotacao => {
+        if (cotacao.status !== "Em cotação") return false;
+        
+        // Apply non-date filters
+        const produtorMatch = filters.produtorFilter.length === 0 || 
+          (cotacao.produtor_cotador?.nome && filters.produtorFilter.includes(cotacao.produtor_cotador.nome));
+        const seguradoraMatch = filters.seguradoraFilter.length === 0 || 
+          (cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
+        const ramoMatch = filters.ramoFilter.length === 0 || 
+          (cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
+        const segmentoMatch = filters.segmentoFilter.length === 0 || 
+          (cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
+        const regraMatch = filters.regraFilter.length === 0 || 
+          (cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
+        const unidadeMatch = filters.unidadeFilter.length === 0 || 
+          (cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
+        
+        return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
+      })
+      .forEach(cotacao => {
+        const produtorNome = cotacao.produtor_cotador?.nome;
+        if (!produtorNome) return;
+
+        if (!stats[produtorNome]) {
+          stats[produtorNome] = {
+            distinctKeys: new Set(),
+            premio: 0,
+            premioRecorrente: 0
+          };
+        }
+
+        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+        const distinctKey = `${cotacao.cpf_cnpj}_${branchGroup}`;
+        stats[produtorNome].distinctKeys.add(distinctKey);
+        
+        const premio = cotacao.valor_premio || 0;
+        const regra = getRegraRamo(cotacao.ramo);
+        stats[produtorNome].premio += premio;
+        if (regra === 'Recorrente') {
+          stats[produtorNome].premioRecorrente += premio;
+        }
+      });
+
+    return stats;
+  }, [allQuotes, filters.produtorFilter, filters.seguradoraFilter, filters.ramoFilter, filters.segmentoFilter, filters.regraFilter, filters.unidadeFilter]);
+
   // Top produtores com métricas detalhadas consolidadas
   // Using DISTINCT counting by CNPJ + branch group
   const topProdutoresDetalhado = useMemo(() => {
@@ -780,6 +836,9 @@ const Dashboard = () => {
         const dateB = b.cotacoes[0]?.data_cotacao || '';
         return new Date(dateB).getTime() - new Date(dateA).getTime();
       });
+      // Get total open (all periods) for this producer
+      const totalOpenStats = totalEmAbertoByProdutor[p.nome];
+      
       return {
         nome: p.nome,
         totalDistinct,
@@ -791,6 +850,10 @@ const Dashboard = () => {
         premioRegraTotal: p.premioRegraTotal,
         premioEmAberto: p.premioEmAberto,
         premioEmAbertoRecorrente: p.premioEmAbertoRecorrente,
+        // New fields: Total em aberto de todo período
+        emAbertoTotalDistinct: totalOpenStats?.distinctKeys.size || 0,
+        premioEmAbertoTotal: totalOpenStats?.premio || 0,
+        premioEmAbertoTotalRecorrente: totalOpenStats?.premioRecorrente || 0,
         ticketMedio: fechadasDistinct > 0 ? p.premioTotal / fechadasDistinct : 0,
         taxaConversao: totalDistinct > 0 ? fechadasDistinct / totalDistinct * 100 : 0,
         cotacoesFechadas: p.cotacoesFechadas,
@@ -805,7 +868,7 @@ const Dashboard = () => {
       if (b.premioTotal !== a.premioTotal) return b.premioTotal - a.premioTotal;
       return b.totalDistinct - a.totalDistinct;
     });
-  }, [filteredCotacoes]);
+  }, [filteredCotacoes, totalEmAbertoByProdutor]);
 
   // Clientes fechados para o tooltip - include "Fechamento congênere"
   const clientesFechados = useMemo(() => {
