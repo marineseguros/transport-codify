@@ -654,6 +654,7 @@ const Dashboard = () => {
       distinctKeys: Set<string>;
       premio: number;
       premioRecorrente: number;
+      cotacoes: Cotacao[];
     }> = {};
 
     // Use allQuotes (unfiltered) but apply non-date filters
@@ -685,13 +686,15 @@ const Dashboard = () => {
           stats[produtorNome] = {
             distinctKeys: new Set(),
             premio: 0,
-            premioRecorrente: 0
+            premioRecorrente: 0,
+            cotacoes: []
           };
         }
 
         const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
         const distinctKey = `${cotacao.cpf_cnpj}_${branchGroup}`;
         stats[produtorNome].distinctKeys.add(distinctKey);
+        stats[produtorNome].cotacoes.push(cotacao);
         
         const premio = cotacao.valor_premio || 0;
         const regra = getRegraRamo(cotacao.ramo);
@@ -720,6 +723,7 @@ const Dashboard = () => {
       premioEmAbertoRecorrente: number;
       cotacoesFechadas: Cotacao[];
       cotacoesEmAberto: Cotacao[];
+      cotacoesDeclinadas: Cotacao[];
       // Group cotações by segurado+grupo for distinct listing
       fechadasByKey: Record<string, {
         segurado: string;
@@ -757,6 +761,7 @@ const Dashboard = () => {
             premioEmAbertoRecorrente: 0,
             cotacoesFechadas: [],
             cotacoesEmAberto: [],
+            cotacoesDeclinadas: [],
             fechadasByKey: {},
             emAbertoByKey: {}
           };
@@ -810,6 +815,7 @@ const Dashboard = () => {
           produtorStats[nome].emAbertoByKey[distinctKey].cotacoes.push(cotacao);
         } else if (cotacao.status === "Declinado") {
           produtorStats[nome].distinctKeysDeclinadas.add(distinctKey);
+          produtorStats[nome].cotacoesDeclinadas.push(cotacao);
         }
       }
     });
@@ -858,6 +864,8 @@ const Dashboard = () => {
         taxaConversao: totalDistinct > 0 ? fechadasDistinct / totalDistinct * 100 : 0,
         cotacoesFechadas: p.cotacoesFechadas,
         cotacoesEmAberto: p.cotacoesEmAberto,
+        cotacoesDeclinadas: p.cotacoesDeclinadas,
+        cotacoesEmAbertoTotal: totalOpenStats?.cotacoes || [],
         distinctFechadasList,
         distinctEmAbertoList
       };
