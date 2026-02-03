@@ -38,6 +38,10 @@ interface ProdutorStats {
   premioRegraTotal: number;
   premioEmAberto: number;
   premioEmAbertoRecorrente: number;
+  // New fields: Total em aberto de todo período
+  emAbertoTotalDistinct: number;
+  premioEmAbertoTotal: number;
+  premioEmAbertoTotalRecorrente: number;
   ticketMedio: number;
   taxaConversao: number;
   cotacoesFechadas: Cotacao[];
@@ -70,16 +74,17 @@ export function StatusDetailModal({
   const totalPremioFechado = produtores.reduce((sum, p) => sum + p.premioTotal, 0);
   const totalPremioRecorrente = produtores.reduce((sum, p) => sum + p.premioRecorrente, 0);
   const totalPremioEmAberto = produtores.reduce((sum, p) => sum + p.premioEmAberto, 0);
+  const totalPremioEmAbertoTotal = produtores.reduce((sum, p) => sum + (p.premioEmAbertoTotal || 0), 0);
   const avgConversao = produtores.length > 0 
     ? produtores.reduce((sum, p) => sum + p.taxaConversao, 0) / produtores.length 
     : 0;
-  const potencialTotal = totalPremioEmAberto * (avgConversao / 100);
+  const potencialTotal = totalPremioEmAbertoTotal * (avgConversao / 100);
   const previsaoGeral = totalPremioFechado + potencialTotal;
 
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl max-h-[85vh]">
+        <DialogContent className="max-w-7xl max-h-[85vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
@@ -90,7 +95,7 @@ export function StatusDetailModal({
           <ScrollArea className="max-h-[70vh] pr-4">
             <div className="space-y-4">
               {/* Summary KPIs */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 bg-muted/30 rounded-lg">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 bg-muted/30 rounded-lg">
                 <div className="text-center">
                   <p className="text-xl font-bold text-primary">{formatCurrency(totalPremioRecorrente)}</p>
                   <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
@@ -104,7 +109,11 @@ export function StatusDetailModal({
                 </div>
                 <div className="text-center">
                   <p className="text-xl font-bold text-brand-orange">{formatCurrency(totalPremioEmAberto)}</p>
-                  <p className="text-xs text-muted-foreground">Total em Aberto</p>
+                  <p className="text-xs text-muted-foreground">Em Aberto (Período)</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-chart-4">{formatCurrency(totalPremioEmAbertoTotal)}</p>
+                  <p className="text-xs text-muted-foreground">Em Aberto (Total)</p>
                 </div>
                 <div className="text-center">
                   <p className="text-xl font-bold">{avgConversao.toFixed(0)}%</p>
@@ -121,17 +130,17 @@ export function StatusDetailModal({
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-xs text-muted-foreground">
-                      <th className="text-left py-2 px-2 font-medium">#</th>
-                      <th className="text-left py-2 px-2 font-medium">Produtor</th>
-                      <th className="text-center py-2 px-2 font-medium text-success">Fechados</th>
-                      <th className="text-center py-2 px-2 font-medium text-brand-orange">Em Aberto</th>
-                      <th className="text-center py-2 px-2 font-medium text-destructive">Declinados</th>
-                      <th className="text-center py-2 px-2 font-medium">Conversão</th>
-                      <th className="text-right py-2 px-2 font-medium">Recorrente</th>
-                      <th className="text-right py-2 px-2 font-medium">Total</th>
-                      <th className="text-right py-2 px-2 font-medium">Aberto Rec.</th>
-                      <th className="text-right py-2 px-2 font-medium">Aberto Total</th>
-                      <th className="text-center py-2 px-2 font-medium">Ação</th>
+                      <th className="text-left py-2 px-1 font-medium">#</th>
+                      <th className="text-left py-2 px-1 font-medium">Produtor</th>
+                      <th className="text-center py-2 px-1 font-medium text-success">Fechados</th>
+                      <th className="text-center py-2 px-1 font-medium text-brand-orange">Aberto (Mês)</th>
+                      <th className="text-center py-2 px-1 font-medium text-chart-4">Aberto (Total)</th>
+                      <th className="text-center py-2 px-1 font-medium text-destructive">Declin.</th>
+                      <th className="text-center py-2 px-1 font-medium">Conv.</th>
+                      <th className="text-right py-2 px-1 font-medium">Rec. Fechado</th>
+                      <th className="text-right py-2 px-1 font-medium">Total Fechado</th>
+                      <th className="text-right py-2 px-1 font-medium">Aberto Total R$</th>
+                      <th className="text-center py-2 px-1 font-medium">Ação</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -147,17 +156,20 @@ export function StatusDetailModal({
                             {index + 1}
                           </span>
                         </td>
-                        <td className="py-2 px-2 font-medium">{produtor.nome}</td>
-                        <td className="py-2 px-2 text-center">
+                        <td className="py-2 px-1 font-medium truncate max-w-[120px]">{produtor.nome}</td>
+                        <td className="py-2 px-1 text-center">
                           <span className="font-semibold text-success">{produtor.fechadasDistinct}</span>
                         </td>
-                        <td className="py-2 px-2 text-center">
+                        <td className="py-2 px-1 text-center">
                           <span className="font-semibold text-brand-orange">{produtor.emCotacaoDistinct}</span>
                         </td>
-                        <td className="py-2 px-2 text-center">
+                        <td className="py-2 px-1 text-center">
+                          <span className="font-semibold text-chart-4">{produtor.emAbertoTotalDistinct || 0}</span>
+                        </td>
+                        <td className="py-2 px-1 text-center">
                           <span className="font-semibold text-destructive">{produtor.declinadasDistinct}</span>
                         </td>
-                        <td className="py-2 px-2 text-center">
+                        <td className="py-2 px-1 text-center">
                           <Badge 
                             variant={produtor.taxaConversao >= 50 ? 'success-alt' : produtor.taxaConversao >= 30 ? 'warning' : 'destructive'}
                             className="text-xs"
@@ -165,19 +177,16 @@ export function StatusDetailModal({
                             {produtor.taxaConversao.toFixed(0)}%
                           </Badge>
                         </td>
-                        <td className="py-2 px-2 text-right font-semibold text-primary">
+                        <td className="py-2 px-1 text-right font-semibold text-primary text-xs">
                           {formatCurrency(produtor.premioRecorrente)}
                         </td>
-                        <td className="py-2 px-2 text-right font-medium text-success">
+                        <td className="py-2 px-1 text-right font-medium text-success text-xs">
                           {formatCurrency(produtor.premioTotal)}
                         </td>
-                        <td className="py-2 px-2 text-right font-medium text-brand-orange/80">
-                          {formatCurrency(produtor.premioEmAbertoRecorrente)}
+                        <td className="py-2 px-1 text-right font-medium text-chart-4 text-xs">
+                          {formatCurrency(produtor.premioEmAbertoTotal || 0)}
                         </td>
-                        <td className="py-2 px-2 text-right font-medium text-brand-orange">
-                          {formatCurrency(produtor.premioEmAberto)}
-                        </td>
-                        <td className="py-2 px-2 text-center">
+                        <td className="py-2 px-1 text-center">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -199,7 +208,7 @@ export function StatusDetailModal({
               {/* Forecast Section */}
               <div className="border-t pt-4">
                 <p className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-amber-500" />
+                  <Zap className="h-4 w-4 text-chart-4" />
                   Previsão e Potencial Consolidado
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -218,13 +227,13 @@ export function StatusDetailModal({
                       {formatCurrency(totalPremioFechado)}
                     </p>
                   </div>
-                  <div className="p-4 bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-lg border border-amber-500/20">
+                  <div className="p-4 bg-gradient-to-br from-chart-4/10 to-chart-4/5 rounded-lg border border-chart-4/20">
                     <p className="text-xs text-muted-foreground mb-1">Potencial de Fechamento</p>
-                    <p className="text-xl font-bold text-amber-600">
+                    <p className="text-xl font-bold text-chart-4">
                       {formatCurrency(potencialTotal)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {formatCurrency(totalPremioEmAberto)} × {avgConversao.toFixed(0)}%
+                      {formatCurrency(totalPremioEmAbertoTotal)} × {avgConversao.toFixed(0)}%
                     </p>
                   </div>
                   <div className="p-4 bg-gradient-to-br from-chart-4/10 to-chart-4/5 rounded-lg border border-chart-4/20">
