@@ -512,6 +512,7 @@ const Dashboard = () => {
   }, [allQuotes, filters]);
 
   // Distribuição por status com dados detalhados para modal
+  // IMPORTANTE: Usar os mesmos valores calculados em monthlyStats para garantir consistência
   const distribuicaoStatusDetalhada = useMemo(() => {
     const validStatuses = ["Em cotação", "Negócio fechado", "Declinado"];
     const statusCounts: Record<string, {
@@ -531,15 +532,24 @@ const Dashboard = () => {
     }> = {};
     validStatuses.forEach(status => {
       let statusCotacoes: Cotacao[];
-      let targetStatuses: string[];
       if (status === "Negócio fechado") {
-        targetStatuses = ["Negócio fechado", "Fechamento congênere"];
         statusCotacoes = filteredCotacoes.filter(cotacao => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere");
       } else {
-        targetStatuses = [status];
         statusCotacoes = filteredCotacoes.filter(cotacao => cotacao.status === status);
       }
-      const count = countDistinctByStatus(statusCotacoes, targetStatuses);
+      
+      // Usar os valores já calculados em monthlyStats para garantir consistência com os cards principais
+      let count: number;
+      if (status === "Em cotação") {
+        count = monthlyStats.emCotacao;
+      } else if (status === "Negócio fechado") {
+        count = monthlyStats.fechados;
+      } else if (status === "Declinado") {
+        count = monthlyStats.declinados;
+      } else {
+        count = countDistinctByStatus(statusCotacoes, [status]);
+      }
+      
       const premioTotal = statusCotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
       const transportador = statusCotacoes.filter(c => c.segmento === "Transportador").length;
       const embarcador = statusCotacoes.filter(c => c.segmento !== "Transportador").length;
@@ -607,7 +617,7 @@ const Dashboard = () => {
         tempoMedio: 0
       };
     });
-  }, [filteredCotacoes]);
+  }, [filteredCotacoes, monthlyStats]);
 
   // Backward compat
   const distribuicaoStatus = distribuicaoStatusDetalhada;
