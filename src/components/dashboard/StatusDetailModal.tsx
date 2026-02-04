@@ -5,13 +5,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Users, Eye, RefreshCw, Zap } from "lucide-react";
+import { Users, Eye, RefreshCw, Zap, Info } from "lucide-react";
 import { type Cotacao } from "@/hooks/useSupabaseData";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { ProdutorDetailModal } from "./ProdutorDetailModal";
 import { ClientesStatusDetailPopup } from "./ClientesStatusDetailPopup";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface StatusData {
   status: string;
@@ -94,7 +100,7 @@ export function StatusDetailModal({
   const previsaoGeral = totalPremioFechado + potencialTotal;
 
   return (
-    <>
+    <TooltipProvider>
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-7xl max-h-[85vh]">
           <DialogHeader>
@@ -102,6 +108,10 @@ export function StatusDetailModal({
               <Users className="h-5 w-5" />
               Ranking de Produtores - Análise Consolidada
             </DialogTitle>
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+              <Info className="h-3 w-3" />
+              Clique nos números de status para ver a lista detalhada de clientes
+            </p>
           </DialogHeader>
 
           <ScrollArea className="max-h-[70vh] pr-4">
@@ -170,56 +180,84 @@ export function StatusDetailModal({
                         </td>
                         <td className="py-2 px-1 font-medium truncate max-w-[120px]">{produtor.nome}</td>
                         <td className="py-2 px-1 text-center">
-                          <button
-                            className="font-semibold text-success hover:underline cursor-pointer"
-                            onClick={() => setStatusDetail({
-                              produtorNome: produtor.nome,
-                              statusType: 'fechados',
-                              cotacoes: produtor.cotacoesFechadas
-                            })}
-                            disabled={produtor.fechadasDistinct === 0}
-                          >
-                            {produtor.fechadasDistinct}
-                          </button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                className="font-semibold text-success hover:underline hover:bg-success/10 px-2 py-0.5 rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:no-underline"
+                                onClick={() => setStatusDetail({
+                                  produtorNome: produtor.nome,
+                                  statusType: 'fechados',
+                                  cotacoes: produtor.cotacoesFechadas
+                                })}
+                                disabled={produtor.fechadasDistinct === 0}
+                              >
+                                {produtor.fechadasDistinct}
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Ver clientes fechados</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </td>
                         <td className="py-2 px-1 text-center">
-                          <button
-                            className="font-semibold text-brand-orange hover:underline cursor-pointer"
-                            onClick={() => setStatusDetail({
-                              produtorNome: produtor.nome,
-                              statusType: 'aberto_mes',
-                              cotacoes: produtor.cotacoesEmAberto
-                            })}
-                            disabled={produtor.emCotacaoDistinct === 0}
-                          >
-                            {produtor.emCotacaoDistinct}
-                          </button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                className="font-semibold text-brand-orange hover:underline hover:bg-brand-orange/10 px-2 py-0.5 rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:no-underline"
+                                onClick={() => setStatusDetail({
+                                  produtorNome: produtor.nome,
+                                  statusType: 'aberto_mes',
+                                  cotacoes: produtor.cotacoesEmAberto
+                                })}
+                                disabled={produtor.emCotacaoDistinct === 0}
+                              >
+                                {produtor.emCotacaoDistinct}
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Ver cotações em aberto do período</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </td>
                         <td className="py-2 px-1 text-center">
-                          <button
-                            className="font-semibold text-chart-4 hover:underline cursor-pointer"
-                            onClick={() => setStatusDetail({
-                              produtorNome: produtor.nome,
-                              statusType: 'aberto_total',
-                              cotacoes: produtor.cotacoesEmAbertoTotal || []
-                            })}
-                            disabled={!produtor.emAbertoTotalDistinct}
-                          >
-                            {produtor.emAbertoTotalDistinct || 0}
-                          </button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                className="font-semibold text-chart-4 hover:underline hover:bg-chart-4/10 px-2 py-0.5 rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:no-underline"
+                                onClick={() => setStatusDetail({
+                                  produtorNome: produtor.nome,
+                                  statusType: 'aberto_total',
+                                  cotacoes: produtor.cotacoesEmAbertoTotal || []
+                                })}
+                                disabled={!produtor.emAbertoTotalDistinct}
+                              >
+                                {produtor.emAbertoTotalDistinct || 0}
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Ver todas cotações em aberto</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </td>
                         <td className="py-2 px-1 text-center">
-                          <button
-                            className="font-semibold text-destructive hover:underline cursor-pointer"
-                            onClick={() => setStatusDetail({
-                              produtorNome: produtor.nome,
-                              statusType: 'declinados',
-                              cotacoes: produtor.cotacoesDeclinadas || []
-                            })}
-                            disabled={produtor.declinadasDistinct === 0}
-                          >
-                            {produtor.declinadasDistinct}
-                          </button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                className="font-semibold text-destructive hover:underline hover:bg-destructive/10 px-2 py-0.5 rounded cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:no-underline"
+                                onClick={() => setStatusDetail({
+                                  produtorNome: produtor.nome,
+                                  statusType: 'declinados',
+                                  cotacoes: produtor.cotacoesDeclinadas || []
+                                })}
+                                disabled={produtor.declinadasDistinct === 0}
+                              >
+                                {produtor.declinadasDistinct}
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Ver cotações declinadas</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </td>
                         <td className="py-2 px-1 text-center">
                           <Badge 
@@ -325,6 +363,6 @@ export function StatusDetailModal({
         formatCurrency={formatCurrency}
         formatDate={formatDate}
       />
-    </>
+    </TooltipProvider>
   );
 }
