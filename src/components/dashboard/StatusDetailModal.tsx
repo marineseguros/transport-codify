@@ -99,6 +99,15 @@ export function StatusDetailModal({
   const potencialTotal = totalPremioEmAbertoTotal * (avgConversao / 100);
   const previsaoGeral = totalPremioFechado + potencialTotal;
 
+  // Get totals from statusData for consistency with main cards
+  const statusEmCotacao = statusData.find(s => s.status === "Em cotação");
+  const statusFechado = statusData.find(s => s.status === "Negócio fechado");
+  const statusDeclinado = statusData.find(s => s.status === "Declinado");
+  
+  const totalEmCotacao = statusEmCotacao?.count || 0;
+  const totalFechados = statusFechado?.count || 0;
+  const totalDeclinados = statusDeclinado?.count || 0;
+
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onClose}>
@@ -116,13 +125,25 @@ export function StatusDetailModal({
 
           <ScrollArea className="max-h-[70vh] pr-4">
             <div className="space-y-4">
-              {/* Summary KPIs */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 bg-muted/30 rounded-lg">
+              {/* Summary KPIs - Counts from Dashboard for consistency */}
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-3 p-3 bg-muted/30 rounded-lg">
+                <div className="text-center">
+                  <p className="text-xl font-bold text-brand-orange">{totalEmCotacao}</p>
+                  <p className="text-xs text-muted-foreground">Em Cotação</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-success">{totalFechados}</p>
+                  <p className="text-xs text-muted-foreground">Fechados</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-destructive">{totalDeclinados}</p>
+                  <p className="text-xs text-muted-foreground">Declinados</p>
+                </div>
                 <div className="text-center">
                   <p className="text-xl font-bold text-primary">{formatCurrency(totalPremioRecorrente)}</p>
                   <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
                     <RefreshCw className="h-3 w-3" />
-                    Recorrente Fechado
+                    Rec. Fechado
                   </p>
                 </div>
                 <div className="text-center">
@@ -130,20 +151,8 @@ export function StatusDetailModal({
                   <p className="text-xs text-muted-foreground">Total Fechado</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xl font-bold text-brand-orange">{formatCurrency(totalPremioEmAberto)}</p>
-                  <p className="text-xs text-muted-foreground">Em Aberto (Período)</p>
-                </div>
-                <div className="text-center">
                   <p className="text-xl font-bold text-chart-4">{formatCurrency(totalPremioEmAbertoTotal)}</p>
                   <p className="text-xs text-muted-foreground">Em Aberto (Total)</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-bold">{avgConversao.toFixed(0)}%</p>
-                  <p className="text-xs text-muted-foreground">Média Conversão</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-bold text-muted-foreground">{produtores.length}</p>
-                  <p className="text-xs text-muted-foreground">Produtores</p>
                 </div>
               </div>
 
