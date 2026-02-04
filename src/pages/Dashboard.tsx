@@ -1520,10 +1520,15 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Layers className="h-4 w-4" />
-                Distribuição por Status
-              </CardTitle>
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Layers className="h-4 w-4" />
+                  Distribuição por Status
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Dados do período selecionado • Clique em "Análise" para visão completa
+                </p>
+              </div>
               <Button variant="ghost" size="sm" onClick={() => setShowStatusDetailModal(true)} className="text-xs gap-1">
                 Análise <Eye className="h-3 w-3" />
               </Button>
