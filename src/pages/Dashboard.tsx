@@ -44,16 +44,27 @@ const getBranchGroup = (ramoDescricao: string | undefined): string => {
 };
 
 // Helper function to count distinct quotes by CNPJ + branch group for any status
+// REGRA DE NEGÓCIO: Para segmento "Avulso", cada cotação é contada individualmente
+// (não agrupa por CNPJ+branchGroup porque múltiplos fechamentos são permitidos no mesmo mês)
 const countDistinctByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): number => {
   const distinctKeys = new Set<string>();
+  let avulsoCount = 0;
+  
   cotacoes.forEach(cotacao => {
     if (targetStatuses.includes(cotacao.status)) {
-      const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
-      const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
-      distinctKeys.add(key);
+      // Para segmento "Avulso", conta cada cotação individualmente
+      if (cotacao.ramo?.segmento === 'Avulso') {
+        avulsoCount++;
+      } else {
+        // Para outros segmentos, agrupa por CNPJ + branch group
+        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+        const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
+        distinctKeys.add(key);
+      }
     }
   });
-  return distinctKeys.size;
+  
+  return distinctKeys.size + avulsoCount;
 };
 
 // Helper function to count distinct closings (backward compatibility wrapper)
@@ -702,7 +713,9 @@ const Dashboard = () => {
         }
 
         const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
-        const distinctKey = `${cotacao.cpf_cnpj}_${branchGroup}`;
+        // REGRA DE NEGÓCIO: Para segmento "Avulso", cada cotação é contada individualmente
+        const isAvulso = cotacao.ramo?.segmento === 'Avulso';
+        const distinctKey = isAvulso ? `avulso_${cotacao.id}` : `${cotacao.cpf_cnpj}_${branchGroup}`;
         stats[produtorNome].distinctKeys.add(distinctKey);
         stats[produtorNome].cotacoes.push(cotacao);
         
@@ -778,8 +791,11 @@ const Dashboard = () => {
         }
 
         // Create distinct key: CNPJ + branch group
+        // REGRA DE NEGÓCIO: Para segmento "Avulso", cada cotação é contada individualmente
         const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
-        const distinctKey = `${cotacao.cpf_cnpj}_${branchGroup}`;
+        const isAvulso = cotacao.ramo?.segmento === 'Avulso';
+        // Para Avulso, usa ID único; para outros, agrupa por CNPJ+branchGroup
+        const distinctKey = isAvulso ? `avulso_${cotacao.id}` : `${cotacao.cpf_cnpj}_${branchGroup}`;
 
         // Add to total distinct
         produtorStats[nome].distinctKeysTotal.add(distinctKey);
@@ -796,14 +812,16 @@ const Dashboard = () => {
           produtorStats[nome].cotacoesFechadas.push(cotacao);
 
           // Group by segurado+grupo for distinct listing
-          if (!produtorStats[nome].fechadasByKey[distinctKey]) {
-            produtorStats[nome].fechadasByKey[distinctKey] = {
+          // Para Avulso, usa chave única para cada cotação
+          const listingKey = isAvulso ? `avulso_${cotacao.id}` : distinctKey;
+          if (!produtorStats[nome].fechadasByKey[listingKey]) {
+            produtorStats[nome].fechadasByKey[listingKey] = {
               segurado: cotacao.segurado,
-              grupo: branchGroup,
+              grupo: isAvulso ? `Avulso - ${cotacao.ramo?.descricao || 'N/A'}` : branchGroup,
               cotacoes: []
             };
           }
-          produtorStats[nome].fechadasByKey[distinctKey].cotacoes.push(cotacao);
+          produtorStats[nome].fechadasByKey[listingKey].cotacoes.push(cotacao);
         } else if (cotacao.status === "Em cotação") {
           produtorStats[nome].distinctKeysEmCotacao.add(distinctKey);
           const premio = cotacao.valor_premio || 0;
@@ -815,14 +833,16 @@ const Dashboard = () => {
           produtorStats[nome].cotacoesEmAberto.push(cotacao);
 
           // Group by segurado+grupo for distinct listing
-          if (!produtorStats[nome].emAbertoByKey[distinctKey]) {
-            produtorStats[nome].emAbertoByKey[distinctKey] = {
+          // Para Avulso, usa chave única para cada cotação
+          const listingKey = isAvulso ? `avulso_${cotacao.id}` : distinctKey;
+          if (!produtorStats[nome].emAbertoByKey[listingKey]) {
+            produtorStats[nome].emAbertoByKey[listingKey] = {
               segurado: cotacao.segurado,
-              grupo: branchGroup,
+              grupo: isAvulso ? `Avulso - ${cotacao.ramo?.descricao || 'N/A'}` : branchGroup,
               cotacoes: []
             };
           }
-          produtorStats[nome].emAbertoByKey[distinctKey].cotacoes.push(cotacao);
+          produtorStats[nome].emAbertoByKey[listingKey].cotacoes.push(cotacao);
         } else if (cotacao.status === "Declinado") {
           produtorStats[nome].distinctKeysDeclinadas.add(distinctKey);
           produtorStats[nome].cotacoesDeclinadas.push(cotacao);
