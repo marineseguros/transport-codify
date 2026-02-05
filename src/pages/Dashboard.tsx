@@ -761,15 +761,16 @@ const Dashboard = () => {
     }> = {};
     filteredCotacoes.forEach(cotacao => {
       // Use produtor_cotador for "Em cotação", produtor_origem for others
-      let produtorNome: string | null = null;
+      // IMPORTANTE: Cotações sem produtor associado são agrupadas em "(Sem Produtor)"
+      // para garantir que a soma por produtor = total do header
+      let produtorNome: string;
       if (cotacao.status === "Em cotação") {
-        produtorNome = cotacao.produtor_cotador?.nome || null;
+        produtorNome = cotacao.produtor_cotador?.nome || "(Sem Produtor)";
       } else {
-        produtorNome = cotacao.produtor_origem?.nome || null;
+        produtorNome = cotacao.produtor_origem?.nome || "(Sem Produtor)";
       }
       
-      if (produtorNome) {
-        const nome = produtorNome;
+      const nome = produtorNome;
         if (!produtorStats[nome]) {
           produtorStats[nome] = {
             nome,
@@ -847,7 +848,6 @@ const Dashboard = () => {
           produtorStats[nome].distinctKeysDeclinadas.add(distinctKey);
           produtorStats[nome].cotacoesDeclinadas.push(cotacao);
         }
-      }
     });
     return Object.values(produtorStats).map(p => {
       const totalDistinct = p.distinctKeysTotal.size;
