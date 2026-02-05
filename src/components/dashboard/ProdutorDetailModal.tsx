@@ -214,8 +214,8 @@ export function ProdutorDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-3">
             <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
               ranking === 1 ? 'bg-amber-500 text-amber-950' : 
@@ -229,14 +229,14 @@ export function ProdutorDetailModal({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="resumo" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="resumo" className="w-full flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
             <TabsTrigger value="resumo">Resumo & Fechamentos</TabsTrigger>
             <TabsTrigger value="status">Análise por Status</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="resumo">
-            <ScrollArea className="max-h-[65vh] pr-4">
+          <TabsContent value="resumo" className="flex-1 min-h-0">
+            <ScrollArea className="h-full pr-4">
               <div className="space-y-4">
                 {/* KPIs Grid */}
                 <div className="grid grid-cols-4 gap-3">
@@ -418,8 +418,8 @@ export function ProdutorDetailModal({
             </ScrollArea>
           </TabsContent>
           
-          <TabsContent value="status">
-            <ScrollArea className="max-h-[65vh] pr-4">
+          <TabsContent value="status" className="flex-1 min-h-0">
+            <ScrollArea className="h-full pr-4">
               <div className="space-y-4">
                 {/* Header with total stats */}
                 <div className="flex items-center gap-2 mb-2">
