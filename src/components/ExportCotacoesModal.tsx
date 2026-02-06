@@ -101,15 +101,15 @@ const COLUMN_GROUPS = {
 // Get all column keys
 const ALL_COLUMN_KEYS = Object.values(COLUMN_GROUPS).flatMap(cols => cols.map(c => c.key));
 
-type TipoRelatorio = "negocio_fechado" | "em_cotacao" | "declinados";
+type TipoRelatorio = "todos" | "negocio_fechado" | "em_cotacao" | "declinados";
 
 export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalProps) {
-  const [tipoRelatorio, setTipoRelatorio] = useState<TipoRelatorio>("negocio_fechado");
-  const [criterio, setCriterio] = useState<string>("data_fechamento");
+  const [tipoRelatorio, setTipoRelatorio] = useState<TipoRelatorio>("todos");
+  const [criterio, setCriterio] = useState<string>("data_cotacao");
 
   // When report type changes, update criteria accordingly
   React.useEffect(() => {
-    if (tipoRelatorio === "em_cotacao" || tipoRelatorio === "declinados") {
+    if (tipoRelatorio === "todos" || tipoRelatorio === "em_cotacao" || tipoRelatorio === "declinados") {
       setCriterio("data_cotacao");
     }
   }, [tipoRelatorio]);
@@ -292,6 +292,7 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
       } else if (tipoRelatorio === "declinados") {
         query = query.eq("status", "Declinado");
       }
+      // "todos" → no status filter
 
       // Apply date filter based on period type
       if (tipoPeriodo === "personalizado" && dataInicio && dataFim) {
@@ -373,20 +374,24 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
       ws["!cols"] = colWidths;
 
       // Get sheet name based on report type
-      const sheetName = tipoRelatorio === "negocio_fechado" 
-        ? "Negócio Fechado" 
-        : tipoRelatorio === "em_cotacao" 
-          ? "Em Cotação" 
-          : "Declinados";
+      const sheetName = tipoRelatorio === "todos"
+        ? "Todas Cotações"
+        : tipoRelatorio === "negocio_fechado" 
+          ? "Negócio Fechado" 
+          : tipoRelatorio === "em_cotacao" 
+            ? "Em Cotação" 
+            : "Declinados";
 
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
       // Generate filename
-      const tipoLabel = tipoRelatorio === "negocio_fechado" 
-        ? "NegocioFechado" 
-        : tipoRelatorio === "em_cotacao" 
-          ? "EmCotacao" 
-          : "Declinados";
+      const tipoLabel = tipoRelatorio === "todos"
+        ? "Todos"
+        : tipoRelatorio === "negocio_fechado" 
+          ? "NegocioFechado" 
+          : tipoRelatorio === "em_cotacao" 
+            ? "EmCotacao" 
+            : "Declinados";
       const criterioLabel = criterio === "data_fechamento" 
         ? "Fechamento" 
         : criterio === "inicio_vigencia" 
@@ -453,6 +458,7 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent position="popper" sideOffset={4}>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="negocio_fechado">Negócio Fechado</SelectItem>
                   <SelectItem value="em_cotacao">Em Cotação</SelectItem>
                   <SelectItem value="declinados">Declinados</SelectItem>
@@ -472,6 +478,15 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
                     <SelectItem value="data_cotacao">Data da Cotação</SelectItem>
                     <SelectItem value="data_fechamento">Data de Fechamento</SelectItem>
                     <SelectItem value="inicio_vigencia">Início de Vigência</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : tipoRelatorio === "todos" ? (
+                <Select value={criterio} onValueChange={setCriterio}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o critério" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" sideOffset={4}>
+                    <SelectItem value="data_cotacao">Data da Cotação</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
