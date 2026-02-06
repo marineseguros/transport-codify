@@ -24,6 +24,7 @@ import { logger } from "@/lib/logger";
 import { MetasRealizadoChart } from "@/components/dashboard/MetasRealizadoChart";
 import { CotacoesEmAbertoChart } from "@/components/dashboard/CotacoesEmAbertoChart";
 import { MetasPremioComparison } from "@/components/dashboard/MetasPremioComparison";
+import { useNavigate } from "react-router-dom";
 
 // Helper function to determine branch group
 const getBranchGroup = (ramoDescricao: string | undefined): string => {
@@ -96,6 +97,7 @@ const Dashboard = () => {
     loading: loadingRamos
   } = useRamos();
   const loading = loadingCotacoes || loadingProdutores || loadingUnidades || loadingSeguradoras || loadingRamos;
+  const navigate = useNavigate();
 
   // Unified filter state
   const [filters, setFilters] = useState<DashboardFilterValues>({
@@ -1325,6 +1327,11 @@ const Dashboard = () => {
           {/* Dashboard Edit Toolbar - Admin Only */}
           <DashboardEditToolbar editMode={dashboardLayout.editMode} setEditMode={dashboardLayout.setEditMode} cards={dashboardLayout.cards} toggleCardVisibility={dashboardLayout.toggleCardVisibility} resetLayout={dashboardLayout.resetLayout} canEdit={dashboardLayout.canEdit} />
           
+          <Button variant="outline" onClick={() => navigate("/fechamentos")} size="sm" className="gap-2 flex-1 sm:flex-none">
+            <ExternalLink className="h-4 w-4" />
+            <span className="hidden sm:inline">Fechamentos</span>
+            <span className="sm:hidden">Fech.</span>
+          </Button>
           <Button variant="outline" onClick={handleImportCSV} size="sm" className="gap-2 flex-1 sm:flex-none">
             <Upload className="h-4 w-4" />
             <span className="hidden sm:inline">Importar CSV</span>
