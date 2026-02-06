@@ -21,6 +21,7 @@ import Relatorios from "./pages/Relatorios";
 import Produtos from "./pages/Produtos";
 import AcompanhamentoCotacoes from "./pages/AcompanhamentoCotacoes";
 import Metas from "./pages/Metas";
+import Fechamentos from "./pages/Fechamentos";
 import NotFoundPage from "./pages/NotFoundPage";
 
 const queryClient = new QueryClient();
@@ -72,6 +73,7 @@ const AppContent = () => {
               <Route path="/produtos" element={<Produtos />} />
               <Route path="/acompanhamento" element={<AcompanhamentoCotacoes />} />
               <Route path="/metas" element={<Metas />} />
+              <Route path="/fechamentos" element={<Fechamentos />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Layout>
