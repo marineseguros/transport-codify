@@ -13,7 +13,7 @@ import {
   CheckCircle, Clock, XCircle, BarChart3, ChevronDown, ChevronUp, Info, Building2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -204,6 +204,7 @@ const Fechamentos = () => {
   const { cotacoes: allCotacoes, loading: loadingCotacoes } = useCotacoesTotais();
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [periodoFilter, setPeriodoFilter] = useState<string>("mes_atual");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [produtorFilter, setProdutorFilter] = useState<string>("todos");
   const [ramoFilter, setRamoFilter] = useState<string>("todos");
@@ -214,8 +215,33 @@ const Fechamentos = () => {
 
   const consolidated = useMemo(() => consolidateRecords(allCotacoes), [allCotacoes]);
 
+  const periodRange = useMemo(() => {
+    const now = new Date();
+    switch (periodoFilter) {
+      case "mes_atual": return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "mes_passado": { const prev = subMonths(now, 1); return { start: startOfMonth(prev), end: endOfMonth(prev) }; }
+      case "ultimos_3": return { start: startOfMonth(subMonths(now, 2)), end: endOfMonth(now) };
+      case "ultimos_6": return { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(now) };
+      case "ano_atual": return { start: startOfYear(now), end: endOfYear(now) };
+      case "ano_anterior": { const prev = subYears(now, 1); return { start: startOfYear(prev), end: endOfYear(prev) }; }
+      default: return null;
+    }
+  }, [periodoFilter]);
+
   const filteredRecords = useMemo(() => {
     let records = consolidated;
+
+    if (periodRange) {
+      records = records.filter(r => {
+        const ref = (r.status === "Negócio fechado" || r.status === "Fechamento congênere")
+          ? r.data_fechamento || r.data_cotacao
+          : r.data_cotacao;
+        try {
+          const d = parseISO(ref);
+          return isWithinInterval(d, { start: periodRange.start, end: periodRange.end });
+        } catch { return false; }
+      });
+    }
 
     if (statusFilter !== "todos") {
       if (statusFilter === "fechados") {
@@ -249,10 +275,10 @@ const Fechamentos = () => {
     }
 
     return records;
-  }, [consolidated, statusFilter, produtorFilter, ramoFilter, seguradoraFilter, unidadeFilter, searchTerm]);
+  }, [consolidated, periodRange, statusFilter, produtorFilter, ramoFilter, seguradoraFilter, unidadeFilter, searchTerm]);
 
   // Reset page on filter change
-  useMemo(() => setPage(1), [statusFilter, produtorFilter, ramoFilter, seguradoraFilter, unidadeFilter, searchTerm]);
+  useMemo(() => setPage(1), [periodoFilter, statusFilter, produtorFilter, ramoFilter, seguradoraFilter, unidadeFilter, searchTerm]);
 
   const paginatedRecords = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -291,10 +317,10 @@ const Fechamentos = () => {
   const uniqueUnidades = useMemo(() => Array.from(new Set(consolidated.map(r => r.unidade_descricao).filter(Boolean))).sort(), [consolidated]);
 
   const clearFilters = () => {
-    setSearchTerm(""); setStatusFilter("todos"); setProdutorFilter("todos");
+    setSearchTerm(""); setPeriodoFilter("mes_atual"); setStatusFilter("todos"); setProdutorFilter("todos");
     setRamoFilter("todos"); setSeguradoraFilter("todos"); setUnidadeFilter("todos");
   };
-  const hasActiveFilters = statusFilter !== "todos" || produtorFilter !== "todos" || ramoFilter !== "todos" || seguradoraFilter !== "todos" || unidadeFilter !== "todos" || searchTerm !== "";
+  const hasActiveFilters = periodoFilter !== "mes_atual" || statusFilter !== "todos" || produtorFilter !== "todos" || ramoFilter !== "todos" || seguradoraFilter !== "todos" || unidadeFilter !== "todos" || searchTerm !== "";
 
   if (loadingCotacoes) {
     return (
@@ -364,6 +390,21 @@ const Fechamentos = () => {
                 className="pl-8 h-8 text-sm"
               />
             </div>
+
+            <Select value={periodoFilter} onValueChange={setPeriodoFilter}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue placeholder="Período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os Períodos</SelectItem>
+                <SelectItem value="mes_atual">Este Mês</SelectItem>
+                <SelectItem value="mes_passado">Mês Passado</SelectItem>
+                <SelectItem value="ultimos_3">Últimos 3 Meses</SelectItem>
+                <SelectItem value="ultimos_6">Últimos 6 Meses</SelectItem>
+                <SelectItem value="ano_atual">Ano Atual</SelectItem>
+                <SelectItem value="ano_anterior">Ano Anterior</SelectItem>
+              </SelectContent>
+            </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px] h-8 text-xs">
