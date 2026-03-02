@@ -273,9 +273,9 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
         .from("cotacoes")
         .select(`
           *,
-          produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(id, nome, email, telefone, codigo_prod),
-          produtor_negociador:produtores!cotacoes_produtor_negociador_id_fkey(id, nome, email, telefone, codigo_prod),
-          produtor_cotador:produtores!cotacoes_produtor_cotador_id_fkey(id, nome, email, telefone, codigo_prod),
+          produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(id, nome, email, codigo_prod),
+          produtor_negociador:produtores!cotacoes_produtor_negociador_id_fkey(id, nome, email, codigo_prod),
+          produtor_cotador:produtores!cotacoes_produtor_cotador_id_fkey(id, nome, email, codigo_prod),
           seguradora:seguradoras(id, nome, codigo),
           cliente:clientes(id, segurado, cpf_cnpj, email, telefone, endereco, cidade, uf, cep),
           ramo:ramos(id, codigo, descricao, ramo_agrupado, segmento),

@@ -35,6 +35,27 @@ export type Database = {
         }
         Relationships: []
       }
+      cidades: {
+        Row: {
+          cod: number | null
+          estado_id: string | null
+          id: string
+          nome: string | null
+        }
+        Insert: {
+          cod?: number | null
+          estado_id?: string | null
+          id: string
+          nome?: string | null
+        }
+        Update: {
+          cod?: number | null
+          estado_id?: string | null
+          id?: string
+          nome?: string | null
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           ativo: boolean
@@ -494,6 +515,27 @@ export type Database = {
         }
         Relationships: []
       }
+      estados: {
+        Row: {
+          cod: number | null
+          id: string
+          nome: string | null
+          sigla: string | null
+        }
+        Insert: {
+          cod?: number | null
+          id: string
+          nome?: string | null
+          sigla?: string | null
+        }
+        Update: {
+          cod?: number | null
+          id?: string
+          nome?: string | null
+          sigla?: string | null
+        }
+        Relationships: []
+      }
       metas: {
         Row: {
           created_at: string
@@ -629,7 +671,6 @@ export type Database = {
           nome: string
           ordem: number | null
           papel: string
-          telefone: string | null
           updated_at: string
         }
         Insert: {
@@ -641,7 +682,6 @@ export type Database = {
           nome: string
           ordem?: number | null
           papel?: string
-          telefone?: string | null
           updated_at?: string
         }
         Update: {
@@ -653,7 +693,6 @@ export type Database = {
           nome?: string
           ordem?: number | null
           papel?: string
-          telefone?: string | null
           updated_at?: string
         }
         Relationships: []
