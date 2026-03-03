@@ -519,7 +519,7 @@ export function ProdutorDetailModal({
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {clientesAgrupados.slice(0, 10).map((cliente, idx) => (
+                                    {clientesAgrupados.map((cliente, idx) => (
                                       <tr key={cliente.cpf_cnpj} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
                                         <td className="py-2 px-3">
                                           <div className="font-medium truncate max-w-[150px]">{cliente.segurado}</div>
@@ -541,11 +541,6 @@ export function ProdutorDetailModal({
                                     ))}
                                   </tbody>
                                 </table>
-                                {clientesAgrupados.length > 10 && (
-                                  <div className="text-center py-2 text-xs text-muted-foreground border-t">
-                                    +{clientesAgrupados.length - 10} clientes
-                                  </div>
-                                )}
                               </div>
                             </CollapsibleContent>
                           </Collapsible>
