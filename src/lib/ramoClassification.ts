@@ -76,16 +76,23 @@ export const getRegraRamo = (
  * Determina o grupo do ramo para agrupamento de cotações distintas
  * RCTR-C e RC-DC são combinados no mesmo grupo
  */
-export const getRamoGroup = (ramoDescricao: string | undefined | null): string => {
-  if (!ramoDescricao) return 'Não informado';
-  const ramoUpper = ramoDescricao.toUpperCase().trim();
+export const getRamoGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | string | undefined | null): string => {
+  if (!ramo) return 'Não informado';
   
-  // Grupo 1: RCTR-C e RC-DC são combinados
-  if (ramoUpper === 'RCTR-C' || ramoUpper === 'RC-DC') {
-    return 'RCTR-C + RC-DC';
+  // Se for objeto com ramo_agrupado, usar diretamente
+  if (typeof ramo === 'object') {
+    if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
+    const desc = ramo.descricao;
+    if (!desc) return 'Não informado';
+    const ramoUpper = desc.toUpperCase().trim();
+    if (ramoUpper === 'RCTR-C' || ramoUpper === 'RC-DC') return 'RCTR-C + RC-DC';
+    return desc;
   }
   
-  return ramoDescricao;
+  // Fallback para string (compatibilidade)
+  const ramoUpper = ramo.toUpperCase().trim();
+  if (ramoUpper === 'RCTR-C' || ramoUpper === 'RC-DC') return 'RCTR-C + RC-DC';
+  return ramo;
 };
 
 /**
