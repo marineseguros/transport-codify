@@ -59,32 +59,13 @@ interface MetasRealizadoChartProps {
 // Function to categorize branches into groups for distinct counting
 // Group 1: RCTR-C + RC-DC (combined)
 // Group 2: All other specific types (each counts separately)
-const getBranchGroup = (ramoDescricao: string | undefined): string => {
-  if (!ramoDescricao) return "outros";
-  const ramoUpper = ramoDescricao.toUpperCase();
-  
-  // Group 1: RCTR-C + RC-DC count together
-  if (ramoUpper.includes("RCTR-C") || ramoUpper.includes("RC-DC")) {
-    return "grupo_rctr";
-  }
-  
-  // Group 2: Each of these counts separately
-  if (ramoUpper.includes("NACIONAL") && !ramoUpper.includes("AVULSA")) return "nacional";
-  if (ramoUpper.includes("EXPORTAÇÃO") || ramoUpper.includes("EXPORTACAO")) {
-    if (ramoUpper.includes("AVULSA")) return "exportacao_avulsa";
-    return "exportacao";
-  }
-  if (ramoUpper.includes("IMPORTAÇÃO") || ramoUpper.includes("IMPORTACAO")) {
-    if (ramoUpper.includes("AVULSA")) return "importacao_avulsa";
-    return "importacao";
-  }
-  if (ramoUpper.includes("RCTR-VI")) return "rctr_vi";
-  if (ramoUpper.includes("NACIONAL") && ramoUpper.includes("AVULSA")) return "nacional_avulsa";
-  if (ramoUpper.includes("RCTA-C")) return "rcta_c";
-  if (ramoUpper.includes("AMBIENTAL")) return "ambiental";
-  if (ramoUpper.includes("RC-V")) return "rc_v";
-  
-  return "outros";
+const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
+  if (!ramo) return "Outros";
+  if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
+  // Fallback por descrição
+  const ramoUpper = (ramo.descricao || '').toUpperCase();
+  if (ramoUpper.includes("RCTR-C") || ramoUpper.includes("RC-DC")) return "RCTR-C + RC-DC";
+  return ramo.descricao || "Outros";
 };
 
 // Count distinct cotações by CNPJ + branch group
@@ -103,7 +84,7 @@ const countDistinctCotacoes = (
       return;
     }
     
-    const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+    const branchGroup = getBranchGroup(cotacao.ramo);
     const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
     distinctKeys.add(key);
   });

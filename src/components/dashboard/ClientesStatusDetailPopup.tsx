@@ -29,21 +29,13 @@ const statusConfig: Record<StatusType, { title: string; color: string; badgeVari
 };
 
 // Helper to group by CNPJ + Ramo Group
-const getBranchGroup = (ramoDescricao: string | undefined): string => {
-  if (!ramoDescricao) return "outros";
-  const ramoUpper = ramoDescricao.toUpperCase();
-  if (ramoUpper.includes("RCTR-C") || ramoUpper.includes("RC-DC")) {
-    return "RCTR-C + RC-DC";
-  }
-  if (ramoUpper.includes("NACIONAL")) return "NACIONAL";
-  if (ramoUpper.includes("EXPORTAÇÃO") || ramoUpper.includes("EXPORTACAO")) return "EXPORTAÇÃO";
-  if (ramoUpper.includes("IMPORTAÇÃO") || ramoUpper.includes("IMPORTACAO")) return "IMPORTAÇÃO";
-  if (ramoUpper.includes("RCTR-VI")) return "RCTR-VI";
-  if (ramoUpper.includes("RCTA-C")) return "RCTA-C";
-  if (ramoUpper.includes("AMBIENTAL")) return "AMBIENTAL";
-  if (ramoUpper.includes("RC-V")) return "RC-V";
-  if (ramoUpper.includes("AVULSA")) return "AVULSA";
-  return "OUTROS";
+const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
+  if (!ramo) return "Outros";
+  if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
+  // Fallback por descrição
+  const ramoUpper = (ramo.descricao || '').toUpperCase();
+  if (ramoUpper.includes("RCTR-C") || ramoUpper.includes("RC-DC")) return "RCTR-C + RC-DC";
+  return ramo.descricao || "Outros";
 };
 
 interface GroupedCliente {
@@ -75,7 +67,7 @@ export function ClientesStatusDetailPopup({
   const groupMap = new Map<string, GroupedCliente>();
 
   cotacoes.forEach(cotacao => {
-    const ramoGroup = getBranchGroup(cotacao.ramo?.descricao);
+    const ramoGroup = getBranchGroup(cotacao.ramo);
     const key = `${cotacao.cpf_cnpj}_${ramoGroup}`;
     
     if (!groupMap.has(key)) {

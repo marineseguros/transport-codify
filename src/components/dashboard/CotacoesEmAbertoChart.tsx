@@ -43,9 +43,9 @@ const getSegmento = (ramoDescricao: string | undefined): string => {
   return 'Transportes';
 };
 
-// Usa a função importada para agrupar ramos - renomeamos para evitar conflito
-const getRamoGroup = (ramoDescricao: string | undefined): string => {
-  return getRamoGroupFromLib(ramoDescricao);
+// Usa a função importada para agrupar ramos
+const getRamoGroup = (ramo: any): string => {
+  return getRamoGroupFromLib(ramo);
 };
 
 interface QuoteDetail {
@@ -214,7 +214,7 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
       const ramoDescricao = cotacao.ramo?.descricao;
       const regra = getRegraRamo(cotacao.ramo);
       const segmento = getSegmento(ramoDescricao);
-      const ramoGroup = getRamoGroup(ramoDescricao);
+      const ramoGroup = getRamoGroup(cotacao.ramo);
       const premio = cotacao.valor_premio || 0;
       
       if (!groupedBySegurado.has(segurado)) {

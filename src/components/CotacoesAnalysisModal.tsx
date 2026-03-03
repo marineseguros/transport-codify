@@ -241,7 +241,7 @@ export function CotacoesAnalysisModal({ open, onOpenChange }: CotacoesAnalysisMo
     filtered.forEach((cotacao) => {
       const ramo = cotacao.ramo as any;
       const ramoDescricao = ramo?.descricao || "Não informado";
-      const ramoGroup = getRamoGroup(ramoDescricao);
+      const ramoGroup = getRamoGroup(ramo);
       const seguradora = cotacao.seguradora as any;
       const produtorCotador = cotacao.produtor_cotador as any;
 

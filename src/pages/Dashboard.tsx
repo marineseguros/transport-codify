@@ -26,22 +26,15 @@ import { CotacoesEmAbertoChart } from "@/components/dashboard/CotacoesEmAbertoCh
 import { MetasPremioComparison } from "@/components/dashboard/MetasPremioComparison";
 import { useNavigate } from "react-router-dom";
 
-// Helper function to determine branch group
-const getBranchGroup = (ramoDescricao: string | undefined): string => {
-  if (!ramoDescricao) return "outros";
-  const ramoUpper = ramoDescricao.toUpperCase();
-
-  // Group 1: RCTR-C + RC-DC
-  if (ramoUpper.includes("RCTR-C") || ramoUpper.includes("RC-DC")) {
-    return "grupo_rctr";
-  }
-
-  // Group 2: All other specific types
-  const group2Types = ["NACIONAL", "EXPORTAÇÃO", "EXPORTACAO", "IMPORTAÇÃO", "IMPORTACAO", "RCTR-VI", "NACIONAL AVULSA", "IMPORTAÇÃO AVULSA", "IMPORTACAO AVULSA", "RCTA-C", "AMBIENTAL", "RC-V"];
-  if (group2Types.some(type => ramoUpper.includes(type))) {
-    return "grupo_nacional";
-  }
-  return "outros";
+// Helper function to determine branch group using ramo_agrupado from DB
+const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
+  if (!ramo) return "Outros";
+  // PRIORIDADE: usar ramo_agrupado da base de dados
+  if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
+  // Fallback por descrição (dados legados)
+  const ramoUpper = (ramo.descricao || '').toUpperCase();
+  if (ramoUpper.includes("RCTR-C") || ramoUpper.includes("RC-DC")) return "RCTR-C + RC-DC";
+  return ramo.descricao || "Outros";
 };
 
 // Helper function to count distinct quotes by CNPJ + branch group for any status
@@ -58,7 +51,7 @@ const countDistinctByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): n
         avulsoCount++;
       } else {
         // Para outros segmentos, agrupa por CNPJ + branch group
-        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+        const branchGroup = getBranchGroup(cotacao.ramo);
         const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
         distinctKeys.add(key);
       }
@@ -714,7 +707,7 @@ const Dashboard = () => {
           };
         }
 
-        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+        const branchGroup = getBranchGroup(cotacao.ramo);
         // REGRA DE NEGÓCIO: Para segmento "Avulso", cada cotação é contada individualmente
         const isAvulso = cotacao.ramo?.segmento === 'Avulso';
         const distinctKey = isAvulso ? `avulso_${cotacao.id}` : `${cotacao.cpf_cnpj}_${branchGroup}`;
@@ -795,7 +788,7 @@ const Dashboard = () => {
 
         // Create distinct key: CNPJ + branch group
         // REGRA DE NEGÓCIO: Para segmento "Avulso", cada cotação é contada individualmente
-        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+        const branchGroup = getBranchGroup(cotacao.ramo);
         const isAvulso = cotacao.ramo?.segmento === 'Avulso';
         // Para Avulso, usa ID único; para outros, agrupa por CNPJ+branchGroup
         const distinctKey = isAvulso ? `avulso_${cotacao.id}` : `${cotacao.cpf_cnpj}_${branchGroup}`;
@@ -1033,7 +1026,7 @@ const Dashboard = () => {
             clientesMap: new Map()
           };
         }
-        const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+        const branchGroup = getBranchGroup(cotacao.ramo);
         const distinctKey = `${cotacao.cpf_cnpj}_${branchGroup}`;
         seguradoraStats[nome].distinctKeys.add(distinctKey);
         seguradoraStats[nome].premio += Number(cotacao.valor_premio);
@@ -1153,7 +1146,7 @@ const Dashboard = () => {
     };
     filteredCotacoes.filter(c => c.status === "Em cotação" || c.status === "Em análise").forEach(cotacao => {
       const segmento = cotacao.segmento || "Não informado";
-      const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+      const branchGroup = getBranchGroup(cotacao.ramo);
       const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
       if (segmento === "Transportador") {
         tipoStats["Em Aberto"].transportador.add(key);
@@ -1188,7 +1181,7 @@ const Dashboard = () => {
     };
     filteredCotacoes.filter(c => c.status === "Negócio fechado" || c.status === "Fechamento congênere").forEach(cotacao => {
       const segmento = cotacao.segmento || "Não informado";
-      const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+      const branchGroup = getBranchGroup(cotacao.ramo);
       const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
       if (segmento === "Transportador") {
         tipoStats.transportador.add(key);
@@ -1223,7 +1216,7 @@ const Dashboard = () => {
     };
     filteredCotacoes.filter(c => c.status === "Declinado").forEach(cotacao => {
       const segmento = cotacao.segmento || "Não informado";
-      const branchGroup = getBranchGroup(cotacao.ramo?.descricao);
+      const branchGroup = getBranchGroup(cotacao.ramo);
       const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
       if (segmento === "Transportador") {
         tipoStats.transportador.add(key);
@@ -2058,7 +2051,7 @@ const Dashboard = () => {
                       distinctFechadas: new Set()
                     };
                   }
-                  const branchGroup = getBranchGroup(c.ramo?.descricao);
+                  const branchGroup = getBranchGroup(c.ramo);
                   const key = `${c.cpf_cnpj}_${branchGroup}`;
                   unidadeStats[nome].total++;
                   unidadeStats[nome].distinctKeys.add(key);
