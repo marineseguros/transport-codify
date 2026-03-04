@@ -524,12 +524,9 @@ export function ProdutorDetailModal({
                                         </td>
                                         <td className="py-2 px-3 hidden sm:table-cell">
                                           <div className="flex flex-wrap gap-1">
-                                            {cliente.ramos.slice(0, 2).map(r => (
+                                            {cliente.ramos.map(r => (
                                               <Badge key={r} variant="outline" className="text-[10px] px-1 py-0">{r}</Badge>
                                             ))}
-                                            {cliente.ramos.length > 2 && (
-                                              <Badge variant="outline" className="text-[10px] px-1 py-0">+{cliente.ramos.length - 2}</Badge>
-                                            )}
                                           </div>
                                         </td>
                                         <td className="py-2 px-3 text-right">{cliente.count}</td>
