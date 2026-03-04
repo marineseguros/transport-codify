@@ -83,9 +83,8 @@ export function ProdutorDetailModal({
   const potencialFechamento = produtor.premioEmAberto * (produtor.taxaConversao / 100);
   const previsaoTotal = produtor.premioTotal + potencialFechamento;
 
-  // Get 10 most recent distinct closed (by segurado + grupo)
+  // Get all distinct closed (by segurado + grupo)
   const recentFechados = produtor.distinctFechadasList
-    .slice(0, 10)
     .map(item => {
       const totalPremio = item.cotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
       const cotacaoRamo = item.cotacoes[0]?.ramo;
@@ -308,7 +307,7 @@ export function ProdutorDetailModal({
               <div className="border rounded-lg p-3">
                 <p className="text-sm font-medium mb-3 flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  10 Fechamentos Mais Recentes (Distintos)
+                  Fechamentos (Distintos)
                 </p>
                 {recentFechados.length > 0 ? (
                   <div className="space-y-2">
@@ -468,7 +467,7 @@ export function ProdutorDetailModal({
                           <div className="mt-4">
                             <div className="text-xs font-medium text-muted-foreground mb-2">Top Ramos</div>
                             <div className="flex flex-wrap gap-2">
-                              {status.ramoBreakdown.slice(0, 3).map((ramo) => (
+                              {status.ramoBreakdown.map((ramo) => (
                                 <Badge key={ramo.ramo} variant="outline" className="text-xs">
                                   {ramo.ramo}: {ramo.count} ({formatCurrency(ramo.premio)})
                                 </Badge>
@@ -482,7 +481,7 @@ export function ProdutorDetailModal({
                           <div className="mt-3">
                             <div className="text-xs font-medium text-muted-foreground mb-2">Top Seguradoras</div>
                             <div className="flex flex-wrap gap-2">
-                              {status.seguradoraBreakdown.slice(0, 3).map((seg) => (
+                              {status.seguradoraBreakdown.map((seg) => (
                                 <Badge key={seg.seguradora} variant="secondary" className="text-xs">
                                   {seg.seguradora}: {seg.count} ({formatCurrency(seg.premio)})
                                 </Badge>
