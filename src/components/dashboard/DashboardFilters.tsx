@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -238,134 +239,134 @@ export function DashboardFilters({
     .filter((u) => u.ativo)
     .map((u) => ({ value: u.descricao, label: u.descricao }));
 
+  const isCustomDate = filters.dateFilter === "personalizado";
+  const isAnoEspecifico = filters.dateFilter === "ano_especifico";
+
   return (
     <Card className="border-border/50">
-      <CardContent className="py-3 px-4">
-        <div className="flex items-end gap-3 flex-wrap">
-          {/* Filtros */}
-          <div className="flex items-end gap-2 flex-wrap flex-1">
-            {/* Período */}
-            <div className="space-y-1 min-w-[120px]">
-              <Label className="text-xs text-muted-foreground">Período</Label>
-              <Select value={filters.dateFilter} onValueChange={(v) => updateFilter("dateFilter", v)}>
+      <CardContent className="py-3 px-4 overflow-x-auto">
+        <div className="flex items-end gap-4 min-w-max">
+          {/* Período */}
+          <div className="space-y-1 w-[140px] shrink-0">
+            <Label className="text-xs text-muted-foreground">Período</Label>
+            <Select value={filters.dateFilter} onValueChange={(v) => updateFilter("dateFilter", v)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mes_atual">Este mês</SelectItem>
+                <SelectItem value="mes_anterior">Mês passado</SelectItem>
+                <SelectItem value="ano_atual">Ano atual</SelectItem>
+                <SelectItem value="ano_anterior">Ano anterior</SelectItem>
+                <SelectItem value="30dias">Últimos 30 dias</SelectItem>
+                <SelectItem value="personalizado">Personalizado</SelectItem>
+                <SelectItem value="ano_especifico">Ano específico</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Datas - always visible, disabled when not custom */}
+          <div className={cn("space-y-1 w-[240px] shrink-0", !isCustomDate && "opacity-50 pointer-events-none")}>
+            <Label className="text-xs text-muted-foreground">Datas</Label>
+            <DatePickerWithRange
+              date={isCustomDate ? filters.dateRange : undefined}
+              onDateChange={(range) => updateFilter("dateRange", range)}
+            />
+          </div>
+
+          {/* Ano específico - only when selected */}
+          {isAnoEspecifico && (
+            <div className="space-y-1 w-[100px] shrink-0">
+              <Label className="text-xs text-muted-foreground">Ano</Label>
+              <Select
+                value={filters.anoEspecifico}
+                onValueChange={(v) => updateFilter("anoEspecifico", v)}
+              >
                 <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder="Ano" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mes_atual">Este mês</SelectItem>
-                  <SelectItem value="mes_anterior">Mês passado</SelectItem>
-                  <SelectItem value="ano_atual">Ano atual</SelectItem>
-                  <SelectItem value="ano_anterior">Ano anterior</SelectItem>
-                  <SelectItem value="30dias">Últimos 30 dias</SelectItem>
-                  <SelectItem value="personalizado">Período personalizado</SelectItem>
-                  <SelectItem value="ano_especifico">Ano específico</SelectItem>
+                  {availableYears.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+          )}
 
-            {/* Custom date range picker */}
-            {filters.dateFilter === "personalizado" && (
-              <div className="space-y-1 min-w-[200px]">
-                <Label className="text-xs text-muted-foreground">Datas</Label>
-                <DatePickerWithRange
-                  date={filters.dateRange}
-                  onDateChange={(range) => updateFilter("dateRange", range)}
-                />
-              </div>
-            )}
-
-            {/* Ano específico selector */}
-            {filters.dateFilter === "ano_especifico" && (
-              <div className="space-y-1 min-w-[80px]">
-                <Label className="text-xs text-muted-foreground">Ano</Label>
-                <Select
-                  value={filters.anoEspecifico}
-                  onValueChange={(v) => updateFilter("anoEspecifico", v)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Ano" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableYears.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Produtor */}
-            <div className="space-y-1 min-w-[130px]">
-              <Label className="text-xs text-muted-foreground">Produtor</Label>
-              <MultiSelect
-                options={produtorOptions}
-                selected={filters.produtorFilter}
-                onChange={(v) => updateFilter("produtorFilter", v)}
-                placeholder="Todos"
-              />
-            </div>
-
-            {/* Seguradora */}
-            <div className="space-y-1 min-w-[130px]">
-              <Label className="text-xs text-muted-foreground">Seguradora</Label>
-              <MultiSelect
-                options={seguradoraOptions}
-                selected={filters.seguradoraFilter}
-                onChange={(v) => updateFilter("seguradoraFilter", v)}
-                placeholder="Todas"
-              />
-            </div>
-
-            {/* Ramo */}
-            <div className="space-y-1 min-w-[130px]">
-              <Label className="text-xs text-muted-foreground">Ramo</Label>
-              <MultiSelect
-                options={ramoOptions}
-                selected={filters.ramoFilter}
-                onChange={(v) => updateFilter("ramoFilter", v)}
-                placeholder="Todos"
-              />
-            </div>
-
-            {/* Segmento */}
-            <div className="space-y-1 min-w-[120px]">
-              <Label className="text-xs text-muted-foreground">Segmento</Label>
-              <MultiSelect
-                options={segmentoOptions}
-                selected={filters.segmentoFilter}
-                onChange={(v) => updateFilter("segmentoFilter", v)}
-                placeholder="Todos"
-              />
-            </div>
-
-            {/* Tipo de Regra */}
-            <div className="space-y-1 min-w-[110px]">
-              <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
-              <MultiSelect
-                options={regraOptions}
-                selected={filters.regraFilter}
-                onChange={(v) => updateFilter("regraFilter", v)}
-                placeholder="Todas"
-              />
-            </div>
-
-            {/* Unidade */}
-            <div className="space-y-1 min-w-[110px]">
-              <Label className="text-xs text-muted-foreground">Unidade</Label>
-              <MultiSelect
-                options={unidadeOptions}
-                selected={filters.unidadeFilter}
-                onChange={(v) => updateFilter("unidadeFilter", v)}
-                placeholder="Todas"
-              />
-            </div>
+          {/* Produtor */}
+          <div className="space-y-1 w-[130px] shrink-0">
+            <Label className="text-xs text-muted-foreground">Produtor</Label>
+            <MultiSelect
+              options={produtorOptions}
+              selected={filters.produtorFilter}
+              onChange={(v) => updateFilter("produtorFilter", v)}
+              placeholder="Todos"
+            />
           </div>
 
-          {/* Ações - alinhadas à direita com espaçamento */}
-          <div className="flex items-center gap-1 ml-auto pl-4 border-l border-border/50">
-            {/* Saved filters */}
+          {/* Seguradora */}
+          <div className="space-y-1 w-[130px] shrink-0">
+            <Label className="text-xs text-muted-foreground">Seguradora</Label>
+            <MultiSelect
+              options={seguradoraOptions}
+              selected={filters.seguradoraFilter}
+              onChange={(v) => updateFilter("seguradoraFilter", v)}
+              placeholder="Todas"
+            />
+          </div>
+
+          {/* Ramo */}
+          <div className="space-y-1 w-[110px] shrink-0">
+            <Label className="text-xs text-muted-foreground">Ramo</Label>
+            <MultiSelect
+              options={ramoOptions}
+              selected={filters.ramoFilter}
+              onChange={(v) => updateFilter("ramoFilter", v)}
+              placeholder="Todos"
+            />
+          </div>
+
+          {/* Segmento */}
+          <div className="space-y-1 w-[120px] shrink-0">
+            <Label className="text-xs text-muted-foreground">Segmento</Label>
+            <MultiSelect
+              options={segmentoOptions}
+              selected={filters.segmentoFilter}
+              onChange={(v) => updateFilter("segmentoFilter", v)}
+              placeholder="Todos"
+            />
+          </div>
+
+          {/* Tipo Regra */}
+          <div className="space-y-1 w-[120px] shrink-0">
+            <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
+            <MultiSelect
+              options={regraOptions}
+              selected={filters.regraFilter}
+              onChange={(v) => updateFilter("regraFilter", v)}
+              placeholder="Todas"
+            />
+          </div>
+
+          {/* Unidade */}
+          <div className="space-y-1 w-[110px] shrink-0">
+            <Label className="text-xs text-muted-foreground">Unidade</Label>
+            <MultiSelect
+              options={unidadeOptions}
+              selected={filters.unidadeFilter}
+              onChange={(v) => updateFilter("unidadeFilter", v)}
+              placeholder="Todas"
+            />
+          </div>
+
+          {/* Spacer */}
+          <div className="flex-1 min-w-[8px]" />
+
+          {/* Ações */}
+          <div className="flex items-center gap-1 shrink-0">
             {savedFilters.length > 0 && (
               <Popover>
                 <PopoverTrigger asChild>
@@ -404,7 +405,6 @@ export function DashboardFilters({
               </Popover>
             )}
 
-            {/* Save filters */}
             <Popover open={showSavePopover} onOpenChange={setShowSavePopover}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
@@ -427,13 +427,12 @@ export function DashboardFilters({
               </PopoverContent>
             </Popover>
 
-            {/* Clear filters */}
             {hasActiveFilters && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={clearFilters}
-                className="h-8 px-3 text-xs ml-2"
+                className="h-8 px-3 text-xs"
               >
                 <X className="h-3.5 w-3.5 mr-1" />
                 Limpar
