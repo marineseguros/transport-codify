@@ -944,25 +944,50 @@ const Dashboard = () => {
     });
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
       const monthName = date.toLocaleDateString("pt-BR", {
         month: "short"
       });
       const year = date.getFullYear();
-      const monthCotacoes = trendFilteredCotacoes.filter(c => {
-        const cotacaoDate = new Date(c.data_cotacao);
-        return cotacaoDate.getMonth() === date.getMonth() && cotacaoDate.getFullYear() === date.getFullYear();
+
+      // Em Cotação: filter by data_cotacao within this month
+      const emCotacaoList = trendFilteredCotacoes.filter(c => {
+        if (c.status !== "Em cotação") return false;
+        const d = new Date(c.data_cotacao);
+        return d >= monthStart && d <= monthEnd;
       });
-      const emCotacao = monthCotacoes.filter(c => c.status === "Em cotação").length;
-      const fechadas = monthCotacoes.filter(c => c.status === "Negócio fechado" || c.status === "Fechamento congênere").length;
-      const declinadas = monthCotacoes.filter(c => c.status === "Declinado").length;
-      const premioFechado = monthCotacoes.filter(c => c.status === "Negócio fechado" || c.status === "Fechamento congênere").reduce((sum, c) => sum + (c.valor_premio || 0), 0);
-      const premioAberto = monthCotacoes.filter(c => c.status === "Em cotação").reduce((sum, c) => sum + (c.valor_premio || 0), 0);
-      const transportador = monthCotacoes.filter(c => c.segmento === "Transportador").length;
-      const embarcador = monthCotacoes.filter(c => c.segmento !== "Transportador").length;
-      const taxaConversao = monthCotacoes.length > 0 ? fechadas / monthCotacoes.length * 100 : 0;
+
+      // Fechadas: filter by data_fechamento within this month
+      const fechadasList = trendFilteredCotacoes.filter(c => {
+        if (c.status !== "Negócio fechado" && c.status !== "Fechamento congênere") return false;
+        if (!c.data_fechamento) return false;
+        const d = new Date(c.data_fechamento);
+        return d >= monthStart && d <= monthEnd;
+      });
+
+      // Declinadas: filter by data_cotacao within this month
+      const declinadasList = trendFilteredCotacoes.filter(c => {
+        if (c.status !== "Declinado") return false;
+        const d = new Date(c.data_cotacao);
+        return d >= monthStart && d <= monthEnd;
+      });
+
+      const emCotacao = emCotacaoList.length;
+      const fechadas = fechadasList.length;
+      const declinadas = declinadasList.length;
+      const total = emCotacao + fechadas + declinadas;
+      const premioFechado = fechadasList.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+      const premioAberto = emCotacaoList.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+
+      // Transportador/Embarcador counts across all statuses in this month
+      const allMonthQuotes = [...emCotacaoList, ...fechadasList, ...declinadasList];
+      const transportador = allMonthQuotes.filter(c => c.segmento === "Transportador").length;
+      const embarcador = allMonthQuotes.filter(c => c.segmento !== "Transportador").length;
+      const taxaConversao = total > 0 ? fechadas / total * 100 : 0;
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
-        total: monthCotacoes.length,
+        total,
         emCotacao,
         fechadas,
         declinadas,
