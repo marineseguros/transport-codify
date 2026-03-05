@@ -247,7 +247,7 @@ export function DashboardFilters({
       <CardContent className="py-3 px-4 overflow-x-auto">
         <div className="flex items-end gap-4 min-w-max">
           {/* Período */}
-          <div className="space-y-1 w-[140px] shrink-0">
+          <div className="space-y-1 w-[130px] shrink-0">
             <Label className="text-xs text-muted-foreground">Período</Label>
             <Select value={filters.dateFilter} onValueChange={(v) => updateFilter("dateFilter", v)}>
               <SelectTrigger className="h-8 text-xs">
@@ -266,7 +266,7 @@ export function DashboardFilters({
           </div>
 
           {/* Datas - always visible, disabled when not custom */}
-          <div className={cn("space-y-1 w-[240px] shrink-0", !isCustomDate && "opacity-50 pointer-events-none")}>
+          <div className={cn("space-y-1 w-[270px] shrink-0", !isCustomDate && "opacity-50 pointer-events-none")}>
             <Label className="text-xs text-muted-foreground">Datas</Label>
             <DatePickerWithRange
               date={isCustomDate ? filters.dateRange : undefined}
@@ -297,7 +297,7 @@ export function DashboardFilters({
           )}
 
           {/* Produtor */}
-          <div className="space-y-1 w-[130px] shrink-0">
+          <div className="space-y-1 w-[150px] shrink-0">
             <Label className="text-xs text-muted-foreground">Produtor</Label>
             <MultiSelect
               options={produtorOptions}
@@ -308,7 +308,7 @@ export function DashboardFilters({
           </div>
 
           {/* Seguradora */}
-          <div className="space-y-1 w-[130px] shrink-0">
+          <div className="space-y-1 w-[150px] shrink-0">
             <Label className="text-xs text-muted-foreground">Seguradora</Label>
             <MultiSelect
               options={seguradoraOptions}
@@ -319,7 +319,7 @@ export function DashboardFilters({
           </div>
 
           {/* Ramo */}
-          <div className="space-y-1 w-[110px] shrink-0">
+          <div className="space-y-1 w-[100px] shrink-0">
             <Label className="text-xs text-muted-foreground">Ramo</Label>
             <MultiSelect
               options={ramoOptions}
@@ -330,7 +330,7 @@ export function DashboardFilters({
           </div>
 
           {/* Segmento */}
-          <div className="space-y-1 w-[120px] shrink-0">
+          <div className="space-y-1 w-[140px] shrink-0">
             <Label className="text-xs text-muted-foreground">Segmento</Label>
             <MultiSelect
               options={segmentoOptions}
@@ -341,7 +341,7 @@ export function DashboardFilters({
           </div>
 
           {/* Tipo Regra */}
-          <div className="space-y-1 w-[120px] shrink-0">
+          <div className="space-y-1 w-[140px] shrink-0">
             <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
             <MultiSelect
               options={regraOptions}
@@ -352,7 +352,7 @@ export function DashboardFilters({
           </div>
 
           {/* Unidade */}
-          <div className="space-y-1 w-[110px] shrink-0">
+          <div className="space-y-1 w-[100px] shrink-0">
             <Label className="text-xs text-muted-foreground">Unidade</Label>
             <MultiSelect
               options={unidadeOptions}
@@ -366,7 +366,7 @@ export function DashboardFilters({
           <div className="flex-1 min-w-[8px]" />
 
           {/* Ações */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {savedFilters.length > 0 && (
               <Popover>
                 <PopoverTrigger asChild>
