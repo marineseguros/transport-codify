@@ -99,7 +99,7 @@ export function TendenciaDetailModal({
             {/* Gráfico de Área Empilhada - Transportador vs Embarcador */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Distribuição Transportador vs Embarcador</CardTitle>
+                <CardTitle className="text-sm">Evolução Mensal - Cotações, Fechamentos e Declinadas</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
@@ -116,19 +116,27 @@ export function TendenciaDetailModal({
                     <Legend />
                     <Area 
                       type="monotone" 
-                      dataKey="transportador" 
-                      stackId="1"
-                      stroke="hsl(var(--primary))" 
-                      fill="hsl(var(--primary) / 0.6)" 
-                      name="Transportador"
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="embarcador" 
+                      dataKey="emCotacao" 
                       stackId="1"
                       stroke="hsl(var(--brand-orange))" 
                       fill="hsl(var(--brand-orange) / 0.6)" 
-                      name="Embarcador"
+                      name="Em Cotação"
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="fechadas" 
+                      stackId="1"
+                      stroke="hsl(var(--success-alt))" 
+                      fill="hsl(var(--success-alt) / 0.6)" 
+                      name="Fechadas"
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="declinadas" 
+                      stackId="1"
+                      stroke="hsl(var(--destructive))" 
+                      fill="hsl(var(--destructive) / 0.6)" 
+                      name="Declinadas"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
