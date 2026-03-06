@@ -289,11 +289,7 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
               <div>
                 <span>Meta x Realizado</span>
                 <p className="text-[11px] font-normal text-muted-foreground">
-                  <span className="capitalize">{monthLabel}</span>
-                  {' • Meta: '}<strong>{totals.totalMeta}</strong>
-                  {' • Realizado: '}<strong className="text-primary">{totals.totalRealizado}</strong>
-                  {' • '}
-                  <strong className={getStatusColor(totals.pct)}>{totals.pct.toFixed(0)}%</strong>
+                  Dados do período selecionado • Clique em "Ver mais" para visão completa
                 </p>
               </div>
             </CardTitle>
@@ -312,10 +308,15 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
 
         <CardContent className="space-y-4 pt-0">
           {/* KPI Strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-
-
-            
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-lg border bg-muted/20 p-2.5 text-center">
+              <p className="text-xl font-bold">{totals.totalMeta}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meta</p>
+            </div>
+            <div className="rounded-lg border bg-primary/5 p-2.5 text-center">
+              <p className="text-xl font-bold text-primary">{totals.totalRealizado}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Realizado</p>
+            </div>
             <div className="rounded-lg border p-2.5 text-center" style={{ background: totals.pct >= 100 ? 'hsl(156 72% 40% / 0.06)' : totals.pct >= 70 ? 'hsl(35 95% 55% / 0.06)' : 'hsl(0 84% 60% / 0.06)' }}>
               <p className={`text-xl font-bold ${getStatusColor(totals.pct)}`}>{totals.pct.toFixed(0)}%</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Atingimento</p>
