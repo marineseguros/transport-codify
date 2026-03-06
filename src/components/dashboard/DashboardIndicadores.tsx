@@ -1,10 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Target } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Target, TrendingUp, TrendingDown, Minus, ExternalLink, BarChart3, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
-import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { format, startOfMonth, endOfMonth, getDaysInMonth, getDate } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Cell } from 'recharts';
 import { logger } from '@/lib/logger';
+import { IndicadoresDetailModal } from './IndicadoresDetailModal';
 
 interface Produto {
   id: string;
@@ -19,8 +24,8 @@ interface Meta {
   produtor_id: string;
   mes: string;
   quantidade: number;
-  tipo_meta?: {id: string;descricao: string;};
-  produtor?: {id: string;nome: string;};
+  tipo_meta?: { id: string; descricao: string };
+  produtor?: { id: string; nome: string };
 }
 
 interface Cotacao {
@@ -35,28 +40,54 @@ interface DashboardIndicadoresProps {
 }
 
 const normalizeLabel = (value?: string | null) =>
-(value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+  (value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+
+const getStatusColor = (pct: number) => {
+  if (pct >= 100) return 'text-success';
+  if (pct >= 70) return 'text-warning';
+  return 'text-destructive';
+};
+
+const getProgressColor = (pct: number) => {
+  if (pct >= 100) return '[&>div]:bg-success';
+  if (pct >= 70) return '[&>div]:bg-warning';
+  return '[&>div]:bg-destructive';
+};
+
+const getBarColor = (pct: number) => {
+  if (pct >= 100) return 'hsl(156, 72%, 40%)';
+  if (pct >= 70) return 'hsl(35, 95%, 55%)';
+  return 'hsl(0, 84%, 60%)';
+};
+
+const StatusIcon = ({ pct }: { pct: number }) => {
+  if (pct >= 100) return <CheckCircle2 className="h-3.5 w-3.5 text-success" />;
+  if (pct >= 70) return <AlertTriangle className="h-3.5 w-3.5 text-warning" />;
+  return <XCircle className="h-3.5 w-3.5 text-destructive" />;
+};
 
 export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresProps) => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDetail, setShowDetail] = useState(false);
 
   const isMetaType = (descricao: string | undefined, target: string) =>
-  normalizeLabel(descricao) === normalizeLabel(target);
+    normalizeLabel(descricao) === normalizeLabel(target);
 
   const analysisDate = useMemo(() => {
     const timestamps: number[] = [];
-    produtos.forEach((p) => {const t = new Date(p.data_registro).getTime();if (!Number.isNaN(t)) timestamps.push(t);});
+    produtos.forEach((p) => { const t = new Date(p.data_registro).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
     if (timestamps.length) return new Date(Math.max(...timestamps));
-    metas.forEach((m) => {const t = new Date(m.mes).getTime();if (!Number.isNaN(t)) timestamps.push(t);});
+    metas.forEach((m) => { const t = new Date(m.mes).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
     if (timestamps.length) return new Date(Math.max(...timestamps));
-    cotacoes.forEach((c) => {const t = new Date(c.data_cotacao).getTime();if (!Number.isNaN(t)) timestamps.push(t);});
+    cotacoes.forEach((c) => { const t = new Date(c.data_cotacao).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
     return timestamps.length ? new Date(Math.max(...timestamps)) : new Date();
   }, [produtos, metas, cotacoes]);
 
   const currentMonthStr = format(analysisDate, 'yyyy-MM');
+  const monthLabel = format(analysisDate, "MMMM 'de' yyyy", { locale: ptBR });
   const startCurrent = startOfMonth(analysisDate);
   const endCurrent = endOfMonth(analysisDate);
 
@@ -65,10 +96,10 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
       try {
         setLoading(true);
         const [prodRes, metasRes, cotRes] = await Promise.all([
-        supabase.from('produtos').select('id, consultor, data_registro, tipo, subtipo').order('data_registro', { ascending: false }),
-        supabase.from('metas').select('*, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)').order('mes', { ascending: false }),
-        supabase.from('cotacoes').select('id, status, data_cotacao, data_fechamento').order('data_cotacao', { ascending: false })]
-        );
+          supabase.from('produtos').select('id, consultor, data_registro, tipo, subtipo').order('data_registro', { ascending: false }),
+          supabase.from('metas').select('*, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)').order('mes', { ascending: false }),
+          supabase.from('cotacoes').select('id, status, data_cotacao, data_fechamento').order('data_cotacao', { ascending: false }),
+        ]);
         if (prodRes.error) throw prodRes.error;
         if (metasRes.error) throw metasRes.error;
         if (cotRes.error) throw cotRes.error;
@@ -85,55 +116,131 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
   }, []);
 
   const currentMonthProdutos = useMemo(() =>
-  produtos.filter((p) => {const d = new Date(p.data_registro);return d >= startCurrent && d <= endCurrent;}),
-  [produtos, startCurrent, endCurrent]);
+    produtos.filter((p) => { const d = new Date(p.data_registro); return d >= startCurrent && d <= endCurrent; }),
+    [produtos, startCurrent, endCurrent]);
 
   const currentMonthCotacoes = useMemo(() =>
-  cotacoes.filter((c) => {const d = new Date(c.data_cotacao);return d >= startCurrent && d <= endCurrent;}),
-  [cotacoes, startCurrent, endCurrent]);
+    cotacoes.filter((c) => { const d = new Date(c.data_cotacao); return d >= startCurrent && d <= endCurrent; }),
+    [cotacoes, startCurrent, endCurrent]);
 
   const currentMonthFechamentos = useMemo(() =>
-  cotacoes.filter((c) => {
-    if (!c.data_fechamento) return false;
-    const d = new Date(c.data_fechamento);
-    return d >= startCurrent && d <= endCurrent && ['Negócio fechado', 'Fechamento congênere'].includes(c.status);
-  }), [cotacoes, startCurrent, endCurrent]);
+    cotacoes.filter((c) => {
+      if (!c.data_fechamento) return false;
+      const d = new Date(c.data_fechamento);
+      return d >= startCurrent && d <= endCurrent && ['Negócio fechado', 'Fechamento congênere'].includes(c.status);
+    }), [cotacoes, startCurrent, endCurrent]);
 
   const chartData = useMemo(() => {
-    const filteredProds = produtorFilter?.length ?
-    currentMonthProdutos.filter((p) => produtorFilter.includes(p.consultor)) :
-    currentMonthProdutos;
+    const filteredProds = produtorFilter?.length
+      ? currentMonthProdutos.filter((p) => produtorFilter.includes(p.consultor))
+      : currentMonthProdutos;
 
     const getMetaTotal = (target: string) =>
-    metas.filter((m) =>
-    m.mes.startsWith(currentMonthStr) &&
-    isMetaType(m.tipo_meta?.descricao, target) && (
-    !produtorFilter?.length || m.produtor && produtorFilter.includes(m.produtor.nome))
-    ).reduce((s, m) => s + m.quantidade, 0);
+      metas.filter((m) =>
+        m.mes.startsWith(currentMonthStr) &&
+        isMetaType(m.tipo_meta?.descricao, target) &&
+        (!produtorFilter?.length || (m.produtor && produtorFilter.includes(m.produtor.nome)))
+      ).reduce((s, m) => s + m.quantidade, 0);
 
     return [
-    { categoria: 'Coleta', Meta: getMetaTotal('Coleta'), Realizado: filteredProds.filter((p) => p.tipo === 'Coleta').length },
-    { categoria: 'Cotação', Meta: getMetaTotal('Cotação'), Realizado: currentMonthCotacoes.length },
-    { categoria: 'Vídeo', Meta: getMetaTotal('Vídeo'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length },
-    { categoria: 'Visita', Meta: getMetaTotal('Visita'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'visita').length },
-    { categoria: 'Indicação', Meta: getMetaTotal('Indicação'), Realizado: filteredProds.filter((p) => p.tipo === 'Indicação').length },
-    { categoria: 'Fechamento', Meta: getMetaTotal('Fechamento'), Realizado: currentMonthFechamentos.length }];
-
+      { categoria: 'Coleta', Meta: getMetaTotal('Coleta'), Realizado: filteredProds.filter((p) => p.tipo === 'Coleta').length },
+      { categoria: 'Cotação', Meta: getMetaTotal('Cotação'), Realizado: currentMonthCotacoes.length },
+      { categoria: 'Vídeo', Meta: getMetaTotal('Vídeo'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length },
+      { categoria: 'Visita', Meta: getMetaTotal('Visita'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'visita').length },
+      { categoria: 'Indicação', Meta: getMetaTotal('Indicação'), Realizado: filteredProds.filter((p) => p.tipo === 'Indicação').length },
+      { categoria: 'Fechamento', Meta: getMetaTotal('Fechamento'), Realizado: currentMonthFechamentos.length },
+    ];
   }, [currentMonthProdutos, currentMonthCotacoes, currentMonthFechamentos, metas, produtorFilter, currentMonthStr]);
 
   const totals = useMemo(() => {
     const totalMeta = chartData.reduce((s, i) => s + i.Meta, 0);
     const totalRealizado = chartData.reduce((s, i) => s + i.Realizado, 0);
-    const pct = totalMeta > 0 ? totalRealizado / totalMeta * 100 : 0;
+    const pct = totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
     return { totalMeta, totalRealizado, pct };
   }, [chartData]);
+
+  // Projection
+  const projection = useMemo(() => {
+    const today = getDate(analysisDate);
+    const daysInMonth = getDaysInMonth(analysisDate);
+    if (today === 0 || totals.totalRealizado === 0) return 0;
+    return Math.round((totals.totalRealizado / today) * daysInMonth);
+  }, [analysisDate, totals.totalRealizado]);
+
+  // Categorias atingidas / parciais / críticas
+  const statusCounts = useMemo(() => {
+    let atingido = 0, parcial = 0, critico = 0;
+    chartData.forEach((item) => {
+      const pct = item.Meta > 0 ? (item.Realizado / item.Meta) * 100 : 0;
+      if (pct >= 100) atingido++;
+      else if (pct >= 70) parcial++;
+      else critico++;
+    });
+    return { atingido, parcial, critico };
+  }, [chartData]);
+
+  // Per-produtor data for detail modal
+  const produtorData = useMemo(() => {
+    const produtorNames = new Set<string>();
+    metas.filter((m) => m.mes.startsWith(currentMonthStr) && m.produtor?.nome)
+      .forEach((m) => produtorNames.add(m.produtor!.nome));
+    currentMonthProdutos.forEach((p) => produtorNames.add(p.consultor));
+
+    return Array.from(produtorNames).map((nome) => {
+      const prodMetas = metas.filter((m) =>
+        m.mes.startsWith(currentMonthStr) && m.produtor?.nome === nome
+      );
+      const meta = prodMetas.reduce((s, m) => s + m.quantidade, 0);
+      const prods = currentMonthProdutos.filter((p) => p.consultor === nome);
+      const realizado = prods.length;
+      const pct = meta > 0 ? (realizado / meta) * 100 : 0;
+      return { nome, meta, realizado, pct };
+    }).filter((p) => p.meta > 0 || p.realizado > 0);
+  }, [metas, currentMonthProdutos, currentMonthStr]);
+
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    const meta = payload.find((p: any) => p.dataKey === 'Meta')?.value || 0;
+    const realizado = payload.find((p: any) => p.dataKey === 'Realizado')?.value || 0;
+    const pct = meta > 0 ? ((realizado / meta) * 100).toFixed(1) : '0.0';
+    return (
+      <div className="rounded-lg border bg-popover p-3 shadow-lg text-sm space-y-1">
+        <p className="font-semibold text-popover-foreground">{label}</p>
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-sm bg-muted-foreground/50" />
+          <span className="text-muted-foreground">Meta:</span>
+          <span className="font-semibold">{meta}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-sm bg-primary" />
+          <span className="text-muted-foreground">Realizado:</span>
+          <span className="font-semibold text-primary">{realizado}</span>
+        </div>
+        <div className="pt-1 border-t">
+          <span className={`font-semibold ${getStatusColor(Number(pct))}`}>{pct}% atingido</span>
+        </div>
+      </div>
+    );
+  };
+
+  // Custom bar label
+  const renderBarLabel = (props: any) => {
+    const { x, y, width, value } = props;
+    if (!value) return null;
+    return (
+      <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={11} fontWeight={600} fill="hsl(var(--foreground))">
+        {value}
+      </text>
+    );
+  };
 
   if (loading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Target className="h-5 w-5 text-primary" />
             Meta x Realizado
           </CardTitle>
         </CardHeader>
@@ -142,73 +249,144 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
         </CardContent>
-      </Card>);
-
+      </Card>
+    );
   }
 
   return (
-    <Card>
-      
+    <>
+      <Card className="overflow-hidden">
+        {/* Header */}
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10">
+                <Target className="h-4.5 w-4.5 text-primary" />
+              </div>
+              <div>
+                <span>Meta x Realizado</span>
+                <p className="text-[11px] font-normal text-muted-foreground capitalize">{monthLabel}</p>
+              </div>
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={`text-xs px-2.5 py-1 ${
+                totals.pct >= 100 ? 'bg-success/10 text-success border-success/30' :
+                totals.pct >= 70 ? 'bg-warning/10 text-warning border-warning/30' :
+                'bg-destructive/10 text-destructive border-destructive/30'
+              }`}>
+                {totals.pct.toFixed(1)}% atingido
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
 
+        <CardContent className="space-y-4 pt-0">
+          {/* KPI Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-lg border bg-muted/20 p-2.5 text-center">
+              <p className="text-xl font-bold">{totals.totalMeta}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meta</p>
+            </div>
+            <div className="rounded-lg border bg-primary/5 p-2.5 text-center">
+              <p className="text-xl font-bold text-primary">{totals.totalRealizado}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Realizado</p>
+            </div>
+            <div className="rounded-lg border bg-muted/20 p-2.5 text-center">
+              <p className="text-xl font-bold">{projection}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Projeção</p>
+            </div>
+            <div className="rounded-lg border p-2.5 text-center" style={{ background: totals.pct >= 100 ? 'hsl(156 72% 40% / 0.06)' : totals.pct >= 70 ? 'hsl(35 95% 55% / 0.06)' : 'hsl(0 84% 60% / 0.06)' }}>
+              <p className={`text-xl font-bold ${getStatusColor(totals.pct)}`}>{totals.pct.toFixed(0)}%</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Atingimento</p>
+            </div>
+          </div>
 
+          {/* Chart */}
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={chartData} margin={{ top: 20, right: 10, left: -10, bottom: 5 }} barGap={4}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+              <XAxis
+                dataKey="categoria"
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
+              <Legend
+                wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                iconType="square"
+                iconSize={10}
+              />
+              <Bar dataKey="Meta" fill="hsl(var(--muted-foreground) / 0.35)" radius={[4, 4, 0, 0]} label={renderBarLabel} />
+              <Bar dataKey="Realizado" radius={[4, 4, 0, 0]} label={renderBarLabel}>
+                {chartData.map((entry, index) => {
+                  const pct = entry.Meta > 0 ? (entry.Realizado / entry.Meta) * 100 : 0;
+                  return <Cell key={index} fill={getBarColor(pct)} />;
+                })}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
 
+          {/* Activity breakdown mini-cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {chartData.map((item) => {
+              const pct = item.Meta > 0 ? (item.Realizado / item.Meta) * 100 : 0;
+              return (
+                <div key={item.categoria} className="flex items-center gap-2.5 rounded-lg border p-2.5 hover:bg-muted/20 transition-colors">
+                  <StatusIcon pct={pct} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium truncate">{item.categoria}</span>
+                      <span className={`text-[11px] font-semibold ${getStatusColor(pct)}`}>{pct.toFixed(0)}%</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-[10px] text-muted-foreground">{item.Realizado}/{item.Meta}</span>
+                    </div>
+                    <Progress value={Math.min(pct, 100)} className={`h-1 mt-1 ${getProgressColor(pct)}`} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
+          {/* Status summary + Ver mais */}
+          <div className="flex items-center justify-between pt-2 border-t">
+            <div className="flex items-center gap-3 text-xs">
+              <span className="flex items-center gap-1 text-success">
+                <CheckCircle2 className="h-3.5 w-3.5" /> {statusCounts.atingido} atingido
+              </span>
+              <span className="flex items-center gap-1 text-warning">
+                <AlertTriangle className="h-3.5 w-3.5" /> {statusCounts.parcial} parcial
+              </span>
+              <span className="flex items-center gap-1 text-destructive">
+                <XCircle className="h-3.5 w-3.5" /> {statusCounts.critico} crítico
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-7 gap-1 text-primary hover:text-primary"
+              onClick={() => setShowDetail(true)}
+            >
+              Ver mais
+              <ExternalLink className="h-3 w-3" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-
-
-
-
-
-
-
-      
-      
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      
-    </Card>);
-
+      <IndicadoresDetailModal
+        open={showDetail}
+        onOpenChange={setShowDetail}
+        chartData={chartData}
+        produtorData={produtorData}
+      />
+    </>
+  );
 };
