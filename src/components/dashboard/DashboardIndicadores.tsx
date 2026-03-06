@@ -10,6 +10,7 @@ import { ptBR } from 'date-fns/locale';
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Cell } from 'recharts';
 import { logger } from '@/lib/logger';
 import { IndicadoresDetailModal } from './IndicadoresDetailModal';
+import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
 
 interface Produto {
   id: string;
@@ -28,19 +29,22 @@ interface Meta {
   produtor?: { id: string; nome: string };
 }
 
-interface Cotacao {
-  id: string;
-  status: string;
-  data_cotacao: string;
-  data_fechamento: string | null;
-}
-
 interface DashboardIndicadoresProps {
   produtorFilter?: string[];
+  filteredCotacoes?: DashboardCotacao[];
 }
 
 const normalizeLabel = (value?: string | null) =>
   (value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+
+// Helper to get branch group (same logic as Dashboard)
+const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
+  if (!ramo) return 'Outros';
+  if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
+  const ramoUpper = (ramo.descricao || '').toUpperCase();
+  if (ramoUpper.includes('RCTR-C') || ramoUpper.includes('RC-DC')) return 'RCTR-C + RC-DC';
+  return ramo.descricao || 'Outros';
+};
 
 const getStatusColor = (pct: number) => {
   if (pct >= 100) return 'text-success';
