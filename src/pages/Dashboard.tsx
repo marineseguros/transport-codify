@@ -1342,17 +1342,10 @@ const Dashboard = () => {
 
         <div className="flex flex-wrap gap-2 md:gap-3 w-full sm:w-auto items-center">
           {/* Dashboard Edit Toolbar - Admin Only */}
-          <DashboardEditToolbar editMode={dashboardLayout.editMode} setEditMode={dashboardLayout.setEditMode} cards={dashboardLayout.cards} toggleCardVisibility={dashboardLayout.toggleCardVisibility} resetLayout={dashboardLayout.resetLayout} canEdit={dashboardLayout.canEdit} />
-          
           <Button variant="outline" onClick={() => navigate("/fechamentos")} size="sm" className="gap-2 flex-1 sm:flex-none">
             <ExternalLink className="h-4 w-4" />
             <span className="hidden sm:inline">Fechamentos</span>
             <span className="sm:hidden">Fech.</span>
-          </Button>
-          <Button variant="outline" onClick={handleImportCSV} size="sm" className="gap-2 flex-1 sm:flex-none">
-            <Upload className="h-4 w-4" />
-            <span className="hidden sm:inline">Importar CSV</span>
-            <span className="sm:hidden">CSV</span>
           </Button>
           <Button onClick={handleNewCotacao} size="sm" className="gap-2 flex-1 sm:flex-none">
             <Plus className="h-4 w-4" />
@@ -1596,12 +1589,7 @@ const Dashboard = () => {
                 premioTotal,
                 percentage
               }) => {
-                const statusColorMap: Record<string, string> = {
-                  "Em cotação": "hsl(var(--brand-orange))",
-                  "Negócio fechado": "hsl(var(--success-alt))",
-                  "Declinado": "hsl(var(--destructive))",
-                };
-                const barColor = statusColorMap[status] || "hsl(var(--primary))";
+                const barColor = "#57AEECA";
                 
                 return (
                   <div key={status} className="space-y-2">
