@@ -1,229 +1,282 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, TrendingUp, BarChart3 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
-import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BarChartBig, ExternalLink, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { Cotacao } from '@/hooks/useSupabaseData';
+import { useNavigate } from 'react-router-dom';
+import { logger } from '@/lib/logger';
+import { PaginationControls } from '@/components/ui/pagination-controls';
 
-interface DashboardIndicadoresProps {
-  cotacoes: Cotacao[];
+interface Produto {
+  id: string;
+  segurado: string;
+  consultor: string;
+  data_registro: string;
+  tipo: string;
+  observacao: string | null;
+  tipo_indicacao?: string | null;
+  cliente_indicado?: string | null;
+  subtipo?: string | null;
+  cidade?: string | null;
+  data_realizada?: string | null;
 }
 
-const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--chart-2, 142 71% 45%))',
-  'hsl(var(--chart-3, 38 92% 50%))',
-  'hsl(var(--destructive))',
-];
+interface DashboardIndicadoresProps {
+  produtorFilter?: string[];
+}
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+const PAGE_SIZE = 5;
 
-export const DashboardIndicadores = ({ cotacoes }: DashboardIndicadoresProps) => {
-  const kpis = useMemo(() => {
-    const total = cotacoes.length;
-    const fechadas = cotacoes.filter(c => c.status === 'Negócio fechado' || c.status === 'Fechamento congênere');
-    const declinadas = cotacoes.filter(c => c.status === 'Declinado');
-    const taxaFechamento = total > 0 ? (fechadas.length / total) * 100 : 0;
-    const totalPremio = fechadas.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
-    const ticketMedio = fechadas.length > 0 ? totalPremio / fechadas.length : 0;
+export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresProps) => {
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterTipo, setFilterTipo] = useState<string>('todos');
+  const [searchSegurado, setSearchSegurado] = useState('');
+  const [page, setPage] = useState(1);
+  const navigate = useNavigate();
 
-    return { total, fechadas: fechadas.length, declinadas: declinadas.length, taxaFechamento, totalPremio, ticketMedio };
-  }, [cotacoes]);
-
-  const monthlyData = useMemo(() => {
-    const stats: Record<string, { month: string; fechadas: number; declinadas: number; premio: number }> = {};
-    cotacoes.forEach(c => {
-      const month = format(new Date(c.data_cotacao), 'MMM/yy', { locale: ptBR });
-      if (!stats[month]) stats[month] = { month, fechadas: 0, declinadas: 0, premio: 0 };
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') {
-        stats[month].fechadas++;
-        stats[month].premio += c.valor_premio || 0;
-      } else if (c.status === 'Declinado') {
-        stats[month].declinadas++;
+  useEffect(() => {
+    const fetchProdutos = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('produtos')
+          .select('*')
+          .order('data_registro', { ascending: false })
+          .limit(200);
+        if (error) throw error;
+        setProdutos(data || []);
+      } catch (error: any) {
+        logger.error('Error fetching produtos for dashboard:', error);
+      } finally {
+        setLoading(false);
       }
-    });
-    return Object.values(stats);
-  }, [cotacoes]);
+    };
+    fetchProdutos();
+  }, []);
 
-  const statusData = useMemo(() => {
-    const counts: Record<string, number> = { 'Em cotação': 0, 'Fechadas': 0, 'Declinado': 0 };
-    cotacoes.forEach(c => {
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') counts['Fechadas']++;
-      else if (c.status === 'Em cotação') counts['Em cotação']++;
-      else if (c.status === 'Declinado') counts['Declinado']++;
-    });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
-  }, [cotacoes]);
+  const filteredProdutos = useMemo(() => {
+    let filtered = produtos;
 
-  const produtorData = useMemo(() => {
-    const stats: Record<string, { nome: string; total: number; fechadas: number; premio: number }> = {};
-    cotacoes.forEach(c => {
-      const nome = c.produtor_origem?.nome || 'Sem Produtor';
-      if (!stats[nome]) stats[nome] = { nome, total: 0, fechadas: 0, premio: 0 };
-      stats[nome].total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') {
-        stats[nome].fechadas++;
-        stats[nome].premio += c.valor_premio || 0;
-      }
+    // Filter by produtor (consultor field)
+    if (produtorFilter && produtorFilter.length > 0) {
+      filtered = filtered.filter(p => produtorFilter.includes(p.consultor));
+    }
+
+    if (filterTipo !== 'todos') {
+      filtered = filtered.filter(p => p.tipo === filterTipo);
+    }
+
+    if (searchSegurado) {
+      filtered = filtered.filter(p =>
+        p.segurado.toLowerCase().includes(searchSegurado.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [produtos, produtorFilter, filterTipo, searchSegurado]);
+
+  // Summary stats
+  const stats = useMemo(() => {
+    const currentMonth = new Date();
+    const startCurrent = startOfMonth(currentMonth);
+    const endCurrent = endOfMonth(currentMonth);
+    const startPrev = startOfMonth(subMonths(currentMonth, 1));
+    const endPrev = endOfMonth(subMonths(currentMonth, 1));
+
+    const thisMonth = produtos.filter(p => {
+      const d = new Date(p.data_registro);
+      return d >= startCurrent && d <= endCurrent;
     });
-    return Object.values(stats)
-      .map(p => ({ ...p, taxa: p.total > 0 ? (p.fechadas / p.total) * 100 : 0 }))
-      .sort((a, b) => b.premio - a.premio)
-      .slice(0, 10);
-  }, [cotacoes]);
+    const lastMonth = produtos.filter(p => {
+      const d = new Date(p.data_registro);
+      return d >= startPrev && d <= endPrev;
+    });
+
+    const byTipo: Record<string, number> = {};
+    thisMonth.forEach(p => {
+      byTipo[p.tipo] = (byTipo[p.tipo] || 0) + 1;
+    });
+
+    return {
+      thisMonth: thisMonth.length,
+      lastMonth: lastMonth.length,
+      byTipo,
+      total: produtos.length,
+    };
+  }, [produtos]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredProdutos.length / PAGE_SIZE);
+  const paginatedProdutos = filteredProdutos.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [filterTipo, searchSegurado, produtorFilter]);
+
+  const getSubtipoDisplay = (produto: Produto) => {
+    if (produto.tipo === 'Indicação' && produto.tipo_indicacao) return produto.tipo_indicacao;
+    if (produto.tipo === 'Visita/Video' && produto.subtipo) return produto.subtipo;
+    return '-';
+  };
+
+  const getDetalhesDisplay = (produto: Produto) => {
+    if (produto.tipo === 'Indicação' && produto.cliente_indicado) return produto.cliente_indicado;
+    if (produto.tipo === 'Visita/Video' && produto.subtipo === 'Visita' && produto.cidade) return produto.cidade;
+    if (produto.tipo === 'Visita/Video' && produto.subtipo === 'Vídeo' && produto.data_realizada) {
+      return format(new Date(produto.data_realizada), 'dd/MM/yyyy', { locale: ptBR });
+    }
+    return '-';
+  };
+
+  const diff = stats.thisMonth - stats.lastMonth;
 
   return (
-    <div className="space-y-4">
-      {/* Section Header */}
-      <div className="flex items-center gap-2">
-        <BarChart3 className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold">Indicadores de Performance</h2>
-        <Badge variant="outline" className="text-xs">Período filtrado</Badge>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Total Cotações</CardTitle>
-            <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-xl font-bold">{kpis.total}</div>
-            <p className="text-[10px] text-muted-foreground">{kpis.fechadas} fechadas · {kpis.declinadas} declinadas</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Taxa Fechamento</CardTitle>
-            <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-xl font-bold">{kpis.taxaFechamento.toFixed(1)}%</div>
-            <Badge variant={kpis.taxaFechamento >= 30 ? 'secondary' : 'outline'} className="text-[10px]">
-              {kpis.taxaFechamento >= 30 ? 'Boa' : 'Pode melhorar'}
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <BarChartBig className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Indicadores</CardTitle>
+            <Badge variant="outline" className="text-[10px] font-normal">
+              {stats.thisMonth} este mês
+              {diff !== 0 && (
+                <span className={diff > 0 ? 'text-emerald-500 ml-1' : 'text-destructive ml-1'}>
+                  {diff > 0 ? '+' : ''}{diff}
+                </span>
+              )}
             </Badge>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Compact filters */}
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Segurado..."
+                value={searchSegurado}
+                onChange={e => setSearchSegurado(e.target.value)}
+                className="h-7 text-xs pl-7 w-[160px]"
+              />
+            </div>
+            <Select value={filterTipo} onValueChange={setFilterTipo}>
+              <SelectTrigger className="h-7 text-xs w-[110px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="Coleta">Coleta</SelectItem>
+                <SelectItem value="Indicação">Indicação</SelectItem>
+                <SelectItem value="Novos CRM">Novos CRM</SelectItem>
+                <SelectItem value="Visita/Video">Visita/Video</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => navigate('/produtos')}
+            >
+              Ver todos
+              <ExternalLink className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Prêmio Total</CardTitle>
-            <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-xl font-bold">{formatCurrency(kpis.totalPremio)}</div>
-            <p className="text-[10px] text-muted-foreground">Prêmios fechados</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Ticket Médio</CardTitle>
-            <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-xl font-bold">{formatCurrency(kpis.ticketMedio)}</div>
-            <p className="text-[10px] text-muted-foreground">Por cotação fechada</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Monthly Performance */}
-        <Card>
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm">Performance Mensal</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip
-                  contentStyle={{ fontSize: 12 }}
-                  formatter={(value: number, name: string) => [
-                    name === 'premio' ? formatCurrency(value) : value,
-                    name === 'fechadas' ? 'Fechadas' : name === 'declinadas' ? 'Declinadas' : 'Prêmio',
-                  ]}
-                />
-                <Bar dataKey="fechadas" fill="hsl(var(--primary))" name="Fechadas" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="declinadas" fill="hsl(var(--destructive))" name="Declinadas" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Status Distribution */}
-        <Card>
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm">Distribuição por Status</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  dataKey="value"
-                >
-                  {statusData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Producer Performance */}
-      {produtorData.length > 0 && (
-        <Card>
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm">Performance por Produtor (Top 10)</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <ResponsiveContainer width="100%" height={Math.max(200, produtorData.length * 40)}>
-              <BarChart data={produtorData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v)} />
-                <YAxis dataKey="nome" type="category" width={110} tick={{ fontSize: 11 }} />
-                <Tooltip
-                  contentStyle={{ fontSize: 12 }}
-                  formatter={(value: number, name: string) => [
-                    name === 'premio' ? formatCurrency(value) : `${value.toFixed(1)}%`,
-                    name === 'premio' ? 'Prêmio' : 'Taxa',
-                  ]}
-                />
-                <Bar dataKey="premio" fill="hsl(var(--primary))" name="Prêmio" radius={[0, 2, 2, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+        {/* Summary badges */}
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {Object.entries(stats.byTipo).map(([tipo, count]) => (
+            <Badge key={tipo} variant="secondary" className="text-[10px] font-normal">
+              {tipo}: {count}
+            </Badge>
+          ))}
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs">Segurado</TableHead>
+                <TableHead className="text-xs">Consultor</TableHead>
+                <TableHead className="text-xs">Data</TableHead>
+                <TableHead className="text-xs">Tipo</TableHead>
+                <TableHead className="text-xs">Subtipo</TableHead>
+                <TableHead className="text-xs">Detalhes</TableHead>
+                <TableHead className="text-xs max-w-[150px]">Obs.</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6">
+                    <div className="flex justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : paginatedProdutos.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6 text-xs text-muted-foreground">
+                    Nenhum registro encontrado
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedProdutos.map(produto => (
+                  <TableRow key={produto.id} className="h-9">
+                    <TableCell className="text-xs font-medium py-1.5">{produto.segurado}</TableCell>
+                    <TableCell className="text-xs py-1.5">{produto.consultor}</TableCell>
+                    <TableCell className="text-xs py-1.5">
+                      {format(new Date(produto.data_registro), 'dd/MM/yyyy', { locale: ptBR })}
+                    </TableCell>
+                    <TableCell className="py-1.5">
+                      <Badge variant="outline" className="text-[10px] font-normal">{produto.tipo}</Badge>
+                    </TableCell>
+                    <TableCell className="text-xs py-1.5">{getSubtipoDisplay(produto)}</TableCell>
+                    <TableCell className="text-xs py-1.5">{getDetalhesDisplay(produto)}</TableCell>
+                    <TableCell className="text-xs py-1.5 max-w-[150px] truncate">
+                      {produto.observacao || '-'}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center px-4 py-2 border-t">
+            <span className="text-[10px] text-muted-foreground">
+              {filteredProdutos.length} registro(s)
+            </span>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-[10px] px-2"
+                disabled={page <= 1}
+                onClick={() => setPage(p => p - 1)}
+              >
+                Anterior
+              </Button>
+              <span className="text-[10px] text-muted-foreground flex items-center px-2">
+                {page}/{totalPages}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-[10px] px-2"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+              >
+                Próximo
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
