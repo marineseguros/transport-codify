@@ -165,7 +165,7 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
 
     // Metas totals for current month
     const getMetaTotal = (tipoDesc: string) =>
-      metas.filter(m => m.mes === currentMonthStr && m.tipo_meta?.descricao === tipoDesc &&
+      metas.filter(m => m.mes.startsWith(currentMonthStr) && m.tipo_meta?.descricao === tipoDesc &&
         (!produtorFilter?.length || (m.produtor && produtorFilter.includes(m.produtor.nome)))
       ).reduce((s, m) => s + m.quantidade, 0);
 
@@ -203,7 +203,7 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
 
       // Meta totals for this produtor
       const getMetaProd = (tipoDesc: string) =>
-        metas.filter(m => m.mes === currentMonthStr && m.tipo_meta?.descricao === tipoDesc && m.produtor?.nome === prod.nome)
+        metas.filter(m => m.mes.startsWith(currentMonthStr) && m.tipo_meta?.descricao === tipoDesc && m.produtor?.nome === prod.nome)
           .reduce((s, m) => s + m.quantidade, 0);
 
       const totalMeta = getMetaProd('Coleta') + getMetaProd('Indicação') + getMetaProd('Visita') + getMetaProd('Vídeo');
