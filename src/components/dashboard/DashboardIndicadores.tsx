@@ -93,28 +93,33 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
   };
 
   const analysisDate = useMemo(() => {
-    const timestamps: number[] = [];
+    const primaryTimestamps: number[] = [];
 
     produtos.forEach(p => {
       const t = new Date(p.data_registro).getTime();
-      if (!Number.isNaN(t)) timestamps.push(t);
+      if (!Number.isNaN(t)) primaryTimestamps.push(t);
     });
 
     metas.forEach(m => {
       const t = new Date(m.mes).getTime();
-      if (!Number.isNaN(t)) timestamps.push(t);
+      if (!Number.isNaN(t)) primaryTimestamps.push(t);
     });
 
+    if (primaryTimestamps.length) {
+      return new Date(Math.max(...primaryTimestamps));
+    }
+
+    const fallbackTimestamps: number[] = [];
     cotacoes.forEach(c => {
       const tCotacao = new Date(c.data_cotacao).getTime();
-      if (!Number.isNaN(tCotacao)) timestamps.push(tCotacao);
+      if (!Number.isNaN(tCotacao)) fallbackTimestamps.push(tCotacao);
       if (c.data_fechamento) {
         const tFechamento = new Date(c.data_fechamento).getTime();
-        if (!Number.isNaN(tFechamento)) timestamps.push(tFechamento);
+        if (!Number.isNaN(tFechamento)) fallbackTimestamps.push(tFechamento);
       }
     });
 
-    return timestamps.length ? new Date(Math.max(...timestamps)) : new Date();
+    return fallbackTimestamps.length ? new Date(Math.max(...fallbackTimestamps)) : new Date();
   }, [produtos, metas, cotacoes]);
 
   const currentMonthStr = format(analysisDate, 'yyyy-MM');
