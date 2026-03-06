@@ -64,11 +64,24 @@ export function TendenciaDetailModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 flex-1">
             <LineChart className="h-5 w-5" />
-            Análise de Tendência - Últimos 6 Meses
+            Análise de Tendência
           </DialogTitle>
-        </DialogHeader>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">Período:</span>
+            <Select value={mesesFiltro} onValueChange={setMesesFiltro}>
+              <SelectTrigger className="h-8 w-[140px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">Últimos 3 meses</SelectItem>
+                <SelectItem value="6">Últimos 6 meses</SelectItem>
+                <SelectItem value="9">Últimos 9 meses</SelectItem>
+                <SelectItem value="12">Últimos 12 meses</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         
         <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
           <div className="space-y-6">
