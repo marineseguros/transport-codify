@@ -607,12 +607,12 @@ export const IndicadoresDetailModal = ({
     {detailCategoria && (
       <CategoriaDetailPopup
         open={!!detailCategoria}
-        onOpenChange={(open) => !open && setDetailCategoria(null)}
+        onOpenChange={(open) => { if (!open) { setDetailCategoria(null); setDetailMonth(null); } }}
         categoria={detailCategoria}
         allProdutos={allProdutos}
         allCotacoes={allCotacoes || []}
         produtorFilter={effectiveProdutorFilter}
-        availableMonths={availableMonths}
+        availableMonths={detailMonth ? [detailMonth] : availableMonths}
       />
     )}
   </>
