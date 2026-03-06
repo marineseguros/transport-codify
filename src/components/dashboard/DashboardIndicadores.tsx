@@ -10,6 +10,7 @@ import { ptBR } from 'date-fns/locale';
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Cell } from 'recharts';
 import { logger } from '@/lib/logger';
 import { IndicadoresDetailModal } from './IndicadoresDetailModal';
+import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
 
 interface Produto {
   id: string;
@@ -28,19 +29,22 @@ interface Meta {
   produtor?: { id: string; nome: string };
 }
 
-interface Cotacao {
-  id: string;
-  status: string;
-  data_cotacao: string;
-  data_fechamento: string | null;
-}
-
 interface DashboardIndicadoresProps {
   produtorFilter?: string[];
+  filteredCotacoes?: DashboardCotacao[];
 }
 
 const normalizeLabel = (value?: string | null) =>
   (value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+
+// Helper to get branch group (same logic as Dashboard)
+const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
+  if (!ramo) return 'Outros';
+  if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
+  const ramoUpper = (ramo.descricao || '').toUpperCase();
+  if (ramoUpper.includes('RCTR-C') || ramoUpper.includes('RC-DC')) return 'RCTR-C + RC-DC';
+  return ramo.descricao || 'Outros';
+};
 
 const getStatusColor = (pct: number) => {
   if (pct >= 100) return 'text-success';
@@ -66,10 +70,9 @@ const StatusIcon = ({ pct }: { pct: number }) => {
   return <XCircle className="h-3.5 w-3.5 text-destructive" />;
 };
 
-export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresProps) => {
+export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: DashboardIndicadoresProps) => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
-  const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDetail, setShowDetail] = useState(false);
 
@@ -82,9 +85,11 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
     if (timestamps.length) return new Date(Math.max(...timestamps));
     metas.forEach((m) => { const t = new Date(m.mes).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
     if (timestamps.length) return new Date(Math.max(...timestamps));
-    cotacoes.forEach((c) => { const t = new Date(c.data_cotacao).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
+    if (filteredCotacoes?.length) {
+      filteredCotacoes.forEach((c) => { const t = new Date(c.data_cotacao).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
+    }
     return timestamps.length ? new Date(Math.max(...timestamps)) : new Date();
-  }, [produtos, metas, cotacoes]);
+  }, [produtos, metas, filteredCotacoes]);
 
   const currentMonthStr = format(analysisDate, 'yyyy-MM');
   const monthLabel = format(analysisDate, "MMMM 'de' yyyy", { locale: ptBR });
@@ -95,17 +100,14 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
     const fetchAll = async () => {
       try {
         setLoading(true);
-        const [prodRes, metasRes, cotRes] = await Promise.all([
+        const [prodRes, metasRes] = await Promise.all([
           supabase.from('produtos').select('id, consultor, data_registro, tipo, subtipo').order('data_registro', { ascending: false }),
           supabase.from('metas').select('*, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)').order('mes', { ascending: false }),
-          supabase.from('cotacoes').select('id, status, data_cotacao, data_fechamento').order('data_cotacao', { ascending: false }),
         ]);
         if (prodRes.error) throw prodRes.error;
         if (metasRes.error) throw metasRes.error;
-        if (cotRes.error) throw cotRes.error;
         setProdutos(prodRes.data || []);
         setMetas(metasRes.data || []);
-        setCotacoes(cotRes.data || []);
       } catch (error: any) {
         logger.error('Error fetching indicadores data:', error);
       } finally {
@@ -119,16 +121,37 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
     produtos.filter((p) => { const d = new Date(p.data_registro); return d >= startCurrent && d <= endCurrent; }),
     [produtos, startCurrent, endCurrent]);
 
-  const currentMonthCotacoes = useMemo(() =>
-    cotacoes.filter((c) => { const d = new Date(c.data_cotacao); return d >= startCurrent && d <= endCurrent; }),
-    [cotacoes, startCurrent, endCurrent]);
+  // Cotação Realizada: Clientes Únicos (distinct CPF/CNPJ + branch group) from filteredCotacoes
+  const cotacaoRealizado = useMemo(() => {
+    if (!filteredCotacoes?.length) return 0;
+    const uniqueKeys = new Set<string>();
+    filteredCotacoes.forEach((c) => {
+      const branchGroup = getBranchGroup(c.ramo);
+      const key = `${c.cpf_cnpj}_${branchGroup}`;
+      uniqueKeys.add(key);
+    });
+    return uniqueKeys.size;
+  }, [filteredCotacoes]);
 
-  const currentMonthFechamentos = useMemo(() =>
-    cotacoes.filter((c) => {
-      if (!c.data_fechamento) return false;
-      const d = new Date(c.data_fechamento);
-      return d >= startCurrent && d <= endCurrent && ['Negócio fechado', 'Fechamento congênere'].includes(c.status);
-    }), [cotacoes, startCurrent, endCurrent]);
+  // Fechamento Realizado: distinct closings (CPF/CNPJ + branch group) from filteredCotacoes
+  const fechamentoRealizado = useMemo(() => {
+    if (!filteredCotacoes?.length) return 0;
+    const closedCotacoes = filteredCotacoes.filter((c) =>
+      c.status === 'Negócio fechado' || c.status === 'Fechamento congênere'
+    );
+    const uniqueKeys = new Set<string>();
+    let avulsoCount = 0;
+    closedCotacoes.forEach((c) => {
+      if (c.ramo?.segmento === 'Avulso') {
+        avulsoCount++;
+      } else {
+        const branchGroup = getBranchGroup(c.ramo);
+        const key = `${c.cpf_cnpj}_${branchGroup}`;
+        uniqueKeys.add(key);
+      }
+    });
+    return uniqueKeys.size + avulsoCount;
+  }, [filteredCotacoes]);
 
   const chartData = useMemo(() => {
     const filteredProds = produtorFilter?.length
@@ -144,13 +167,13 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
 
     return [
       { categoria: 'Coleta', Meta: getMetaTotal('Coleta'), Realizado: filteredProds.filter((p) => p.tipo === 'Coleta').length },
-      { categoria: 'Cotação', Meta: getMetaTotal('Cotação'), Realizado: currentMonthCotacoes.length },
+      { categoria: 'Cotação', Meta: getMetaTotal('Cotação'), Realizado: cotacaoRealizado },
       { categoria: 'Vídeo', Meta: getMetaTotal('Vídeo'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length },
       { categoria: 'Visita', Meta: getMetaTotal('Visita'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'visita').length },
       { categoria: 'Indicação', Meta: getMetaTotal('Indicação'), Realizado: filteredProds.filter((p) => p.tipo === 'Indicação').length },
-      { categoria: 'Fechamento', Meta: getMetaTotal('Fechamento'), Realizado: currentMonthFechamentos.length },
+      { categoria: 'Fechamento', Meta: getMetaTotal('Fechamento'), Realizado: fechamentoRealizado },
     ];
-  }, [currentMonthProdutos, currentMonthCotacoes, currentMonthFechamentos, metas, produtorFilter, currentMonthStr]);
+  }, [currentMonthProdutos, cotacaoRealizado, fechamentoRealizado, metas, produtorFilter, currentMonthStr]);
 
   const totals = useMemo(() => {
     const totalMeta = chartData.reduce((s, i) => s + i.Meta, 0);
