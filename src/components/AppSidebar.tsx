@@ -23,7 +23,7 @@ const menuItems = [{
   url: "/acompanhamento",
   icon: ClipboardList
 }, {
-  title: "Produtos",
+  title: "Indicadores",
   url: "/produtos",
   icon: Package
 }, {
