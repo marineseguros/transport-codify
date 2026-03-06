@@ -664,6 +664,27 @@ const Dashboard = () => {
   // Import centralized classification from lib
   // Using centralized getRegraRamo from lib/ramoClassification.ts
 
+  // Calculate global distinct open quotes count (all time, ignoring date filter)
+  const globalEmAbertoDistinct = useMemo(() => {
+    const filtered = allQuotes.filter((cotacao) => {
+      if (cotacao.status !== "Em cotação") return false;
+      const produtorMatch = filters.produtorFilter.length === 0 ||
+        (cotacao.produtor_cotador?.nome && filters.produtorFilter.includes(cotacao.produtor_cotador.nome));
+      const seguradoraMatch = filters.seguradoraFilter.length === 0 ||
+        (cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
+      const ramoMatch = filters.ramoFilter.length === 0 ||
+        (cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
+      const segmentoMatch = filters.segmentoFilter.length === 0 ||
+        (cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
+      const regraMatch = filters.regraFilter.length === 0 ||
+        (cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
+      const unidadeMatch = filters.unidadeFilter.length === 0 ||
+        (cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
+      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
+    });
+    return countDistinctByStatus(filtered, ["Em cotação"]);
+  }, [allQuotes, filters.produtorFilter, filters.seguradoraFilter, filters.ramoFilter, filters.segmentoFilter, filters.regraFilter, filters.unidadeFilter]);
+
   // Calculate TOTAL open quotes ignoring date filters (for "Em Aberto Total" column)
   const totalEmAbertoByProdutor = useMemo(() => {
     const stats: Record<string, {
