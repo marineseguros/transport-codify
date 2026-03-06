@@ -1391,8 +1391,11 @@ const Dashboard = () => {
               <UITooltip>
                 <TooltipTrigger asChild>
                   <div className="cursor-help">
-                    <div className="text-2xl font-bold text-brand-orange">{monthlyStats.emCotacao}</div>
-                    {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
+                    <div className="text-2xl font-bold text-brand-orange">{globalEmAbertoDistinct}</div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                      <span>Mês: <span className="font-semibold text-brand-orange">{monthlyStats.emCotacao}</span></span>
+                      {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
+                    </div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
