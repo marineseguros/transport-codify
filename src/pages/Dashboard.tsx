@@ -1577,10 +1577,10 @@ const Dashboard = () => {
         })}
       </div>
 
-      {/* Distribuição por Status e Top Produtores */}
-      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
+      {/* Distribuição por Status e Tendência */}
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 items-stretch">
         {/* Distribuição por Status */}
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
@@ -1597,8 +1597,8 @@ const Dashboard = () => {
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="flex-1 flex flex-col justify-evenly">
+            <div className="flex flex-col justify-evenly h-full gap-4">
               {distribuicaoStatus.map(({
                 status,
                 count,
