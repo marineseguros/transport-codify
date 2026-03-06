@@ -170,6 +170,7 @@ export const IndicadoresDetailModal = ({
   const [filterStatus, setFilterStatus] = useState<string>('todos');
   const [filterProdutor, setFilterProdutor] = useState<string>('todos');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [detailCategoria, setDetailCategoria] = useState<string | null>(null);
 
   const toggleExpand = (cat: string) => {
     setExpandedCategories((prev) => {
