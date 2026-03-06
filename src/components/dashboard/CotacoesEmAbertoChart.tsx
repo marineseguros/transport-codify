@@ -383,9 +383,7 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
 
   }
 
-  return (
-    <Card>
-      
+  return;
 
 
 
@@ -416,8 +414,6 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
 
 
 
-      
-      
 
 
 
@@ -534,7 +530,11 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
 
 
 
-      
-    </Card>);
+
+
+
+
+
+
 
 };
