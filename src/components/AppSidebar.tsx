@@ -1,8 +1,15 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { BarChart3, FileText, Users, Settings, Kanban, Building2, Tags, Home, Package, ClipboardList, ChevronLeft, ChevronRight, Target } from "lucide-react";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarHeader, useSidebar } from "@/components/ui/sidebar";
+import { BarChart3, FileText, Users, Settings, Kanban, Building2, Tags, Home, Package, ClipboardList, ChevronLeft, ChevronRight, Target, LogOut, KeyRound, User, Clock } from "lucide-react";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ChangePasswordModal } from "@/components/ChangePasswordModal";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useState } from "react";
 const menuItems = [{
   title: "Clientes",
   url: "/clientes",
