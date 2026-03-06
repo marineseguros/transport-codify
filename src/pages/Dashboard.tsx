@@ -1529,10 +1529,10 @@ const Dashboard = () => {
           const tempoMedioComp = stats.previousTempoMedio > 0 ? stats.tempoMedio - stats.previousTempoMedio : 0;
           const taxaComp = stats.previousTaxaConversao > 0 ? stats.taxaConversao - stats.previousTaxaConversao : 0;
           const segmentoColors: Record<string, string> = {
-            'Transportes': 'bg-blue-500/10 border-blue-500/30',
-            'Avulso': 'bg-amber-500/10 border-amber-500/30',
-            'Ambiental': 'bg-emerald-500/10 border-emerald-500/30',
-            'RC-V': 'bg-purple-500/10 border-purple-500/30'
+            'Transportes': 'border-l-4 border-l-blue-500',
+            'Avulso': 'border-l-4 border-l-amber-500',
+            'Ambiental': 'border-l-4 border-l-emerald-500',
+            'RC-V': 'border-l-4 border-l-purple-500'
           };
           const segmentoTextColors: Record<string, string> = {
             'Transportes': 'text-blue-500',
