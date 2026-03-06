@@ -283,8 +283,8 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10">
-                <Target className="h-4.5 w-4.5 text-primary" />
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/30">
+                <Target className="h-4.5 w-4.5 text-foreground" />
               </div>
               <div>
                 <span>Meta x Realizado</span>
@@ -297,7 +297,7 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs h-7 gap-1 text-primary hover:text-primary"
+                className="text-xs h-7 gap-1 text-muted-foreground hover:text-foreground"
                 onClick={() => setShowDetail(true)}>
                 Ver mais
                 <ExternalLink className="h-3 w-3" />
@@ -308,17 +308,19 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
 
         <CardContent className="space-y-4 pt-0">
           {/* KPI Strip */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-lg border bg-muted/20 p-2.5 text-center">
-              <p className="text-xl font-bold">{totals.totalMeta}</p>
+          <div className="flex items-center justify-center gap-6 py-1">
+            <div className="text-center">
+              <p className="text-lg font-bold">{totals.totalMeta}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meta</p>
             </div>
-            <div className="rounded-lg border bg-primary/5 p-2.5 text-center">
-              <p className="text-xl font-bold text-primary">{totals.totalRealizado}</p>
+            <div className="h-8 w-px bg-border" />
+            <div className="text-center">
+              <p className="text-lg font-bold text-primary">{totals.totalRealizado}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Realizado</p>
             </div>
-            <div className="rounded-lg border p-2.5 text-center" style={{ background: totals.pct >= 100 ? 'hsl(156 72% 40% / 0.06)' : totals.pct >= 70 ? 'hsl(35 95% 55% / 0.06)' : 'hsl(0 84% 60% / 0.06)' }}>
-              <p className={`text-xl font-bold ${getStatusColor(totals.pct)}`}>{totals.pct.toFixed(0)}%</p>
+            <div className="h-8 w-px bg-border" />
+            <div className="text-center">
+              <p className={`text-lg font-bold ${getStatusColor(totals.pct)}`}>{totals.pct.toFixed(0)}%</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Atingimento</p>
             </div>
           </div>
