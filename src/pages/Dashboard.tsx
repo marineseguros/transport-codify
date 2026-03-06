@@ -1589,7 +1589,7 @@ const Dashboard = () => {
                 premioTotal,
                 percentage
               }) => {
-                const barColor = "#57AEECA";
+                const barColor = "#57AEEC";
                 
                 return (
                   <div key={status} className="space-y-2">
