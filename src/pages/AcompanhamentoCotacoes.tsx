@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp, AlertTriangle, Pencil, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, AlertTriangle, Pencil, ClipboardList } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CotacaoModal } from "@/components/CotacaoModal";
@@ -171,7 +171,7 @@ const AcompanhamentoCotacoes = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-            <Clock className="h-7 w-7 md:h-8 md:w-8" />
+            <ClipboardList className="h-7 w-7 md:h-8 md:w-8" />
             Acompanhamento de Cotações
           </h1>
           <p className="text-sm text-muted-foreground">
