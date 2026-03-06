@@ -314,10 +314,10 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
               <p className="text-xl font-bold text-primary">{totals.totalRealizado}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Realizado</p>
             </div>
-            <div className="rounded-lg border bg-muted/20 p-2.5 text-center">
-              <p className="text-xl font-bold">{projection}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Projeção</p>
-            </div>
+            
+
+
+            
             <div className="rounded-lg border p-2.5 text-center" style={{ background: totals.pct >= 100 ? 'hsl(156 72% 40% / 0.06)' : totals.pct >= 70 ? 'hsl(35 95% 55% / 0.06)' : 'hsl(0 84% 60% / 0.06)' }}>
               <p className={`text-xl font-bold ${getStatusColor(totals.pct)}`}>{totals.pct.toFixed(0)}%</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Atingimento</p>
