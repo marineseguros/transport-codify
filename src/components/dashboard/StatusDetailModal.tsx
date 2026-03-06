@@ -100,11 +100,11 @@ export function StatusDetailModal({
   const previsaoGeral = totalPremioFechado + potencialTotal;
 
   // Get totals from statusData for consistency with main cards
-  const statusEmCotacao = statusData.find(s => s.status === "Em cotação");
   const statusFechado = statusData.find(s => s.status === "Negócio fechado");
   const statusDeclinado = statusData.find(s => s.status === "Declinado");
   
-  const totalEmCotacao = statusEmCotacao?.count || 0;
+  // Use sum of per-producer column values so header matches column sum exactly
+  const totalEmCotacao = produtores.reduce((sum, p) => sum + p.emCotacaoDistinct, 0);
   const totalFechados = statusFechado?.count || 0;
   const totalDeclinados = statusDeclinado?.count || 0;
 

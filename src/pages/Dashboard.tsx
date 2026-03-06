@@ -1340,11 +1340,12 @@ const Dashboard = () => {
     const sign = diff > 0 ? "+" : "";
     const icon = diff > 0 ? <TrendingUp className="h-3 w-3" /> : diff < 0 ? <TrendingDown className="h-3 w-3" /> : null;
     const color = diff > 0 ? "text-success" : diff < 0 ? "text-destructive" : "text-muted-foreground";
+    const formattedDiff = typeof diff === 'number' && !Number.isInteger(diff) ? diff.toFixed(2) : diff;
     return <span className={`text-xs flex items-center gap-1 ${color}`}>
         {icon}
         {sign}
-        {diff} ({sign}
-        {percentage.toFixed(1)}%)
+        {formattedDiff} ({sign}
+        {percentage.toFixed(2)}%)
       </span>;
   };
   return <>
@@ -1382,20 +1383,21 @@ const Dashboard = () => {
       {/* KPIs Mensais com Comparativos */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Em Cotação</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-3">
             <TooltipProvider>
               <UITooltip>
                 <TooltipTrigger asChild>
                   <div className="cursor-help">
                     <div className="text-2xl font-bold text-brand-orange">{globalEmAbertoDistinct}</div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                      <span>Mês: <span className="font-semibold text-brand-orange">{monthlyStats.emCotacao}</span></span>
-                      {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
-                    </div>
+                     <div className="text-[10px] text-muted-foreground mt-0.5">Total do período selecionado</div>
+                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                       <span>Mês: <span className="font-semibold text-brand-orange">{monthlyStats.emCotacao}</span></span>
+                       {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
+                     </div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
@@ -1418,11 +1420,11 @@ const Dashboard = () => {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Negócio Fechado</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-3">
             <TooltipProvider>
               <UITooltip>
                 <TooltipTrigger asChild>
@@ -1451,58 +1453,58 @@ const Dashboard = () => {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Declinado</CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-3">
             <div className="text-2xl font-bold text-destructive">{monthlyStats.declinados}</div>
             {formatComparison(monthlyStats.declinadosComp.diff, monthlyStats.declinadosComp.percentage)}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-3">
             <div className="text-2xl font-bold">{formatCurrency(monthlyStats.ticketMedio)}</div>
             {formatComparison(monthlyStats.ticketMedioComp.diff, monthlyStats.ticketMedioComp.percentage)}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-3">
             <div className="text-2xl font-bold">{Math.round(monthlyStats.tempoMedioFechamento)} dias</div>
             {monthlyStats.tempoMedioComp.diff !== 0 ? <span className={`text-xs flex items-center gap-1 ${monthlyStats.tempoMedioComp.diff < 0 ? "text-success" : monthlyStats.tempoMedioComp.diff > 0 ? "text-destructive" : "text-muted-foreground"}`}>
                 {monthlyStats.tempoMedioComp.diff < 0 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
-                {monthlyStats.tempoMedioComp.diff > 0 ? "+" : ""}{Math.round(monthlyStats.tempoMedioComp.diff)} dias ({monthlyStats.tempoMedioComp.percentage > 0 ? "+" : ""}{monthlyStats.tempoMedioComp.percentage.toFixed(1)}%)
+                {monthlyStats.tempoMedioComp.diff > 0 ? "+" : ""}{Math.round(monthlyStats.tempoMedioComp.diff)} dias ({monthlyStats.tempoMedioComp.percentage > 0 ? "+" : ""}{monthlyStats.tempoMedioComp.percentage.toFixed(2)}%)
               </span> : <p className="text-xs text-muted-foreground">Fechamento</p>}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-3">
             <div className="text-2xl font-bold text-success-alt">{monthlyStats.taxaConversao.toFixed(1)}%</div>
             {formatComparison(monthlyStats.taxaConversaoComp.diff, monthlyStats.taxaConversaoComp.percentage)}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Prêmio Total</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-3">
             <div className="text-2xl font-bold text-primary">{formatCurrency(monthlyStats.premioTotal)}</div>
             {formatComparison(monthlyStats.premioTotalComp.diff, monthlyStats.premioTotalComp.percentage)}
           </CardContent>
