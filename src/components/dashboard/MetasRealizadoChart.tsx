@@ -395,63 +395,63 @@ export const MetasRealizadoChart = ({
 
 
       
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis
-              dataKey="atividade"
-              tick={{ fontSize: 12 }}
-              tickLine={false}
-              className="text-muted-foreground" />
-            
-            <YAxis
-              tick={{ fontSize: 12 }}
-              tickLine={false}
-              className="text-muted-foreground" />
-            
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px'
-              }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }} />
-            
-            <Legend />
-            <Bar
-              dataKey="Meta"
-              fill="hsl(var(--muted-foreground))"
-              radius={[4, 4, 0, 0]}
-              name="Meta" />
-            
-            <Bar
-              dataKey="Realizado"
-              fill="hsl(var(--primary))"
-              radius={[4, 4, 0, 0]}
-              name="Realizado" />
-            
-          </BarChart>
-        </ResponsiveContainer>
+      
 
-        {/* Summary cards */}
-        <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
-          <div className="text-center">
-            <p className="text-2xl font-bold">{totals.totalMeta}</p>
-            <p className="text-xs text-muted-foreground">Total Meta</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-primary">{totals.totalRealizado}</p>
-            <p className="text-xs text-muted-foreground">Total Realizado</p>
-          </div>
-          <div className="text-center">
-            <p className={`text-2xl font-bold ${totals.percentualAtingido >= 100 ? 'text-success' : totals.percentualAtingido >= 70 ? 'text-warning' : 'text-destructive'}`}>
-              {totals.percentualAtingido.toFixed(0)}%
-            </p>
-            <p className="text-xs text-muted-foreground">% Atingido</p>
-          </div>
-        </div>
-      </CardContent>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
     </Card>);
 
 };
