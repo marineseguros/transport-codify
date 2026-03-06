@@ -114,7 +114,7 @@ export function ClientesStatusDetailPopup({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[90vw] w-auto max-h-[85vh]">
+      <DialogContent className="!max-w-[90vw] !w-auto max-h-[85vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
