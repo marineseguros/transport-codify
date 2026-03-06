@@ -934,12 +934,23 @@ const Dashboard = () => {
     return [...filteredCotacoes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
   }, [filteredCotacoes]);
 
+  // Base filtered cotações for trend modal (no producer filter - modal has its own)
+  const trendBaseFilteredCotacoes = useMemo(() => {
+    return allQuotes.filter((cotacao) => {
+      const seguradoraMatch = filters.seguradoraFilter.length === 0 || cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome);
+      const ramoMatch = filters.ramoFilter.length === 0 || cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao);
+      const segmentoMatch = filters.segmentoFilter.length === 0 || cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento);
+      const regraMatch = filters.regraFilter.length === 0 || cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra);
+      const unidadeMatch = filters.unidadeFilter.length === 0 || cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao);
+      return seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
+    });
+  }, [allQuotes, filters.seguradoraFilter, filters.ramoFilter, filters.segmentoFilter, filters.regraFilter, filters.unidadeFilter]);
+
   // Monthly trend data DETALHADA para modal
   const monthlyTrendDataDetalhada = useMemo(() => {
     const months = [];
     const now = new Date();
-    const trendFilteredCotacoes = allQuotes.filter((cotacao) => {
-      // Mixed produtor logic: cotador for "Em cotação", origem for others
+    const trendFilteredCotacoes = trendBaseFilteredCotacoes.filter((cotacao) => {
       let produtorMatch = true;
       if (filters.produtorFilter.length > 0) {
         if (cotacao.status === "Em cotação") {
@@ -948,12 +959,7 @@ const Dashboard = () => {
           produtorMatch = cotacao.produtor_origem?.nome ? filters.produtorFilter.includes(cotacao.produtor_origem.nome) : false;
         }
       }
-      const seguradoraMatch = filters.seguradoraFilter.length === 0 || cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome);
-      const ramoMatch = filters.ramoFilter.length === 0 || cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao);
-      const segmentoMatch = filters.segmentoFilter.length === 0 || cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento);
-      const regraMatch = filters.regraFilter.length === 0 || cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra);
-      const unidadeMatch = filters.unidadeFilter.length === 0 || cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao);
-      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
+      return produtorMatch;
     });
     for (let i = 11; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -2115,7 +2121,7 @@ const Dashboard = () => {
       {/* Modais de Análise Detalhada */}
       <StatusDetailModal open={showStatusDetailModal} onClose={() => setShowStatusDetailModal(false)} statusData={distribuicaoStatusDetalhada} formatCurrency={formatCurrency} formatDate={formatDate} produtores={topProdutoresDetalhado} />
       
-      <TendenciaDetailModal open={showTendenciaDetailModal} onClose={() => setShowTendenciaDetailModal(false)} monthlyData={monthlyTrendDataDetalhada} formatCurrency={formatCurrency} />
+      <TendenciaDetailModal open={showTendenciaDetailModal} onClose={() => setShowTendenciaDetailModal(false)} cotacoes={trendBaseFilteredCotacoes} produtoresDisponiveis={produtores} formatCurrency={formatCurrency} />
       
       <SeguradoraDetailModal open={showSeguradoraDetailModal} onClose={() => setShowSeguradoraDetailModal(false)} seguradoras={seguradoraDataDetalhada} formatCurrency={formatCurrency} />
       </div>
