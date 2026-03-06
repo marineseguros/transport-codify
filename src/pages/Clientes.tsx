@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Search, Edit, Trash2, FileText, Building2, History } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, FileText, Users, History, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -190,7 +190,7 @@ const Clientes = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-3">
-            <Building2 className="h-7 w-7 md:h-8 md:w-8" />
+            <Users className="h-7 w-7 md:h-8 md:w-8" />
             Clientes
           </h1>
           <p className="text-sm text-muted-foreground">

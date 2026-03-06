@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Download, TrendingUp, Calendar, Filter, FileText, BarChart } from 'lucide-react';
+import { Download, TrendingUp, Calendar, Filter, FileText, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -163,7 +163,7 @@ const Relatorios = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-3">
-            <BarChart className="h-7 w-7 md:h-8 md:w-8" />
+            <BarChart3 className="h-7 w-7 md:h-8 md:w-8" />
             Relatórios
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -256,7 +256,7 @@ const Relatorios = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Prêmio Total</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(kpis.totalPremio)}</div>
