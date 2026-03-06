@@ -380,9 +380,7 @@ export const MetasRealizadoChart = ({
 
   }
 
-  return (
-    <Card>
-      
+  return;
 
 
 
@@ -394,8 +392,6 @@ export const MetasRealizadoChart = ({
 
 
 
-      
-      
 
 
 
@@ -451,7 +447,11 @@ export const MetasRealizadoChart = ({
 
 
 
-      
-    </Card>);
+
+
+
+
+
+
 
 };
