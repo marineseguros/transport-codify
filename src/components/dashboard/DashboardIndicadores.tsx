@@ -19,8 +19,8 @@ interface Meta {
   produtor_id: string;
   mes: string;
   quantidade: number;
-  tipo_meta?: { id: string; descricao: string };
-  produtor?: { id: string; nome: string };
+  tipo_meta?: {id: string;descricao: string;};
+  produtor?: {id: string;nome: string;};
 }
 
 interface Cotacao {
@@ -35,7 +35,7 @@ interface DashboardIndicadoresProps {
 }
 
 const normalizeLabel = (value?: string | null) =>
-  (value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+(value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 
 export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresProps) => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -44,15 +44,15 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
   const [loading, setLoading] = useState(true);
 
   const isMetaType = (descricao: string | undefined, target: string) =>
-    normalizeLabel(descricao) === normalizeLabel(target);
+  normalizeLabel(descricao) === normalizeLabel(target);
 
   const analysisDate = useMemo(() => {
     const timestamps: number[] = [];
-    produtos.forEach(p => { const t = new Date(p.data_registro).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
+    produtos.forEach((p) => {const t = new Date(p.data_registro).getTime();if (!Number.isNaN(t)) timestamps.push(t);});
     if (timestamps.length) return new Date(Math.max(...timestamps));
-    metas.forEach(m => { const t = new Date(m.mes).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
+    metas.forEach((m) => {const t = new Date(m.mes).getTime();if (!Number.isNaN(t)) timestamps.push(t);});
     if (timestamps.length) return new Date(Math.max(...timestamps));
-    cotacoes.forEach(c => { const t = new Date(c.data_cotacao).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
+    cotacoes.forEach((c) => {const t = new Date(c.data_cotacao).getTime();if (!Number.isNaN(t)) timestamps.push(t);});
     return timestamps.length ? new Date(Math.max(...timestamps)) : new Date();
   }, [produtos, metas, cotacoes]);
 
@@ -65,10 +65,10 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
       try {
         setLoading(true);
         const [prodRes, metasRes, cotRes] = await Promise.all([
-          supabase.from('produtos').select('id, consultor, data_registro, tipo, subtipo').order('data_registro', { ascending: false }),
-          supabase.from('metas').select('*, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)').order('mes', { ascending: false }),
-          supabase.from('cotacoes').select('id, status, data_cotacao, data_fechamento').order('data_cotacao', { ascending: false }),
-        ]);
+        supabase.from('produtos').select('id, consultor, data_registro, tipo, subtipo').order('data_registro', { ascending: false }),
+        supabase.from('metas').select('*, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)').order('mes', { ascending: false }),
+        supabase.from('cotacoes').select('id, status, data_cotacao, data_fechamento').order('data_cotacao', { ascending: false })]
+        );
         if (prodRes.error) throw prodRes.error;
         if (metasRes.error) throw metasRes.error;
         if (cotRes.error) throw cotRes.error;
@@ -85,46 +85,46 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
   }, []);
 
   const currentMonthProdutos = useMemo(() =>
-    produtos.filter(p => { const d = new Date(p.data_registro); return d >= startCurrent && d <= endCurrent; }),
-    [produtos, startCurrent, endCurrent]);
+  produtos.filter((p) => {const d = new Date(p.data_registro);return d >= startCurrent && d <= endCurrent;}),
+  [produtos, startCurrent, endCurrent]);
 
   const currentMonthCotacoes = useMemo(() =>
-    cotacoes.filter(c => { const d = new Date(c.data_cotacao); return d >= startCurrent && d <= endCurrent; }),
-    [cotacoes, startCurrent, endCurrent]);
+  cotacoes.filter((c) => {const d = new Date(c.data_cotacao);return d >= startCurrent && d <= endCurrent;}),
+  [cotacoes, startCurrent, endCurrent]);
 
   const currentMonthFechamentos = useMemo(() =>
-    cotacoes.filter(c => {
-      if (!c.data_fechamento) return false;
-      const d = new Date(c.data_fechamento);
-      return d >= startCurrent && d <= endCurrent && ['Negócio fechado', 'Fechamento congênere'].includes(c.status);
-    }), [cotacoes, startCurrent, endCurrent]);
+  cotacoes.filter((c) => {
+    if (!c.data_fechamento) return false;
+    const d = new Date(c.data_fechamento);
+    return d >= startCurrent && d <= endCurrent && ['Negócio fechado', 'Fechamento congênere'].includes(c.status);
+  }), [cotacoes, startCurrent, endCurrent]);
 
   const chartData = useMemo(() => {
-    const filteredProds = produtorFilter?.length
-      ? currentMonthProdutos.filter(p => produtorFilter.includes(p.consultor))
-      : currentMonthProdutos;
+    const filteredProds = produtorFilter?.length ?
+    currentMonthProdutos.filter((p) => produtorFilter.includes(p.consultor)) :
+    currentMonthProdutos;
 
     const getMetaTotal = (target: string) =>
-      metas.filter(m =>
-        m.mes.startsWith(currentMonthStr) &&
-        isMetaType(m.tipo_meta?.descricao, target) &&
-        (!produtorFilter?.length || (m.produtor && produtorFilter.includes(m.produtor.nome)))
-      ).reduce((s, m) => s + m.quantidade, 0);
+    metas.filter((m) =>
+    m.mes.startsWith(currentMonthStr) &&
+    isMetaType(m.tipo_meta?.descricao, target) && (
+    !produtorFilter?.length || m.produtor && produtorFilter.includes(m.produtor.nome))
+    ).reduce((s, m) => s + m.quantidade, 0);
 
     return [
-      { categoria: 'Coleta', Meta: getMetaTotal('Coleta'), Realizado: filteredProds.filter(p => p.tipo === 'Coleta').length },
-      { categoria: 'Cotação', Meta: getMetaTotal('Cotação'), Realizado: currentMonthCotacoes.length },
-      { categoria: 'Vídeo', Meta: getMetaTotal('Vídeo'), Realizado: filteredProds.filter(p => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length },
-      { categoria: 'Visita', Meta: getMetaTotal('Visita'), Realizado: filteredProds.filter(p => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'visita').length },
-      { categoria: 'Indicação', Meta: getMetaTotal('Indicação'), Realizado: filteredProds.filter(p => p.tipo === 'Indicação').length },
-      { categoria: 'Fechamento', Meta: getMetaTotal('Fechamento'), Realizado: currentMonthFechamentos.length },
-    ];
+    { categoria: 'Coleta', Meta: getMetaTotal('Coleta'), Realizado: filteredProds.filter((p) => p.tipo === 'Coleta').length },
+    { categoria: 'Cotação', Meta: getMetaTotal('Cotação'), Realizado: currentMonthCotacoes.length },
+    { categoria: 'Vídeo', Meta: getMetaTotal('Vídeo'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length },
+    { categoria: 'Visita', Meta: getMetaTotal('Visita'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'visita').length },
+    { categoria: 'Indicação', Meta: getMetaTotal('Indicação'), Realizado: filteredProds.filter((p) => p.tipo === 'Indicação').length },
+    { categoria: 'Fechamento', Meta: getMetaTotal('Fechamento'), Realizado: currentMonthFechamentos.length }];
+
   }, [currentMonthProdutos, currentMonthCotacoes, currentMonthFechamentos, metas, produtorFilter, currentMonthStr]);
 
   const totals = useMemo(() => {
     const totalMeta = chartData.reduce((s, i) => s + i.Meta, 0);
     const totalRealizado = chartData.reduce((s, i) => s + i.Realizado, 0);
-    const pct = totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
+    const pct = totalMeta > 0 ? totalRealizado / totalMeta * 100 : 0;
     return { totalMeta, totalRealizado, pct };
   }, [chartData]);
 
@@ -142,8 +142,8 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>);
+
   }
 
   return (
@@ -162,53 +162,53 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis
-              dataKey="categoria"
-              tick={{ fontSize: 12 }}
-              tickLine={false}
-              className="text-muted-foreground"
-            />
-            <YAxis
-              tick={{ fontSize: 12 }}
-              tickLine={false}
-              className="text-muted-foreground"
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-              }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }}
-            />
-            <Legend />
-            <Bar dataKey="Meta" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} name="Meta" />
-            <Bar dataKey="Realizado" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Realizado" />
-          </BarChart>
-        </ResponsiveContainer>
+      
 
-        {/* Summary */}
-        <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
-          <div className="text-center">
-            <p className="text-2xl font-bold">{totals.totalMeta}</p>
-            <p className="text-xs text-muted-foreground">Total Meta</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-primary">{totals.totalRealizado}</p>
-            <p className="text-xs text-muted-foreground">Total Realizado</p>
-          </div>
-          <div className="text-center">
-            <p className={`text-2xl font-bold ${totals.pct >= 100 ? 'text-success' : totals.pct >= 70 ? 'text-warning' : 'text-destructive'}`}>
-              {totals.pct.toFixed(0)}%
-            </p>
-            <p className="text-xs text-muted-foreground">% Atingido</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+    </Card>);
+
 };
