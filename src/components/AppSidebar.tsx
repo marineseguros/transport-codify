@@ -66,7 +66,7 @@ export function AppSidebar() {
   } = useAuth();
   const currentPath = location.pathname;
   const canAccessAdmin = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
-  return <Sidebar className={cn(collapsed ? "w-14" : "w-64")} collapsible="icon">
+  return <Sidebar className={cn("h-screen", collapsed ? "w-14" : "w-64")} collapsible="icon">
       {/* Logo da Empresa */}
       <SidebarHeader className="border-b px-3 py-4 flex items-center justify-center">
         <img src="/marine-logo.png" alt="Marine Seguros Logo" className={cn("cursor-pointer", collapsed ? "h-10 w-10" : "h-16 w-16")} />
