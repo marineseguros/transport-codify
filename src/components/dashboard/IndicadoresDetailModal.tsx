@@ -277,7 +277,7 @@ export const IndicadoresDetailModal = ({
 
       return { categoria: cat, Meta: meta, Realizado: realizado };
     });
-  }, [currentMonthStr, allMetas, allProdutos, allCotacoes, effectiveProdutorFilter]);
+  }, [dashboardDateRange, allMetas, allProdutos, allCotacoes, effectiveProdutorFilter]);
 
   // Monthly data per category
   const monthlyData = useMemo(() => {
