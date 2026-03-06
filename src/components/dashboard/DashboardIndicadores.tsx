@@ -93,20 +93,25 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
   };
 
   const analysisDate = useMemo(() => {
-    const primaryTimestamps: number[] = [];
+    const produtoTimestamps: number[] = [];
 
     produtos.forEach(p => {
       const t = new Date(p.data_registro).getTime();
-      if (!Number.isNaN(t)) primaryTimestamps.push(t);
+      if (!Number.isNaN(t)) produtoTimestamps.push(t);
     });
 
+    if (produtoTimestamps.length) {
+      return new Date(Math.max(...produtoTimestamps));
+    }
+
+    const metasTimestamps: number[] = [];
     metas.forEach(m => {
       const t = new Date(m.mes).getTime();
-      if (!Number.isNaN(t)) primaryTimestamps.push(t);
+      if (!Number.isNaN(t)) metasTimestamps.push(t);
     });
 
-    if (primaryTimestamps.length) {
-      return new Date(Math.max(...primaryTimestamps));
+    if (metasTimestamps.length) {
+      return new Date(Math.max(...metasTimestamps));
     }
 
     const fallbackTimestamps: number[] = [];
