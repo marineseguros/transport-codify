@@ -669,17 +669,17 @@ const Dashboard = () => {
     const filtered = allQuotes.filter((cotacao) => {
       if (cotacao.status !== "Em cotação") return false;
       const produtorMatch = filters.produtorFilter.length === 0 ||
-        (cotacao.produtor_cotador?.nome && filters.produtorFilter.includes(cotacao.produtor_cotador.nome));
+      cotacao.produtor_cotador?.nome && filters.produtorFilter.includes(cotacao.produtor_cotador.nome);
       const seguradoraMatch = filters.seguradoraFilter.length === 0 ||
-        (cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
+      cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome);
       const ramoMatch = filters.ramoFilter.length === 0 ||
-        (cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
+      cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao);
       const segmentoMatch = filters.segmentoFilter.length === 0 ||
-        (cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
+      cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento);
       const regraMatch = filters.regraFilter.length === 0 ||
-        (cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
+      cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra);
       const unidadeMatch = filters.unidadeFilter.length === 0 ||
-        (cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
+      cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao);
       return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
     });
     return countDistinctByStatus(filtered, ["Em cotação"]);
@@ -1620,10 +1620,10 @@ const Dashboard = () => {
                 const statusColorMap: Record<string, string> = {
                   "Em cotação": "hsl(var(--brand-orange))",
                   "Negócio fechado": "hsl(var(--success-alt))",
-                  "Declinado": "hsl(var(--destructive))",
+                  "Declinado": "hsl(var(--destructive))"
                 };
                 const barColor = statusColorMap[status] || "hsl(var(--primary))";
-                
+
                 return (
                   <div key={status} className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -1639,14 +1639,14 @@ const Dashboard = () => {
                           className="h-full rounded-full transition-all duration-500"
                           style={{
                             width: `${percentage}%`,
-                            backgroundColor: barColor,
-                          }}
-                        />
+                            backgroundColor: barColor
+                          }} />
+                        
                       </div>
                       <span className="text-sm font-medium w-12 text-right">{percentage.toFixed(0)}%</span>
                     </div>
-                  </div>
-                );
+                  </div>);
+
               })}
             </div>
           </CardContent>
@@ -1767,242 +1767,242 @@ const Dashboard = () => {
       
 
       {/* Análises por Tipo de Cliente - Barras Empilhadas */}
-      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {/* Cotações em Aberto por Tipo */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Cotações em Aberto</CardTitle>
-            <p className="text-xs text-muted-foreground">Transportador x Embarcador (distintos)</p>
-          </CardHeader>
-          <CardContent>
-            <TooltipProvider>
-              <div className="space-y-4">
-                {/* Barra empilhada */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">Total</span>
-                    <span className="font-bold text-brand-orange">{cotacoesPorTipoCliente.total}</span>
-                  </div>
-                  {cotacoesPorTipoCliente.total > 0 ? <UITooltip>
-                      <TooltipTrigger asChild>
-                        <div className="w-full bg-secondary rounded-full h-10 flex items-center overflow-hidden cursor-help">
-                          {cotacoesPorTipoCliente.transportador > 0 && <div className="bg-brand-orange h-10 flex items-center justify-center text-xs font-medium text-white" style={{
-                          width: `${cotacoesPorTipoCliente.transportador / cotacoesPorTipoCliente.total * 100}%`
-                        }}>
-                              {cotacoesPorTipoCliente.transportador}
-                            </div>}
-                          {cotacoesPorTipoCliente.embarcador > 0 && <div className="bg-chart-2 h-10 flex items-center justify-center text-xs font-medium text-white" style={{
-                          width: `${cotacoesPorTipoCliente.embarcador / cotacoesPorTipoCliente.total * 100}%`
-                        }}>
-                              {cotacoesPorTipoCliente.embarcador}
-                            </div>}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-sm">
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between gap-4">
-                            <span className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded bg-brand-orange"></div>
-                              Transportador
-                            </span>
-                            <span className="font-bold">{cotacoesPorTipoCliente.transportador} ({formatCurrency(cotacoesPorTipoCliente.premioTransportador)})</span>
-                          </div>
-                          <div className="flex justify-between gap-4">
-                            <span className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded bg-chart-2"></div>
-                              Embarcador
-                            </span>
-                            <span className="font-bold">{cotacoesPorTipoCliente.embarcador} ({formatCurrency(cotacoesPorTipoCliente.premioEmbarcador)})</span>
-                          </div>
-                        </div>
-                      </TooltipContent>
-                    </UITooltip> : <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
-                      Nenhuma cotação
-                    </div>}
-                </div>
-                
-                {/* Legenda e insights */}
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t">
-                  <div className="text-center p-2 rounded-lg bg-brand-orange/10">
-                    <div className="text-lg font-bold text-brand-orange">{cotacoesPorTipoCliente.transportador}</div>
-                    <div className="text-xs text-muted-foreground">Transportador</div>
-                    <div className="text-xs font-medium mt-1">{formatCurrency(cotacoesPorTipoCliente.premioTransportador)}</div>
-                  </div>
-                  <div className="text-center p-2 rounded-lg bg-chart-2/10">
-                    <div className="text-lg font-bold text-chart-2">{cotacoesPorTipoCliente.embarcador}</div>
-                    <div className="text-xs text-muted-foreground">Embarcador</div>
-                    <div className="text-xs font-medium mt-1">{formatCurrency(cotacoesPorTipoCliente.premioEmbarcador)}</div>
-                  </div>
-                </div>
-                
-                {/* Insight */}
-                {cotacoesPorTipoCliente.total > 0 && <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
-                    {cotacoesPorTipoCliente.transportador > cotacoesPorTipoCliente.embarcador ? `Foco em Transportadores: ${(cotacoesPorTipoCliente.transportador / cotacoesPorTipoCliente.total * 100).toFixed(0)}% do pipeline` : cotacoesPorTipoCliente.embarcador > cotacoesPorTipoCliente.transportador ? `Foco em Embarcadores: ${(cotacoesPorTipoCliente.embarcador / cotacoesPorTipoCliente.total * 100).toFixed(0)}% do pipeline` : "Pipeline equilibrado entre segmentos"}
-                  </div>}
-              </div>
-            </TooltipProvider>
-          </CardContent>
-        </Card>
+      
 
-        {/* Fechamentos por Tipo */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Fechamentos por Segmento</CardTitle>
-            <p className="text-xs text-muted-foreground">Transportador x Embarcador (distintos)</p>
-          </CardHeader>
-          <CardContent>
-            <TooltipProvider>
-              <div className="space-y-4">
-                {/* Barra empilhada */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">Total</span>
-                    <span className="font-bold text-success-alt">{fechamentosPorTipoCliente.total}</span>
-                  </div>
-                  {fechamentosPorTipoCliente.total > 0 ? <UITooltip>
-                      <TooltipTrigger asChild>
-                        <div className="w-full bg-secondary rounded-full h-10 flex items-center overflow-hidden cursor-help">
-                          {fechamentosPorTipoCliente.transportador > 0 && <div className="bg-success-alt h-10 flex items-center justify-center text-xs font-medium text-white" style={{
-                          width: `${fechamentosPorTipoCliente.transportador / fechamentosPorTipoCliente.total * 100}%`
-                        }}>
-                              {fechamentosPorTipoCliente.transportador}
-                            </div>}
-                          {fechamentosPorTipoCliente.embarcador > 0 && <div className="bg-chart-4 h-10 flex items-center justify-center text-xs font-medium text-white" style={{
-                          width: `${fechamentosPorTipoCliente.embarcador / fechamentosPorTipoCliente.total * 100}%`
-                        }}>
-                              {fechamentosPorTipoCliente.embarcador}
-                            </div>}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-sm">
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between gap-4">
-                            <span className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded bg-success-alt"></div>
-                              Transportador
-                            </span>
-                            <span className="font-bold">{fechamentosPorTipoCliente.transportador} ({formatCurrency(fechamentosPorTipoCliente.premioTransportador)})</span>
-                          </div>
-                          <div className="flex justify-between gap-4">
-                            <span className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded bg-chart-4"></div>
-                              Embarcador
-                            </span>
-                            <span className="font-bold">{fechamentosPorTipoCliente.embarcador} ({formatCurrency(fechamentosPorTipoCliente.premioEmbarcador)})</span>
-                          </div>
-                        </div>
-                      </TooltipContent>
-                    </UITooltip> : <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
-                      Nenhum fechamento
-                    </div>}
-                </div>
-                
-                {/* Legenda e insights */}
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t">
-                  <div className="text-center p-2 rounded-lg bg-success-alt/10">
-                    <div className="text-lg font-bold text-success-alt">{fechamentosPorTipoCliente.transportador}</div>
-                    <div className="text-xs text-muted-foreground">Transportador</div>
-                    <div className="text-xs font-medium mt-1">{formatCurrency(fechamentosPorTipoCliente.premioTransportador)}</div>
-                  </div>
-                  <div className="text-center p-2 rounded-lg bg-chart-4/10">
-                    <div className="text-lg font-bold text-chart-4">{fechamentosPorTipoCliente.embarcador}</div>
-                    <div className="text-xs text-muted-foreground">Embarcador</div>
-                    <div className="text-xs font-medium mt-1">{formatCurrency(fechamentosPorTipoCliente.premioEmbarcador)}</div>
-                  </div>
-                </div>
-                
-                {/* Ticket médio */}
-                {fechamentosPorTipoCliente.total > 0 && <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded space-y-1">
-                    <div className="flex justify-between">
-                      <span>Ticket médio Transp.:</span>
-                      <span className="font-medium">{fechamentosPorTipoCliente.transportador > 0 ? formatCurrency(fechamentosPorTipoCliente.premioTransportador / fechamentosPorTipoCliente.transportador) : '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Ticket médio Embarc.:</span>
-                      <span className="font-medium">{fechamentosPorTipoCliente.embarcador > 0 ? formatCurrency(fechamentosPorTipoCliente.premioEmbarcador / fechamentosPorTipoCliente.embarcador) : '-'}</span>
-                    </div>
-                  </div>}
-              </div>
-            </TooltipProvider>
-          </CardContent>
-        </Card>
 
-        {/* Declinados por Tipo */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Declinados por Segmento</CardTitle>
-            <p className="text-xs text-muted-foreground">Transportador x Embarcador (distintos)</p>
-          </CardHeader>
-          <CardContent>
-            <TooltipProvider>
-              <div className="space-y-4">
-                {/* Barra empilhada */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">Total</span>
-                    <span className="font-bold text-destructive">{declinadosPorTipoCliente.total}</span>
-                  </div>
-                  {declinadosPorTipoCliente.total > 0 ? <UITooltip>
-                      <TooltipTrigger asChild>
-                        <div className="w-full bg-secondary rounded-full h-10 flex items-center overflow-hidden cursor-help">
-                          {declinadosPorTipoCliente.transportador > 0 && <div className="bg-destructive h-10 flex items-center justify-center text-xs font-medium text-white" style={{
-                          width: `${declinadosPorTipoCliente.transportador / declinadosPorTipoCliente.total * 100}%`
-                        }}>
-                              {declinadosPorTipoCliente.transportador}
-                            </div>}
-                          {declinadosPorTipoCliente.embarcador > 0 && <div className="bg-chart-5 h-10 flex items-center justify-center text-xs font-medium text-white" style={{
-                          width: `${declinadosPorTipoCliente.embarcador / declinadosPorTipoCliente.total * 100}%`
-                        }}>
-                              {declinadosPorTipoCliente.embarcador}
-                            </div>}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-sm">
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between gap-4">
-                            <span className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded bg-destructive"></div>
-                              Transportador
-                            </span>
-                            <span className="font-bold">{declinadosPorTipoCliente.transportador} ({formatCurrency(declinadosPorTipoCliente.premioTransportador)})</span>
-                          </div>
-                          <div className="flex justify-between gap-4">
-                            <span className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded bg-chart-5"></div>
-                              Embarcador
-                            </span>
-                            <span className="font-bold">{declinadosPorTipoCliente.embarcador} ({formatCurrency(declinadosPorTipoCliente.premioEmbarcador)})</span>
-                          </div>
-                        </div>
-                      </TooltipContent>
-                    </UITooltip> : <div className="w-full bg-secondary rounded-full h-10 flex items-center justify-center text-xs text-muted-foreground">
-                      Nenhum declinado
-                    </div>}
-                </div>
-                
-                {/* Legenda e insights */}
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t">
-                  <div className="text-center p-2 rounded-lg bg-destructive/10">
-                    <div className="text-lg font-bold text-destructive">{declinadosPorTipoCliente.transportador}</div>
-                    <div className="text-xs text-muted-foreground">Transportador</div>
-                    <div className="text-xs font-medium mt-1">{formatCurrency(declinadosPorTipoCliente.premioTransportador)}</div>
-                  </div>
-                  <div className="text-center p-2 rounded-lg bg-chart-5/10">
-                    <div className="text-lg font-bold text-chart-5">{declinadosPorTipoCliente.embarcador}</div>
-                    <div className="text-xs text-muted-foreground">Embarcador</div>
-                    <div className="text-xs font-medium mt-1">{formatCurrency(declinadosPorTipoCliente.premioEmbarcador)}</div>
-                  </div>
-                </div>
-                
-                {/* Taxa de declínio */}
-                {cotacoesPorTipoCliente.total + fechamentosPorTipoCliente.total + declinadosPorTipoCliente.total > 0 && <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
-                    Taxa de declínio: {(declinadosPorTipoCliente.total / (cotacoesPorTipoCliente.total + fechamentosPorTipoCliente.total + declinadosPorTipoCliente.total) * 100).toFixed(1)}% do total de cotações
-                  </div>}
-              </div>
-            </TooltipProvider>
-          </CardContent>
-        </Card>
-      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
 
       {/* Seção de Metas */}
       <MetasRealizadoChart dateFilter={filters.dateFilter} dateRange={filters.dateRange} produtorFilter={filters.produtorFilter} produtores={produtores} fechamentosCount={monthlyStats.fechados} />
