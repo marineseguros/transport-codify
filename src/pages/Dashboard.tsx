@@ -1589,7 +1589,12 @@ const Dashboard = () => {
                 premioTotal,
                 percentage
               }) => {
-                const barColor = "#57AEEC";
+                const statusColorMap: Record<string, string> = {
+                  "Em cotação": "hsl(var(--brand-orange))",
+                  "Negócio fechado": "hsl(var(--success-alt))",
+                  "Declinado": "hsl(var(--destructive))",
+                };
+                const barColor = statusColorMap[status] || "hsl(var(--primary))";
                 
                 return (
                   <div key={status} className="space-y-2">
