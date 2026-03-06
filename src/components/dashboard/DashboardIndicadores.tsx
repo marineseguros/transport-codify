@@ -32,6 +32,10 @@ interface Meta {
 interface DashboardIndicadoresProps {
   produtorFilter?: string[];
   filteredCotacoes?: DashboardCotacao[];
+  allCotacoes?: DashboardCotacao[];
+  dateFilter?: string;
+  anoEspecifico?: string;
+  dateRange?: { from?: Date; to?: Date };
 }
 
 const normalizeLabel = (value?: string | null) =>
@@ -70,7 +74,7 @@ const StatusIcon = ({ pct }: {pct: number;}) => {
   return <XCircle className="h-3.5 w-3.5 text-destructive" />;
 };
 
-export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: DashboardIndicadoresProps) => {
+export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCotacoes, dateFilter, anoEspecifico, dateRange }: DashboardIndicadoresProps) => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -408,9 +412,12 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
         produtorData={produtorData}
         allMetas={metas}
         allProdutos={produtos}
-        allCotacoes={filteredCotacoes}
+        allCotacoes={allCotacoes || []}
         produtorNames={allProdutorNames}
-        currentProdutorFilter={produtorFilter} />
+        currentProdutorFilter={produtorFilter}
+        dateFilter={dateFilter}
+        anoEspecifico={anoEspecifico}
+        dateRangeProp={dateRange} />
       
     </>);
 

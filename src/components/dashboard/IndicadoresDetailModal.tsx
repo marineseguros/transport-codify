@@ -56,6 +56,9 @@ interface IndicadoresDetailModalProps {
   allCotacoes?: DashboardCotacao[];
   produtorNames: string[];
   currentProdutorFilter?: string[];
+  dateFilter?: string;
+  anoEspecifico?: string;
+  dateRangeProp?: { from?: Date; to?: Date };
 }
 
 const normalizeLabel = (value?: string | null) =>
@@ -107,22 +110,27 @@ const computeRealized = (
   prodFilter?: string[]
 ) => {
   if (cat === 'Cotação') {
+    // Mixed attribution: Cotação uses produtor_cotador
     const monthCotacoes = cotacoes.filter((c) => {
       const d = new Date(c.data_cotacao);
-      return d >= start && d <= end &&
-        (!prodFilter?.length || prodFilter.includes(c.produtor_cotador?.nome || ''));
+      if (d < start || d > end) return false;
+      if (!prodFilter?.length) return true;
+      return prodFilter.includes(c.produtor_cotador?.nome || '');
     });
     const keys = new Set<string>();
     monthCotacoes.forEach((c) => keys.add(`${c.cpf_cnpj}_${getBranchGroup(c.ramo)}`));
     return keys.size;
   }
   if (cat === 'Fechamento') {
-    const closed = cotacoes.filter((c) =>
-      (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') &&
-      c.data_fechamento &&
-      (() => { const d = new Date(c.data_fechamento!); return d >= start && d <= end; })() &&
-      (!prodFilter?.length || prodFilter.includes(c.produtor_cotador?.nome || ''))
-    );
+    // Mixed attribution: Fechamento uses produtor_origem
+    const closed = cotacoes.filter((c) => {
+      if (c.status !== 'Negócio fechado' && c.status !== 'Fechamento congênere') return false;
+      if (!c.data_fechamento) return false;
+      const d = new Date(c.data_fechamento);
+      if (d < start || d > end) return false;
+      if (!prodFilter?.length) return true;
+      return prodFilter.includes(c.produtor_origem?.nome || '');
+    });
     const keys = new Set<string>();
     let avulso = 0;
     closed.forEach((c) => {
@@ -152,6 +160,9 @@ export const IndicadoresDetailModal = ({
   allCotacoes,
   produtorNames,
   currentProdutorFilter,
+  dateFilter,
+  anoEspecifico,
+  dateRangeProp,
 }: IndicadoresDetailModalProps) => {
   const [filterCategoria, setFilterCategoria] = useState<string>('todas');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
@@ -173,39 +184,100 @@ export const IndicadoresDetailModal = ({
     return currentProdutorFilter;
   }, [filterProdutor, currentProdutorFilter]);
 
-  // Distinct months
+  // Compute the dashboard's active date range from filter props
+  const dashboardDateRange = useMemo(() => {
+    const now = new Date();
+    let start: Date;
+    let end: Date = now;
+    switch (dateFilter) {
+      case '30dias':
+        start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case 'mes_atual':
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'mes_anterior':
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        end = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case 'ano_atual':
+        start = new Date(now.getFullYear(), 0, 1);
+        end = new Date(now.getFullYear(), 11, 31);
+        break;
+      case 'ano_anterior':
+        start = new Date(now.getFullYear() - 1, 0, 1);
+        end = new Date(now.getFullYear() - 1, 11, 31);
+        break;
+      case 'ano_especifico': {
+        const year = parseInt(anoEspecifico || '') || now.getFullYear();
+        start = new Date(year, 0, 1);
+        end = new Date(year, 11, 31);
+        break;
+      }
+      case 'personalizado':
+        start = dateRangeProp?.from || now;
+        end = dateRangeProp?.to || start;
+        break;
+      default:
+        // "todos" — use full range from data
+        start = new Date(2000, 0, 1);
+        end = new Date(2099, 11, 31);
+        break;
+    }
+    return { start, end };
+  }, [dateFilter, anoEspecifico, dateRangeProp]);
+
+  const filterYear = dashboardDateRange.start.getFullYear();
+
+  // Current month for the main row: use the dashboard's start month
+  const currentMonthStr = format(dashboardDateRange.start, 'yyyy-MM');
+
+  // Distinct months restricted to the filtered year
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
-    allMetas.forEach((m) => months.add(m.mes.substring(0, 7)));
-    allProdutos.forEach((p) => months.add(p.data_registro.substring(0, 7)));
+    allMetas.forEach((m) => {
+      const mk = m.mes.substring(0, 7);
+      if (mk.startsWith(String(filterYear))) months.add(mk);
+    });
+    allProdutos.forEach((p) => {
+      const mk = p.data_registro.substring(0, 7);
+      if (mk.startsWith(String(filterYear))) months.add(mk);
+    });
+    // Also add months from cotacoes
+    (allCotacoes || []).forEach((c) => {
+      const mk = c.data_cotacao.substring(0, 7);
+      if (mk.startsWith(String(filterYear))) months.add(mk);
+      if (c.data_fechamento) {
+        const fk = c.data_fechamento.substring(0, 7);
+        if (fk.startsWith(String(filterYear))) months.add(fk);
+      }
+    });
     return Array.from(months).sort().reverse();
-  }, [allMetas, allProdutos]);
-
-  // Current month (from chartData context — use the latest month with data)
-  const currentMonthStr = useMemo(() => {
-    if (availableMonths.length) return availableMonths[0];
-    return format(new Date(), 'yyyy-MM');
-  }, [availableMonths]);
+  }, [allMetas, allProdutos, allCotacoes, filterYear]);
 
   // Recompute main category data respecting modal produtor filter
+  // Use the dashboard's full date range for the main row
   const computedChartData = useMemo(() => {
-    const start = startOfMonth(parseISO(`${currentMonthStr}-01`));
-    const end = endOfMonth(start);
+    const start = dashboardDateRange.start;
+    const end = dashboardDateRange.end;
 
     return CATEGORIES.map((cat) => {
+      // For meta, sum all metas whose month falls within the dashboard range
       const meta = allMetas
-        .filter((m) =>
-          m.mes.startsWith(currentMonthStr) &&
-          isMetaType(m.tipo_meta?.descricao, cat) &&
-          (!effectiveProdutorFilter?.length || (m.produtor && effectiveProdutorFilter.includes(m.produtor.nome)))
-        )
+        .filter((m) => {
+          const mDate = new Date(m.mes);
+          return mDate >= startOfMonth(start) && mDate <= endOfMonth(end) &&
+            isMetaType(m.tipo_meta?.descricao, cat) &&
+            (!effectiveProdutorFilter?.length || (m.produtor && effectiveProdutorFilter.includes(m.produtor.nome)));
+        })
         .reduce((s, m) => s + m.quantidade, 0);
 
       const realizado = computeRealized(cat, allProdutos, allCotacoes || [], start, end, effectiveProdutorFilter);
 
       return { categoria: cat, Meta: meta, Realizado: realizado };
     });
-  }, [currentMonthStr, allMetas, allProdutos, allCotacoes, effectiveProdutorFilter]);
+  }, [dashboardDateRange, allMetas, allProdutos, allCotacoes, effectiveProdutorFilter]);
 
   // Monthly data per category
   const monthlyData = useMemo(() => {
