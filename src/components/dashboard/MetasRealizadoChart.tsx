@@ -9,8 +9,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-} from 'recharts';
+  Legend } from
+'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 
@@ -44,12 +44,12 @@ interface CotacaoForCount {
   produtor_origem_id: string | null;
   produtor_negociador_id: string | null;
   produtor_cotador_id: string | null;
-  ramo: { descricao: string } | null;
+  ramo: {descricao: string;} | null;
 }
 
 interface MetasRealizadoChartProps {
   dateFilter: string;
-  dateRange?: { from?: Date; to?: Date };
+  dateRange?: {from?: Date;to?: Date;};
   produtorFilter: string[];
   produtores: Produtor[];
   // Fechamentos count from cotacoes (passed from parent to avoid duplicate queries)
@@ -59,7 +59,7 @@ interface MetasRealizadoChartProps {
 // Function to categorize branches into groups for distinct counting
 // Group 1: RCTR-C + RC-DC (combined)
 // Group 2: All other specific types (each counts separately)
-const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
+const getBranchGroup = (ramo: {descricao?: string;ramo_agrupado?: string | null;} | undefined | null): string => {
   if (!ramo) return "Outros";
   if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
   // Fallback por descrição
@@ -70,25 +70,25 @@ const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | nul
 
 // Count distinct cotações by CNPJ + branch group
 const countDistinctCotacoes = (
-  cotacoes: CotacaoForCount[],
-  produtorId: string | null
-): number => {
+cotacoes: CotacaoForCount[],
+produtorId: string | null)
+: number => {
   const distinctKeys = new Set<string>();
-  
-  cotacoes.forEach(cotacao => {
+
+  cotacoes.forEach((cotacao) => {
     // Filter by produtor if selected
-    if (produtorId && 
-        cotacao.produtor_origem_id !== produtorId &&
-        cotacao.produtor_negociador_id !== produtorId &&
-        cotacao.produtor_cotador_id !== produtorId) {
+    if (produtorId &&
+    cotacao.produtor_origem_id !== produtorId &&
+    cotacao.produtor_negociador_id !== produtorId &&
+    cotacao.produtor_cotador_id !== produtorId) {
       return;
     }
-    
+
     const branchGroup = getBranchGroup(cotacao.ramo);
     const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
     distinctKeys.add(key);
   });
-  
+
   return distinctKeys.size;
 };
 
@@ -100,30 +100,30 @@ const countDistinctCotacoes = (
 // - FECHAMENTO: Counted from cotacoes table with status "Negócio fechado"
 const mapProdutoToActivities = (tipo: string, subtipo: string | null): string[] => {
   const activities: string[] = [];
-  
+
   // COLETA: Count by tipo
   if (tipo === 'Coleta') {
     activities.push('Coleta');
   }
-  
+
   // INDICAÇÃO: Count by tipo
   if (tipo === 'Indicação') {
     activities.push('Indicação');
   }
-  
+
   // COTAÇÃO: Now counted from cotacoes table, not from produtos
   // Removed: if (tipo === 'Novos CRM') activities.push('Cotação');
-  
+
   // VISITA: Count ONLY by subtipo (regardless of tipo)
   if (subtipo === 'Visita') {
     activities.push('Visita');
   }
-  
+
   // VÍDEO: Count ONLY by subtipo (regardless of tipo)
   if (subtipo === 'Vídeo') {
     activities.push('Vídeo');
   }
-  
+
   return activities;
 };
 
@@ -146,7 +146,7 @@ export const MetasRealizadoChart = ({
   dateRange,
   produtorFilter,
   produtores,
-  fechamentosCount,
+  fechamentosCount
 }: MetasRealizadoChartProps) => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
@@ -159,7 +159,7 @@ export const MetasRealizadoChart = ({
     let start: Date;
     let end: Date = now;
     let yearFilter = false;
-    
+
     switch (dateFilter) {
       case 'hoje':
         start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -208,16 +208,16 @@ export const MetasRealizadoChart = ({
       startDate: start,
       endDate: end,
       targetYear: year,
-      isYearFilter: yearFilter,
+      isYearFilter: yearFilter
     };
   }, [dateFilter, dateRange]);
 
   // Find the produtor_id from the selected producer names
   const selectedProdutorIds = useMemo(() => {
     if (produtorFilter.length === 0) return [];
-    return produtores
-      .filter(p => produtorFilter.includes(p.nome))
-      .map(p => p.id);
+    return produtores.
+    filter((p) => produtorFilter.includes(p.nome)).
+    map((p) => p.id);
   }, [produtores, produtorFilter]);
 
   // Fetch produtos, metas, and cotações count
@@ -229,18 +229,18 @@ export const MetasRealizadoChart = ({
         const startStr = startDate.toISOString();
         const endStr = new Date(endDate.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString();
 
-        const { data: produtosData, error: produtosError } = await supabase
-          .from('produtos')
-          .select('id, tipo, subtipo, data_registro, consultor')
-          .gte('data_registro', startStr)
-          .lte('data_registro', endStr);
+        const { data: produtosData, error: produtosError } = await supabase.
+        from('produtos').
+        select('id, tipo, subtipo, data_registro, consultor').
+        gte('data_registro', startStr).
+        lte('data_registro', endStr);
 
         if (produtosError) throw produtosError;
 
         // Fetch metas - for year filter, get all months of the year; otherwise get specific month
-        let metasQuery = supabase
-          .from('metas')
-          .select(`
+        let metasQuery = supabase.
+        from('metas').
+        select(`
             id,
             produtor_id,
             mes,
@@ -265,18 +265,18 @@ export const MetasRealizadoChart = ({
         if (metasError) throw metasError;
 
         // Fetch cotações with full data for distinct counting (CNPJ + Ramo)
-        const { data: cotacoesDataResult, error: cotacoesError } = await supabase
-          .from('cotacoes')
-          .select(`
+        const { data: cotacoesDataResult, error: cotacoesError } = await supabase.
+        from('cotacoes').
+        select(`
             id,
             cpf_cnpj,
             produtor_origem_id,
             produtor_negociador_id,
             produtor_cotador_id,
             ramo:ramos(descricao)
-          `)
-          .gte('data_cotacao', startStr)
-          .lte('data_cotacao', endStr);
+          `).
+        gte('data_cotacao', startStr).
+        lte('data_cotacao', endStr);
 
         if (cotacoesError) throw cotacoesError;
 
@@ -296,17 +296,17 @@ export const MetasRealizadoChart = ({
   // Calculate realized counts from produtos
   const realizadoPorAtividade = useMemo(() => {
     const counts: Record<string, number> = {};
-    ACTIVITIES.forEach(act => counts[act] = 0);
+    ACTIVITIES.forEach((act) => counts[act] = 0);
 
     // Filter by produtor if needed (using consultor field)
-    const filteredProdutos = produtorFilter.length === 0 
-      ? produtos 
-      : produtos.filter(p => produtorFilter.includes(p.consultor));
+    const filteredProdutos = produtorFilter.length === 0 ?
+    produtos :
+    produtos.filter((p) => produtorFilter.includes(p.consultor));
 
-    filteredProdutos.forEach(produto => {
+    filteredProdutos.forEach((produto) => {
       // Get all activities this produto counts for
       const activities = mapProdutoToActivities(produto.tipo, produto.subtipo);
-      activities.forEach(activity => {
+      activities.forEach((activity) => {
         if (counts[activity] !== undefined) {
           counts[activity]++;
         }
@@ -326,14 +326,14 @@ export const MetasRealizadoChart = ({
   // Each producer should only see their own metas, never sum across producers
   const metasPorAtividade = useMemo(() => {
     const totals: Record<string, number> = {};
-    ACTIVITIES.forEach(act => totals[act] = 0);
+    ACTIVITIES.forEach((act) => totals[act] = 0);
 
     // Filter metas by produtor_id if specific ones are selected
-    const filteredMetas = selectedProdutorIds.length === 0 
-      ? metas 
-      : metas.filter(meta => selectedProdutorIds.includes(meta.produtor_id));
+    const filteredMetas = selectedProdutorIds.length === 0 ?
+    metas :
+    metas.filter((meta) => selectedProdutorIds.includes(meta.produtor_id));
 
-    filteredMetas.forEach(meta => {
+    filteredMetas.forEach((meta) => {
       if (meta.tipo_meta?.descricao) {
         const normalizedType = normalizeMetaType(meta.tipo_meta.descricao);
         if (totals[normalizedType] !== undefined) {
@@ -347,10 +347,10 @@ export const MetasRealizadoChart = ({
 
   // Prepare chart data
   const chartData = useMemo(() => {
-    return ACTIVITIES.map(activity => ({
+    return ACTIVITIES.map((activity) => ({
       atividade: activity,
       Meta: metasPorAtividade[activity] || 0,
-      Realizado: realizadoPorAtividade[activity] || 0,
+      Realizado: realizadoPorAtividade[activity] || 0
     }));
   }, [metasPorAtividade, realizadoPorAtividade]);
 
@@ -358,7 +358,7 @@ export const MetasRealizadoChart = ({
   const totals = useMemo(() => {
     const totalMeta = Object.values(metasPorAtividade).reduce((sum, val) => sum + val, 0);
     const totalRealizado = Object.values(realizadoPorAtividade).reduce((sum, val) => sum + val, 0);
-    const percentualAtingido = totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
+    const percentualAtingido = totalMeta > 0 ? totalRealizado / totalMeta * 100 : 0;
     return { totalMeta, totalRealizado, percentualAtingido };
   }, [metasPorAtividade, realizadoPorAtividade]);
 
@@ -376,61 +376,61 @@ export const MetasRealizadoChart = ({
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>);
+
   }
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Meta x Realizado
-          </div>
-          <div className="text-sm font-normal text-muted-foreground">
-            Atingimento: <span className={`font-semibold ${totals.percentualAtingido >= 100 ? 'text-success' : totals.percentualAtingido >= 70 ? 'text-warning' : 'text-destructive'}`}>
-              {totals.percentualAtingido.toFixed(1)}%
-            </span>
-          </div>
-        </CardTitle>
-      </CardHeader>
+      
+
+
+
+
+
+
+
+
+
+
+
+      
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis 
-              dataKey="atividade" 
+            <XAxis
+              dataKey="atividade"
               tick={{ fontSize: 12 }}
               tickLine={false}
-              className="text-muted-foreground"
-            />
-            <YAxis 
+              className="text-muted-foreground" />
+            
+            <YAxis
               tick={{ fontSize: 12 }}
               tickLine={false}
-              className="text-muted-foreground"
-            />
+              className="text-muted-foreground" />
+            
             <Tooltip
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
+                borderRadius: '8px'
               }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }}
-            />
+              labelStyle={{ color: 'hsl(var(--foreground))' }} />
+            
             <Legend />
-            <Bar 
-              dataKey="Meta" 
-              fill="hsl(var(--muted-foreground))" 
+            <Bar
+              dataKey="Meta"
+              fill="hsl(var(--muted-foreground))"
               radius={[4, 4, 0, 0]}
-              name="Meta"
-            />
-            <Bar 
-              dataKey="Realizado" 
-              fill="hsl(var(--primary))" 
+              name="Meta" />
+            
+            <Bar
+              dataKey="Realizado"
+              fill="hsl(var(--primary))"
               radius={[4, 4, 0, 0]}
-              name="Realizado"
-            />
+              name="Realizado" />
+            
           </BarChart>
         </ResponsiveContainer>
 
@@ -452,6 +452,6 @@ export const MetasRealizadoChart = ({
           </div>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
