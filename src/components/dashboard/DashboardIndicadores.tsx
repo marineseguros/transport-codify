@@ -329,10 +329,20 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
     { label: 'Coleta', realizado: headerKpis.coleta, meta: headerKpis.metaColeta },
     { label: 'Indicação', realizado: headerKpis.indicacao, meta: headerKpis.metaIndicacao },
     { label: 'Visita', realizado: headerKpis.visita, meta: headerKpis.metaVisita },
-    { label: 'Vídeo', realizado: headerKpis.video, meta: headerKpis.metaVideo },
-    { label: 'Cotações', realizado: headerKpis.cotacoesCount, meta: headerKpis.metaCotacao },
-    { label: 'Fechamentos', realizado: headerKpis.fechamentosCount, meta: headerKpis.metaFechamento },
+    { label: 'Video', realizado: headerKpis.video, meta: headerKpis.metaVideo },
+    { label: 'Cotação', realizado: headerKpis.cotacoesCount, meta: headerKpis.metaCotacao },
+    { label: 'Fechamento', realizado: headerKpis.fechamentosCount, meta: headerKpis.metaFechamento },
   ];
+
+  const chartData = kpiItems.map(item => ({
+    categoria: item.label,
+    meta: item.meta,
+    realizado: item.realizado,
+  }));
+
+  const totalMetaPainel = chartData.reduce((sum, item) => sum + item.meta, 0);
+  const totalRealizadoPainel = chartData.reduce((sum, item) => sum + item.realizado, 0);
+  const pctPainel = totalMetaPainel > 0 ? (totalRealizadoPainel / totalMetaPainel) * 100 : 0;
 
   return (
     <Card>
@@ -362,24 +372,54 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
           </div>
         ) : (
           <>
-            {/* Header KPI Summary Bar */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-px bg-border rounded-lg overflow-hidden">
-              {kpiItems.map(kpi => {
-                const pct = kpi.meta > 0 ? (kpi.realizado / kpi.meta) * 100 : 0;
-                return (
-                  <div key={kpi.label} className="bg-card p-3 text-center space-y-0.5">
-                    <p className={`text-xl font-bold ${kpi.meta > 0 ? getStatusColor(pct) : 'text-foreground'}`}>
-                      {kpi.realizado}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">{kpi.label}</p>
-                    {kpi.meta > 0 && (
-                      <p className="text-[9px] text-muted-foreground">
-                        Meta: {kpi.meta} · <span className={getStatusColor(pct)}>{pct.toFixed(0)}%</span>
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
+            {/* Meta x Realizado (estilo analítico) */}
+            <div className="rounded-xl border bg-gradient-to-br from-card via-card to-muted/40 p-3 md:p-4 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <Target className="h-4 w-4 text-primary" />
+                  Meta x Realizado
+                </h4>
+                <span className={`text-xs font-semibold ${getStatusColor(pctPainel)}`}>
+                  Atingimento: {pctPainel.toFixed(1)}%
+                </span>
+              </div>
+
+              <div className="h-[260px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 12, right: 8, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.35} />
+                    <XAxis dataKey="categoria" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        background: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '0.5rem',
+                      }}
+                      labelStyle={{ color: 'hsl(var(--foreground))' }}
+                      formatter={(value: number, name) => [value, name === 'meta' ? 'Meta' : 'Realizado']}
+                    />
+                    <Legend formatter={(value) => (value === 'meta' ? 'Meta' : 'Realizado')} />
+                    <Bar dataKey="meta" name="meta" fill="hsl(var(--muted))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="realizado" name="realizado" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 border-t pt-3">
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{totalMetaPainel}</p>
+                  <p className="text-[10px] text-muted-foreground">Total Meta</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-primary">{totalRealizadoPainel}</p>
+                  <p className="text-[10px] text-muted-foreground">Total Realizado</p>
+                </div>
+                <div className="text-center">
+                  <p className={`text-2xl font-bold ${getStatusColor(pctPainel)}`}>{pctPainel.toFixed(1)}%</p>
+                  <p className="text-[10px] text-muted-foreground">% Atingido</p>
+                </div>
+              </div>
             </div>
 
             {/* Producer Ranking Table */}
