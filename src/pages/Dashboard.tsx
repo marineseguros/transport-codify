@@ -982,7 +982,7 @@ const Dashboard = () => {
       // Transportador/Embarcador counts
       const transportador = allCotacoesInMonth.filter((c) => c.segmento === "Transportador").length;
       const embarcador = allCotacoesInMonth.filter((c) => c.segmento !== "Transportador").length;
-      const taxaConversao = total > 0 ? fechadas / total * 100 : 0;
+      const taxaConversao = clientesUnicos > 0 ? fechadas / clientesUnicos * 100 : 0;
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
         total,
