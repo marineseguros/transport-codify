@@ -536,14 +536,15 @@ export const IndicadoresDetailModal = ({
                               className={`h-1.5 ${getProgressColor(m.pct)}`}
                             />
                           </td>
+                          <td className="px-2 py-1.5"></td>
                         </tr>
                       ))}
-                    </>
+                    </Fragment>
                   );
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground text-sm">
+                    <td colSpan={8} className="px-3 py-6 text-center text-muted-foreground text-sm">
                       Nenhum resultado com os filtros aplicados
                     </td>
                   </tr>
