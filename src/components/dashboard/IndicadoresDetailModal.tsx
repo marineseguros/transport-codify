@@ -1,12 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Target, TrendingUp, TrendingDown, Minus, Filter, ChevronRight, ChevronDown } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, Minus, Filter, ChevronRight, ChevronDown, Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
+import { CategoriaDetailPopup } from './CategoriaDetailPopup';
 
 interface Produto {
   id: string;
@@ -168,6 +171,7 @@ export const IndicadoresDetailModal = ({
   const [filterStatus, setFilterStatus] = useState<string>('todos');
   const [filterProdutor, setFilterProdutor] = useState<string>('todos');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [detailCategoria, setDetailCategoria] = useState<string | null>(null);
 
   const toggleExpand = (cat: string) => {
     setExpandedCategories((prev) => {
@@ -369,6 +373,7 @@ export const IndicadoresDetailModal = ({
   }, [computedProdutorData, filterStatus, filterProdutor]);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!w-[calc(100vw-2rem)] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -448,6 +453,7 @@ export const IndicadoresDetailModal = ({
                   <th className="text-center px-3 py-2 font-medium text-muted-foreground">Faltam</th>
                   <th className="text-center px-3 py-2 font-medium text-muted-foreground">% Atingido</th>
                   <th className="text-right px-3 py-2 font-medium text-muted-foreground w-[120px]">Progresso</th>
+                  <th className="text-center px-3 py-2 font-medium text-muted-foreground w-10"></th>
                 </tr>
               </thead>
               <tbody>
@@ -457,9 +463,8 @@ export const IndicadoresDetailModal = ({
                   const hasMonths = months.length > 0;
 
                   return (
-                    <>
+                    <Fragment key={item.categoria}>
                       <tr
-                        key={item.categoria}
                         className={`border-t hover:bg-muted/20 transition-colors ${hasMonths ? 'cursor-pointer select-none' : ''}`}
                         onClick={() => hasMonths && toggleExpand(item.categoria)}
                       >
@@ -491,6 +496,23 @@ export const IndicadoresDetailModal = ({
                             className={`h-2 ${getProgressColor(item.pct)}`}
                           />
                         </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={(e) => { e.stopPropagation(); setDetailCategoria(item.categoria); }}
+                                >
+                                  <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="left"><p className="text-xs">Ver registros</p></TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
                       </tr>
                       {isExpanded && months.map((m) => (
                         <tr key={`${item.categoria}-${m.monthKey}`} className="border-t bg-muted/10">
@@ -516,14 +538,15 @@ export const IndicadoresDetailModal = ({
                               className={`h-1.5 ${getProgressColor(m.pct)}`}
                             />
                           </td>
+                          <td className="px-2 py-1.5"></td>
                         </tr>
                       ))}
-                    </>
+                    </Fragment>
                   );
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground text-sm">
+                    <td colSpan={8} className="px-3 py-6 text-center text-muted-foreground text-sm">
                       Nenhum resultado com os filtros aplicados
                     </td>
                   </tr>
@@ -579,5 +602,18 @@ export const IndicadoresDetailModal = ({
         )}
       </DialogContent>
     </Dialog>
+
+    {detailCategoria && (
+      <CategoriaDetailPopup
+        open={!!detailCategoria}
+        onOpenChange={(open) => !open && setDetailCategoria(null)}
+        categoria={detailCategoria}
+        allProdutos={allProdutos}
+        allCotacoes={allCotacoes || []}
+        produtorFilter={effectiveProdutorFilter}
+        availableMonths={availableMonths}
+      />
+    )}
+  </>
   );
 };
