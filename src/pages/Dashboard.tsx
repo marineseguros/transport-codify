@@ -955,7 +955,7 @@ const Dashboard = () => {
       const unidadeMatch = filters.unidadeFilter.length === 0 || cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao);
       return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
     });
-    for (let i = 5; i >= 0; i--) {
+    for (let i = 11; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
