@@ -373,6 +373,7 @@ export const IndicadoresDetailModal = ({
   }, [computedProdutorData, filterStatus, filterProdutor]);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!w-[calc(100vw-2rem)] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
