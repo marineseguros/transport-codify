@@ -2,12 +2,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { TrendingUp, TrendingDown, LineChart, Calendar, DollarSign, Target, Zap } from "lucide-react";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { TrendingUp, TrendingDown, LineChart, Zap } from "lucide-react";
+import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 interface MonthData {
   mes: string;
   total: number;
+  clientesUnicos: number;
   emCotacao: number;
   fechadas: number;
   declinadas: number;
@@ -31,7 +32,6 @@ export function TendenciaDetailModal({
   monthlyData,
   formatCurrency 
 }: TendenciaDetailModalProps) {
-  // Calcular tendências
   const lastMonth = monthlyData[monthlyData.length - 1];
   const previousMonth = monthlyData[monthlyData.length - 2];
   
@@ -42,13 +42,11 @@ export function TendenciaDetailModal({
   const mediaMensal = totalGeral / monthlyData.length;
   const mediaFechamentos = totalFechadas / monthlyData.length;
   
-  // Calcular variação
   const variacaoTotal = previousMonth ? ((lastMonth?.total - previousMonth.total) / previousMonth.total * 100) : 0;
   const variacaoFechadas = previousMonth && previousMonth.fechadas > 0 
     ? ((lastMonth?.fechadas - previousMonth.fechadas) / previousMonth.fechadas * 100) 
     : 0;
   
-  // Mês de melhor performance
   const melhorMesFechadas = [...monthlyData].sort((a, b) => b.fechadas - a.fechadas)[0];
   const melhorMesPremio = [...monthlyData].sort((a, b) => b.premioFechado - a.premioFechado)[0];
 
@@ -96,49 +94,47 @@ export function TendenciaDetailModal({
               </Card>
             </div>
             
-            {/* Gráfico de Área Empilhada - Transportador vs Embarcador */}
+            {/* Gráfico Combo: Barras (Total) + Linha (Taxa de Conversão) */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Evolução Mensal - Cotações, Fechamentos e Declinadas</CardTitle>
+                <CardTitle className="text-sm">Evolução Mensal - Volume x Conversão</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
-                  <AreaChart data={monthlyData}>
+                  <ComposedChart data={monthlyData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
+                    <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} unit="%" domain={[0, 100]} />
                     <Tooltip 
                       contentStyle={{
                         backgroundColor: "hsl(var(--popover))",
                         border: "1px solid hsl(var(--border))",
+                        color: "hsl(var(--popover-foreground))",
+                      }}
+                      formatter={(value: number, name: string) => {
+                        if (name === "Taxa de Conversão") return [`${value.toFixed(1)}%`, name];
+                        return [value, name];
                       }}
                     />
                     <Legend />
-                    <Area 
-                      type="monotone" 
-                      dataKey="emCotacao" 
-                      stackId="1"
-                      stroke="hsl(var(--brand-orange))" 
-                      fill="hsl(var(--brand-orange) / 0.6)" 
-                      name="Em Cotação"
+                    <Bar 
+                      yAxisId="left"
+                      dataKey="total" 
+                      fill="hsl(var(--primary) / 0.7)" 
+                      name="Total de Cotações"
+                      radius={[4, 4, 0, 0]}
                     />
-                    <Area 
+                    <Line 
+                      yAxisId="right"
                       type="monotone" 
-                      dataKey="fechadas" 
-                      stackId="1"
-                      stroke="hsl(var(--success-alt))" 
-                      fill="hsl(var(--success-alt) / 0.6)" 
-                      name="Fechadas"
+                      dataKey="taxaConversao" 
+                      stroke="hsl(var(--success))" 
+                      strokeWidth={2}
+                      dot={{ fill: "hsl(var(--success))", r: 4 }}
+                      name="Taxa de Conversão"
                     />
-                    <Area 
-                      type="monotone" 
-                      dataKey="declinadas" 
-                      stackId="1"
-                      stroke="hsl(var(--destructive))" 
-                      fill="hsl(var(--destructive) / 0.6)" 
-                      name="Declinadas"
-                    />
-                  </AreaChart>
+                  </ComposedChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
@@ -155,6 +151,7 @@ export function TendenciaDetailModal({
                       <tr className="border-b text-xs text-muted-foreground">
                         <th className="text-left py-2 px-2">Mês</th>
                         <th className="text-center py-2 px-2">Total</th>
+                        <th className="text-center py-2 px-2">Clientes Únicos</th>
                         <th className="text-center py-2 px-2 text-brand-orange">Em Cotação</th>
                         <th className="text-center py-2 px-2 text-success">Fechadas</th>
                         <th className="text-center py-2 px-2 text-destructive">Declinadas</th>
@@ -173,6 +170,7 @@ export function TendenciaDetailModal({
                           <tr key={month.mes} className="border-b border-border/50 hover:bg-muted/30">
                             <td className="py-2 px-2 font-medium">{month.mes}</td>
                             <td className="py-2 px-2 text-center">{month.total}</td>
+                            <td className="py-2 px-2 text-center text-muted-foreground">{month.clientesUnicos}</td>
                             <td className="py-2 px-2 text-center text-brand-orange">{month.emCotacao}</td>
                             <td className="py-2 px-2 text-center">
                               <div className="flex items-center justify-center gap-1">

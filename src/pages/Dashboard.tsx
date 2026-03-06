@@ -979,6 +979,15 @@ const Dashboard = () => {
       const premioFechado = fechadasList.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
       const premioAberto = emCotacaoList.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
 
+      // Clientes Únicos: contagem distinta de CPF/CNPJ + Ramo Agrupado no mês
+      const clientesUnicosSet = new Set<string>();
+      allCotacoesInMonth.forEach(c => {
+        const branchGroup = getBranchGroup(c.ramo);
+        const key = `${c.cpf_cnpj}_${branchGroup}`;
+        clientesUnicosSet.add(key);
+      });
+      const clientesUnicos = clientesUnicosSet.size;
+
       // Transportador/Embarcador counts
       const transportador = allCotacoesInMonth.filter(c => c.segmento === "Transportador").length;
       const embarcador = allCotacoesInMonth.filter(c => c.segmento !== "Transportador").length;
@@ -986,6 +995,7 @@ const Dashboard = () => {
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
         total,
+        clientesUnicos,
         emCotacao,
         fechadas,
         declinadas,
