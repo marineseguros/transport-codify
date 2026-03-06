@@ -344,7 +344,7 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
 
           {/* Chart */}
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={chartData} margin={{ top: 20, right: 10, left: -10, bottom: 5 }} barGap={4}>
+            <BarChart data={chartData} margin={{ top: 35, right: 10, left: -10, bottom: 5 }} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
               <XAxis
                 dataKey="categoria"
@@ -359,13 +359,25 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
                 allowDecimals={false} />
               
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
-              <Legend
-                wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                iconType="square"
-                iconSize={10} />
               
-              <Bar dataKey="Meta" fill="hsl(var(--muted-foreground) / 0.35)" radius={[4, 4, 0, 0]} label={renderBarLabel} />
-              <Bar dataKey="Realizado" radius={[4, 4, 0, 0]} label={renderBarLabel}>
+              {/* Meta reference lines per category */}
+              {chartData.map((entry, index) => entry.Meta > 0 ? (
+                <ReferenceLine
+                  key={`meta-${index}`}
+                  y={entry.Meta}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeDasharray="6 3"
+                  strokeWidth={1.5}
+                  strokeOpacity={0.6}
+                  label={{
+                    value: `Meta: ${entry.Meta}`,
+                    position: 'right',
+                    fontSize: 0,
+                  }}
+                />
+              ) : null)}
+
+              <Bar dataKey="Realizado" radius={[4, 4, 0, 0]} barSize={36} label={renderBarLabel}>
                 {chartData.map((entry, index) => {
                   const pct = entry.Meta > 0 ? entry.Realizado / entry.Meta * 100 : 0;
                   return <Cell key={index} fill={getBarColor(pct)} />;
@@ -373,6 +385,22 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-5 text-xs">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-success inline-block" /> Atingido (≥100%)
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-warning inline-block" /> Parcial (≥70%)
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-destructive inline-block" /> Crítico (&lt;70%)
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-0.5 border-t-2 border-dashed border-muted-foreground inline-block" /> Meta
+            </span>
+          </div>
 
           {/* Activity breakdown mini-cards */}
           
