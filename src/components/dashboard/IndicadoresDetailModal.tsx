@@ -317,14 +317,56 @@ export const IndicadoresDetailModal = ({
     return { meta: m, realizado: r, pct: m > 0 ? (r / m) * 100 : 0 };
   }, [filtered]);
 
+  // Recompute produtor ranking from scratch using availableMonths (same scope as category breakdown)
+  const computedProdutorData = useMemo(() => {
+    const prodNames = new Set<string>();
+    allMetas.forEach((m) => {
+      if (m.produtor?.nome && availableMonths.some((mk) => m.mes.startsWith(mk))) {
+        prodNames.add(m.produtor.nome);
+      }
+    });
+    allProdutos.forEach((p) => {
+      if (availableMonths.some((mk) => p.data_registro.startsWith(mk))) {
+        prodNames.add(p.consultor);
+      }
+    });
+
+    return Array.from(prodNames).map((nome) => {
+      let totalMeta = 0;
+      let totalRealizado = 0;
+
+      availableMonths.forEach((monthKey) => {
+        const start = startOfMonth(parseISO(`${monthKey}-01`));
+        const end = endOfMonth(start);
+
+        // Sum metas for this producer across all categories
+        const monthMeta = allMetas
+          .filter((m) => m.mes.startsWith(monthKey) && m.produtor?.nome === nome)
+          .reduce((s, m) => s + m.quantidade, 0);
+
+        // Sum realized for this producer across all categories
+        let monthRealizado = 0;
+        CATEGORIES.forEach((cat) => {
+          monthRealizado += computeRealized(cat, allProdutos, allCotacoes || [], start, end, [nome]);
+        });
+
+        totalMeta += monthMeta;
+        totalRealizado += monthRealizado;
+      });
+
+      const pct = totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
+      return { nome, meta: totalMeta, realizado: totalRealizado, pct };
+    }).filter((p) => p.meta > 0 || p.realizado > 0);
+  }, [availableMonths, allMetas, allProdutos, allCotacoes]);
+
   const filteredProdutores = useMemo(() => {
-    let data = [...produtorData];
+    let data = [...computedProdutorData];
     if (filterProdutor !== 'todos') data = data.filter((d) => d.nome === filterProdutor);
     if (filterStatus === 'atingido') data = data.filter((d) => d.pct >= 100);
     else if (filterStatus === 'parcial') data = data.filter((d) => d.pct >= 70 && d.pct < 100);
     else if (filterStatus === 'critico') data = data.filter((d) => d.pct < 70);
     return data.sort((a, b) => b.pct - a.pct);
-  }, [produtorData, filterStatus, filterProdutor]);
+  }, [computedProdutorData, filterStatus, filterProdutor]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
