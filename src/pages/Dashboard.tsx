@@ -2121,7 +2121,7 @@ const Dashboard = () => {
       {/* Modais de Análise Detalhada */}
       <StatusDetailModal open={showStatusDetailModal} onClose={() => setShowStatusDetailModal(false)} statusData={distribuicaoStatusDetalhada} formatCurrency={formatCurrency} formatDate={formatDate} produtores={topProdutoresDetalhado} />
       
-      <TendenciaDetailModal open={showTendenciaDetailModal} onClose={() => setShowTendenciaDetailModal(false)} monthlyData={monthlyTrendDataDetalhada} formatCurrency={formatCurrency} />
+      <TendenciaDetailModal open={showTendenciaDetailModal} onClose={() => setShowTendenciaDetailModal(false)} cotacoes={trendBaseFilteredCotacoes} produtoresDisponiveis={produtores} formatCurrency={formatCurrency} />
       
       <SeguradoraDetailModal open={showSeguradoraDetailModal} onClose={() => setShowSeguradoraDetailModal(false)} seguradoras={seguradoraDataDetalhada} formatCurrency={formatCurrency} />
       </div>
