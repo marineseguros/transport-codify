@@ -1713,6 +1713,9 @@ const Dashboard = () => {
         <ProdutorDetailModal open={!!selectedProdutor} onClose={() => setSelectedProdutor(null)} produtor={selectedProdutor} formatCurrency={formatCurrency} formatDate={formatDate} ranking={selectedProdutorRanking} />
       </div>
 
+      {/* Indicadores (Produtos) */}
+      <DashboardIndicadores produtorFilter={filters.produtorFilter} filteredCotacoes={filteredCotacoes} allCotacoes={allQuotes} dateFilter={filters.dateFilter} anoEspecifico={filters.anoEspecifico} dateRange={filters.dateRange} />
+
       {/* Gráficos e Análises Avançadas */}
       
 
@@ -2099,8 +2102,7 @@ const Dashboard = () => {
 
 
       
-      {/* Indicadores (Produtos) */}
-      <DashboardIndicadores produtorFilter={filters.produtorFilter} filteredCotacoes={filteredCotacoes} allCotacoes={allQuotes} dateFilter={filters.dateFilter} anoEspecifico={filters.anoEspecifico} dateRange={filters.dateRange} />
+      
 
       {/* Cotações Recentes */}
       
