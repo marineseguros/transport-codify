@@ -82,6 +82,7 @@ export function TendenciaDetailModal({
               </SelectContent>
             </Select>
           </div>
+        </DialogHeader>
         
         <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
           <div className="space-y-6">
