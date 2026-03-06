@@ -10,8 +10,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  LabelList,
-} from 'recharts';
+  LabelList } from
+'recharts';
 import type { Cotacao } from '@/hooks/useSupabaseData';
 import { supabase } from '@/integrations/supabase/client';
 import DOMPurify from 'dompurify';
@@ -30,7 +30,7 @@ import { getRegraRamo, getRamoGroup as getRamoGroupFromLib } from '@/lib/ramoCla
 const getSegmento = (ramoDescricao: string | undefined): string => {
   if (!ramoDescricao) return 'Outros';
   const ramoUpper = ramoDescricao.toUpperCase();
-  
+
   if (ramoUpper.includes('AVULSA') || ramoUpper.includes('GARANTIA ADUANEIRA')) {
     return 'Avulso';
   }
@@ -90,7 +90,7 @@ const formatCurrency = (value: number) => {
     style: 'currency',
     currency: 'BRL',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(value);
 };
 
@@ -118,7 +118,7 @@ const CustomTooltip = ({ active, payload, viewType }: any) => {
 
   // Get the ramoGroups based on viewType
   const ramoGroups = viewType === 'Recorrente' ? data.ramoGroupsRecorrente : data.ramoGroupsTotal;
-  
+
   // Find the representative ramo group (highest premium)
   let representativeGroup: RamoGroupData | null = null;
   if (ramoGroups) {
@@ -151,42 +151,42 @@ const CustomTooltip = ({ active, payload, viewType }: any) => {
           <span className="text-muted-foreground">Data Início: </span>
           <span className="font-medium text-foreground">{formatDate(data.dataInicio)}</span>
         </div>
-        {representativeGroup?.produtorCotador && (
-          <div>
+        {representativeGroup?.produtorCotador &&
+        <div>
             <span className="text-muted-foreground">Produtor Cotador: </span>
             <span className="font-medium text-foreground">{representativeGroup.produtorCotador}</span>
           </div>
-        )}
-        {representativeGroup && (
-          <div className="pt-1 border-t mt-1">
+        }
+        {representativeGroup &&
+        <div className="pt-1 border-t mt-1">
             <span className="text-muted-foreground">Prêmio Cotação: </span>
             <span className="font-semibold text-primary">{formatCurrency(representativeGroup.premioTotal)}</span>
           </div>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 // Custom label for bar
 const renderCustomLabel = (props: any) => {
   const { x, y, width, height, value } = props;
   if (value === 0) return null;
-  
+
   const labelX = x + width + 5;
   const labelY = y + height / 2;
-  
+
   return (
     <text
       x={labelX}
       y={labelY}
       fill="hsl(var(--foreground))"
       fontSize={10}
-      dominantBaseline="middle"
-    >
+      dominantBaseline="middle">
+      
       {formatCurrencyShort(value)}
-    </text>
-  );
+    </text>);
+
 };
 
 export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: CotacoesEmAbertoChartProps) => {
@@ -201,22 +201,22 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
 
   // Process all "Em cotação" data - SEM filtro de data, apenas filtro de produtor
   const allData = useMemo(() => {
-    let emCotacao = cotacoes.filter(c => c.status === 'Em cotação');
-    
+    let emCotacao = cotacoes.filter((c) => c.status === 'Em cotação');
+
     // Aplicar filtro de produtor_cotador (para "Em cotação" usa produtor_cotador)
     if (produtorFilter.length > 0) {
-      emCotacao = emCotacao.filter(c => c.produtor_cotador?.nome && produtorFilter.includes(c.produtor_cotador.nome));
+      emCotacao = emCotacao.filter((c) => c.produtor_cotador?.nome && produtorFilter.includes(c.produtor_cotador.nome));
     }
     const groupedBySegurado = new Map<string, SeguradoData>();
-    
-    emCotacao.forEach(cotacao => {
+
+    emCotacao.forEach((cotacao) => {
       const segurado = cotacao.segurado || 'Não informado';
       const ramoDescricao = cotacao.ramo?.descricao;
       const regra = getRegraRamo(cotacao.ramo);
       const segmento = getSegmento(ramoDescricao);
       const ramoGroup = getRamoGroup(cotacao.ramo);
       const premio = cotacao.valor_premio || 0;
-      
+
       if (!groupedBySegurado.has(segurado)) {
         groupedBySegurado.set(segurado, {
           segurado,
@@ -229,12 +229,12 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
           premio: 0,
           ramoRepresentativo: '',
           segmentoRepresentativo: '',
-          dataInicio: null,
+          dataInicio: null
         });
       }
-      
+
       const data = groupedBySegurado.get(segurado)!;
-      
+
       const quoteDetail: QuoteDetail = {
         id: cotacao.id,
         ramo: ramoDescricao || 'Não informado',
@@ -243,12 +243,12 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
         premio,
         regra,
         dataCotacao: cotacao.data_cotacao,
-        produtorCotador: cotacao.produtor_cotador?.nome || null,
+        produtorCotador: cotacao.produtor_cotador?.nome || null
       };
-      
+
       // Agrupar por ramoGroup para somar RCTR-C + RC-DC
       const ramoGroupsMap = regra === 'Recorrente' ? data.ramoGroupsRecorrente : data.ramoGroupsTotal;
-      
+
       if (!ramoGroupsMap.has(ramoGroup)) {
         ramoGroupsMap.set(ramoGroup, {
           ramoGroup,
@@ -256,19 +256,19 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
           premioTotal: 0,
           dataMaisAntiga: cotacao.data_cotacao,
           produtorCotador: cotacao.produtor_cotador?.nome || null,
-          cotacoes: [],
+          cotacoes: []
         });
       }
-      
+
       const groupData = ramoGroupsMap.get(ramoGroup)!;
       groupData.premioTotal += premio;
       groupData.cotacoes.push(quoteDetail);
-      
+
       // Atualizar data mais antiga
       if (cotacao.data_cotacao && (!groupData.dataMaisAntiga || cotacao.data_cotacao < groupData.dataMaisAntiga)) {
         groupData.dataMaisAntiga = cotacao.data_cotacao;
       }
-      
+
       if (regra === 'Recorrente') {
         data.premioRecorrente += premio;
         data.cotacoesRecorrente.push(quoteDetail);
@@ -277,38 +277,38 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
         data.cotacoesTotal.push(quoteDetail);
       }
     });
-    
+
     return Array.from(groupedBySegurado.values());
   }, [cotacoes, produtorFilter]);
 
   // Filter and sort based on viewType
   const chartData = useMemo(() => {
-    return allData
-      .map(item => {
-        const ramoGroups = viewType === 'Recorrente' ? item.ramoGroupsRecorrente : item.ramoGroupsTotal;
-        const premio = viewType === 'Recorrente' ? item.premioRecorrente : item.premioTotal;
-        
-        // Find the representative ramo group (highest premium)
-        let representativeGroup: RamoGroupData | null = null;
-        let maxPremio = 0;
-        ramoGroups.forEach((group) => {
-          if (group.premioTotal > maxPremio) {
-            maxPremio = group.premioTotal;
-            representativeGroup = group;
-          }
-        });
-        
-        return {
-          ...item,
-          premio,
-          ramoRepresentativo: representativeGroup?.ramoGroup || 'N/A',
-          segmentoRepresentativo: representativeGroup?.segmento || 'N/A',
-          dataInicio: representativeGroup?.dataMaisAntiga || null,
-        };
-      })
-      .filter(item => item.premio > 0)
-      .sort((a, b) => b.premio - a.premio)
-      .slice(0, 10);
+    return allData.
+    map((item) => {
+      const ramoGroups = viewType === 'Recorrente' ? item.ramoGroupsRecorrente : item.ramoGroupsTotal;
+      const premio = viewType === 'Recorrente' ? item.premioRecorrente : item.premioTotal;
+
+      // Find the representative ramo group (highest premium)
+      let representativeGroup: RamoGroupData | null = null;
+      let maxPremio = 0;
+      ramoGroups.forEach((group) => {
+        if (group.premioTotal > maxPremio) {
+          maxPremio = group.premioTotal;
+          representativeGroup = group;
+        }
+      });
+
+      return {
+        ...item,
+        premio,
+        ramoRepresentativo: representativeGroup?.ramoGroup || 'N/A',
+        segmentoRepresentativo: representativeGroup?.segmento || 'N/A',
+        dataInicio: representativeGroup?.dataMaisAntiga || null
+      };
+    }).
+    filter((item) => item.premio > 0).
+    sort((a, b) => b.premio - a.premio).
+    slice(0, 10);
   }, [allData, viewType]);
 
   // Calculate totals
@@ -316,7 +316,7 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
     return allData.reduce(
       (acc, item) => ({
         recorrente: acc.recorrente + item.premioRecorrente,
-        total: acc.total + item.premioTotal,
+        total: acc.total + item.premioTotal
       }),
       { recorrente: 0, total: 0 }
     );
@@ -326,18 +326,18 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
   const generateAIAnalysis = async () => {
     setIsLoadingAI(true);
     try {
-      const analysisData = allData.map(d => ({
+      const analysisData = allData.map((d) => ({
         segurado: d.segurado,
         premioRecorrente: d.premioRecorrente,
         premioTotal: d.premioTotal,
         qtdCotacoesRecorrente: d.cotacoesRecorrente.length,
         qtdCotacoesTotal: d.cotacoesTotal.length,
-        ramosRecorrente: d.cotacoesRecorrente.map(c => c.ramo),
-        ramosTotal: d.cotacoesTotal.map(c => c.ramo),
-        datasMaisAntigas: [...d.cotacoesRecorrente, ...d.cotacoesTotal]
-          .map(c => c.dataCotacao)
-          .filter(Boolean)
-          .sort()[0],
+        ramosRecorrente: d.cotacoesRecorrente.map((c) => c.ramo),
+        ramosTotal: d.cotacoesTotal.map((c) => c.ramo),
+        datasMaisAntigas: [...d.cotacoesRecorrente, ...d.cotacoesTotal].
+        map((c) => c.dataCotacao).
+        filter(Boolean).
+        sort()[0]
       }));
 
       const { data, error } = await supabase.functions.invoke('ai-analysis', {
@@ -347,9 +347,9 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
           totals: {
             recorrente: totals.recorrente,
             total: totals.total,
-            segurados: allData.length,
-          },
-        },
+            segurados: allData.length
+          }
+        }
       });
 
       if (error) throw error;
@@ -379,86 +379,86 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
             Nenhuma cotação em aberto
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>);
+
   }
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FileText className="h-5 w-5" />
-            Cotações em Aberto
-          </CardTitle>
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-            <Button
-              variant={viewType === 'Recorrente' ? 'default' : 'ghost'}
-              size="sm"
-              className="h-7 text-xs px-3"
-              onClick={() => setViewType('Recorrente')}
-            >
-              Recorrente
-            </Button>
-            <Button
-              variant={viewType === 'Total' ? 'default' : 'ghost'}
-              size="sm"
-              className="h-7 text-xs px-3"
-              onClick={() => setViewType('Total')}
-            >
-              Total
-            </Button>
-          </div>
-        </div>
-        <div className="text-sm text-muted-foreground mt-1">
-          {viewType === 'Recorrente' 
-            ? `${formatCurrency(totals.recorrente)} em aberto`
-            : `${formatCurrency(totals.total)} em aberto`
-          }
-        </div>
-      </CardHeader>
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
       <CardContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Chart Section */}
           <div className="min-h-[300px]">
-            {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={Math.max(280, chartData.length * 40)}>
-                <BarChart 
-                  data={chartData} 
-                  margin={{ top: 10, right: 60, left: 10, bottom: 10 }}
-                  layout="vertical"
-                >
+            {chartData.length > 0 ?
+            <ResponsiveContainer width="100%" height={Math.max(280, chartData.length * 40)}>
+                <BarChart
+                data={chartData}
+                margin={{ top: 10, right: 60, left: 10, bottom: 10 }}
+                layout="vertical">
+                
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={true} vertical={false} />
-                  <XAxis 
-                    type="number"
-                    tick={{ fontSize: 10 }}
-                    tickLine={false}
-                    className="text-muted-foreground"
-                    tickFormatter={(value) => formatCurrencyShort(value)}
-                  />
-                  <YAxis 
-                    type="category"
-                    dataKey="segurado" 
-                    tick={{ fontSize: 9, fill: '#FFFFFF' }}
-                    tickLine={false}
-                    width={100}
-                  />
+                  <XAxis
+                  type="number"
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  className="text-muted-foreground"
+                  tickFormatter={(value) => formatCurrencyShort(value)} />
+                
+                  <YAxis
+                  type="category"
+                  dataKey="segurado"
+                  tick={{ fontSize: 9, fill: '#FFFFFF' }}
+                  tickLine={false}
+                  width={100} />
+                
                   <Tooltip content={<CustomTooltip viewType={viewType} />} />
-                  <Bar 
-                    dataKey="premio" 
-                    fill={viewType === 'Recorrente' ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))'} 
-                    radius={[0, 4, 4, 0]}
-                    name={viewType === 'Recorrente' ? 'Prêmio Recorrente' : 'Prêmio Total'}
-                  >
+                  <Bar
+                  dataKey="premio"
+                  fill={viewType === 'Recorrente' ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))'}
+                  radius={[0, 4, 4, 0]}
+                  name={viewType === 'Recorrente' ? 'Prêmio Recorrente' : 'Prêmio Total'}>
+                  
                     <LabelList content={renderCustomLabel} />
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[280px] text-muted-foreground text-sm">
+              </ResponsiveContainer> :
+
+            <div className="flex items-center justify-center h-[280px] text-muted-foreground text-sm">
                 Nenhuma cotação {viewType.toLowerCase()} em aberto
               </div>
-            )}
+            }
           </div>
 
           {/* AI Analysis Section */}
@@ -469,52 +469,52 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
                 Análise por IA
               </h4>
               <div className="flex gap-2">
-                {aiAnalysis && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs text-muted-foreground hover:text-destructive"
-                    onClick={() => setAiAnalysis('')}
-                  >
+                {aiAnalysis &&
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                  onClick={() => setAiAnalysis('')}>
+                  
                     Apagar
                   </Button>
-                )}
+                }
                 <Button
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs"
                   onClick={generateAIAnalysis}
-                  disabled={isLoadingAI}
-                >
-                  {isLoadingAI ? (
-                    <>
+                  disabled={isLoadingAI}>
+                  
+                  {isLoadingAI ?
+                  <>
                       <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                       Analisando...
-                    </>
-                  ) : (
-                    'Gerar Análise'
-                  )}
+                    </> :
+
+                  'Gerar Análise'
+                  }
                 </Button>
               </div>
             </div>
             <div className="text-sm min-h-[220px] overflow-y-auto">
-              {aiAnalysis ? (
-                <div 
-                  className="whitespace-pre-wrap leading-relaxed text-foreground"
-                  dangerouslySetInnerHTML={{ 
-                    __html: DOMPurify.sanitize(
-                      aiAnalysis
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\n/g, '<br/>')
-                    )
-                  }}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-[200px] text-center text-muted-foreground">
+              {aiAnalysis ?
+              <div
+                className="whitespace-pre-wrap leading-relaxed text-foreground"
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(
+                    aiAnalysis.
+                    replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').
+                    replace(/\n/g, '<br/>')
+                  )
+                }} /> :
+
+
+              <div className="flex flex-col items-center justify-center h-[200px] text-center text-muted-foreground">
                   <Sparkles className="h-8 w-8 text-muted-foreground/50 mb-2" />
                   <p>Clique em "Gerar Análise" para obter insights.</p>
                 </div>
-              )}
+              }
             </div>
           </div>
         </div>
@@ -522,7 +522,7 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
         {/* Summary */}
         <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
           <div className="text-center">
-            <p className="text-xl font-bold">{allData.filter(d => viewType === 'Recorrente' ? d.premioRecorrente > 0 : d.premioTotal > 0).length}</p>
+            <p className="text-xl font-bold">{allData.filter((d) => viewType === 'Recorrente' ? d.premioRecorrente > 0 : d.premioTotal > 0).length}</p>
             <p className="text-xs text-muted-foreground">Segurados ({viewType})</p>
           </div>
           <div className="text-center">
@@ -535,6 +535,6 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
           </div>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
