@@ -34,23 +34,31 @@ export function TendenciaDetailModal({
   monthlyData,
   formatCurrency 
 }: TendenciaDetailModalProps) {
-  const lastMonth = monthlyData[monthlyData.length - 1];
-  const previousMonth = monthlyData[monthlyData.length - 2];
+  const [mesesFiltro, setMesesFiltro] = useState("6");
+
+  const filteredData = useMemo(() => {
+    const count = parseInt(mesesFiltro);
+    if (count >= monthlyData.length) return monthlyData;
+    return monthlyData.slice(monthlyData.length - count);
+  }, [monthlyData, mesesFiltro]);
+
+  const lastMonth = filteredData[filteredData.length - 1];
+  const previousMonth = filteredData[filteredData.length - 2];
   
-  const totalGeral = monthlyData.reduce((sum, m) => sum + m.total, 0);
-  const totalFechadas = monthlyData.reduce((sum, m) => sum + m.fechadas, 0);
-  const totalPremio = monthlyData.reduce((sum, m) => sum + m.premioFechado, 0);
+  const totalGeral = filteredData.reduce((sum, m) => sum + m.total, 0);
+  const totalFechadas = filteredData.reduce((sum, m) => sum + m.fechadas, 0);
+  const totalPremio = filteredData.reduce((sum, m) => sum + m.premioFechado, 0);
   
-  const mediaMensal = totalGeral / monthlyData.length;
-  const mediaFechamentos = totalFechadas / monthlyData.length;
+  const mediaMensal = filteredData.length > 0 ? totalGeral / filteredData.length : 0;
+  const mediaFechamentos = filteredData.length > 0 ? totalFechadas / filteredData.length : 0;
   
   const variacaoTotal = previousMonth ? ((lastMonth?.total - previousMonth.total) / previousMonth.total * 100) : 0;
   const variacaoFechadas = previousMonth && previousMonth.fechadas > 0 
     ? ((lastMonth?.fechadas - previousMonth.fechadas) / previousMonth.fechadas * 100) 
     : 0;
   
-  const melhorMesFechadas = [...monthlyData].sort((a, b) => b.fechadas - a.fechadas)[0];
-  const melhorMesPremio = [...monthlyData].sort((a, b) => b.premioFechado - a.premioFechado)[0];
+  const melhorMesFechadas = [...filteredData].sort((a, b) => b.fechadas - a.fechadas)[0];
+  const melhorMesPremio = [...filteredData].sort((a, b) => b.premioFechado - a.premioFechado)[0];
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
