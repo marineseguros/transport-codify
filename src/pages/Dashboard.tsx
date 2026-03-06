@@ -1387,7 +1387,7 @@ const Dashboard = () => {
             <CardTitle className="text-sm font-medium">Em Cotação</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-3">
             <TooltipProvider>
               <UITooltip>
                 <TooltipTrigger asChild>
