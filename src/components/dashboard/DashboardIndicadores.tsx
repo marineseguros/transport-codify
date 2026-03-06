@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChartBig, ExternalLink, Search, ChevronDown, ChevronUp, Target, TrendingUp, TrendingDown, Minus, Eye, Users, Sparkles } from 'lucide-react';
+import { BarChartBig, ExternalLink, Search, ChevronDown, ChevronUp, Target, Users, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
@@ -301,12 +301,6 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
     if (pct >= 100) return 'text-emerald-600 dark:text-emerald-400';
     if (pct >= 80) return 'text-amber-500';
     return 'text-destructive';
-  };
-
-  const getStatusBg = (pct: number) => {
-    if (pct >= 100) return 'bg-emerald-500/10 border-emerald-500/20';
-    if (pct >= 80) return 'bg-amber-500/10 border-amber-500/20';
-    return 'bg-destructive/10 border-destructive/20';
   };
 
   const getPctBadgeBg = (pct: number) => {
