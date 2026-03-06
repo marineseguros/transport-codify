@@ -7,7 +7,7 @@ import { Target, TrendingUp, TrendingDown, Minus, ExternalLink, BarChart3, Check
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth, getDaysInMonth, getDate } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Cell, ReferenceLine } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { logger } from '@/lib/logger';
 import { IndicadoresDetailModal } from './IndicadoresDetailModal';
 import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
