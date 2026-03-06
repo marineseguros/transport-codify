@@ -172,6 +172,7 @@ export const IndicadoresDetailModal = ({
   const [filterProdutor, setFilterProdutor] = useState<string>('todos');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [detailCategoria, setDetailCategoria] = useState<string | null>(null);
+  const [detailMonth, setDetailMonth] = useState<string | null>(null);
 
   const toggleExpand = (cat: string) => {
     setExpandedCategories((prev) => {
@@ -496,27 +497,27 @@ export const IndicadoresDetailModal = ({
                             className={`h-2 ${getProgressColor(item.pct)}`}
                           />
                         </td>
-                        <td className="px-2 py-2.5 text-center">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  onClick={(e) => { e.stopPropagation(); setDetailCategoria(item.categoria); }}
-                                >
-                                  <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="left"><p className="text-xs">Ver registros</p></TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </td>
+                        <td className="px-2 py-2.5"></td>
                       </tr>
                       {isExpanded && months.map((m) => (
                         <tr key={`${item.categoria}-${m.monthKey}`} className="border-t bg-muted/10">
-                          <td className="px-2 py-1.5"></td>
+                          <td className="px-2 py-1.5 text-center">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5"
+                                    onClick={(e) => { e.stopPropagation(); setDetailCategoria(item.categoria); setDetailMonth(m.monthKey); }}
+                                  >
+                                    <Eye className="h-3 w-3 text-muted-foreground" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="left"><p className="text-xs">Ver registros</p></TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </td>
                           <td className="px-3 py-1.5 text-xs text-muted-foreground pl-8 capitalize">{m.monthLabel}</td>
                           <td className="px-3 py-1.5 text-center text-xs text-muted-foreground">{m.meta}</td>
                           <td className="px-3 py-1.5 text-center text-xs font-medium text-primary">{m.realizado}</td>
