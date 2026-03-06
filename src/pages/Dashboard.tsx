@@ -1597,8 +1597,8 @@ const Dashboard = () => {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col p-4 pt-2">
-            <div className="flex flex-col justify-evenly h-full gap-3">
+          <CardContent className="flex-1 flex flex-col justify-evenly">
+            <div className="flex flex-col justify-evenly h-full gap-4">
               {distribuicaoStatus.map(({
                 status,
                 count,
@@ -1613,10 +1613,7 @@ const Dashboard = () => {
                 const barColor = statusColorMap[status] || "hsl(var(--primary))";
                 
                 return (
-                  <div
-                    key={status}
-                    className="rounded-xl bg-muted/40 border border-border/50 p-4 flex flex-col gap-3 shadow-sm"
-                  >
+                  <div key={status} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <Badge variant={getStatusBadgeVariant(status)}>{status}</Badge>
@@ -1625,16 +1622,16 @@ const Dashboard = () => {
                       <span className="text-sm text-muted-foreground font-medium">{formatCurrency(premioTotal)}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-secondary/80 rounded-full h-3 overflow-hidden">
+                      <div className="flex-1 bg-secondary rounded-full h-2.5 overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-500"
                           style={{
                             width: `${percentage}%`,
-                            background: `linear-gradient(90deg, ${barColor}, ${barColor}dd)`,
+                            backgroundColor: barColor,
                           }}
                         />
                       </div>
-                      <span className="text-sm font-semibold w-12 text-right">{percentage.toFixed(0)}%</span>
+                      <span className="text-sm font-medium w-12 text-right">{percentage.toFixed(0)}%</span>
                     </div>
                   </div>
                 );
