@@ -256,33 +256,7 @@ export const IndicadoresDetailModal = ({
     return Array.from(months).sort();
   }, [allMetas, allProdutos, allCotacoes, filterYear]);
 
-  // Recompute main category data respecting modal produtor filter
-  // Use the dashboard's full date range for the main row
-  const computedChartData = useMemo(() => {
-    const start = dashboardDateRange.start;
-    const end = dashboardDateRange.end;
-
-    return CATEGORIES.map((cat) => {
-      // For meta, sum all metas whose month falls within the dashboard range
-      // Use string comparison to avoid timezone issues with Date objects
-      const startMonth = format(dashboardDateRange.start, 'yyyy-MM');
-      const endMonth = format(dashboardDateRange.end, 'yyyy-MM');
-      const meta = allMetas
-        .filter((m) => {
-          const mk = m.mes.substring(0, 7);
-          return mk >= startMonth && mk <= endMonth &&
-            isMetaType(m.tipo_meta?.descricao, cat) &&
-            (!effectiveProdutorFilter?.length || (m.produtor && effectiveProdutorFilter.includes(m.produtor.nome)));
-        })
-        .reduce((s, m) => s + m.quantidade, 0);
-
-      const realizado = computeRealized(cat, allProdutos, allCotacoes || [], start, end, effectiveProdutorFilter);
-
-      return { categoria: cat, Meta: meta, Realizado: realizado };
-    });
-  }, [dashboardDateRange, allMetas, allProdutos, allCotacoes, effectiveProdutorFilter]);
-
-  // Monthly data per category
+  // Monthly data per category (compute FIRST, then derive totals from it)
   const monthlyData = useMemo(() => {
     const result: Record<string, MonthlyRow[]> = {};
     CATEGORIES.forEach((cat) => {
@@ -310,6 +284,16 @@ export const IndicadoresDetailModal = ({
     });
     return result;
   }, [availableMonths, allMetas, allProdutos, allCotacoes, effectiveProdutorFilter]);
+
+  // Main category totals derived from monthly data (ensures consistency)
+  const computedChartData = useMemo(() => {
+    return CATEGORIES.map((cat) => {
+      const months = monthlyData[cat] || [];
+      const Meta = months.reduce((s, m) => s + m.meta, 0);
+      const Realizado = months.reduce((s, m) => s + m.realizado, 0);
+      return { categoria: cat, Meta, Realizado };
+    });
+  }, [monthlyData]);
 
   const enrichedData = useMemo(() =>
     computedChartData.map((item) => {
