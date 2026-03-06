@@ -30,17 +30,7 @@ export const Layout = ({ children }: LayoutProps) => {
         
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="h-14 md:h-16 border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 flex items-center justify-between px-3 md:px-6 sticky top-0 z-40">
-            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-              <div className="min-w-0 hidden sm:block">
-                <h1 className="text-sm md:text-lg font-semibold text-primary truncate">
-                  Sistema de Cotações {user?.modulo || 'Transportes'}
-                </h1>
-                <p className="text-xs md:text-sm text-muted-foreground truncate">
-                  Gestão de Cotações de {user?.modulo || 'Transportes'}
-                </p>
-              </div>
-            </div>
+          <header className="h-11 border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 flex items-center justify-end px-3 md:px-6 sticky top-0 z-40">
             
             <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
               <ThemeToggle />
