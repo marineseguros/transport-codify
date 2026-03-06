@@ -18,7 +18,7 @@ import { SeguradoraDetailModal } from "@/components/dashboard/SeguradoraDetailMo
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, ComposedChart, Legend } from "recharts";
 import { CotacaoModal } from "@/components/CotacaoModal";
 import { logger } from "@/lib/logger";
 import { MetasRealizadoChart } from "@/components/dashboard/MetasRealizadoChart";
