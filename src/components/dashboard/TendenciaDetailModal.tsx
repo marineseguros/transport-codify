@@ -120,9 +120,9 @@ export function TendenciaDetailModal({
                     <Legend />
                     <Bar 
                       yAxisId="left"
-                      dataKey="total" 
+                      dataKey="clientesUnicos" 
                       fill="hsl(var(--primary) / 0.7)" 
-                      name="Total de Cotações"
+                      name="Clientes Únicos"
                       radius={[4, 4, 0, 0]}
                     />
                     <Line 
