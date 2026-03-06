@@ -1,7 +1,9 @@
+import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrendingUp, TrendingDown, LineChart, Zap } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
@@ -32,32 +34,54 @@ export function TendenciaDetailModal({
   monthlyData,
   formatCurrency 
 }: TendenciaDetailModalProps) {
-  const lastMonth = monthlyData[monthlyData.length - 1];
-  const previousMonth = monthlyData[monthlyData.length - 2];
+  const [mesesFiltro, setMesesFiltro] = useState("6");
+
+  const filteredData = useMemo(() => {
+    const count = parseInt(mesesFiltro);
+    if (count >= monthlyData.length) return monthlyData;
+    return monthlyData.slice(monthlyData.length - count);
+  }, [monthlyData, mesesFiltro]);
+
+  const lastMonth = filteredData[filteredData.length - 1];
+  const previousMonth = filteredData[filteredData.length - 2];
   
-  const totalGeral = monthlyData.reduce((sum, m) => sum + m.total, 0);
-  const totalFechadas = monthlyData.reduce((sum, m) => sum + m.fechadas, 0);
-  const totalPremio = monthlyData.reduce((sum, m) => sum + m.premioFechado, 0);
+  const totalGeral = filteredData.reduce((sum, m) => sum + m.total, 0);
+  const totalFechadas = filteredData.reduce((sum, m) => sum + m.fechadas, 0);
+  const totalPremio = filteredData.reduce((sum, m) => sum + m.premioFechado, 0);
   
-  const mediaMensal = totalGeral / monthlyData.length;
-  const mediaFechamentos = totalFechadas / monthlyData.length;
+  const mediaMensal = filteredData.length > 0 ? totalGeral / filteredData.length : 0;
+  const mediaFechamentos = filteredData.length > 0 ? totalFechadas / filteredData.length : 0;
   
   const variacaoTotal = previousMonth ? ((lastMonth?.total - previousMonth.total) / previousMonth.total * 100) : 0;
   const variacaoFechadas = previousMonth && previousMonth.fechadas > 0 
     ? ((lastMonth?.fechadas - previousMonth.fechadas) / previousMonth.fechadas * 100) 
     : 0;
   
-  const melhorMesFechadas = [...monthlyData].sort((a, b) => b.fechadas - a.fechadas)[0];
-  const melhorMesPremio = [...monthlyData].sort((a, b) => b.premioFechado - a.premioFechado)[0];
+  const melhorMesFechadas = [...filteredData].sort((a, b) => b.fechadas - a.fechadas)[0];
+  const melhorMesPremio = [...filteredData].sort((a, b) => b.premioFechado - a.premioFechado)[0];
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 flex-1">
             <LineChart className="h-5 w-5" />
-            Análise de Tendência - Últimos 6 Meses
+            Análise de Tendência
           </DialogTitle>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">Período:</span>
+            <Select value={mesesFiltro} onValueChange={setMesesFiltro}>
+              <SelectTrigger className="h-8 w-[140px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">Últimos 3 meses</SelectItem>
+                <SelectItem value="6">Últimos 6 meses</SelectItem>
+                <SelectItem value="9">Últimos 9 meses</SelectItem>
+                <SelectItem value="12">Últimos 12 meses</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </DialogHeader>
         
         <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
@@ -101,7 +125,7 @@ export function TendenciaDetailModal({
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
-                  <ComposedChart data={monthlyData}>
+                  <ComposedChart data={filteredData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
                     <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
@@ -162,8 +186,8 @@ export function TendenciaDetailModal({
                       </tr>
                     </thead>
                     <tbody>
-                      {monthlyData.map((month, index) => {
-                        const prevMonth = monthlyData[index - 1];
+                      {filteredData.map((month, index) => {
+                        const prevMonth = filteredData[index - 1];
                         const trend = prevMonth ? month.fechadas - prevMonth.fechadas : 0;
                         
                         return (
