@@ -27,7 +27,7 @@ import { MetasPremioComparison } from "@/components/dashboard/MetasPremioCompari
 import { useNavigate } from "react-router-dom";
 
 // Helper function to determine branch group using ramo_agrupado from DB
-const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
+const getBranchGroup = (ramo: {descricao?: string;ramo_agrupado?: string | null;} | undefined | null): string => {
   if (!ramo) return "Outros";
   // PRIORIDADE: usar ramo_agrupado da base de dados
   if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
@@ -43,8 +43,8 @@ const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | nul
 const countDistinctByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): number => {
   const distinctKeys = new Set<string>();
   let avulsoCount = 0;
-  
-  cotacoes.forEach(cotacao => {
+
+  cotacoes.forEach((cotacao) => {
     if (targetStatuses.includes(cotacao.status)) {
       // Para segmento "Avulso", conta cada cotação individualmente
       if (cotacao.ramo?.segmento === 'Avulso') {
@@ -57,7 +57,7 @@ const countDistinctByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): n
       }
     }
   });
-  
+
   return distinctKeys.size + avulsoCount;
 };
 
@@ -166,7 +166,7 @@ const Dashboard = () => {
     // - "Em cotação" uses produtor_cotador
     // - "Fechados" and "Declinado" uses produtor_origem
     if (filters.produtorFilter.length > 0) {
-      filtered = filtered.filter(cotacao => {
+      filtered = filtered.filter((cotacao) => {
         if (cotacao.status === "Em cotação") {
           return cotacao.produtor_cotador?.nome && filters.produtorFilter.includes(cotacao.produtor_cotador.nome);
         }
@@ -176,27 +176,27 @@ const Dashboard = () => {
 
     // Apply seguradora filter
     if (filters.seguradoraFilter.length > 0) {
-      filtered = filtered.filter(cotacao => cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
+      filtered = filtered.filter((cotacao) => cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
     }
 
     // Apply ramo filter
     if (filters.ramoFilter.length > 0) {
-      filtered = filtered.filter(cotacao => cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
+      filtered = filtered.filter((cotacao) => cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
     }
 
     // Apply segmento filter (from ramo)
     if (filters.segmentoFilter.length > 0) {
-      filtered = filtered.filter(cotacao => cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
+      filtered = filtered.filter((cotacao) => cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
     }
 
     // Apply regra filter (from ramo - database field)
     if (filters.regraFilter.length > 0) {
-      filtered = filtered.filter(cotacao => cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
+      filtered = filtered.filter((cotacao) => cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
     }
 
     // Apply unidade filter
     if (filters.unidadeFilter.length > 0) {
-      filtered = filtered.filter(cotacao => cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
+      filtered = filtered.filter((cotacao) => cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
     }
 
     // Apply date filter
@@ -238,7 +238,7 @@ const Dashboard = () => {
     }
 
     // Filter by correct date field based on status
-    return filtered.filter(cotacao => {
+    return filtered.filter((cotacao) => {
       // Use data_cotacao for "Em cotação" and "Declinado"
       if (cotacao.status === "Em cotação" || cotacao.status === "Declinado") {
         const cotacaoDate = new Date(cotacao.data_cotacao);
@@ -324,7 +324,7 @@ const Dashboard = () => {
     }
 
     // Apply all filters consistently for both periods with mixed produtor logic
-    const baseFilteredQuotes = allQuotes.filter(c => {
+    const baseFilteredQuotes = allQuotes.filter((c) => {
       // Produtor filter: cotador for "Em cotação", origem for others
       let produtorMatch = true;
       if (filters.produtorFilter.length > 0) {
@@ -334,23 +334,23 @@ const Dashboard = () => {
           produtorMatch = c.produtor_origem?.nome ? filters.produtorFilter.includes(c.produtor_origem.nome) : false;
         }
       }
-      const seguradoraMatch = filters.seguradoraFilter.length === 0 || (c.seguradora?.nome && filters.seguradoraFilter.includes(c.seguradora.nome));
-      const ramoMatch = filters.ramoFilter.length === 0 || (c.ramo?.descricao && filters.ramoFilter.includes(c.ramo.descricao));
-      const segmentoMatch = filters.segmentoFilter.length === 0 || (c.ramo?.segmento && filters.segmentoFilter.includes(c.ramo.segmento));
-      const regraMatch = filters.regraFilter.length === 0 || (c.ramo?.regra && filters.regraFilter.includes(c.ramo.regra));
-      const unidadeMatch = filters.unidadeFilter.length === 0 || (c.unidade?.descricao && filters.unidadeFilter.includes(c.unidade.descricao));
+      const seguradoraMatch = filters.seguradoraFilter.length === 0 || c.seguradora?.nome && filters.seguradoraFilter.includes(c.seguradora.nome);
+      const ramoMatch = filters.ramoFilter.length === 0 || c.ramo?.descricao && filters.ramoFilter.includes(c.ramo.descricao);
+      const segmentoMatch = filters.segmentoFilter.length === 0 || c.ramo?.segmento && filters.segmentoFilter.includes(c.ramo.segmento);
+      const regraMatch = filters.regraFilter.length === 0 || c.ramo?.regra && filters.regraFilter.includes(c.ramo.regra);
+      const unidadeMatch = filters.unidadeFilter.length === 0 || c.unidade?.descricao && filters.unidadeFilter.includes(c.unidade.descricao);
       return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
     });
 
     // Filter quotations (Em cotação, Declinado) by data_cotacao
-    const currentPeriodCotacoes = baseFilteredQuotes.filter(c => {
+    const currentPeriodCotacoes = baseFilteredQuotes.filter((c) => {
       if (c.status === "Em cotação" || c.status === "Declinado") {
         const date = new Date(c.data_cotacao);
         return date >= currentStartDate && date <= currentEndDate;
       }
       return false;
     });
-    const previousPeriodCotacoes = baseFilteredQuotes.filter(c => {
+    const previousPeriodCotacoes = baseFilteredQuotes.filter((c) => {
       if (c.status === "Em cotação" || c.status === "Declinado") {
         const date = new Date(c.data_cotacao);
         return date >= previousStartDate && date <= previousEndDate;
@@ -359,7 +359,7 @@ const Dashboard = () => {
     });
 
     // Filter closings (Negócio fechado, Fechamento congênere) by data_fechamento
-    const currentPeriodFechamentos = baseFilteredQuotes.filter(c => {
+    const currentPeriodFechamentos = baseFilteredQuotes.filter((c) => {
       if (c.status === "Negócio fechado" || c.status === "Fechamento congênere") {
         if (!c.data_fechamento) return false;
         const date = new Date(c.data_fechamento);
@@ -367,7 +367,7 @@ const Dashboard = () => {
       }
       return false;
     });
-    const previousPeriodFechamentos = baseFilteredQuotes.filter(c => {
+    const previousPeriodFechamentos = baseFilteredQuotes.filter((c) => {
       if (c.status === "Negócio fechado" || c.status === "Fechamento congênere") {
         if (!c.data_fechamento) return false;
         const date = new Date(c.data_fechamento);
@@ -409,12 +409,12 @@ const Dashboard = () => {
       previousTempoMedio: number;
       previousTaxaConversao: number;
     }> = {};
-    segmentos.forEach(segmento => {
-      const currentCotacoesSegmento = currentPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
-      const currentFechamentosSegmento = currentPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
-      const previousCotacoesSegmento = previousPeriodCotacoes.filter(c => c.ramo?.segmento === segmento);
-      const previousFechamentosSegmento = previousPeriodFechamentos.filter(c => c.ramo?.segmento === segmento);
-      
+    segmentos.forEach((segmento) => {
+      const currentCotacoesSegmento = currentPeriodCotacoes.filter((c) => c.ramo?.segmento === segmento);
+      const currentFechamentosSegmento = currentPeriodFechamentos.filter((c) => c.ramo?.segmento === segmento);
+      const previousCotacoesSegmento = previousPeriodCotacoes.filter((c) => c.ramo?.segmento === segmento);
+      const previousFechamentosSegmento = previousPeriodFechamentos.filter((c) => c.ramo?.segmento === segmento);
+
       // Use distinct count (CNPJ + branchGroup) per segment - this is the correct business logic
       const emCotacaoSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Em cotação"]);
       const fechadosSegmento = countDistinctByStatus(currentFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
@@ -426,13 +426,13 @@ const Dashboard = () => {
       const previousTotalDistinctSegmento = previousEmCotacaoSegmento + previousFechadosSegmento + previousDeclinadosSegmento;
 
       // Tempo médio por segmento
-      const temposFechamentoSegmento = currentFechamentosSegmento.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
+      const temposFechamentoSegmento = currentFechamentosSegmento.filter((c) => c.data_fechamento && c.data_cotacao).map((c) => {
         const inicio = new Date(c.data_cotacao).getTime();
         const fim = new Date(c.data_fechamento!).getTime();
         return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
       });
       const tempoMedioSegmento = temposFechamentoSegmento.length > 0 ? temposFechamentoSegmento.reduce((sum, t) => sum + t, 0) / temposFechamentoSegmento.length : 0;
-      const temposFechamentoPreviousSegmento = previousFechamentosSegmento.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
+      const temposFechamentoPreviousSegmento = previousFechamentosSegmento.filter((c) => c.data_fechamento && c.data_cotacao).map((c) => {
         const inicio = new Date(c.data_cotacao).getTime();
         const fim = new Date(c.data_fechamento!).getTime();
         return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
@@ -472,7 +472,7 @@ const Dashboard = () => {
     const ticketMedioAnterior = fechadosAnterior > 0 ? premioTotalAnterior / fechadosAnterior : 0;
 
     // Tempo médio de fechamento (dias)
-    const temposFechamento = cotacoesFechadas.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
+    const temposFechamento = cotacoesFechadas.filter((c) => c.data_fechamento && c.data_cotacao).map((c) => {
       const inicio = new Date(c.data_cotacao).getTime();
       const fim = new Date(c.data_fechamento!).getTime();
       return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
@@ -480,7 +480,7 @@ const Dashboard = () => {
     const tempoMedioFechamento = temposFechamento.length > 0 ? temposFechamento.reduce((sum, tempo) => sum + tempo, 0) / temposFechamento.length : 0;
 
     // Previous period tempo médio
-    const temposFechamentoAnterior = cotacoesFechadasAnterior.filter(c => c.data_fechamento && c.data_cotacao).map(c => {
+    const temposFechamentoAnterior = cotacoesFechadasAnterior.filter((c) => c.data_fechamento && c.data_cotacao).map((c) => {
       const inicio = new Date(c.data_cotacao).getTime();
       const fim = new Date(c.data_fechamento!).getTime();
       return Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
@@ -536,14 +536,14 @@ const Dashboard = () => {
         premio: number;
       }>;
     }> = {};
-    validStatuses.forEach(status => {
+    validStatuses.forEach((status) => {
       let statusCotacoes: Cotacao[];
       if (status === "Negócio fechado") {
-        statusCotacoes = filteredCotacoes.filter(cotacao => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere");
+        statusCotacoes = filteredCotacoes.filter((cotacao) => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere");
       } else {
-        statusCotacoes = filteredCotacoes.filter(cotacao => cotacao.status === status);
+        statusCotacoes = filteredCotacoes.filter((cotacao) => cotacao.status === status);
       }
-      
+
       // Usar os valores já calculados em monthlyStats para garantir consistência com os cards principais
       let count: number;
       if (status === "Em cotação") {
@@ -555,17 +555,17 @@ const Dashboard = () => {
       } else {
         count = countDistinctByStatus(statusCotacoes, [status]);
       }
-      
+
       const premioTotal = statusCotacoes.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
-      const transportador = statusCotacoes.filter(c => c.segmento === "Transportador").length;
-      const embarcador = statusCotacoes.filter(c => c.segmento !== "Transportador").length;
+      const transportador = statusCotacoes.filter((c) => c.segmento === "Transportador").length;
+      const embarcador = statusCotacoes.filter((c) => c.segmento !== "Transportador").length;
 
       // Breakdown por ramo
       const ramoBreakdown: Record<string, {
         count: number;
         premio: number;
       }> = {};
-      statusCotacoes.forEach(c => {
+      statusCotacoes.forEach((c) => {
         const ramo = c.ramo?.descricao || "Não informado";
         if (!ramoBreakdown[ramo]) ramoBreakdown[ramo] = {
           count: 0,
@@ -580,7 +580,7 @@ const Dashboard = () => {
         count: number;
         premio: number;
       }> = {};
-      statusCotacoes.forEach(c => {
+      statusCotacoes.forEach((c) => {
         const seg = c.seguradora?.nome || "Não informado";
         if (!seguradoraBreakdown[seg]) seguradoraBreakdown[seg] = {
           count: 0,
@@ -600,12 +600,12 @@ const Dashboard = () => {
       };
     });
     const totalDistinct = Object.values(statusCounts).reduce((sum, item) => sum + item.count, 0);
-    return validStatuses.map(status => {
+    return validStatuses.map((status) => {
       const data = statusCounts[status];
       return {
         status,
         count: data.count,
-        seguradosDistintos: new Set(data.cotacoes.map(c => c.cpf_cnpj)).size,
+        seguradosDistintos: new Set(data.cotacoes.map((c) => c.cpf_cnpj)).size,
         percentage: totalDistinct > 0 ? data.count / totalDistinct * 100 : 0,
         cotacoes: data.cotacoes,
         premioTotal: data.premioTotal,
@@ -674,53 +674,53 @@ const Dashboard = () => {
     }> = {};
 
     // Use allQuotes (unfiltered) but apply non-date filters
-    allQuotes
-      .filter(cotacao => {
-        if (cotacao.status !== "Em cotação") return false;
-        
-        // Apply non-date filters
-        const produtorMatch = filters.produtorFilter.length === 0 || 
-          (cotacao.produtor_cotador?.nome && filters.produtorFilter.includes(cotacao.produtor_cotador.nome));
-        const seguradoraMatch = filters.seguradoraFilter.length === 0 || 
-          (cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
-        const ramoMatch = filters.ramoFilter.length === 0 || 
-          (cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
-        const segmentoMatch = filters.segmentoFilter.length === 0 || 
-          (cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
-        const regraMatch = filters.regraFilter.length === 0 || 
-          (cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
-        const unidadeMatch = filters.unidadeFilter.length === 0 || 
-          (cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
-        
-        return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
-      })
-      .forEach(cotacao => {
-        const produtorNome = cotacao.produtor_cotador?.nome;
-        if (!produtorNome) return;
+    allQuotes.
+    filter((cotacao) => {
+      if (cotacao.status !== "Em cotação") return false;
 
-        if (!stats[produtorNome]) {
-          stats[produtorNome] = {
-            distinctKeys: new Set(),
-            premio: 0,
-            premioRecorrente: 0,
-            cotacoes: []
-          };
-        }
+      // Apply non-date filters
+      const produtorMatch = filters.produtorFilter.length === 0 ||
+      cotacao.produtor_cotador?.nome && filters.produtorFilter.includes(cotacao.produtor_cotador.nome);
+      const seguradoraMatch = filters.seguradoraFilter.length === 0 ||
+      cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome);
+      const ramoMatch = filters.ramoFilter.length === 0 ||
+      cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao);
+      const segmentoMatch = filters.segmentoFilter.length === 0 ||
+      cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento);
+      const regraMatch = filters.regraFilter.length === 0 ||
+      cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra);
+      const unidadeMatch = filters.unidadeFilter.length === 0 ||
+      cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao);
 
-        const branchGroup = getBranchGroup(cotacao.ramo);
-        // REGRA DE NEGÓCIO: Para segmento "Avulso", cada cotação é contada individualmente
-        const isAvulso = cotacao.ramo?.segmento === 'Avulso';
-        const distinctKey = isAvulso ? `avulso_${cotacao.id}` : `${cotacao.cpf_cnpj}_${branchGroup}`;
-        stats[produtorNome].distinctKeys.add(distinctKey);
-        stats[produtorNome].cotacoes.push(cotacao);
-        
-        const premio = cotacao.valor_premio || 0;
-        const regra = getRegraRamo(cotacao.ramo);
-        stats[produtorNome].premio += premio;
-        if (regra === 'Recorrente') {
-          stats[produtorNome].premioRecorrente += premio;
-        }
-      });
+      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
+    }).
+    forEach((cotacao) => {
+      const produtorNome = cotacao.produtor_cotador?.nome;
+      if (!produtorNome) return;
+
+      if (!stats[produtorNome]) {
+        stats[produtorNome] = {
+          distinctKeys: new Set(),
+          premio: 0,
+          premioRecorrente: 0,
+          cotacoes: []
+        };
+      }
+
+      const branchGroup = getBranchGroup(cotacao.ramo);
+      // REGRA DE NEGÓCIO: Para segmento "Avulso", cada cotação é contada individualmente
+      const isAvulso = cotacao.ramo?.segmento === 'Avulso';
+      const distinctKey = isAvulso ? `avulso_${cotacao.id}` : `${cotacao.cpf_cnpj}_${branchGroup}`;
+      stats[produtorNome].distinctKeys.add(distinctKey);
+      stats[produtorNome].cotacoes.push(cotacao);
+
+      const premio = cotacao.valor_premio || 0;
+      const regra = getRegraRamo(cotacao.ramo);
+      stats[produtorNome].premio += premio;
+      if (regra === 'Recorrente') {
+        stats[produtorNome].premioRecorrente += premio;
+      }
+    });
 
     return stats;
   }, [allQuotes, filters.produtorFilter, filters.seguradoraFilter, filters.ramoFilter, filters.segmentoFilter, filters.regraFilter, filters.unidadeFilter]);
@@ -754,7 +754,7 @@ const Dashboard = () => {
         cotacoes: Cotacao[];
       }>;
     }> = {};
-    filteredCotacoes.forEach(cotacao => {
+    filteredCotacoes.forEach((cotacao) => {
       // Use produtor_cotador for "Em cotação", produtor_origem for others
       // IMPORTANTE: Cotações sem produtor associado são agrupadas em "(Sem Produtor)"
       // para garantir que a soma por produtor = total do header
@@ -764,87 +764,87 @@ const Dashboard = () => {
       } else {
         produtorNome = cotacao.produtor_origem?.nome || "(Sem Produtor)";
       }
-      
+
       const nome = produtorNome;
-        if (!produtorStats[nome]) {
-          produtorStats[nome] = {
-            nome,
-            distinctKeysTotal: new Set(),
-            distinctKeysEmCotacao: new Set(),
-            distinctKeysFechadas: new Set(),
-            distinctKeysDeclinadas: new Set(),
-            premioTotal: 0,
-            premioRecorrente: 0,
-            premioRegraTotal: 0,
-            premioEmAberto: 0,
-            premioEmAbertoRecorrente: 0,
-            cotacoesFechadas: [],
-            cotacoesEmAberto: [],
-            cotacoesDeclinadas: [],
-            fechadasByKey: {},
-            emAbertoByKey: {}
+      if (!produtorStats[nome]) {
+        produtorStats[nome] = {
+          nome,
+          distinctKeysTotal: new Set(),
+          distinctKeysEmCotacao: new Set(),
+          distinctKeysFechadas: new Set(),
+          distinctKeysDeclinadas: new Set(),
+          premioTotal: 0,
+          premioRecorrente: 0,
+          premioRegraTotal: 0,
+          premioEmAberto: 0,
+          premioEmAbertoRecorrente: 0,
+          cotacoesFechadas: [],
+          cotacoesEmAberto: [],
+          cotacoesDeclinadas: [],
+          fechadasByKey: {},
+          emAbertoByKey: {}
+        };
+      }
+
+      // Create distinct key: CNPJ + branch group
+      // REGRA DE NEGÓCIO: Para segmento "Avulso", cada cotação é contada individualmente
+      const branchGroup = getBranchGroup(cotacao.ramo);
+      const isAvulso = cotacao.ramo?.segmento === 'Avulso';
+      // Para Avulso, usa ID único; para outros, agrupa por CNPJ+branchGroup
+      const distinctKey = isAvulso ? `avulso_${cotacao.id}` : `${cotacao.cpf_cnpj}_${branchGroup}`;
+
+      // Add to total distinct
+      produtorStats[nome].distinctKeysTotal.add(distinctKey);
+      if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
+        produtorStats[nome].distinctKeysFechadas.add(distinctKey);
+        const premio = cotacao.valor_premio || 0;
+        const regra = getRegraRamo(cotacao.ramo);
+        produtorStats[nome].premioTotal += premio;
+        if (regra === 'Recorrente') {
+          produtorStats[nome].premioRecorrente += premio;
+        } else {
+          produtorStats[nome].premioRegraTotal += premio;
+        }
+        produtorStats[nome].cotacoesFechadas.push(cotacao);
+
+        // Group by segurado+grupo for distinct listing
+        // Para Avulso, usa chave única para cada cotação
+        const listingKey = isAvulso ? `avulso_${cotacao.id}` : distinctKey;
+        if (!produtorStats[nome].fechadasByKey[listingKey]) {
+          produtorStats[nome].fechadasByKey[listingKey] = {
+            segurado: cotacao.segurado,
+            grupo: isAvulso ? `Avulso - ${cotacao.ramo?.descricao || 'N/A'}` : branchGroup,
+            cotacoes: []
           };
         }
-
-        // Create distinct key: CNPJ + branch group
-        // REGRA DE NEGÓCIO: Para segmento "Avulso", cada cotação é contada individualmente
-        const branchGroup = getBranchGroup(cotacao.ramo);
-        const isAvulso = cotacao.ramo?.segmento === 'Avulso';
-        // Para Avulso, usa ID único; para outros, agrupa por CNPJ+branchGroup
-        const distinctKey = isAvulso ? `avulso_${cotacao.id}` : `${cotacao.cpf_cnpj}_${branchGroup}`;
-
-        // Add to total distinct
-        produtorStats[nome].distinctKeysTotal.add(distinctKey);
-        if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
-          produtorStats[nome].distinctKeysFechadas.add(distinctKey);
-          const premio = cotacao.valor_premio || 0;
-          const regra = getRegraRamo(cotacao.ramo);
-          produtorStats[nome].premioTotal += premio;
-          if (regra === 'Recorrente') {
-            produtorStats[nome].premioRecorrente += premio;
-          } else {
-            produtorStats[nome].premioRegraTotal += premio;
-          }
-          produtorStats[nome].cotacoesFechadas.push(cotacao);
-
-          // Group by segurado+grupo for distinct listing
-          // Para Avulso, usa chave única para cada cotação
-          const listingKey = isAvulso ? `avulso_${cotacao.id}` : distinctKey;
-          if (!produtorStats[nome].fechadasByKey[listingKey]) {
-            produtorStats[nome].fechadasByKey[listingKey] = {
-              segurado: cotacao.segurado,
-              grupo: isAvulso ? `Avulso - ${cotacao.ramo?.descricao || 'N/A'}` : branchGroup,
-              cotacoes: []
-            };
-          }
-          produtorStats[nome].fechadasByKey[listingKey].cotacoes.push(cotacao);
-        } else if (cotacao.status === "Em cotação") {
-          produtorStats[nome].distinctKeysEmCotacao.add(distinctKey);
-          const premio = cotacao.valor_premio || 0;
-          const regra = getRegraRamo(cotacao.ramo);
-          produtorStats[nome].premioEmAberto += premio;
-          if (regra === 'Recorrente') {
-            produtorStats[nome].premioEmAbertoRecorrente += premio;
-          }
-          produtorStats[nome].cotacoesEmAberto.push(cotacao);
-
-          // Group by segurado+grupo for distinct listing
-          // Para Avulso, usa chave única para cada cotação
-          const listingKey = isAvulso ? `avulso_${cotacao.id}` : distinctKey;
-          if (!produtorStats[nome].emAbertoByKey[listingKey]) {
-            produtorStats[nome].emAbertoByKey[listingKey] = {
-              segurado: cotacao.segurado,
-              grupo: isAvulso ? `Avulso - ${cotacao.ramo?.descricao || 'N/A'}` : branchGroup,
-              cotacoes: []
-            };
-          }
-          produtorStats[nome].emAbertoByKey[listingKey].cotacoes.push(cotacao);
-        } else if (cotacao.status === "Declinado") {
-          produtorStats[nome].distinctKeysDeclinadas.add(distinctKey);
-          produtorStats[nome].cotacoesDeclinadas.push(cotacao);
+        produtorStats[nome].fechadasByKey[listingKey].cotacoes.push(cotacao);
+      } else if (cotacao.status === "Em cotação") {
+        produtorStats[nome].distinctKeysEmCotacao.add(distinctKey);
+        const premio = cotacao.valor_premio || 0;
+        const regra = getRegraRamo(cotacao.ramo);
+        produtorStats[nome].premioEmAberto += premio;
+        if (regra === 'Recorrente') {
+          produtorStats[nome].premioEmAbertoRecorrente += premio;
         }
+        produtorStats[nome].cotacoesEmAberto.push(cotacao);
+
+        // Group by segurado+grupo for distinct listing
+        // Para Avulso, usa chave única para cada cotação
+        const listingKey = isAvulso ? `avulso_${cotacao.id}` : distinctKey;
+        if (!produtorStats[nome].emAbertoByKey[listingKey]) {
+          produtorStats[nome].emAbertoByKey[listingKey] = {
+            segurado: cotacao.segurado,
+            grupo: isAvulso ? `Avulso - ${cotacao.ramo?.descricao || 'N/A'}` : branchGroup,
+            cotacoes: []
+          };
+        }
+        produtorStats[nome].emAbertoByKey[listingKey].cotacoes.push(cotacao);
+      } else if (cotacao.status === "Declinado") {
+        produtorStats[nome].distinctKeysDeclinadas.add(distinctKey);
+        produtorStats[nome].cotacoesDeclinadas.push(cotacao);
+      }
     });
-    return Object.values(produtorStats).map(p => {
+    return Object.values(produtorStats).map((p) => {
       const totalDistinct = p.distinctKeysTotal.size;
       const fechadasDistinct = p.distinctKeysFechadas.size;
       const emCotacaoDistinct = p.distinctKeysEmCotacao.size;
@@ -869,7 +869,7 @@ const Dashboard = () => {
       });
       // Get total open (all periods) for this producer
       const totalOpenStats = totalEmAbertoByProdutor[p.nome];
-      
+
       return {
         nome: p.nome,
         totalDistinct,
@@ -905,12 +905,12 @@ const Dashboard = () => {
 
   // Clientes fechados para o tooltip - include "Fechamento congênere"
   const clientesFechados = useMemo(() => {
-    return filteredCotacoes.filter(cotacao => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere").sort((a, b) => new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime()).slice(0, 10);
+    return filteredCotacoes.filter((cotacao) => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere").sort((a, b) => new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime()).slice(0, 10);
   }, [filteredCotacoes]);
 
   // Clientes em cotação para o tooltip
   const clientesEmCotacao = useMemo(() => {
-    return filteredCotacoes.filter(cotacao => cotacao.status === "Em cotação").sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime()).slice(0, 10);
+    return filteredCotacoes.filter((cotacao) => cotacao.status === "Em cotação").sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime()).slice(0, 10);
   }, [filteredCotacoes]);
 
   // View mode state for recent quotes
@@ -925,7 +925,7 @@ const Dashboard = () => {
   const monthlyTrendDataDetalhada = useMemo(() => {
     const months = [];
     const now = new Date();
-    const trendFilteredCotacoes = allQuotes.filter(cotacao => {
+    const trendFilteredCotacoes = allQuotes.filter((cotacao) => {
       // Mixed produtor logic: cotador for "Em cotação", origem for others
       let produtorMatch = true;
       if (filters.produtorFilter.length > 0) {
@@ -935,11 +935,11 @@ const Dashboard = () => {
           produtorMatch = cotacao.produtor_origem?.nome ? filters.produtorFilter.includes(cotacao.produtor_origem.nome) : false;
         }
       }
-      const seguradoraMatch = filters.seguradoraFilter.length === 0 || (cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
-      const ramoMatch = filters.ramoFilter.length === 0 || (cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
-      const segmentoMatch = filters.segmentoFilter.length === 0 || (cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
-      const regraMatch = filters.regraFilter.length === 0 || (cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
-      const unidadeMatch = filters.unidadeFilter.length === 0 || (cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
+      const seguradoraMatch = filters.seguradoraFilter.length === 0 || cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome);
+      const ramoMatch = filters.ramoFilter.length === 0 || cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao);
+      const segmentoMatch = filters.segmentoFilter.length === 0 || cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento);
+      const regraMatch = filters.regraFilter.length === 0 || cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra);
+      const unidadeMatch = filters.unidadeFilter.length === 0 || cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao);
       return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
     });
     for (let i = 5; i >= 0; i--) {
@@ -952,16 +952,16 @@ const Dashboard = () => {
       const year = date.getFullYear();
 
       // Total de cotações: TODAS com data_cotacao neste mês (contagem bruta real)
-      const allCotacoesInMonth = trendFilteredCotacoes.filter(c => {
+      const allCotacoesInMonth = trendFilteredCotacoes.filter((c) => {
         const d = new Date(c.data_cotacao);
         return d >= monthStart && d <= monthEnd;
       });
 
       // Em Cotação: status "Em cotação" com data_cotacao neste mês
-      const emCotacaoList = allCotacoesInMonth.filter(c => c.status === "Em cotação");
+      const emCotacaoList = allCotacoesInMonth.filter((c) => c.status === "Em cotação");
 
       // Fechadas: data_fechamento neste mês + contagem DISTINTA (CNPJ + branch group)
-      const fechadasList = trendFilteredCotacoes.filter(c => {
+      const fechadasList = trendFilteredCotacoes.filter((c) => {
         if (c.status !== "Negócio fechado" && c.status !== "Fechamento congênere") return false;
         if (!c.data_fechamento) return false;
         const d = new Date(c.data_fechamento);
@@ -970,7 +970,7 @@ const Dashboard = () => {
       const fechadasDistinct = countDistinctClosings(fechadasList);
 
       // Declinadas: status "Declinado" com data_cotacao neste mês
-      const declinadasList = allCotacoesInMonth.filter(c => c.status === "Declinado");
+      const declinadasList = allCotacoesInMonth.filter((c) => c.status === "Declinado");
 
       const emCotacao = emCotacaoList.length;
       const fechadas = fechadasDistinct;
@@ -981,7 +981,7 @@ const Dashboard = () => {
 
       // Clientes Únicos: contagem distinta de CPF/CNPJ + Ramo Agrupado no mês
       const clientesUnicosSet = new Set<string>();
-      allCotacoesInMonth.forEach(c => {
+      allCotacoesInMonth.forEach((c) => {
         const branchGroup = getBranchGroup(c.ramo);
         const key = `${c.cpf_cnpj}_${branchGroup}`;
         clientesUnicosSet.add(key);
@@ -989,8 +989,8 @@ const Dashboard = () => {
       const clientesUnicos = clientesUnicosSet.size;
 
       // Transportador/Embarcador counts
-      const transportador = allCotacoesInMonth.filter(c => c.segmento === "Transportador").length;
-      const embarcador = allCotacoesInMonth.filter(c => c.segmento !== "Transportador").length;
+      const transportador = allCotacoesInMonth.filter((c) => c.segmento === "Transportador").length;
+      const embarcador = allCotacoesInMonth.filter((c) => c.segmento !== "Transportador").length;
       const taxaConversao = total > 0 ? fechadas / total * 100 : 0;
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
@@ -1034,17 +1034,17 @@ const Dashboard = () => {
     }> = {};
     const now = new Date();
     const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
-    const seguradoraFilteredCotacoes = allQuotes.filter(cotacao => {
-      const produtorMatch = filters.produtorFilter.length === 0 || (cotacao.produtor_origem?.nome && filters.produtorFilter.includes(cotacao.produtor_origem.nome));
-      const seguradoraMatch = filters.seguradoraFilter.length === 0 || (cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
-      const ramoMatch = filters.ramoFilter.length === 0 || (cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
-      const segmentoMatch = filters.segmentoFilter.length === 0 || (cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
-      const regraMatch = filters.regraFilter.length === 0 || (cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
-      const unidadeMatch = filters.unidadeFilter.length === 0 || (cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
+    const seguradoraFilteredCotacoes = allQuotes.filter((cotacao) => {
+      const produtorMatch = filters.produtorFilter.length === 0 || cotacao.produtor_origem?.nome && filters.produtorFilter.includes(cotacao.produtor_origem.nome);
+      const seguradoraMatch = filters.seguradoraFilter.length === 0 || cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome);
+      const ramoMatch = filters.ramoFilter.length === 0 || cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao);
+      const segmentoMatch = filters.segmentoFilter.length === 0 || cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento);
+      const regraMatch = filters.regraFilter.length === 0 || cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra);
+      const unidadeMatch = filters.unidadeFilter.length === 0 || cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao);
       const dateMatch = new Date(cotacao.data_cotacao) >= twelveMonthsAgo;
       return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch && dateMatch;
     });
-    seguradoraFilteredCotacoes.forEach(cotacao => {
+    seguradoraFilteredCotacoes.forEach((cotacao) => {
       if (cotacao.seguradora && (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") && cotacao.valor_premio > 0) {
         const nome = cotacao.seguradora.nome;
         if (!seguradoraStats[nome]) {
@@ -1099,7 +1099,7 @@ const Dashboard = () => {
     });
     const totalPremio = Object.values(seguradoraStats).reduce((sum, s) => sum + s.premio, 0);
     const totalCount = Object.values(seguradoraStats).reduce((sum, s) => sum + s.distinctKeys.size, 0);
-    return Object.values(seguradoraStats).map(s => ({
+    return Object.values(seguradoraStats).map((s) => ({
       nome: s.nome,
       premio: s.premio,
       count: s.count,
@@ -1113,7 +1113,7 @@ const Dashboard = () => {
         ramo,
         ...stats
       })).sort((a, b) => b.premio - a.premio).slice(0, 3),
-      clientes: Array.from(s.clientesMap.values()).map(c => ({
+      clientes: Array.from(s.clientesMap.values()).map((c) => ({
         ...c,
         ramos: Array.from(c.ramos)
       })).sort((a, b) => b.premio - a.premio)
@@ -1125,7 +1125,7 @@ const Dashboard = () => {
 
   // Pie chart data
   const pieChartData = useMemo(() => {
-    return distribuicaoStatus.map(item => ({
+    return distribuicaoStatus.map((item) => ({
       name: item.status,
       value: item.count,
       color: item.status === "Em cotação" ? "hsl(var(--brand-orange))" : item.status === "Negócio fechado" ? "hsl(var(--success-alt))" : "hsl(var(--destructive))"
@@ -1139,7 +1139,7 @@ const Dashboard = () => {
       total: number;
       fechadas: number;
     }> = {};
-    filteredCotacoes.forEach(cotacao => {
+    filteredCotacoes.forEach((cotacao) => {
       if (cotacao.produtor_cotador) {
         const nome = cotacao.produtor_cotador.nome;
         if (!produtorStats[nome]) {
@@ -1177,7 +1177,7 @@ const Dashboard = () => {
         premioEmbarcador: 0
       }
     };
-    filteredCotacoes.filter(c => c.status === "Em cotação" || c.status === "Em análise").forEach(cotacao => {
+    filteredCotacoes.filter((c) => c.status === "Em cotação" || c.status === "Em análise").forEach((cotacao) => {
       const segmento = cotacao.segmento || "Não informado";
       const branchGroup = getBranchGroup(cotacao.ramo);
       const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
@@ -1212,7 +1212,7 @@ const Dashboard = () => {
       premioTransportador: 0,
       premioEmbarcador: 0
     };
-    filteredCotacoes.filter(c => c.status === "Negócio fechado" || c.status === "Fechamento congênere").forEach(cotacao => {
+    filteredCotacoes.filter((c) => c.status === "Negócio fechado" || c.status === "Fechamento congênere").forEach((cotacao) => {
       const segmento = cotacao.segmento || "Não informado";
       const branchGroup = getBranchGroup(cotacao.ramo);
       const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
@@ -1247,7 +1247,7 @@ const Dashboard = () => {
       premioTransportador: 0,
       premioEmbarcador: 0
     };
-    filteredCotacoes.filter(c => c.status === "Declinado").forEach(cotacao => {
+    filteredCotacoes.filter((c) => c.status === "Declinado").forEach((cotacao) => {
       const segmento = cotacao.segmento || "Não informado";
       const branchGroup = getBranchGroup(cotacao.ramo);
       const key = `${cotacao.cpf_cnpj}_${branchGroup}`;
@@ -1394,7 +1394,7 @@ const Dashboard = () => {
                   <div className="space-y-2">
                     <h4 className="font-semibold">Clientes em Cotação no Período</h4>
                     {clientesEmCotacao.length > 0 ? <div className="space-y-1">
-                        {clientesEmCotacao.map(cotacao => <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
+                        {clientesEmCotacao.map((cotacao) => <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
                             <div className="font-medium">{cotacao.segurado}</div>
                             <div className="text-muted-foreground">
                               Data Cotação: {formatDate(cotacao.data_cotacao)}
@@ -1503,7 +1503,7 @@ const Dashboard = () => {
 
       {/* KPIs por Segmento */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-4">
-        {['Transportes', 'Avulso', 'Ambiental', 'RC-V'].map(segmento => {
+        {['Transportes', 'Avulso', 'Ambiental', 'RC-V'].map((segmento) => {
           const stats = monthlyStats.segmentoStats[segmento];
           const premioComp = stats.previousPremio > 0 ? (stats.premioTotal - stats.previousPremio) / stats.previousPremio * 100 : 0;
           const fechadosComp = stats.previousFechados > 0 ? stats.fechados - stats.previousFechados : 0;
@@ -1643,34 +1643,34 @@ const Dashboard = () => {
                 <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
                 <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--popover))",
                     border: "1px solid hsl(var(--border))",
-                    color: "hsl(var(--popover-foreground))",
+                    color: "hsl(var(--popover-foreground))"
                   }}
                   formatter={(value: number, name: string) => {
                     if (name === "Taxa de Conversão") return [`${value.toFixed(1)}%`, name];
                     return [value, name];
-                  }}
-                />
+                  }} />
+                
                 <Legend />
-                <Bar 
+                <Bar
                   yAxisId="left"
-                  dataKey="total" 
-                  fill="hsl(var(--primary) / 0.7)" 
+                  dataKey="total"
+                  fill="hsl(var(--primary) / 0.7)"
                   name="Total de Cotações"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Line 
+                  radius={[4, 4, 0, 0]} />
+                
+                <Line
                   yAxisId="right"
-                  type="monotone" 
-                  dataKey="taxaConversao" 
-                  stroke="hsl(var(--success))" 
+                  type="monotone"
+                  dataKey="taxaConversao"
+                  stroke="hsl(var(--success))"
                   strokeWidth={2}
                   dot={{ fill: "hsl(var(--success))", r: 4 }}
-                  name="Taxa de Conversão"
-                />
+                  name="Taxa de Conversão" />
+                
               </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
@@ -1684,58 +1684,58 @@ const Dashboard = () => {
       </div>
 
       {/* Gráficos e Análises Avançadas */}
-      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Shield className="h-4 w-4" />
-                  Top 5 Seguradoras
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">Últimos 12 meses</p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => setShowSeguradoraDetailModal(true)} className="text-xs gap-1">
-                Ver todas <Eye className="h-3 w-3" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {seguradoraData.length > 0 ? <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-xs text-muted-foreground">
-                      <th className="text-left py-2 font-medium">#</th>
-                      <th className="text-left py-2 font-medium">Seguradora</th>
-                      <th className="text-right py-2 font-medium">Fech.</th>
-                      <th className="text-right py-2 font-medium">Prêmio</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {seguradoraData.map((seg, index) => <tr key={seg.nome} className="border-b border-border/50 hover:bg-muted/30">
-                        <td className="py-2">
-                          <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${index === 0 ? 'bg-amber-500 text-amber-950' : index === 1 ? 'bg-slate-400 text-slate-950' : index === 2 ? 'bg-amber-700 text-amber-100' : 'bg-muted text-muted-foreground'}`}>
-                            {index + 1}
-                          </span>
-                        </td>
-                        <td className="py-2">
-                          <span className="font-medium truncate max-w-[120px]">{seg.nome}</span>
-                        </td>
-                        <td className="py-2 text-right">
-                          <span className="text-muted-foreground">{seg.distinctCount} fech.</span>
-                        </td>
-                        <td className="py-2 text-right">
-                          <span className="font-semibold text-primary">{formatCurrency(seg.premio)}</span>
-                        </td>
-                      </tr>)}
-                  </tbody>
-                </table>
-              </div> : <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
-                Nenhum dado disponível
-              </div>}
-          </CardContent>
-        </Card>
-      </div>
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
 
       {/* Análises por Tipo de Cliente - Barras Empilhadas */}
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -2012,7 +2012,7 @@ const Dashboard = () => {
                   distinctKeys: Set<string>;
                   distinctFechadas: Set<string>;
                 }> = {};
-                filteredCotacoes.forEach(c => {
+                filteredCotacoes.forEach((c) => {
                   const nome = c.unidade?.descricao || 'Não informada';
                   if (!unidadeStats[nome]) {
                     unidadeStats[nome] = {
@@ -2034,14 +2034,14 @@ const Dashboard = () => {
                     unidadeStats[nome].premio += c.valor_premio || 0;
                   }
                 });
-                const unidadesOrdenadas = Object.values(unidadeStats).map(u => ({
+                const unidadesOrdenadas = Object.values(unidadeStats).map((u) => ({
                   ...u,
                   distinctTotal: u.distinctKeys.size,
                   distinctFechadas: u.distinctFechadas.size,
                   taxa: u.distinctKeys.size > 0 ? u.distinctFechadas.size / u.distinctKeys.size * 100 : 0
                 })).sort((a, b) => b.premio - a.premio).slice(0, 5);
                 const maxPremio = unidadesOrdenadas[0]?.premio || 1;
-                return unidadesOrdenadas.map(unidade => <div key={unidade.nome} className="space-y-2">
+                return unidadesOrdenadas.map((unidade) => <div key={unidade.nome} className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">{unidade.nome}</span>
                       <div className="flex items-center gap-3">
