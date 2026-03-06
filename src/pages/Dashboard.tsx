@@ -2099,8 +2099,8 @@ const Dashboard = () => {
 
 
       
-      {/* Indicadores de Performance */}
-      <DashboardIndicadores cotacoes={filteredCotacoes} />
+      {/* Indicadores (Produtos) */}
+      <DashboardIndicadores produtorFilter={filters.produtorFilter} />
 
       {/* Cotações Recentes */}
       
