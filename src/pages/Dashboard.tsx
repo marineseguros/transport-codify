@@ -1358,11 +1358,11 @@ const Dashboard = () => {
             <span className="hidden sm:inline">Fechamentos</span>
             <span className="sm:hidden">Fech.</span>
           </Button>
-          <Button variant="outline" onClick={handleImportCSV} size="sm" className="gap-2 flex-1 sm:flex-none">
-            <Upload className="h-4 w-4" />
-            <span className="hidden sm:inline">Importar CSV</span>
-            <span className="sm:hidden">CSV</span>
-          </Button>
+          
+
+
+
+          
           <Button onClick={handleNewCotacao} size="sm" className="gap-2 flex-1 sm:flex-none">
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Nova Cotação</span>
@@ -1577,10 +1577,10 @@ const Dashboard = () => {
         })}
       </div>
 
-      {/* Distribuição por Status e Tendência */}
-      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 items-stretch">
+      {/* Distribuição por Status e Top Produtores */}
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
         {/* Distribuição por Status */}
-        <Card className="flex flex-col">
+        <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
@@ -1597,8 +1597,8 @@ const Dashboard = () => {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-evenly">
-            <div className="flex flex-col justify-evenly h-full gap-4">
+          <CardContent>
+            <div className="space-y-3">
               {distribuicaoStatus.map(({
                 status,
                 count,
