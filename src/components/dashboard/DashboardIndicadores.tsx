@@ -148,20 +148,20 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Meta x Realizado
-          </div>
-          <div className="text-sm font-normal text-muted-foreground">
-            Atingimento:{' '}
-            <span className={`font-semibold ${totals.pct >= 100 ? 'text-success' : totals.pct >= 70 ? 'text-warning' : 'text-destructive'}`}>
-              {totals.pct.toFixed(1)}%
-            </span>
-          </div>
-        </CardTitle>
-      </CardHeader>
+      
+
+
+
+
+
+
+
+
+
+
+
+
+      
       
 
 
