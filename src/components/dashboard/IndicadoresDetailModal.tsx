@@ -2,8 +2,29 @@ import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Target, TrendingUp, TrendingDown, Minus, Filter } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, Minus, Filter, ChevronRight, ChevronDown } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
+
+interface Produto {
+  id: string;
+  consultor: string;
+  data_registro: string;
+  tipo: string;
+  subtipo?: string | null;
+}
+
+interface Meta {
+  id: string;
+  produtor_id: string;
+  mes: string;
+  quantidade: number;
+  tipo_meta?: { id: string; descricao: string };
+  produtor?: { id: string; nome: string };
+}
 
 interface ChartItem {
   categoria: string;
@@ -18,12 +39,39 @@ interface ProdutorPerformance {
   pct: number;
 }
 
+interface MonthlyRow {
+  monthLabel: string;
+  monthKey: string;
+  meta: number;
+  realizado: number;
+  pct: number;
+}
+
 interface IndicadoresDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   chartData: ChartItem[];
   produtorData: ProdutorPerformance[];
+  allMetas: Meta[];
+  allProdutos: Produto[];
+  allCotacoes?: DashboardCotacao[];
+  produtorNames: string[];
+  currentProdutorFilter?: string[];
 }
+
+const normalizeLabel = (value?: string | null) =>
+  (value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+
+const isMetaType = (descricao: string | undefined, target: string) =>
+  normalizeLabel(descricao) === normalizeLabel(target);
+
+const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
+  if (!ramo) return 'Outros';
+  if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
+  const ramoUpper = (ramo.descricao || '').toUpperCase();
+  if (ramoUpper.includes('RCTR-C') || ramoUpper.includes('RC-DC')) return 'RCTR-C + RC-DC';
+  return ramo.descricao || 'Outros';
+};
 
 const getStatusColor = (pct: number) => {
   if (pct >= 100) return 'text-success';
@@ -54,9 +102,134 @@ export const IndicadoresDetailModal = ({
   onOpenChange,
   chartData,
   produtorData,
+  allMetas,
+  allProdutos,
+  allCotacoes,
+  produtorNames,
+  currentProdutorFilter,
 }: IndicadoresDetailModalProps) => {
   const [filterCategoria, setFilterCategoria] = useState<string>('todas');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
+  const [filterProdutor, setFilterProdutor] = useState<string>('todos');
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (cat: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
+  // Distinct months from metas
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    allMetas.forEach((m) => {
+      const key = m.mes.substring(0, 7);
+      months.add(key);
+    });
+    allProdutos.forEach((p) => {
+      const key = p.data_registro.substring(0, 7);
+      months.add(key);
+    });
+    return Array.from(months).sort().reverse();
+  }, [allMetas, allProdutos]);
+
+  // Effective produtor filter: modal filter overrides if set, otherwise use dashboard filter
+  const effectiveProdutorFilter = useMemo(() => {
+    if (filterProdutor !== 'todos') return [filterProdutor];
+    return currentProdutorFilter;
+  }, [filterProdutor, currentProdutorFilter]);
+
+  // Monthly data per category
+  const monthlyData = useMemo(() => {
+    const categories = ['Coleta', 'Cotação', 'Vídeo', 'Visita', 'Indicação', 'Fechamento'];
+    const result: Record<string, MonthlyRow[]> = {};
+
+    categories.forEach((cat) => {
+      const rows: MonthlyRow[] = [];
+      availableMonths.forEach((monthKey) => {
+        const start = startOfMonth(parseISO(`${monthKey}-01`));
+        const end = endOfMonth(start);
+
+        // Meta for this month/category
+        const metaTotal = allMetas
+          .filter((m) =>
+            m.mes.startsWith(monthKey) &&
+            isMetaType(m.tipo_meta?.descricao, cat) &&
+            (!effectiveProdutorFilter?.length || (m.produtor && effectiveProdutorFilter.includes(m.produtor.nome)))
+          )
+          .reduce((s, m) => s + m.quantidade, 0);
+
+        // Realizado for this month/category
+        let realizado = 0;
+        if (cat === 'Cotação') {
+          if (allCotacoes?.length) {
+            const monthCotacoes = allCotacoes.filter((c) => {
+              const d = new Date(c.data_cotacao);
+              return d >= start && d <= end &&
+                (!effectiveProdutorFilter?.length || effectiveProdutorFilter.includes(c.produtor_cotador?.nome || ''));
+            });
+            const uniqueKeys = new Set<string>();
+            monthCotacoes.forEach((c) => {
+              uniqueKeys.add(`${c.cpf_cnpj}_${getBranchGroup(c.ramo)}`);
+            });
+            realizado = uniqueKeys.size;
+          }
+        } else if (cat === 'Fechamento') {
+          if (allCotacoes?.length) {
+            const closed = allCotacoes.filter((c) =>
+              (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') &&
+              c.data_fechamento &&
+              (() => { const d = new Date(c.data_fechamento!); return d >= start && d <= end; })() &&
+              (!effectiveProdutorFilter?.length || effectiveProdutorFilter.includes(c.produtor_cotador?.nome || ''))
+            );
+            const uniqueKeys = new Set<string>();
+            let avulsoCount = 0;
+            closed.forEach((c) => {
+              if (c.ramo?.segmento === 'Avulso') {
+                avulsoCount++;
+              } else {
+                uniqueKeys.add(`${c.cpf_cnpj}_${getBranchGroup(c.ramo)}`);
+              }
+            });
+            realizado = uniqueKeys.size + avulsoCount;
+          }
+        } else {
+          const monthProds = allProdutos.filter((p) => {
+            const d = new Date(p.data_registro);
+            return d >= start && d <= end &&
+              (!effectiveProdutorFilter?.length || effectiveProdutorFilter.includes(p.consultor));
+          });
+
+          if (cat === 'Coleta') {
+            realizado = monthProds.filter((p) => p.tipo === 'Coleta').length;
+          } else if (cat === 'Vídeo') {
+            realizado = monthProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length;
+          } else if (cat === 'Visita') {
+            realizado = monthProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'visita').length;
+          } else if (cat === 'Indicação') {
+            realizado = monthProds.filter((p) => p.tipo === 'Indicação').length;
+          }
+        }
+
+        if (metaTotal > 0 || realizado > 0) {
+          const pct = metaTotal > 0 ? (realizado / metaTotal) * 100 : 0;
+          rows.push({
+            monthLabel: format(start, "MMM/yy", { locale: ptBR }),
+            monthKey,
+            meta: metaTotal,
+            realizado,
+            pct,
+          });
+        }
+      });
+      result[cat] = rows;
+    });
+
+    return result;
+  }, [availableMonths, allMetas, allProdutos, allCotacoes, effectiveProdutorFilter]);
 
   const enrichedData = useMemo(() =>
     chartData.map((item) => {
@@ -84,18 +257,21 @@ export const IndicadoresDetailModal = ({
 
   const filteredProdutores = useMemo(() => {
     let data = [...produtorData];
+    if (filterProdutor !== 'todos') {
+      data = data.filter((d) => d.nome === filterProdutor);
+    }
     if (filterStatus === 'atingido') data = data.filter((d) => d.pct >= 100);
     else if (filterStatus === 'parcial') data = data.filter((d) => d.pct >= 70 && d.pct < 100);
     else if (filterStatus === 'critico') data = data.filter((d) => d.pct < 70);
     return data.sort((a, b) => b.pct - a.pct);
-  }, [produtorData, filterStatus]);
+  }, [produtorData, filterStatus, filterProdutor]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!w-[calc(100vw-2rem)] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
-            <Target className="h-5 w-5 text-primary" />
+            <Target className="h-5 w-5 text-foreground" />
             Analítico — Meta x Realizado
           </DialogTitle>
         </DialogHeader>
@@ -103,6 +279,17 @@ export const IndicadoresDetailModal = ({
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted/30 border">
           <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select value={filterProdutor} onValueChange={setFilterProdutor}>
+            <SelectTrigger className="w-[160px] h-8 text-xs">
+              <SelectValue placeholder="Produtor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos produtores</SelectItem>
+              {produtorNames.map((name) => (
+                <SelectItem key={name} value={name}>{name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={filterCategoria} onValueChange={setFilterCategoria}>
             <SelectTrigger className="w-[160px] h-8 text-xs">
               <SelectValue placeholder="Categoria" />
@@ -145,13 +332,14 @@ export const IndicadoresDetailModal = ({
           </div>
         </div>
 
-        {/* Detail table */}
+        {/* Detail table with expandable months */}
         <div className="space-y-1">
           <h3 className="text-sm font-semibold text-muted-foreground mb-2">Detalhamento por Categoria</h3>
           <div className="rounded-lg border overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted/50">
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground w-8"></th>
                   <th className="text-left px-3 py-2 font-medium text-muted-foreground">Categoria</th>
                   <th className="text-center px-3 py-2 font-medium text-muted-foreground">Meta</th>
                   <th className="text-center px-3 py-2 font-medium text-muted-foreground">Realizado</th>
@@ -161,34 +349,86 @@ export const IndicadoresDetailModal = ({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((item) => (
-                  <tr key={item.categoria} className="border-t hover:bg-muted/20 transition-colors">
-                    <td className="px-3 py-2.5 font-medium">{item.categoria}</td>
-                    <td className="px-3 py-2.5 text-center text-muted-foreground">{item.Meta}</td>
-                    <td className="px-3 py-2.5 text-center font-semibold text-primary">{item.Realizado}</td>
-                    <td className="px-3 py-2.5 text-center">
-                      {item.falta > 0 ? (
-                        <span className="text-destructive font-medium">{item.falta}</span>
-                      ) : (
-                        <span className="text-success font-medium">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5 text-center">
-                      <Badge variant="outline" className={`text-[11px] px-2 ${getStatusBg(item.pct)}`}>
-                        {item.pct.toFixed(1)}%
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <Progress
-                        value={Math.min(item.pct, 100)}
-                        className={`h-2 ${getProgressColor(item.pct)}`}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map((item) => {
+                  const isExpanded = expandedCategories.has(item.categoria);
+                  const months = monthlyData[item.categoria] || [];
+                  const hasMonths = months.length > 0;
+
+                  return (
+                    <Collapsible key={item.categoria} open={isExpanded} onOpenChange={() => toggleExpand(item.categoria)} asChild>
+                      <>
+                        <CollapsibleTrigger asChild>
+                          <tr
+                            className={`border-t hover:bg-muted/20 transition-colors ${hasMonths ? 'cursor-pointer' : ''}`}
+                            onClick={() => hasMonths && toggleExpand(item.categoria)}
+                          >
+                            <td className="px-2 py-2.5 text-muted-foreground">
+                              {hasMonths && (
+                                isExpanded
+                                  ? <ChevronDown className="h-3.5 w-3.5" />
+                                  : <ChevronRight className="h-3.5 w-3.5" />
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 font-medium">{item.categoria}</td>
+                            <td className="px-3 py-2.5 text-center text-muted-foreground">{item.Meta}</td>
+                            <td className="px-3 py-2.5 text-center font-semibold text-primary">{item.Realizado}</td>
+                            <td className="px-3 py-2.5 text-center">
+                              {item.falta > 0 ? (
+                                <span className="text-destructive font-medium">{item.falta}</span>
+                              ) : (
+                                <span className="text-success font-medium">—</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 text-center">
+                              <Badge variant="outline" className={`text-[11px] px-2 ${getStatusBg(item.pct)}`}>
+                                {item.pct.toFixed(1)}%
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <Progress
+                                value={Math.min(item.pct, 100)}
+                                className={`h-2 ${getProgressColor(item.pct)}`}
+                              />
+                            </td>
+                          </tr>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent asChild>
+                          <>
+                            {isExpanded && months.map((m) => (
+                              <tr key={`${item.categoria}-${m.monthKey}`} className="border-t bg-muted/10">
+                                <td className="px-2 py-1.5"></td>
+                                <td className="px-3 py-1.5 text-xs text-muted-foreground pl-8 capitalize">{m.monthLabel}</td>
+                                <td className="px-3 py-1.5 text-center text-xs text-muted-foreground">{m.meta}</td>
+                                <td className="px-3 py-1.5 text-center text-xs font-medium text-primary">{m.realizado}</td>
+                                <td className="px-3 py-1.5 text-center text-xs">
+                                  {m.meta - m.realizado > 0 ? (
+                                    <span className="text-destructive">{m.meta - m.realizado}</span>
+                                  ) : (
+                                    <span className="text-success">—</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-1.5 text-center">
+                                  <span className={`text-[10px] font-medium ${getStatusColor(m.pct)}`}>
+                                    {m.pct.toFixed(1)}%
+                                  </span>
+                                </td>
+                                <td className="px-3 py-1.5">
+                                  <Progress
+                                    value={Math.min(m.pct, 100)}
+                                    className={`h-1.5 ${getProgressColor(m.pct)}`}
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </>
+                        </CollapsibleContent>
+                      </>
+                    </Collapsible>
+                  );
+                })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground text-sm">
+                    <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground text-sm">
                       Nenhum resultado com os filtros aplicados
                     </td>
                   </tr>
