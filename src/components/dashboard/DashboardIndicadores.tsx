@@ -288,17 +288,24 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
               </div>
               <div>
                 <span>Meta x Realizado</span>
-                <p className="text-[11px] font-normal text-muted-foreground capitalize">{monthLabel}</p>
+                <p className="text-[11px] font-normal text-muted-foreground">
+                  <span className="capitalize">{monthLabel}</span>
+                  {' • Meta: '}<strong>{totals.totalMeta}</strong>
+                  {' • Realizado: '}<strong className="text-primary">{totals.totalRealizado}</strong>
+                  {' • '}
+                  <strong className={getStatusColor(totals.pct)}>{totals.pct.toFixed(0)}%</strong>
+                </p>
               </div>
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className={`text-xs px-2.5 py-1 ${
-              totals.pct >= 100 ? 'bg-success/10 text-success border-success/30' :
-              totals.pct >= 70 ? 'bg-warning/10 text-warning border-warning/30' :
-              'bg-destructive/10 text-destructive border-destructive/30'}`
-              }>
-                {totals.pct.toFixed(1)}% atingido
-              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-7 gap-1 text-primary hover:text-primary"
+                onClick={() => setShowDetail(true)}>
+                Ver mais
+                <ExternalLink className="h-3 w-3" />
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -306,15 +313,6 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
         <CardContent className="space-y-4 pt-0">
           {/* KPI Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-lg border bg-muted/20 p-2.5 text-center">
-              <p className="text-xl font-bold">{totals.totalMeta}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Meta</p>
-            </div>
-            <div className="rounded-lg border bg-primary/5 p-2.5 text-center">
-              <p className="text-xl font-bold text-primary">{totals.totalRealizado}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Realizado</p>
-            </div>
-            
 
 
             
@@ -378,28 +376,17 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
 
           
 
-          {/* Status summary + Ver mais */}
-          <div className="flex items-center justify-between pt-2 border-t">
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1 text-success">
-                <CheckCircle2 className="h-3.5 w-3.5" /> {statusCounts.atingido} atingido
-              </span>
-              <span className="flex items-center gap-1 text-warning">
-                <AlertTriangle className="h-3.5 w-3.5" /> {statusCounts.parcial} parcial
-              </span>
-              <span className="flex items-center gap-1 text-destructive">
-                <XCircle className="h-3.5 w-3.5" /> {statusCounts.critico} crítico
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-7 gap-1 text-primary hover:text-primary"
-              onClick={() => setShowDetail(true)}>
-              
-              Ver mais
-              <ExternalLink className="h-3 w-3" />
-            </Button>
+          {/* Status summary */}
+          <div className="flex items-center gap-3 text-xs pt-2 border-t">
+            <span className="flex items-center gap-1 text-success">
+              <CheckCircle2 className="h-3.5 w-3.5" /> {statusCounts.atingido} atingido
+            </span>
+            <span className="flex items-center gap-1 text-warning">
+              <AlertTriangle className="h-3.5 w-3.5" /> {statusCounts.parcial} parcial
+            </span>
+            <span className="flex items-center gap-1 text-destructive">
+              <XCircle className="h-3.5 w-3.5" /> {statusCounts.critico} crítico
+            </span>
           </div>
         </CardContent>
       </Card>
