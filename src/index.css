@@ -25,7 +25,7 @@ All colors MUST be HSL.
     --primary-hover: 205 87% 43%;
 
     /* Success - Modern emerald green */
-    --success: 156 72% 40%;
+    --success: 156 62% 52%;
     --success-foreground: 0 0% 100%;
     
     /* Warning - Sophisticated amber */
@@ -100,7 +100,7 @@ All colors MUST be HSL.
     --primary-hover: 205 95% 58%;
 
     /* Dark mode - Vibrant emerald */
-    --success: 156 72% 52%;
+    --success: 156 62% 52%;
     --success-foreground: 220 20% 12%;
     
     /* Dark mode - Warm amber */
