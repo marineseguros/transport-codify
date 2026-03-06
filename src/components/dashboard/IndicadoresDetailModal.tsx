@@ -160,6 +160,9 @@ export const IndicadoresDetailModal = ({
   allCotacoes,
   produtorNames,
   currentProdutorFilter,
+  dateFilter,
+  anoEspecifico,
+  dateRangeProp,
 }: IndicadoresDetailModalProps) => {
   const [filterCategoria, setFilterCategoria] = useState<string>('todas');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
