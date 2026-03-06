@@ -32,6 +32,10 @@ interface Meta {
 interface DashboardIndicadoresProps {
   produtorFilter?: string[];
   filteredCotacoes?: DashboardCotacao[];
+  allCotacoes?: DashboardCotacao[];
+  dateFilter?: string;
+  anoEspecifico?: string;
+  dateRange?: { from?: Date; to?: Date };
 }
 
 const normalizeLabel = (value?: string | null) =>
