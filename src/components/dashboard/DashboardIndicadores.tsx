@@ -343,9 +343,9 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
           </div>
 
           {/* Chart */}
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={chartData} margin={{ top: 35, right: 10, left: -10, bottom: 5 }} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={chartData} margin={{ top: 40, right: 10, left: -10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} vertical={false} />
               <XAxis
                 dataKey="categoria"
                 tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
@@ -359,25 +359,47 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
                 allowDecimals={false} />
               
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
-              
-              {/* Meta reference lines per category */}
-              {chartData.map((entry, index) => entry.Meta > 0 ? (
-                <ReferenceLine
-                  key={`meta-${index}`}
-                  y={entry.Meta}
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeDasharray="6 3"
-                  strokeWidth={1.5}
-                  strokeOpacity={0.6}
-                  label={{
-                    value: `Meta: ${entry.Meta}`,
-                    position: 'right',
-                    fontSize: 0,
-                  }}
-                />
-              ) : null)}
 
-              <Bar dataKey="Realizado" radius={[4, 4, 0, 0]} barSize={36} label={renderBarLabel}>
+              <Bar
+                dataKey="Realizado"
+                radius={[4, 4, 0, 0]}
+                barSize={40}
+                label={renderBarLabel}
+                shape={(props: any) => {
+                  const { x, y, width, height, fill, index } = props;
+                  const item = chartData[index];
+                  const meta = item?.Meta || 0;
+                  // Calculate meta Y position
+                  const chartHeight = 280 - 40 - 5; // height minus top/bottom margins
+                  const maxVal = Math.max(...chartData.map(d => Math.max(d.Meta, d.Realizado))) * 1.1;
+                  
+                  return (
+                    <g>
+                      <rect x={x} y={y} width={width} height={height} fill={fill} rx={4} ry={4} />
+                      {meta > 0 && (() => {
+                        // Use the bar's coordinate system to calculate meta line position
+                        const barBottom = y + height;
+                        const realized = item.Realizado;
+                        const pixelsPerUnit = realized > 0 ? height / realized : (chartHeight / (maxVal || 1));
+                        const metaY = barBottom - (meta * pixelsPerUnit);
+                        const lineExtend = 8;
+                        return (
+                          <line
+                            x1={x - lineExtend}
+                            y1={metaY}
+                            x2={x + width + lineExtend}
+                            y2={metaY}
+                            stroke="hsl(var(--foreground))"
+                            strokeWidth={2}
+                            strokeDasharray="6 3"
+                            strokeOpacity={0.5}
+                          />
+                        );
+                      })()}
+                    </g>
+                  );
+                }}
+              >
                 {chartData.map((entry, index) => {
                   const pct = entry.Meta > 0 ? entry.Realizado / entry.Meta * 100 : 0;
                   return <Cell key={index} fill={getBarColor(pct)} />;
