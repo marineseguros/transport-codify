@@ -130,6 +130,89 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>}
       </SidebarContent>
+
+      {/* User controls at bottom */}
+      <SidebarFooter className="border-t px-2 py-3">
+        <div className={cn("flex items-center", collapsed ? "justify-center" : "gap-2")}>
+          <ThemeToggle />
+          
+          {!collapsed && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 h-auto py-1.5 px-2 flex-1 min-w-0">
+                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 flex-shrink-0">
+                    <User className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-medium truncate">{user?.nome}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.papel}</p>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start" className="w-64">
+                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-2">
+                  <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-foreground">Último acesso</p>
+                      <p>{lastSignIn}</p>
+                    </div>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setIsChangePasswordOpen(true)} className="cursor-pointer">
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Alterar Senha
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {collapsed && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <User className="h-4 w-4 text-primary" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="end" className="w-64">
+                <DropdownMenuLabel>{user?.nome}</DropdownMenuLabel>
+                <p className="px-2 pb-2 text-xs text-muted-foreground">{user?.papel}</p>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-2">
+                  <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-foreground">Último acesso</p>
+                      <p>{lastSignIn}</p>
+                    </div>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setIsChangePasswordOpen(true)} className="cursor-pointer">
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Alterar Senha
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </SidebarFooter>
+
+      <ChangePasswordModal 
+        isOpen={isChangePasswordOpen} 
+        onClose={() => setIsChangePasswordOpen(false)} 
+      />
       
       {/* Botão customizado na linha divisória com chevron */}
       <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-50">
