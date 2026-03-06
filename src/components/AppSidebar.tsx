@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { BarChart3, FileText, Users, Settings, Kanban, Building2, Tags, Home, ClipboardList, ChevronLeft, ChevronRight, Target, LogOut, KeyRound, User, Clock, BarChartBig } from "lucide-react";
+import { BarChart3, FileText, Users, Settings, Kanban, Building2, Tags, Home, ClipboardList, ChevronLeft, ChevronRight, Target, LogOut, KeyRound, User, Clock, BarChartBig, LayoutDashboard } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,7 @@ const menuItems = [{
 }, {
   title: "Dashboard",
   url: "/",
-  icon: Home
+  icon: LayoutDashboard
 }];
 const adminItems = [{
   title: "Usuários",

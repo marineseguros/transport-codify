@@ -6,7 +6,7 @@ import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger }
 import { useCotacoesTotais, useProdutores, useUnidades, useSeguradoras, useRamos, type Cotacao } from "@/hooks/useSupabaseData";
 import { useAuth } from "@/contexts/AuthContext";
 import { WeeklyReminderModal } from "@/components/WeeklyReminderModal";
-import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, Users, Building, List, Grid3X3, Home, ExternalLink, Eye, Building2, PieChart as PieChartIcon, LineChart as LineChartIcon, Shield, Layers } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, Users, Building, List, Grid3X3, LayoutDashboard, ExternalLink, Eye, Building2, PieChart as PieChartIcon, LineChart as LineChartIcon, Shield, Layers } from "lucide-react";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { DashboardEditToolbar } from "@/components/dashboard/DashboardEditToolbar";
 import { DashboardFilters, type DashboardFilterValues } from "@/components/dashboard/DashboardFilters";
@@ -1356,7 +1356,7 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-            <Home className="h-7 w-7 md:h-8 md:w-8" />
+            <LayoutDashboard className="h-7 w-7 md:h-8 md:w-8" />
             Dashboard
           </h1>
           <p className="text-sm text-muted-foreground">Análise completa e KPIs de cotações</p>
