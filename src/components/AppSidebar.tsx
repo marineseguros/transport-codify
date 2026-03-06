@@ -80,7 +80,7 @@ export function AppSidebar() {
   const lastSignIn = session?.user?.last_sign_in_at 
     ? format(new Date(session.user.last_sign_in_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
     : "Não disponível";
-  return <Sidebar className={cn("h-screen", collapsed ? "w-14" : "w-52")} collapsible="icon">
+  return <Sidebar className="h-screen" collapsible="icon">
       {/* Logo da Empresa */}
       <SidebarHeader className="border-b px-3 py-4 flex items-center justify-center">
         <img src="/marine-logo.png" alt="Marine Seguros Logo" className={cn("cursor-pointer", collapsed ? "h-10 w-10" : "h-16 w-16")} />
