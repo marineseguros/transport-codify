@@ -25,8 +25,8 @@ interface Meta {
   produtor_id: string;
   mes: string;
   quantidade: number;
-  tipo_meta?: { id: string; descricao: string };
-  produtor?: { id: string; nome: string };
+  tipo_meta?: {id: string;descricao: string;};
+  produtor?: {id: string;nome: string;};
 }
 
 interface DashboardIndicadoresProps {
@@ -35,10 +35,10 @@ interface DashboardIndicadoresProps {
 }
 
 const normalizeLabel = (value?: string | null) =>
-  (value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+(value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 
 // Helper to get branch group (same logic as Dashboard)
-const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
+const getBranchGroup = (ramo: {descricao?: string;ramo_agrupado?: string | null;} | undefined | null): string => {
   if (!ramo) return 'Outros';
   if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
   const ramoUpper = (ramo.descricao || '').toUpperCase();
@@ -64,7 +64,7 @@ const getBarColor = (pct: number) => {
   return 'hsl(0, 84%, 60%)';
 };
 
-const StatusIcon = ({ pct }: { pct: number }) => {
+const StatusIcon = ({ pct }: {pct: number;}) => {
   if (pct >= 100) return <CheckCircle2 className="h-3.5 w-3.5 text-success" />;
   if (pct >= 70) return <AlertTriangle className="h-3.5 w-3.5 text-warning" />;
   return <XCircle className="h-3.5 w-3.5 text-destructive" />;
@@ -77,16 +77,16 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
   const [showDetail, setShowDetail] = useState(false);
 
   const isMetaType = (descricao: string | undefined, target: string) =>
-    normalizeLabel(descricao) === normalizeLabel(target);
+  normalizeLabel(descricao) === normalizeLabel(target);
 
   const analysisDate = useMemo(() => {
     const timestamps: number[] = [];
-    produtos.forEach((p) => { const t = new Date(p.data_registro).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
+    produtos.forEach((p) => {const t = new Date(p.data_registro).getTime();if (!Number.isNaN(t)) timestamps.push(t);});
     if (timestamps.length) return new Date(Math.max(...timestamps));
-    metas.forEach((m) => { const t = new Date(m.mes).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
+    metas.forEach((m) => {const t = new Date(m.mes).getTime();if (!Number.isNaN(t)) timestamps.push(t);});
     if (timestamps.length) return new Date(Math.max(...timestamps));
     if (filteredCotacoes?.length) {
-      filteredCotacoes.forEach((c) => { const t = new Date(c.data_cotacao).getTime(); if (!Number.isNaN(t)) timestamps.push(t); });
+      filteredCotacoes.forEach((c) => {const t = new Date(c.data_cotacao).getTime();if (!Number.isNaN(t)) timestamps.push(t);});
     }
     return timestamps.length ? new Date(Math.max(...timestamps)) : new Date();
   }, [produtos, metas, filteredCotacoes]);
@@ -101,9 +101,9 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
       try {
         setLoading(true);
         const [prodRes, metasRes] = await Promise.all([
-          supabase.from('produtos').select('id, consultor, data_registro, tipo, subtipo').order('data_registro', { ascending: false }),
-          supabase.from('metas').select('*, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)').order('mes', { ascending: false }),
-        ]);
+        supabase.from('produtos').select('id, consultor, data_registro, tipo, subtipo').order('data_registro', { ascending: false }),
+        supabase.from('metas').select('*, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)').order('mes', { ascending: false })]
+        );
         if (prodRes.error) throw prodRes.error;
         if (metasRes.error) throw metasRes.error;
         setProdutos(prodRes.data || []);
@@ -118,8 +118,8 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
   }, []);
 
   const currentMonthProdutos = useMemo(() =>
-    produtos.filter((p) => { const d = new Date(p.data_registro); return d >= startCurrent && d <= endCurrent; }),
-    [produtos, startCurrent, endCurrent]);
+  produtos.filter((p) => {const d = new Date(p.data_registro);return d >= startCurrent && d <= endCurrent;}),
+  [produtos, startCurrent, endCurrent]);
 
   // Cotação Realizada: Clientes Únicos (distinct CPF/CNPJ + branch group) from filteredCotacoes
   const cotacaoRealizado = useMemo(() => {
@@ -137,7 +137,7 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
   const fechamentoRealizado = useMemo(() => {
     if (!filteredCotacoes?.length) return 0;
     const closedCotacoes = filteredCotacoes.filter((c) =>
-      c.status === 'Negócio fechado' || c.status === 'Fechamento congênere'
+    c.status === 'Negócio fechado' || c.status === 'Fechamento congênere'
     );
     const uniqueKeys = new Set<string>();
     let avulsoCount = 0;
@@ -154,31 +154,31 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
   }, [filteredCotacoes]);
 
   const chartData = useMemo(() => {
-    const filteredProds = produtorFilter?.length
-      ? currentMonthProdutos.filter((p) => produtorFilter.includes(p.consultor))
-      : currentMonthProdutos;
+    const filteredProds = produtorFilter?.length ?
+    currentMonthProdutos.filter((p) => produtorFilter.includes(p.consultor)) :
+    currentMonthProdutos;
 
     const getMetaTotal = (target: string) =>
-      metas.filter((m) =>
-        m.mes.startsWith(currentMonthStr) &&
-        isMetaType(m.tipo_meta?.descricao, target) &&
-        (!produtorFilter?.length || (m.produtor && produtorFilter.includes(m.produtor.nome)))
-      ).reduce((s, m) => s + m.quantidade, 0);
+    metas.filter((m) =>
+    m.mes.startsWith(currentMonthStr) &&
+    isMetaType(m.tipo_meta?.descricao, target) && (
+    !produtorFilter?.length || m.produtor && produtorFilter.includes(m.produtor.nome))
+    ).reduce((s, m) => s + m.quantidade, 0);
 
     return [
-      { categoria: 'Coleta', Meta: getMetaTotal('Coleta'), Realizado: filteredProds.filter((p) => p.tipo === 'Coleta').length },
-      { categoria: 'Cotação', Meta: getMetaTotal('Cotação'), Realizado: cotacaoRealizado },
-      { categoria: 'Vídeo', Meta: getMetaTotal('Vídeo'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length },
-      { categoria: 'Visita', Meta: getMetaTotal('Visita'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'visita').length },
-      { categoria: 'Indicação', Meta: getMetaTotal('Indicação'), Realizado: filteredProds.filter((p) => p.tipo === 'Indicação').length },
-      { categoria: 'Fechamento', Meta: getMetaTotal('Fechamento'), Realizado: fechamentoRealizado },
-    ];
+    { categoria: 'Coleta', Meta: getMetaTotal('Coleta'), Realizado: filteredProds.filter((p) => p.tipo === 'Coleta').length },
+    { categoria: 'Cotação', Meta: getMetaTotal('Cotação'), Realizado: cotacaoRealizado },
+    { categoria: 'Vídeo', Meta: getMetaTotal('Vídeo'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length },
+    { categoria: 'Visita', Meta: getMetaTotal('Visita'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'visita').length },
+    { categoria: 'Indicação', Meta: getMetaTotal('Indicação'), Realizado: filteredProds.filter((p) => p.tipo === 'Indicação').length },
+    { categoria: 'Fechamento', Meta: getMetaTotal('Fechamento'), Realizado: fechamentoRealizado }];
+
   }, [currentMonthProdutos, cotacaoRealizado, fechamentoRealizado, metas, produtorFilter, currentMonthStr]);
 
   const totals = useMemo(() => {
     const totalMeta = chartData.reduce((s, i) => s + i.Meta, 0);
     const totalRealizado = chartData.reduce((s, i) => s + i.Realizado, 0);
-    const pct = totalMeta > 0 ? (totalRealizado / totalMeta) * 100 : 0;
+    const pct = totalMeta > 0 ? totalRealizado / totalMeta * 100 : 0;
     return { totalMeta, totalRealizado, pct };
   }, [chartData]);
 
@@ -187,17 +187,17 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
     const today = getDate(analysisDate);
     const daysInMonth = getDaysInMonth(analysisDate);
     if (today === 0 || totals.totalRealizado === 0) return 0;
-    return Math.round((totals.totalRealizado / today) * daysInMonth);
+    return Math.round(totals.totalRealizado / today * daysInMonth);
   }, [analysisDate, totals.totalRealizado]);
 
   // Categorias atingidas / parciais / críticas
   const statusCounts = useMemo(() => {
-    let atingido = 0, parcial = 0, critico = 0;
+    let atingido = 0,parcial = 0,critico = 0;
     chartData.forEach((item) => {
-      const pct = item.Meta > 0 ? (item.Realizado / item.Meta) * 100 : 0;
-      if (pct >= 100) atingido++;
-      else if (pct >= 70) parcial++;
-      else critico++;
+      const pct = item.Meta > 0 ? item.Realizado / item.Meta * 100 : 0;
+      if (pct >= 100) atingido++;else
+      if (pct >= 70) parcial++;else
+      critico++;
     });
     return { atingido, parcial, critico };
   }, [chartData]);
@@ -205,18 +205,18 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
   // Per-produtor data for detail modal
   const produtorData = useMemo(() => {
     const produtorNames = new Set<string>();
-    metas.filter((m) => m.mes.startsWith(currentMonthStr) && m.produtor?.nome)
-      .forEach((m) => produtorNames.add(m.produtor!.nome));
+    metas.filter((m) => m.mes.startsWith(currentMonthStr) && m.produtor?.nome).
+    forEach((m) => produtorNames.add(m.produtor!.nome));
     currentMonthProdutos.forEach((p) => produtorNames.add(p.consultor));
 
     return Array.from(produtorNames).map((nome) => {
       const prodMetas = metas.filter((m) =>
-        m.mes.startsWith(currentMonthStr) && m.produtor?.nome === nome
+      m.mes.startsWith(currentMonthStr) && m.produtor?.nome === nome
       );
       const meta = prodMetas.reduce((s, m) => s + m.quantidade, 0);
       const prods = currentMonthProdutos.filter((p) => p.consultor === nome);
       const realizado = prods.length;
-      const pct = meta > 0 ? (realizado / meta) * 100 : 0;
+      const pct = meta > 0 ? realizado / meta * 100 : 0;
       return { nome, meta, realizado, pct };
     }).filter((p) => p.meta > 0 || p.realizado > 0);
   }, [metas, currentMonthProdutos, currentMonthStr]);
@@ -226,7 +226,7 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
     if (!active || !payload?.length) return null;
     const meta = payload.find((p: any) => p.dataKey === 'Meta')?.value || 0;
     const realizado = payload.find((p: any) => p.dataKey === 'Realizado')?.value || 0;
-    const pct = meta > 0 ? ((realizado / meta) * 100).toFixed(1) : '0.0';
+    const pct = meta > 0 ? (realizado / meta * 100).toFixed(1) : '0.0';
     return (
       <div className="rounded-lg border bg-popover p-3 shadow-lg text-sm space-y-1">
         <p className="font-semibold text-popover-foreground">{label}</p>
@@ -243,8 +243,8 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
         <div className="pt-1 border-t">
           <span className={`font-semibold ${getStatusColor(Number(pct))}`}>{pct}% atingido</span>
         </div>
-      </div>
-    );
+      </div>);
+
   };
 
   // Custom bar label
@@ -254,8 +254,8 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
     return (
       <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={11} fontWeight={600} fill="hsl(var(--foreground))">
         {value}
-      </text>
-    );
+      </text>);
+
   };
 
   if (loading) {
@@ -272,8 +272,8 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>);
+
   }
 
   return (
@@ -293,10 +293,10 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
             </CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={`text-xs px-2.5 py-1 ${
-                totals.pct >= 100 ? 'bg-success/10 text-success border-success/30' :
-                totals.pct >= 70 ? 'bg-warning/10 text-warning border-warning/30' :
-                'bg-destructive/10 text-destructive border-destructive/30'
-              }`}>
+              totals.pct >= 100 ? 'bg-success/10 text-success border-success/30' :
+              totals.pct >= 70 ? 'bg-warning/10 text-warning border-warning/30' :
+              'bg-destructive/10 text-destructive border-destructive/30'}`
+              }>
                 {totals.pct.toFixed(1)}% atingido
               </Badge>
             </div>
@@ -332,24 +332,24 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
                 dataKey="categoria"
                 tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                 tickLine={false}
-                axisLine={false}
-              />
+                axisLine={false} />
+              
               <YAxis
                 tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                 tickLine={false}
                 axisLine={false}
-                allowDecimals={false}
-              />
+                allowDecimals={false} />
+              
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
               <Legend
                 wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
                 iconType="square"
-                iconSize={10}
-              />
+                iconSize={10} />
+              
               <Bar dataKey="Meta" fill="hsl(var(--muted-foreground) / 0.35)" radius={[4, 4, 0, 0]} label={renderBarLabel} />
               <Bar dataKey="Realizado" radius={[4, 4, 0, 0]} label={renderBarLabel}>
                 {chartData.map((entry, index) => {
-                  const pct = entry.Meta > 0 ? (entry.Realizado / entry.Meta) * 100 : 0;
+                  const pct = entry.Meta > 0 ? entry.Realizado / entry.Meta * 100 : 0;
                   return <Cell key={index} fill={getBarColor(pct)} />;
                 })}
               </Bar>
@@ -357,26 +357,26 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
           </ResponsiveContainer>
 
           {/* Activity breakdown mini-cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {chartData.map((item) => {
-              const pct = item.Meta > 0 ? (item.Realizado / item.Meta) * 100 : 0;
-              return (
-                <div key={item.categoria} className="flex items-center gap-2.5 rounded-lg border p-2.5 hover:bg-muted/20 transition-colors">
-                  <StatusIcon pct={pct} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium truncate">{item.categoria}</span>
-                      <span className={`text-[11px] font-semibold ${getStatusColor(pct)}`}>{pct.toFixed(0)}%</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[10px] text-muted-foreground">{item.Realizado}/{item.Meta}</span>
-                    </div>
-                    <Progress value={Math.min(pct, 100)} className={`h-1 mt-1 ${getProgressColor(pct)}`} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
 
           {/* Status summary + Ver mais */}
           <div className="flex items-center justify-between pt-2 border-t">
@@ -395,8 +395,8 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
               variant="ghost"
               size="sm"
               className="text-xs h-7 gap-1 text-primary hover:text-primary"
-              onClick={() => setShowDetail(true)}
-            >
+              onClick={() => setShowDetail(true)}>
+              
               Ver mais
               <ExternalLink className="h-3 w-3" />
             </Button>
@@ -408,8 +408,8 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
         open={showDetail}
         onOpenChange={setShowDetail}
         chartData={chartData}
-        produtorData={produtorData}
-      />
-    </>
-  );
+        produtorData={produtorData} />
+      
+    </>);
+
 };
