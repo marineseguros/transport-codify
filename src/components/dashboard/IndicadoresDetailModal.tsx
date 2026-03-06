@@ -253,7 +253,7 @@ export const IndicadoresDetailModal = ({
         if (fk.startsWith(String(filterYear))) months.add(fk);
       }
     });
-    return Array.from(months).sort().reverse();
+    return Array.from(months).sort();
   }, [allMetas, allProdutos, allCotacoes, filterYear]);
 
   // Recompute main category data respecting modal produtor filter
@@ -264,10 +264,13 @@ export const IndicadoresDetailModal = ({
 
     return CATEGORIES.map((cat) => {
       // For meta, sum all metas whose month falls within the dashboard range
+      // Use string comparison to avoid timezone issues with Date objects
+      const startMonth = format(dashboardDateRange.start, 'yyyy-MM');
+      const endMonth = format(dashboardDateRange.end, 'yyyy-MM');
       const meta = allMetas
         .filter((m) => {
-          const mDate = new Date(m.mes);
-          return mDate >= startOfMonth(start) && mDate <= endOfMonth(end) &&
+          const mk = m.mes.substring(0, 7);
+          return mk >= startMonth && mk <= endMonth &&
             isMetaType(m.tipo_meta?.descricao, cat) &&
             (!effectiveProdutorFilter?.length || (m.produtor && effectiveProdutorFilter.includes(m.produtor.nome)));
         })
