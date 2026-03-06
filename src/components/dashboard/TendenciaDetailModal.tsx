@@ -125,7 +125,7 @@ export function TendenciaDetailModal({
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
-                  <ComposedChart data={monthlyData}>
+                  <ComposedChart data={filteredData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
                     <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
@@ -186,8 +186,8 @@ export function TendenciaDetailModal({
                       </tr>
                     </thead>
                     <tbody>
-                      {monthlyData.map((month, index) => {
-                        const prevMonth = monthlyData[index - 1];
+                      {filteredData.map((month, index) => {
+                        const prevMonth = filteredData[index - 1];
                         const trend = prevMonth ? month.fechadas - prevMonth.fechadas : 0;
                         
                         return (
