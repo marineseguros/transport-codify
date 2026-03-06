@@ -1483,7 +1483,7 @@ const Dashboard = () => {
             <div className="text-2xl font-bold">{Math.round(monthlyStats.tempoMedioFechamento)} dias</div>
             {monthlyStats.tempoMedioComp.diff !== 0 ? <span className={`text-xs flex items-center gap-1 ${monthlyStats.tempoMedioComp.diff < 0 ? "text-success" : monthlyStats.tempoMedioComp.diff > 0 ? "text-destructive" : "text-muted-foreground"}`}>
                 {monthlyStats.tempoMedioComp.diff < 0 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
-                {monthlyStats.tempoMedioComp.diff > 0 ? "+" : ""}{Math.round(monthlyStats.tempoMedioComp.diff)} dias ({monthlyStats.tempoMedioComp.percentage > 0 ? "+" : ""}{monthlyStats.tempoMedioComp.percentage.toFixed(1)}%)
+                {monthlyStats.tempoMedioComp.diff > 0 ? "+" : ""}{Math.round(monthlyStats.tempoMedioComp.diff)} dias ({monthlyStats.tempoMedioComp.percentage > 0 ? "+" : ""}{monthlyStats.tempoMedioComp.percentage.toFixed(2)}%)
               </span> : <p className="text-xs text-muted-foreground">Fechamento</p>}
           </CardContent>
         </Card>
