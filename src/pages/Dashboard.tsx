@@ -829,7 +829,7 @@ const Dashboard = () => {
             cotacoes: []
           };
         }
-        produtorStats[nome].emAbertoByKey[listingKey].cotacoes.push(cotacao);
+        produtorStats[nome].emAbertoByKey[distinctKey].cotacoes.push(cotacao);
       } else if (cotacao.status === "Declinado") {
         produtorStats[nome].distinctKeysDeclinadas.add(distinctKey);
         produtorStats[nome].cotacoesDeclinadas.push(cotacao);
