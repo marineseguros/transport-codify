@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import { logger } from '@/lib/logger';
 
 interface Produto {
@@ -71,11 +72,54 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
   const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
 
-  const currentMonth = new Date();
-  const currentYear = currentMonth.getFullYear();
-  const currentMonthStr = format(currentMonth, 'yyyy-MM');
-  const startCurrent = startOfMonth(currentMonth);
-  const endCurrent = endOfMonth(currentMonth);
+  const normalizeLabel = (value?: string | null) =>
+    (value || '')
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      .trim();
+
+  const isSubtipo = (subtipo: string | null | undefined, expected: 'visita' | 'video') =>
+    normalizeLabel(subtipo) === expected;
+
+  const isMetaType = (descricao: string | undefined, target: 'coleta' | 'indicacao' | 'visita' | 'video' | 'cotacao' | 'fechamento') => {
+    const normalized = normalizeLabel(descricao);
+    if (target === 'coleta') return normalized === 'coleta';
+    if (target === 'indicacao') return normalized === 'indicacao';
+    if (target === 'visita') return normalized === 'visita';
+    if (target === 'video') return normalized === 'video';
+    if (target === 'cotacao') return normalized === 'cotacao';
+    return normalized === 'fechamento';
+  };
+
+  const analysisDate = useMemo(() => {
+    const timestamps: number[] = [];
+
+    produtos.forEach(p => {
+      const t = new Date(p.data_registro).getTime();
+      if (!Number.isNaN(t)) timestamps.push(t);
+    });
+
+    metas.forEach(m => {
+      const t = new Date(m.mes).getTime();
+      if (!Number.isNaN(t)) timestamps.push(t);
+    });
+
+    cotacoes.forEach(c => {
+      const tCotacao = new Date(c.data_cotacao).getTime();
+      if (!Number.isNaN(tCotacao)) timestamps.push(tCotacao);
+      if (c.data_fechamento) {
+        const tFechamento = new Date(c.data_fechamento).getTime();
+        if (!Number.isNaN(tFechamento)) timestamps.push(tFechamento);
+      }
+    });
+
+    return timestamps.length ? new Date(Math.max(...timestamps)) : new Date();
+  }, [produtos, metas, cotacoes]);
+
+  const currentMonthStr = format(analysisDate, 'yyyy-MM');
+  const startCurrent = startOfMonth(analysisDate);
+  const endCurrent = endOfMonth(analysisDate);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -83,9 +127,9 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
         setLoading(true);
 
         const [prodRes, metasRes, cotRes, produtoresRes] = await Promise.all([
-          supabase.from('produtos').select('*').gte('data_registro', `${currentYear}-01-01`).order('data_registro', { ascending: false }),
-          supabase.from('metas').select('*, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)').gte('mes', `${currentYear}-01-01`).lte('mes', `${currentYear}-12-31`),
-          supabase.from('cotacoes').select('id, status, data_cotacao, data_fechamento, valor_premio, produtor_origem_id, produtor_cotador_id').gte('data_cotacao', `${currentYear}-01-01`),
+          supabase.from('produtos').select('*').order('data_registro', { ascending: false }),
+          supabase.from('metas').select('*, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)').order('mes', { ascending: false }),
+          supabase.from('cotacoes').select('id, status, data_cotacao, data_fechamento, valor_premio, produtor_origem_id, produtor_cotador_id').order('data_cotacao', { ascending: false }),
           supabase.from('produtores').select('id, nome').eq('ativo', true).order('ordem'),
         ]);
 
@@ -157,26 +201,26 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
 
     const coleta = filteredProds.filter(p => p.tipo === 'Coleta').length;
     const indicacao = filteredProds.filter(p => p.tipo === 'Indicação').length;
-    const visita = filteredProds.filter(p => p.tipo === 'Visita/Video' && p.subtipo === 'Visita').length;
-    const video = filteredProds.filter(p => p.tipo === 'Visita/Video' && p.subtipo === 'Vídeo').length;
+    const visita = filteredProds.filter(p => p.tipo === 'Visita/Video' && isSubtipo(p.subtipo, 'visita')).length;
+    const video = filteredProds.filter(p => p.tipo === 'Visita/Video' && isSubtipo(p.subtipo, 'video')).length;
     const cotacoesCount = currentMonthCotacoes.length;
     const fechamentosCount = currentMonthFechamentos.length;
     const premioFechado = currentMonthFechamentos.reduce((s, c) => s + (c.valor_premio || 0), 0);
 
     // Metas totals for current month
-    const getMetaTotal = (tipoDesc: string) =>
-      metas.filter(m => m.mes.startsWith(currentMonthStr) && m.tipo_meta?.descricao === tipoDesc &&
+    const getMetaTotal = (target: 'coleta' | 'indicacao' | 'visita' | 'video' | 'cotacao' | 'fechamento') =>
+      metas.filter(m => m.mes.startsWith(currentMonthStr) && isMetaType(m.tipo_meta?.descricao, target) &&
         (!produtorFilter?.length || (m.produtor && produtorFilter.includes(m.produtor.nome)))
       ).reduce((s, m) => s + m.quantidade, 0);
 
     return {
       coleta, indicacao, visita, video, cotacoesCount, fechamentosCount, premioFechado,
-      metaColeta: getMetaTotal('Coleta'),
-      metaIndicacao: getMetaTotal('Indicação'),
-      metaVisita: getMetaTotal('Visita'),
-      metaVideo: getMetaTotal('Vídeo'),
-      metaCotacao: getMetaTotal('Cotação'),
-      metaFechamento: getMetaTotal('Fechamento'),
+      metaColeta: getMetaTotal('coleta'),
+      metaIndicacao: getMetaTotal('indicacao'),
+      metaVisita: getMetaTotal('visita'),
+      metaVideo: getMetaTotal('video'),
+      metaCotacao: getMetaTotal('cotacao'),
+      metaFechamento: getMetaTotal('fechamento'),
     };
   }, [currentMonthProdutos, currentMonthCotacoes, currentMonthFechamentos, metas, produtorFilter, currentMonthStr]);
 
@@ -190,8 +234,8 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
       const prods = currentMonthProdutos.filter(p => p.consultor === prod.nome);
       const coleta = prods.filter(p => p.tipo === 'Coleta').length;
       const indicacao = prods.filter(p => p.tipo === 'Indicação').length;
-      const visita = prods.filter(p => p.tipo === 'Visita/Video' && p.subtipo === 'Visita').length;
-      const video = prods.filter(p => p.tipo === 'Visita/Video' && p.subtipo === 'Vídeo').length;
+      const visita = prods.filter(p => p.tipo === 'Visita/Video' && isSubtipo(p.subtipo, 'visita')).length;
+      const video = prods.filter(p => p.tipo === 'Visita/Video' && isSubtipo(p.subtipo, 'video')).length;
       const totalProdutos = coleta + indicacao + visita + video;
 
       // Cotacoes where this produtor is cotador
@@ -202,11 +246,11 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
       const premioFechado = fechProd.reduce((s, c) => s + (c.valor_premio || 0), 0);
 
       // Meta totals for this produtor
-      const getMetaProd = (tipoDesc: string) =>
-        metas.filter(m => m.mes.startsWith(currentMonthStr) && m.tipo_meta?.descricao === tipoDesc && m.produtor?.nome === prod.nome)
+      const getMetaProd = (target: 'coleta' | 'indicacao' | 'visita' | 'video') =>
+        metas.filter(m => m.mes.startsWith(currentMonthStr) && isMetaType(m.tipo_meta?.descricao, target) && m.produtor?.nome === prod.nome)
           .reduce((s, m) => s + m.quantidade, 0);
 
-      const totalMeta = getMetaProd('Coleta') + getMetaProd('Indicação') + getMetaProd('Visita') + getMetaProd('Vídeo');
+      const totalMeta = getMetaProd('coleta') + getMetaProd('indicacao') + getMetaProd('visita') + getMetaProd('video');
       const pctAtingimento = totalMeta > 0 ? (totalProdutos / totalMeta) * 100 : 0;
 
       return {
@@ -272,14 +316,14 @@ export const DashboardIndicadores = ({ produtorFilter }: DashboardIndicadoresPro
 
   const getDetalhesDisplay = (produto: Produto) => {
     if (produto.tipo === 'Indicação' && produto.cliente_indicado) return produto.cliente_indicado;
-    if (produto.tipo === 'Visita/Video' && produto.subtipo === 'Visita' && produto.cidade) return produto.cidade;
-    if (produto.tipo === 'Visita/Video' && produto.subtipo === 'Vídeo' && produto.data_realizada) {
+    if (produto.tipo === 'Visita/Video' && isSubtipo(produto.subtipo, 'visita') && produto.cidade) return produto.cidade;
+    if (produto.tipo === 'Visita/Video' && isSubtipo(produto.subtipo, 'video') && produto.data_realizada) {
       return format(new Date(produto.data_realizada), 'dd/MM/yyyy', { locale: ptBR });
     }
     return '-';
   };
 
-  const monthLabel = format(currentMonth, 'MMMM yyyy', { locale: ptBR });
+  const monthLabel = format(analysisDate, 'MMMM yyyy', { locale: ptBR });
 
   const kpiItems = [
     { label: 'Coleta', realizado: headerKpis.coleta, meta: headerKpis.metaColeta },
