@@ -1022,8 +1022,8 @@ const Dashboard = () => {
     return months;
   }, [allQuotes, filters]);
 
-  // Backward compat
-  const monthlyTrendData = monthlyTrendDataDetalhada;
+  // Backward compat - card shows last 6 months only
+  const monthlyTrendData = monthlyTrendDataDetalhada.slice(-6);
 
   // Top seguradoras data DETALHADA - últimos 12 meses
   const seguradoraDataDetalhada = useMemo(() => {
