@@ -235,38 +235,44 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
   // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
-    const meta = payload.find((p: any) => p.dataKey === 'Meta')?.value || 0;
     const realizado = payload.find((p: any) => p.dataKey === 'Realizado')?.value || 0;
+    const item = chartData.find((d) => d.categoria === label);
+    const meta = item?.Meta || 0;
     const pct = meta > 0 ? (realizado / meta * 100).toFixed(1) : '0.0';
     return (
       <div className="rounded-lg border bg-popover p-3 shadow-lg text-sm space-y-1">
         <p className="font-semibold text-popover-foreground">{label}</p>
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-sm bg-muted-foreground/50" />
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'hsl(var(--muted-foreground))' }} />
           <span className="text-muted-foreground">Meta:</span>
           <span className="font-semibold">{meta}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-sm bg-primary" />
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: getBarColor(Number(pct)) }} />
           <span className="text-muted-foreground">Realizado:</span>
-          <span className="font-semibold text-primary">{realizado}</span>
+          <span className="font-semibold">{realizado}</span>
         </div>
         <div className="pt-1 border-t">
           <span className={`font-semibold ${getStatusColor(Number(pct))}`}>{pct}% atingido</span>
         </div>
       </div>);
-
   };
 
-  // Custom bar label
+  // Custom bar label showing value + percentage
   const renderBarLabel = (props: any) => {
-    const { x, y, width, value } = props;
-    if (!value) return null;
+    const { x, y, width, value, index } = props;
+    if (value === undefined || value === null) return null;
+    const item = chartData[index];
+    const pct = item?.Meta > 0 ? (item.Realizado / item.Meta * 100).toFixed(0) : '0';
     return (
-      <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={11} fontWeight={600} fill="hsl(var(--foreground))">
-        {value}
-      </text>);
-
+      <g>
+        <text x={x + width / 2} y={y - 16} textAnchor="middle" fontSize={12} fontWeight={700} fill="hsl(var(--foreground))">
+          {value}
+        </text>
+        <text x={x + width / 2} y={y - 4} textAnchor="middle" fontSize={10} fontWeight={500} fill={getBarColor(Number(pct))}>
+          {pct}%
+        </text>
+      </g>);
   };
 
   if (loading) {
