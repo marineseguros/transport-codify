@@ -56,6 +56,9 @@ interface IndicadoresDetailModalProps {
   allCotacoes?: DashboardCotacao[];
   produtorNames: string[];
   currentProdutorFilter?: string[];
+  dateFilter?: string;
+  anoEspecifico?: string;
+  dateRangeProp?: { from?: Date; to?: Date };
 }
 
 const normalizeLabel = (value?: string | null) =>
@@ -107,22 +110,27 @@ const computeRealized = (
   prodFilter?: string[]
 ) => {
   if (cat === 'Cotação') {
+    // Mixed attribution: Cotação uses produtor_cotador
     const monthCotacoes = cotacoes.filter((c) => {
       const d = new Date(c.data_cotacao);
-      return d >= start && d <= end &&
-        (!prodFilter?.length || prodFilter.includes(c.produtor_cotador?.nome || ''));
+      if (d < start || d > end) return false;
+      if (!prodFilter?.length) return true;
+      return prodFilter.includes(c.produtor_cotador?.nome || '');
     });
     const keys = new Set<string>();
     monthCotacoes.forEach((c) => keys.add(`${c.cpf_cnpj}_${getBranchGroup(c.ramo)}`));
     return keys.size;
   }
   if (cat === 'Fechamento') {
-    const closed = cotacoes.filter((c) =>
-      (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') &&
-      c.data_fechamento &&
-      (() => { const d = new Date(c.data_fechamento!); return d >= start && d <= end; })() &&
-      (!prodFilter?.length || prodFilter.includes(c.produtor_cotador?.nome || ''))
-    );
+    // Mixed attribution: Fechamento uses produtor_origem
+    const closed = cotacoes.filter((c) => {
+      if (c.status !== 'Negócio fechado' && c.status !== 'Fechamento congênere') return false;
+      if (!c.data_fechamento) return false;
+      const d = new Date(c.data_fechamento);
+      if (d < start || d > end) return false;
+      if (!prodFilter?.length) return true;
+      return prodFilter.includes(c.produtor_origem?.nome || '');
+    });
     const keys = new Set<string>();
     let avulso = 0;
     closed.forEach((c) => {
