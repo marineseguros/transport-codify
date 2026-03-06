@@ -7,7 +7,7 @@ import { Target, TrendingUp, TrendingDown, Minus, ExternalLink, BarChart3, Check
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth, getDaysInMonth, getDate } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Cell } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { logger } from '@/lib/logger';
 import { IndicadoresDetailModal } from './IndicadoresDetailModal';
 import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
@@ -235,38 +235,44 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
   // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
-    const meta = payload.find((p: any) => p.dataKey === 'Meta')?.value || 0;
     const realizado = payload.find((p: any) => p.dataKey === 'Realizado')?.value || 0;
+    const item = chartData.find((d) => d.categoria === label);
+    const meta = item?.Meta || 0;
     const pct = meta > 0 ? (realizado / meta * 100).toFixed(1) : '0.0';
     return (
       <div className="rounded-lg border bg-popover p-3 shadow-lg text-sm space-y-1">
         <p className="font-semibold text-popover-foreground">{label}</p>
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-sm bg-muted-foreground/50" />
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: 'hsl(var(--muted-foreground))' }} />
           <span className="text-muted-foreground">Meta:</span>
           <span className="font-semibold">{meta}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-sm bg-primary" />
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: getBarColor(Number(pct)) }} />
           <span className="text-muted-foreground">Realizado:</span>
-          <span className="font-semibold text-primary">{realizado}</span>
+          <span className="font-semibold">{realizado}</span>
         </div>
         <div className="pt-1 border-t">
           <span className={`font-semibold ${getStatusColor(Number(pct))}`}>{pct}% atingido</span>
         </div>
       </div>);
-
   };
 
-  // Custom bar label
+  // Custom bar label showing value + percentage
   const renderBarLabel = (props: any) => {
-    const { x, y, width, value } = props;
-    if (!value) return null;
+    const { x, y, width, value, index } = props;
+    if (value === undefined || value === null) return null;
+    const item = chartData[index];
+    const pct = item?.Meta > 0 ? (item.Realizado / item.Meta * 100).toFixed(0) : '0';
     return (
-      <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={11} fontWeight={600} fill="hsl(var(--foreground))">
-        {value}
-      </text>);
-
+      <g>
+        <text x={x + width / 2} y={y - 16} textAnchor="middle" fontSize={12} fontWeight={700} fill="hsl(var(--foreground))">
+          {value}
+        </text>
+        <text x={x + width / 2} y={y - 4} textAnchor="middle" fontSize={10} fontWeight={500} fill={getBarColor(Number(pct))}>
+          {pct}%
+        </text>
+      </g>);
   };
 
   if (loading) {
@@ -337,9 +343,9 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
           </div>
 
           {/* Chart */}
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={chartData} margin={{ top: 20, right: 10, left: -10, bottom: 5 }} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={chartData} margin={{ top: 40, right: 10, left: -10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} vertical={false} />
               <XAxis
                 dataKey="categoria"
                 tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
@@ -353,13 +359,47 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
                 allowDecimals={false} />
               
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
-              <Legend
-                wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                iconType="square"
-                iconSize={10} />
-              
-              <Bar dataKey="Meta" fill="hsl(var(--muted-foreground) / 0.35)" radius={[4, 4, 0, 0]} label={renderBarLabel} />
-              <Bar dataKey="Realizado" radius={[4, 4, 0, 0]} label={renderBarLabel}>
+
+              <Bar
+                dataKey="Realizado"
+                radius={[4, 4, 0, 0]}
+                barSize={40}
+                label={renderBarLabel}
+                shape={(props: any) => {
+                  const { x, y, width, height, fill, index } = props;
+                  const item = chartData[index];
+                  const meta = item?.Meta || 0;
+                  // Calculate meta Y position
+                  const chartHeight = 280 - 40 - 5; // height minus top/bottom margins
+                  const maxVal = Math.max(...chartData.map(d => Math.max(d.Meta, d.Realizado))) * 1.1;
+                  
+                  return (
+                    <g>
+                      <rect x={x} y={y} width={width} height={height} fill={fill} rx={4} ry={4} />
+                      {meta > 0 && (() => {
+                        // Use the bar's coordinate system to calculate meta line position
+                        const barBottom = y + height;
+                        const realized = item.Realizado;
+                        const pixelsPerUnit = realized > 0 ? height / realized : (chartHeight / (maxVal || 1));
+                        const metaY = barBottom - (meta * pixelsPerUnit);
+                        const lineExtend = 8;
+                        return (
+                          <line
+                            x1={x - lineExtend}
+                            y1={metaY}
+                            x2={x + width + lineExtend}
+                            y2={metaY}
+                            stroke="hsl(var(--foreground))"
+                            strokeWidth={2}
+                            strokeDasharray="6 3"
+                            strokeOpacity={0.5}
+                          />
+                        );
+                      })()}
+                    </g>
+                  );
+                }}
+              >
                 {chartData.map((entry, index) => {
                   const pct = entry.Meta > 0 ? entry.Realizado / entry.Meta * 100 : 0;
                   return <Cell key={index} fill={getBarColor(pct)} />;
@@ -367,6 +407,22 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-5 text-xs">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-success inline-block" /> Atingido (≥100%)
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-warning inline-block" /> Parcial (≥70%)
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-destructive inline-block" /> Crítico (&lt;70%)
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-0.5 border-t-2 border-dashed border-muted-foreground inline-block" /> Meta
+            </span>
+          </div>
 
           {/* Activity breakdown mini-cards */}
           
