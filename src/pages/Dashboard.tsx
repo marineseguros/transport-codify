@@ -1985,90 +1985,90 @@ const Dashboard = () => {
       <CotacoesEmAbertoChart cotacoes={allQuotes} produtorFilter={filters.produtorFilter} />
 
       {/* Insights Adicionais */}
-      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {/* Gráfico de Pizza - Status */}
-        
+      
 
-        {/* Análise de Produtividade - Top Produtores com Fechadas destacadas */}
-        
 
-        {/* Performance por Unidade - Com dados detalhados */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Performance por Unidade
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {(() => {
-                // Calcular dados por unidade com distintos
-                const unidadeStats: Record<string, {
-                  nome: string;
-                  total: number;
-                  fechadas: number;
-                  premio: number;
-                  distinctKeys: Set<string>;
-                  distinctFechadas: Set<string>;
-                }> = {};
-                filteredCotacoes.forEach((c) => {
-                  const nome = c.unidade?.descricao || 'Não informada';
-                  if (!unidadeStats[nome]) {
-                    unidadeStats[nome] = {
-                      nome,
-                      total: 0,
-                      fechadas: 0,
-                      premio: 0,
-                      distinctKeys: new Set(),
-                      distinctFechadas: new Set()
-                    };
-                  }
-                  const branchGroup = getBranchGroup(c.ramo);
-                  const key = `${c.cpf_cnpj}_${branchGroup}`;
-                  unidadeStats[nome].total++;
-                  unidadeStats[nome].distinctKeys.add(key);
-                  if (c.status === "Negócio fechado" || c.status === "Fechamento congênere") {
-                    unidadeStats[nome].fechadas++;
-                    unidadeStats[nome].distinctFechadas.add(key);
-                    unidadeStats[nome].premio += c.valor_premio || 0;
-                  }
-                });
-                const unidadesOrdenadas = Object.values(unidadeStats).map((u) => ({
-                  ...u,
-                  distinctTotal: u.distinctKeys.size,
-                  distinctFechadas: u.distinctFechadas.size,
-                  taxa: u.distinctKeys.size > 0 ? u.distinctFechadas.size / u.distinctKeys.size * 100 : 0
-                })).sort((a, b) => b.premio - a.premio).slice(0, 5);
-                const maxPremio = unidadesOrdenadas[0]?.premio || 1;
-                return unidadesOrdenadas.map((unidade) => <div key={unidade.nome} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">{unidade.nome}</span>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <span className="text-sm font-bold text-success">{unidade.distinctFechadas}</span>
-                          <span className="text-muted-foreground text-xs">/{unidade.distinctTotal}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground w-12 text-right">{unidade.taxa.toFixed(1)}%</span>
-                      </div>
-                    </div>
-                    {/* Barra de progresso com prêmio */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-secondary rounded-full h-2.5 overflow-hidden">
-                        <div className="bg-gradient-to-r from-success to-success-alt h-full transition-all" style={{
-                        width: `${unidade.premio / maxPremio * 100}%`
-                      }} />
-                      </div>
-                      <span className="text-xs font-medium text-primary min-w-[70px] text-right">
-                        {formatCurrency(unidade.premio)}
-                      </span>
-                    </div>
-                  </div>);
-              })()}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
 
       {/* Cotações Recentes */}
       
