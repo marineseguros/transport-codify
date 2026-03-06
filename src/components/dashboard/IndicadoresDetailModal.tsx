@@ -451,6 +451,7 @@ export const IndicadoresDetailModal = ({
                   <th className="text-center px-3 py-2 font-medium text-muted-foreground">Faltam</th>
                   <th className="text-center px-3 py-2 font-medium text-muted-foreground">% Atingido</th>
                   <th className="text-right px-3 py-2 font-medium text-muted-foreground w-[120px]">Progresso</th>
+                  <th className="text-center px-3 py-2 font-medium text-muted-foreground w-10"></th>
                 </tr>
               </thead>
               <tbody>
@@ -460,9 +461,8 @@ export const IndicadoresDetailModal = ({
                   const hasMonths = months.length > 0;
 
                   return (
-                    <>
+                    <Fragment key={item.categoria}>
                       <tr
-                        key={item.categoria}
                         className={`border-t hover:bg-muted/20 transition-colors ${hasMonths ? 'cursor-pointer select-none' : ''}`}
                         onClick={() => hasMonths && toggleExpand(item.categoria)}
                       >
@@ -493,6 +493,23 @@ export const IndicadoresDetailModal = ({
                             value={Math.min(item.pct, 100)}
                             className={`h-2 ${getProgressColor(item.pct)}`}
                           />
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={(e) => { e.stopPropagation(); setDetailCategoria(item.categoria); }}
+                                >
+                                  <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="left"><p className="text-xs">Ver registros</p></TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </td>
                       </tr>
                       {isExpanded && months.map((m) => (
