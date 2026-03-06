@@ -405,7 +405,12 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
         open={showDetail}
         onOpenChange={setShowDetail}
         chartData={chartData}
-        produtorData={produtorData} />
+        produtorData={produtorData}
+        allMetas={metas}
+        allProdutos={produtos}
+        allCotacoes={filteredCotacoes}
+        produtorNames={allProdutorNames}
+        currentProdutorFilter={produtorFilter} />
       
     </>);
 
