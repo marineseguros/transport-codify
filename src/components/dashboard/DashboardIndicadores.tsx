@@ -203,6 +203,13 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
   }, [chartData]);
 
   // Per-produtor data for detail modal
+  const allProdutorNames = useMemo(() => {
+    const names = new Set<string>();
+    metas.filter((m) => m.produtor?.nome).forEach((m) => names.add(m.produtor!.nome));
+    produtos.forEach((p) => names.add(p.consultor));
+    return Array.from(names).sort();
+  }, [metas, produtos]);
+
   const produtorData = useMemo(() => {
     const produtorNames = new Set<string>();
     metas.filter((m) => m.mes.startsWith(currentMonthStr) && m.produtor?.nome).
@@ -398,7 +405,12 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes }: Dashb
         open={showDetail}
         onOpenChange={setShowDetail}
         chartData={chartData}
-        produtorData={produtorData} />
+        produtorData={produtorData}
+        allMetas={metas}
+        allProdutos={produtos}
+        allCotacoes={filteredCotacoes}
+        produtorNames={allProdutorNames}
+        currentProdutorFilter={produtorFilter} />
       
     </>);
 
