@@ -145,7 +145,7 @@ export function ClientesStatusDetailPopup({
 
             {/* Client List */}
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-full w-max text-sm">
                 <thead>
                   <tr className="border-b text-xs text-muted-foreground">
                     <th className="text-left py-2 px-2 font-medium">Cliente</th>
@@ -166,12 +166,12 @@ export function ClientesStatusDetailPopup({
                       <td className="py-2 px-2">
                         <div className="flex items-center gap-2">
                           <Building className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-medium truncate max-w-[150px]" title={cliente.segurado}>
+                          <span className="font-medium whitespace-nowrap" title={cliente.segurado}>
                             {cliente.segurado}
                           </span>
                         </div>
                       </td>
-                      <td className="py-2 px-2 text-xs text-muted-foreground font-mono">
+                      <td className="py-2 px-2 text-xs text-muted-foreground font-mono whitespace-nowrap">
                         {cliente.cpfCnpj}
                       </td>
                       <td className="py-2 px-2">
@@ -179,7 +179,7 @@ export function ClientesStatusDetailPopup({
                           {cliente.ramoGroup}
                         </Badge>
                       </td>
-                      <td className="py-2 px-2 text-xs truncate max-w-[100px]" title={cliente.seguradora}>
+                      <td className="py-2 px-2 text-xs whitespace-nowrap" title={cliente.seguradora}>
                         {cliente.seguradora || '-'}
                       </td>
                       <td className="py-2 px-2 text-center text-xs">
@@ -200,7 +200,7 @@ export function ClientesStatusDetailPopup({
                               : '-'}
                         </span>
                       </td>
-                      <td className="py-2 px-2 text-right">
+                      <td className="py-2 px-2 text-right whitespace-nowrap">
                         <span className={`font-semibold ${config.color}`}>
                           {formatCurrency(cliente.premioTotal)}
                         </span>
