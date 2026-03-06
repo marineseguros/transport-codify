@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePickerWithRange } from "@/components/ui/date-picker";
 import { DateRange } from "react-day-picker";
-import { X, Save, Bookmark } from "lucide-react";
+import { X, Save, Bookmark, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -42,32 +41,33 @@ interface DashboardFiltersProps {
 
 const STORAGE_KEY_PREFIX = "dashboard_saved_filters";
 
-// Get unique segmentos from ramos
 const getUniqueSegmentos = (ramos: Ramo[]): string[] => {
   const segmentos = new Set<string>();
-  ramos.forEach(r => {
-    if (r.segmento) segmentos.add(r.segmento);
-  });
+  ramos.forEach(r => { if (r.segmento) segmentos.add(r.segmento); });
   return Array.from(segmentos).sort();
 };
 
-// Get unique regras from ramos
 const getUniqueRegras = (ramos: Ramo[]): string[] => {
   const regras = new Set<string>();
-  ramos.forEach(r => {
-    if (r.regra) regras.add(r.regra);
-  });
+  ramos.forEach(r => { if (r.regra) regras.add(r.regra); });
   return Array.from(regras).sort();
 };
 
-// Get years for ano específico
 const getAvailableYears = (): number[] => {
   const currentYear = new Date().getFullYear();
   const years: number[] = [];
-  for (let i = currentYear; i >= currentYear - 5; i--) {
-    years.push(i);
-  }
+  for (let i = currentYear; i >= currentYear - 5; i--) years.push(i);
   return years;
+};
+
+const DATE_FILTER_LABELS: Record<string, string> = {
+  mes_atual: "Este mês",
+  mes_anterior: "Mês passado",
+  ano_atual: "Ano atual",
+  ano_anterior: "Ano anterior",
+  "30dias": "Últimos 30 dias",
+  personalizado: "Personalizado",
+  ano_especifico: "Ano específico",
 };
 
 export function DashboardFilters({
@@ -82,19 +82,16 @@ export function DashboardFilters({
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
   const [newFilterName, setNewFilterName] = useState("");
   const [showSavePopover, setShowSavePopover] = useState(false);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
 
-  // User-specific storage key
   const storageKey = user?.user_id ? `${STORAGE_KEY_PREFIX}_${user.user_id}` : STORAGE_KEY_PREFIX;
 
-  // Load saved filters from localStorage (per user)
   useEffect(() => {
     if (!user?.user_id) return;
-    
     const stored = localStorage.getItem(storageKey);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        // Migrate old single-value filters to arrays
         const migrated = parsed.map((saved: SavedFilter) => ({
           ...saved,
           filters: migrateFiltersToArray(saved.filters)
@@ -108,49 +105,19 @@ export function DashboardFilters({
     }
   }, [storageKey, user?.user_id]);
 
-  // Migration helper for old single-value filters
-  const migrateFiltersToArray = (oldFilters: any): DashboardFilterValues => {
-    return {
-      dateFilter: oldFilters.dateFilter || "mes_atual",
-      dateRange: oldFilters.dateRange,
-      produtorFilter: Array.isArray(oldFilters.produtorFilter) 
-        ? oldFilters.produtorFilter 
-        : oldFilters.produtorFilter && oldFilters.produtorFilter !== "todos" 
-          ? [oldFilters.produtorFilter] 
-          : [],
-      seguradoraFilter: Array.isArray(oldFilters.seguradoraFilter)
-        ? oldFilters.seguradoraFilter
-        : oldFilters.seguradoraFilter && oldFilters.seguradoraFilter !== "todas"
-          ? [oldFilters.seguradoraFilter]
-          : [],
-      ramoFilter: Array.isArray(oldFilters.ramoFilter)
-        ? oldFilters.ramoFilter
-        : oldFilters.ramoFilter && oldFilters.ramoFilter !== "todos"
-          ? [oldFilters.ramoFilter]
-          : [],
-      segmentoFilter: Array.isArray(oldFilters.segmentoFilter)
-        ? oldFilters.segmentoFilter
-        : oldFilters.segmentoFilter && oldFilters.segmentoFilter !== "todos"
-          ? [oldFilters.segmentoFilter]
-          : [],
-      regraFilter: Array.isArray(oldFilters.regraFilter)
-        ? oldFilters.regraFilter
-        : oldFilters.regraFilter && oldFilters.regraFilter !== "todas"
-          ? [oldFilters.regraFilter]
-          : [],
-      unidadeFilter: Array.isArray(oldFilters.unidadeFilter)
-        ? oldFilters.unidadeFilter
-        : oldFilters.unidadeFilter && oldFilters.unidadeFilter !== "todas"
-          ? [oldFilters.unidadeFilter]
-          : [],
-      anoEspecifico: oldFilters.anoEspecifico || "",
-    };
-  };
+  const migrateFiltersToArray = (oldFilters: any): DashboardFilterValues => ({
+    dateFilter: oldFilters.dateFilter || "mes_atual",
+    dateRange: oldFilters.dateRange,
+    produtorFilter: Array.isArray(oldFilters.produtorFilter) ? oldFilters.produtorFilter : oldFilters.produtorFilter && oldFilters.produtorFilter !== "todos" ? [oldFilters.produtorFilter] : [],
+    seguradoraFilter: Array.isArray(oldFilters.seguradoraFilter) ? oldFilters.seguradoraFilter : oldFilters.seguradoraFilter && oldFilters.seguradoraFilter !== "todas" ? [oldFilters.seguradoraFilter] : [],
+    ramoFilter: Array.isArray(oldFilters.ramoFilter) ? oldFilters.ramoFilter : oldFilters.ramoFilter && oldFilters.ramoFilter !== "todos" ? [oldFilters.ramoFilter] : [],
+    segmentoFilter: Array.isArray(oldFilters.segmentoFilter) ? oldFilters.segmentoFilter : oldFilters.segmentoFilter && oldFilters.segmentoFilter !== "todos" ? [oldFilters.segmentoFilter] : [],
+    regraFilter: Array.isArray(oldFilters.regraFilter) ? oldFilters.regraFilter : oldFilters.regraFilter && oldFilters.regraFilter !== "todas" ? [oldFilters.regraFilter] : [],
+    unidadeFilter: Array.isArray(oldFilters.unidadeFilter) ? oldFilters.unidadeFilter : oldFilters.unidadeFilter && oldFilters.unidadeFilter !== "todas" ? [oldFilters.unidadeFilter] : [],
+    anoEspecifico: oldFilters.anoEspecifico || "",
+  });
 
-  const updateFilter = <K extends keyof DashboardFilterValues>(
-    key: K,
-    value: DashboardFilterValues[K]
-  ) => {
+  const updateFilter = <K extends keyof DashboardFilterValues>(key: K, value: DashboardFilterValues[K]) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 
@@ -169,16 +136,8 @@ export function DashboardFilters({
   };
 
   const saveCurrentFilters = () => {
-    if (!newFilterName.trim()) {
-      toast.error("Digite um nome para o filtro");
-      return;
-    }
-
-    const newSaved: SavedFilter = {
-      name: newFilterName.trim(),
-      filters: { ...filters },
-    };
-
+    if (!newFilterName.trim()) { toast.error("Digite um nome para o filtro"); return; }
+    const newSaved: SavedFilter = { name: newFilterName.trim(), filters: { ...filters } };
     const updated = [...savedFilters.filter(f => f.name !== newSaved.name), newSaved];
     setSavedFilters(updated);
     localStorage.setItem(storageKey, JSON.stringify(updated));
@@ -212,235 +171,236 @@ export function DashboardFilters({
     filters.regraFilter.length > 0 ||
     filters.unidadeFilter.length > 0;
 
-  // Build options for multiselect
-  const produtorOptions: MultiSelectOption[] = produtores
-    .filter((p) => p.ativo)
-    .map((p) => ({ value: p.nome, label: p.nome }));
+  const hasExtraFilters = filters.regraFilter.length > 0 || filters.unidadeFilter.length > 0;
+  const extraFilterCount = (filters.regraFilter.length > 0 ? 1 : 0) + (filters.unidadeFilter.length > 0 ? 1 : 0);
 
-  const seguradoraOptions: MultiSelectOption[] = seguradoras
-    .filter((s) => s.ativo)
-    .map((s) => ({ value: s.nome, label: s.nome }));
-
-  const ramoOptions: MultiSelectOption[] = ramos
-    .filter((r) => r.ativo)
-    .map((r) => ({ value: r.descricao, label: r.descricao }));
-
-  const segmentoOptions: MultiSelectOption[] = segmentos.map((s) => ({
-    value: s,
-    label: s,
-  }));
-
-  const regraOptions: MultiSelectOption[] = regras.map((r) => ({
-    value: r,
-    label: r,
-  }));
-
-  const unidadeOptions: MultiSelectOption[] = unidades
-    .filter((u) => u.ativo)
-    .map((u) => ({ value: u.descricao, label: u.descricao }));
+  const produtorOptions: MultiSelectOption[] = produtores.filter(p => p.ativo).map(p => ({ value: p.nome, label: p.nome }));
+  const seguradoraOptions: MultiSelectOption[] = seguradoras.filter(s => s.ativo).map(s => ({ value: s.nome, label: s.nome }));
+  const ramoOptions: MultiSelectOption[] = ramos.filter(r => r.ativo).map(r => ({ value: r.descricao, label: r.descricao }));
+  const segmentoOptions: MultiSelectOption[] = segmentos.map(s => ({ value: s, label: s }));
+  const regraOptions: MultiSelectOption[] = regras.map(r => ({ value: r, label: r }));
+  const unidadeOptions: MultiSelectOption[] = unidades.filter(u => u.ativo).map(u => ({ value: u.descricao, label: u.descricao }));
 
   const isCustomDate = filters.dateFilter === "personalizado";
   const isAnoEspecifico = filters.dateFilter === "ano_especifico";
 
   return (
-    <Card className="border-border/50">
-      <CardContent className="py-3 px-4 overflow-x-auto">
-        <div className="flex items-end gap-4 min-w-max">
-          {/* Período */}
-          <div className="space-y-1 w-[130px] shrink-0">
-            <Label className="text-xs text-muted-foreground">Período</Label>
-            <Select value={filters.dateFilter} onValueChange={(v) => updateFilter("dateFilter", v)}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="mes_atual">Este mês</SelectItem>
-                <SelectItem value="mes_anterior">Mês passado</SelectItem>
-                <SelectItem value="ano_atual">Ano atual</SelectItem>
-                <SelectItem value="ano_anterior">Ano anterior</SelectItem>
-                <SelectItem value="30dias">Últimos 30 dias</SelectItem>
-                <SelectItem value="personalizado">Personalizado</SelectItem>
-                <SelectItem value="ano_especifico">Ano específico</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* Período - inline label */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Período:</span>
+        <Select value={filters.dateFilter} onValueChange={(v) => updateFilter("dateFilter", v)}>
+          <SelectTrigger className="h-7 text-xs border-border/60 bg-background w-auto min-w-[120px] gap-1 px-2.5 rounded-md">
+            <SelectValue placeholder="Selecione" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="mes_atual">Este mês</SelectItem>
+            <SelectItem value="mes_anterior">Mês passado</SelectItem>
+            <SelectItem value="ano_atual">Ano atual</SelectItem>
+            <SelectItem value="ano_anterior">Ano anterior</SelectItem>
+            <SelectItem value="30dias">Últimos 30 dias</SelectItem>
+            <SelectItem value="personalizado">Personalizado</SelectItem>
+            <SelectItem value="ano_especifico">Ano específico</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-          {/* Datas - always visible, disabled when not custom */}
-          <div className={cn("space-y-1 w-[270px] shrink-0", !isCustomDate && "opacity-50 pointer-events-none")}>
-            <Label className="text-xs text-muted-foreground">Datas</Label>
-            <DatePickerWithRange
-              date={isCustomDate ? filters.dateRange : undefined}
-              onDateChange={(range) => updateFilter("dateRange", range)}
-            />
-          </div>
-
-          {/* Ano específico - only when selected */}
-          {isAnoEspecifico && (
-            <div className="space-y-1 w-[100px] shrink-0">
-              <Label className="text-xs text-muted-foreground">Ano</Label>
-              <Select
-                value={filters.anoEspecifico}
-                onValueChange={(v) => updateFilter("anoEspecifico", v)}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Ano" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableYears.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Produtor */}
-          <div className="space-y-1 w-[150px] shrink-0">
-            <Label className="text-xs text-muted-foreground">Produtor</Label>
-            <MultiSelect
-              options={produtorOptions}
-              selected={filters.produtorFilter}
-              onChange={(v) => updateFilter("produtorFilter", v)}
-              placeholder="Todos"
-            />
-          </div>
-
-          {/* Seguradora */}
-          <div className="space-y-1 w-[150px] shrink-0">
-            <Label className="text-xs text-muted-foreground">Seguradora</Label>
-            <MultiSelect
-              options={seguradoraOptions}
-              selected={filters.seguradoraFilter}
-              onChange={(v) => updateFilter("seguradoraFilter", v)}
-              placeholder="Todas"
-            />
-          </div>
-
-          {/* Ramo */}
-          <div className="space-y-1 w-[100px] shrink-0">
-            <Label className="text-xs text-muted-foreground">Ramo</Label>
-            <MultiSelect
-              options={ramoOptions}
-              selected={filters.ramoFilter}
-              onChange={(v) => updateFilter("ramoFilter", v)}
-              placeholder="Todos"
-            />
-          </div>
-
-          {/* Segmento */}
-          <div className="space-y-1 w-[140px] shrink-0">
-            <Label className="text-xs text-muted-foreground">Segmento</Label>
-            <MultiSelect
-              options={segmentoOptions}
-              selected={filters.segmentoFilter}
-              onChange={(v) => updateFilter("segmentoFilter", v)}
-              placeholder="Todos"
-            />
-          </div>
-
-          {/* Tipo Regra */}
-          <div className="space-y-1 w-[140px] shrink-0">
-            <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
-            <MultiSelect
-              options={regraOptions}
-              selected={filters.regraFilter}
-              onChange={(v) => updateFilter("regraFilter", v)}
-              placeholder="Todas"
-            />
-          </div>
-
-          {/* Unidade */}
-          <div className="space-y-1 w-[100px] shrink-0">
-            <Label className="text-xs text-muted-foreground">Unidade</Label>
-            <MultiSelect
-              options={unidadeOptions}
-              selected={filters.unidadeFilter}
-              onChange={(v) => updateFilter("unidadeFilter", v)}
-              placeholder="Todas"
-            />
-          </div>
-
-          {/* Spacer */}
-          <div className="flex-1 min-w-[8px]" />
-
-          {/* Ações */}
-          <div className="flex items-center gap-2 shrink-0">
-            {savedFilters.length > 0 && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
-                    <Bookmark className="h-3.5 w-3.5" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64" align="end">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Filtros Salvos</p>
-                    <div className="space-y-1 max-h-48 overflow-y-auto">
-                      {savedFilters.map((saved) => (
-                        <div
-                          key={saved.name}
-                          className="flex items-center justify-between p-2 rounded hover:bg-muted"
-                        >
-                          <button
-                            onClick={() => loadSavedFilter(saved)}
-                            className="text-sm text-left flex-1 truncate"
-                          >
-                            {saved.name}
-                          </button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => deleteSavedFilter(saved.name)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-
-            <Popover open={showSavePopover} onOpenChange={setShowSavePopover}>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
-                  <Save className="h-3.5 w-3.5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64" align="end">
-                <div className="space-y-3">
-                  <Label className="text-sm">Nome do filtro</Label>
-                  <Input
-                    placeholder="Ex: Meus fechamentos"
-                    value={newFilterName}
-                    onChange={(e) => setNewFilterName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && saveCurrentFilters()}
-                  />
-                  <Button onClick={saveCurrentFilters} size="sm" className="w-full">
-                    Salvar
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearFilters}
-                className="h-8 px-3 text-xs"
-              >
-                <X className="h-3.5 w-3.5 mr-1" />
-                Limpar
-              </Button>
-            )}
-          </div>
+      {/* Datas custom */}
+      {isCustomDate && (
+        <div className="shrink-0 w-[250px]">
+          <DatePickerWithRange
+            date={filters.dateRange}
+            onDateChange={(range) => updateFilter("dateRange", range)}
+          />
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      {/* Ano específico */}
+      {isAnoEspecifico && (
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-xs font-medium text-muted-foreground">Ano:</span>
+          <Select value={filters.anoEspecifico} onValueChange={(v) => updateFilter("anoEspecifico", v)}>
+            <SelectTrigger className="h-7 text-xs border-border/60 bg-background w-[80px] gap-1 px-2.5 rounded-md">
+              <SelectValue placeholder="Ano" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableYears.map((year) => (
+                <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Separator */}
+      <div className="h-4 w-px bg-border/60 shrink-0 hidden sm:block" />
+
+      {/* Produtor */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Produtor:</span>
+        <div className="w-[140px]">
+          <MultiSelect
+            options={produtorOptions}
+            selected={filters.produtorFilter}
+            onChange={(v) => updateFilter("produtorFilter", v)}
+            placeholder="Todos"
+            className="h-7 text-xs"
+          />
+        </div>
+      </div>
+
+      {/* Seguradora */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Seguradora:</span>
+        <div className="w-[140px]">
+          <MultiSelect
+            options={seguradoraOptions}
+            selected={filters.seguradoraFilter}
+            onChange={(v) => updateFilter("seguradoraFilter", v)}
+            placeholder="Todas"
+            className="h-7 text-xs"
+          />
+        </div>
+      </div>
+
+      {/* Ramo */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Ramo:</span>
+        <div className="w-[100px]">
+          <MultiSelect
+            options={ramoOptions}
+            selected={filters.ramoFilter}
+            onChange={(v) => updateFilter("ramoFilter", v)}
+            placeholder="Todos"
+            className="h-7 text-xs"
+          />
+        </div>
+      </div>
+
+      {/* Segmento */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Segmento:</span>
+        <div className="w-[120px]">
+          <MultiSelect
+            options={segmentoOptions}
+            selected={filters.segmentoFilter}
+            onChange={(v) => updateFilter("segmentoFilter", v)}
+            placeholder="Todos"
+            className="h-7 text-xs"
+          />
+        </div>
+      </div>
+
+      {/* + Mais filtros */}
+      <Popover open={showMoreFilters} onOpenChange={setShowMoreFilters}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-7 px-2.5 text-xs gap-1.5 rounded-md text-muted-foreground hover:text-foreground",
+              hasExtraFilters && "text-primary font-medium"
+            )}
+          >
+            <SlidersHorizontal className="h-3 w-3" />
+            Mais filtros
+            {extraFilterCount > 0 && (
+              <span className="inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold">
+                {extraFilterCount}
+              </span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-72 p-4" align="start">
+          <div className="space-y-4">
+            <p className="text-sm font-medium">Filtros adicionais</p>
+            
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
+                <MultiSelect
+                  options={regraOptions}
+                  selected={filters.regraFilter}
+                  onChange={(v) => updateFilter("regraFilter", v)}
+                  placeholder="Todas"
+                  className="h-8"
+                />
+              </div>
+              
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Unidade</Label>
+                <MultiSelect
+                  options={unidadeOptions}
+                  selected={filters.unidadeFilter}
+                  onChange={(v) => updateFilter("unidadeFilter", v)}
+                  placeholder="Todas"
+                  className="h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Spacer */}
+      <div className="flex-1 min-w-[4px]" />
+
+      {/* Actions group */}
+      <div className="flex items-center gap-1 shrink-0">
+        {savedFilters.length > 0 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
+                <Bookmark className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64" align="end">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Filtros Salvos</p>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {savedFilters.map((saved) => (
+                    <div key={saved.name} className="flex items-center justify-between p-2 rounded hover:bg-muted">
+                      <button onClick={() => loadSavedFilter(saved)} className="text-sm text-left flex-1 truncate">
+                        {saved.name}
+                      </button>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => deleteSavedFilter(saved.name)}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+
+        <Popover open={showSavePopover} onOpenChange={setShowSavePopover}>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground">
+              <Save className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64" align="end">
+            <div className="space-y-3">
+              <Label className="text-sm">Nome do filtro</Label>
+              <Input
+                placeholder="Ex: Meus fechamentos"
+                value={newFilterName}
+                onChange={(e) => setNewFilterName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveCurrentFilters()}
+              />
+              <Button onClick={saveCurrentFilters} size="sm" className="w-full">Salvar</Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground">
+            <X className="h-3 w-3" />
+            Limpar
+          </Button>
+        )}
+      </div>
+    </div>
   );
 }

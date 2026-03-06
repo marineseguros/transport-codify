@@ -1378,7 +1378,9 @@ const Dashboard = () => {
       </div>
 
       {/* Filtros */}
-      <DashboardFilters filters={filters} onFiltersChange={setFilters} produtores={produtores} seguradoras={seguradoras} ramos={ramos} unidades={unidades} />
+      <div className="bg-muted/30 border border-border/50 rounded-lg px-4 py-2.5">
+        <DashboardFilters filters={filters} onFiltersChange={setFilters} produtores={produtores} seguradoras={seguradoras} ramos={ramos} unidades={unidades} />
+      </div>
 
       {/* KPIs Mensais com Comparativos */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
