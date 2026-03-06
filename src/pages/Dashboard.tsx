@@ -18,7 +18,7 @@ import { SeguradoraDetailModal } from "@/components/dashboard/SeguradoraDetailMo
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, ComposedChart, Legend } from "recharts";
 import { CotacaoModal } from "@/components/CotacaoModal";
 import { logger } from "@/lib/logger";
 import { MetasRealizadoChart } from "@/components/dashboard/MetasRealizadoChart";
@@ -1623,94 +1623,8 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Top Produtores - Formato Tabela Minimalista */}
+        {/* Tendência de Cotações (6 Meses) - Gráfico Barras + Linha */}
         <Card className="col-span-1">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Users className="h-4 w-4" />
-                  Top Produtores
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">Clientes distintos por período</p>
-              </div>
-              {topProdutoresDetalhado.length > 3 && <Button variant="ghost" size="sm" onClick={() => setShowTopProdutoresModal(true)} className="text-xs gap-1">
-                  Ver todos
-                  <ExternalLink className="h-3 w-3" />
-                </Button>}
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {topProdutoresDetalhado.length > 0 ? <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-xs text-muted-foreground">
-                      <th className="text-left py-2 font-medium">#</th>
-                      <th className="text-left py-2 font-medium">Produtor</th>
-                      <th className="text-center py-2 font-medium text-success">Fech.</th>
-                      <th className="text-center py-2 font-medium text-brand-orange">Aberto</th>
-                      <th className="text-center py-2 font-medium text-destructive">Decl.</th>
-                      <th className="text-right py-2 font-medium">Recorrente</th>
-                      <th className="text-right py-2 font-medium">Total</th>
-                      <th className="text-center py-2 font-medium"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topProdutoresDetalhado.slice(0, 3).map((produtor, index) => <tr key={produtor.nome} className="border-b border-border/50 hover:bg-muted/30">
-                        <td className="py-2">
-                          <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${index === 0 ? 'bg-amber-500 text-amber-950' : index === 1 ? 'bg-slate-400 text-slate-950' : index === 2 ? 'bg-amber-700 text-amber-100' : 'bg-muted text-muted-foreground'}`}>
-                            {index + 1}
-                          </span>
-                        </td>
-                        <td className="py-2">
-                          <div className="font-medium truncate max-w-[100px]">{produtor.nome}</div>
-                        </td>
-                        <td className="py-2 text-center">
-                          <span className="font-semibold text-success">{produtor.fechadasDistinct}</span>
-                        </td>
-                        <td className="py-2 text-center">
-                          <span className="font-semibold text-brand-orange">{produtor.emCotacaoDistinct}</span>
-                        </td>
-                        <td className="py-2 text-center">
-                          <span className="font-semibold text-destructive">{produtor.declinadasDistinct}</span>
-                        </td>
-                        <td className="py-2 text-right">
-                          <span className="font-semibold text-primary text-xs">{formatCurrency(produtor.premioRecorrente)}</span>
-                        </td>
-                        <td className="py-2 text-right">
-                          <span className="font-medium text-muted-foreground text-xs">{formatCurrency(produtor.premioTotal)}</span>
-                        </td>
-                        <td className="py-2 text-center">
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => {
-                        setSelectedProdutor(produtor);
-                        setSelectedProdutorRanking(index + 1);
-                      }}>
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                        </td>
-                      </tr>)}
-                  </tbody>
-                </table>
-                {topProdutoresDetalhado.length > 3 && <p className="text-xs text-muted-foreground text-center mt-2">
-                    +{topProdutoresDetalhado.length - 3} produtores
-                  </p>}
-              </div> : <p className="text-center text-muted-foreground py-4 text-sm">
-                Nenhum produtor encontrado no período
-              </p>}
-          </CardContent>
-        </Card>
-
-        {/* Modal de Top Produtores Detalhado */}
-        <TopProdutoresModal open={showTopProdutoresModal} onClose={() => setShowTopProdutoresModal(false)} produtores={topProdutoresDetalhado} formatCurrency={formatCurrency} formatDate={formatDate} />
-
-        {/* Modal Individual de Produtor */}
-        <ProdutorDetailModal open={!!selectedProdutor} onClose={() => setSelectedProdutor(null)} produtor={selectedProdutor} formatCurrency={formatCurrency} formatDate={formatDate} ranking={selectedProdutorRanking} />
-      </div>
-
-      {/* Gráficos e Análises Avançadas */}
-      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
-        {/* Tendência Mensal */}
-        <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -1724,27 +1638,53 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={monthlyTrendData}>
+              <ComposedChart data={monthlyTrendData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" tick={{
-                  fontSize: 11
-                }} />
-                <YAxis tick={{
-                  fontSize: 11
-                }} />
-                <Tooltip formatter={(value, name) => [value, name === "fechadas" ? "Fechadas" : name === "emCotacao" ? "Em Cotação" : "Total"]} contentStyle={{
-                  backgroundColor: "hsl(var(--popover))",
-                  border: "1px solid hsl(var(--border))"
-                }} />
-                <Line type="monotone" dataKey="total" stroke="hsl(var(--muted-foreground))" strokeWidth={2} strokeDasharray="5 5" />
-                <Line type="monotone" dataKey="emCotacao" stroke="hsl(var(--brand-orange))" strokeWidth={2} />
-                <Line type="monotone" dataKey="fechadas" stroke="hsl(var(--success-alt))" strokeWidth={2} />
-              </LineChart>
+                <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--popover))",
+                    border: "1px solid hsl(var(--border))",
+                    color: "hsl(var(--popover-foreground))",
+                  }}
+                  formatter={(value: number, name: string) => {
+                    if (name === "Taxa de Conversão") return [`${value.toFixed(1)}%`, name];
+                    return [value, name];
+                  }}
+                />
+                <Legend />
+                <Bar 
+                  yAxisId="left"
+                  dataKey="total" 
+                  fill="hsl(var(--primary) / 0.7)" 
+                  name="Total de Cotações"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Line 
+                  yAxisId="right"
+                  type="monotone" 
+                  dataKey="taxaConversao" 
+                  stroke="hsl(var(--success))" 
+                  strokeWidth={2}
+                  dot={{ fill: "hsl(var(--success))", r: 4 }}
+                  name="Taxa de Conversão"
+                />
+              </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Top Seguradoras */}
+        {/* Modal de Top Produtores Detalhado */}
+        <TopProdutoresModal open={showTopProdutoresModal} onClose={() => setShowTopProdutoresModal(false)} produtores={topProdutoresDetalhado} formatCurrency={formatCurrency} formatDate={formatDate} />
+
+        {/* Modal Individual de Produtor */}
+        <ProdutorDetailModal open={!!selectedProdutor} onClose={() => setSelectedProdutor(null)} produtor={selectedProdutor} formatCurrency={formatCurrency} formatDate={formatDate} ranking={selectedProdutorRanking} />
+      </div>
+
+      {/* Gráficos e Análises Avançadas */}
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
