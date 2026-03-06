@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
+import { CategoriaDetailPopup } from './CategoriaDetailPopup';
 
 interface Produto {
   id: string;
@@ -600,5 +601,18 @@ export const IndicadoresDetailModal = ({
         )}
       </DialogContent>
     </Dialog>
+
+    {detailCategoria && (
+      <CategoriaDetailPopup
+        open={!!detailCategoria}
+        onOpenChange={(open) => !open && setDetailCategoria(null)}
+        categoria={detailCategoria}
+        allProdutos={allProdutos}
+        allCotacoes={allCotacoes || []}
+        produtorFilter={effectiveProdutorFilter}
+        availableMonths={availableMonths}
+      />
+    )}
+  </>
   );
 };
