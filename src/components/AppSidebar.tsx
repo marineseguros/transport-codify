@@ -69,10 +69,17 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const {
-    user
+    user,
+    session,
+    logout
   } = useAuth();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const currentPath = location.pathname;
   const canAccessAdmin = user?.papel && ['Administrador', 'Gerente', 'CEO'].includes(user.papel);
+  
+  const lastSignIn = session?.user?.last_sign_in_at 
+    ? format(new Date(session.user.last_sign_in_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+    : "Não disponível";
   return <Sidebar className={cn("h-screen", collapsed ? "w-14" : "w-64")} collapsible="icon">
       {/* Logo da Empresa */}
       <SidebarHeader className="border-b px-3 py-4 flex items-center justify-center">
