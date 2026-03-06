@@ -417,124 +417,124 @@ export const CotacoesEmAbertoChart = ({ cotacoes, produtorFilter = [] }: Cotacoe
 
 
       
-      <CardContent>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Chart Section */}
-          <div className="min-h-[300px]">
-            {chartData.length > 0 ?
-            <ResponsiveContainer width="100%" height={Math.max(280, chartData.length * 40)}>
-                <BarChart
-                data={chartData}
-                margin={{ top: 10, right: 60, left: 10, bottom: 10 }}
-                layout="vertical">
-                
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={true} vertical={false} />
-                  <XAxis
-                  type="number"
-                  tick={{ fontSize: 10 }}
-                  tickLine={false}
-                  className="text-muted-foreground"
-                  tickFormatter={(value) => formatCurrencyShort(value)} />
-                
-                  <YAxis
-                  type="category"
-                  dataKey="segurado"
-                  tick={{ fontSize: 9, fill: '#FFFFFF' }}
-                  tickLine={false}
-                  width={100} />
-                
-                  <Tooltip content={<CustomTooltip viewType={viewType} />} />
-                  <Bar
-                  dataKey="premio"
-                  fill={viewType === 'Recorrente' ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))'}
-                  radius={[0, 4, 4, 0]}
-                  name={viewType === 'Recorrente' ? 'Prêmio Recorrente' : 'Prêmio Total'}>
-                  
-                    <LabelList content={renderCustomLabel} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer> :
-
-            <div className="flex items-center justify-center h-[280px] text-muted-foreground text-sm">
-                Nenhuma cotação {viewType.toLowerCase()} em aberto
-              </div>
-            }
-          </div>
-
-          {/* AI Analysis Section */}
-          <div className="border rounded-lg p-4 bg-muted/30">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-sm flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                Análise por IA
-              </h4>
-              <div className="flex gap-2">
-                {aiAnalysis &&
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs text-muted-foreground hover:text-destructive"
-                  onClick={() => setAiAnalysis('')}>
-                  
-                    Apagar
-                  </Button>
-                }
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={generateAIAnalysis}
-                  disabled={isLoadingAI}>
-                  
-                  {isLoadingAI ?
-                  <>
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      Analisando...
-                    </> :
-
-                  'Gerar Análise'
-                  }
-                </Button>
-              </div>
-            </div>
-            <div className="text-sm min-h-[220px] overflow-y-auto">
-              {aiAnalysis ?
-              <div
-                className="whitespace-pre-wrap leading-relaxed text-foreground"
-                dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(
-                    aiAnalysis.
-                    replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').
-                    replace(/\n/g, '<br/>')
-                  )
-                }} /> :
+      
 
 
-              <div className="flex flex-col items-center justify-center h-[200px] text-center text-muted-foreground">
-                  <Sparkles className="h-8 w-8 text-muted-foreground/50 mb-2" />
-                  <p>Clique em "Gerar Análise" para obter insights.</p>
-                </div>
-              }
-            </div>
-          </div>
-        </div>
 
-        {/* Summary */}
-        <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
-          <div className="text-center">
-            <p className="text-xl font-bold">{allData.filter((d) => viewType === 'Recorrente' ? d.premioRecorrente > 0 : d.premioTotal > 0).length}</p>
-            <p className="text-xs text-muted-foreground">Segurados ({viewType})</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xl font-bold text-primary">{formatCurrency(totals.recorrente)}</p>
-            <p className="text-xs text-muted-foreground">Prêmio Recorrente</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xl font-bold">{formatCurrency(totals.total)}</p>
-            <p className="text-xs text-muted-foreground">Prêmio Total</p>
-          </div>
-        </div>
-      </CardContent>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
     </Card>);
 
 };
