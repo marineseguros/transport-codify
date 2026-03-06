@@ -1597,28 +1597,48 @@ const Dashboard = () => {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-evenly">
-            <div className="flex flex-col justify-evenly h-full gap-4">
+          <CardContent className="flex-1 flex flex-col p-4 pt-2">
+            <div className="flex flex-col justify-evenly h-full gap-3">
               {distribuicaoStatus.map(({
                 status,
                 count,
                 premioTotal,
                 percentage
-              }) => <div key={status} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Badge variant={getStatusBadgeVariant(status)}>{status}</Badge>
-                    <span className="text-lg font-bold">{count}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground">{formatCurrency(premioTotal)}</span>
-                    <div className="w-20 bg-secondary rounded-full h-2">
-                      <div className="bg-primary rounded-full h-2" style={{
-                      width: `${percentage}%`
-                    }} />
+              }) => {
+                const statusColorMap: Record<string, string> = {
+                  "Em cotação": "hsl(var(--brand-orange))",
+                  "Negócio fechado": "hsl(var(--success-alt))",
+                  "Declinado": "hsl(var(--destructive))",
+                };
+                const barColor = statusColorMap[status] || "hsl(var(--primary))";
+                
+                return (
+                  <div
+                    key={status}
+                    className="rounded-xl bg-muted/40 border border-border/50 p-4 flex flex-col gap-3 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Badge variant={getStatusBadgeVariant(status)}>{status}</Badge>
+                        <span className="text-lg font-bold">{count}</span>
+                      </div>
+                      <span className="text-sm text-muted-foreground font-medium">{formatCurrency(premioTotal)}</span>
                     </div>
-                    <span className="text-sm font-medium w-12 text-right">{percentage.toFixed(0)}%</span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 bg-secondary/80 rounded-full h-3 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${percentage}%`,
+                            background: `linear-gradient(90deg, ${barColor}, ${barColor}dd)`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-sm font-semibold w-12 text-right">{percentage.toFixed(0)}%</span>
+                    </div>
                   </div>
-                </div>)}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
