@@ -6,7 +6,9 @@ import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger }
 import { useCotacoesTotais, useProdutores, useUnidades, useSeguradoras, useRamos, type Cotacao } from "@/hooks/useSupabaseData";
 import { useAuth } from "@/contexts/AuthContext";
 import { WeeklyReminderModal } from "@/components/WeeklyReminderModal";
-import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, Users, Building, List, Grid3X3, LayoutDashboard, ExternalLink, Eye, Building2, PieChart as PieChartIcon, LineChart as LineChartIcon, Shield, Layers } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, Users, Building, List, Grid3X3, LayoutDashboard, ExternalLink, Eye, Building2, PieChart as PieChartIcon, LineChart as LineChartIcon, Shield, Layers, BarChart3, Download } from "lucide-react";
+import { ExportCotacoesModal } from "@/components/ExportCotacoesModal";
+import { CotacoesAnalysisModal } from "@/components/CotacoesAnalysisModal";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { DashboardEditToolbar } from "@/components/dashboard/DashboardEditToolbar";
 import { DashboardFilters, type DashboardFilterValues } from "@/components/dashboard/DashboardFilters";
