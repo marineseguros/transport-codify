@@ -636,6 +636,8 @@ const Dashboard = () => {
   const [showStatusDetailModal, setShowStatusDetailModal] = useState(false);
   const [showTendenciaDetailModal, setShowTendenciaDetailModal] = useState(false);
   const [showSeguradoraDetailModal, setShowSeguradoraDetailModal] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
   const [selectedProdutor, setSelectedProdutor] = useState<{
     nome: string;
     totalDistinct: number;
