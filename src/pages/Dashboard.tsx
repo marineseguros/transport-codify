@@ -2136,6 +2136,9 @@ const Dashboard = () => {
       <TendenciaDetailModal open={showTendenciaDetailModal} onClose={() => setShowTendenciaDetailModal(false)} cotacoes={trendBaseFilteredCotacoes} produtoresDisponiveis={produtores} formatCurrency={formatCurrency} />
       
       <SeguradoraDetailModal open={showSeguradoraDetailModal} onClose={() => setShowSeguradoraDetailModal(false)} seguradoras={seguradoraDataDetalhada} formatCurrency={formatCurrency} />
+
+      <ExportCotacoesModal open={exportModalOpen} onOpenChange={setExportModalOpen} />
+      <CotacoesAnalysisModal open={analysisModalOpen} onOpenChange={setAnalysisModalOpen} />
       </div>
     </>;
 };
