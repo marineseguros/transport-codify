@@ -6,7 +6,9 @@ import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger }
 import { useCotacoesTotais, useProdutores, useUnidades, useSeguradoras, useRamos, type Cotacao } from "@/hooks/useSupabaseData";
 import { useAuth } from "@/contexts/AuthContext";
 import { WeeklyReminderModal } from "@/components/WeeklyReminderModal";
-import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, Users, Building, List, Grid3X3, LayoutDashboard, ExternalLink, Eye, Building2, PieChart as PieChartIcon, LineChart as LineChartIcon, Shield, Layers } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, Users, Building, List, Grid3X3, LayoutDashboard, ExternalLink, Eye, Building2, PieChart as PieChartIcon, LineChart as LineChartIcon, Shield, Layers, BarChart3, Download } from "lucide-react";
+import { ExportCotacoesModal } from "@/components/ExportCotacoesModal";
+import { CotacoesAnalysisModal } from "@/components/CotacoesAnalysisModal";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { DashboardEditToolbar } from "@/components/dashboard/DashboardEditToolbar";
 import { DashboardFilters, type DashboardFilterValues } from "@/components/dashboard/DashboardFilters";
@@ -634,6 +636,8 @@ const Dashboard = () => {
   const [showStatusDetailModal, setShowStatusDetailModal] = useState(false);
   const [showTendenciaDetailModal, setShowTendenciaDetailModal] = useState(false);
   const [showSeguradoraDetailModal, setShowSeguradoraDetailModal] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
   const [selectedProdutor, setSelectedProdutor] = useState<{
     nome: string;
     totalDistinct: number;
@@ -1371,6 +1375,14 @@ const Dashboard = () => {
 
         <div className="flex flex-wrap gap-2 md:gap-3 w-full sm:w-auto items-center">
           {/* Dashboard Edit Toolbar - Admin Only */}
+          <Button onClick={() => setAnalysisModalOpen(true)} variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Análise</span>
+          </Button>
+          <Button onClick={() => setExportModalOpen(true)} variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Exportar</span>
+          </Button>
           <Button variant="outline" onClick={() => navigate("/fechamentos")} size="sm" className="gap-2 flex-1 sm:flex-none">
             <ExternalLink className="h-4 w-4" />
             <span className="hidden sm:inline">Fechamentos</span>
@@ -2124,6 +2136,9 @@ const Dashboard = () => {
       <TendenciaDetailModal open={showTendenciaDetailModal} onClose={() => setShowTendenciaDetailModal(false)} cotacoes={trendBaseFilteredCotacoes} produtoresDisponiveis={produtores} formatCurrency={formatCurrency} />
       
       <SeguradoraDetailModal open={showSeguradoraDetailModal} onClose={() => setShowSeguradoraDetailModal(false)} seguradoras={seguradoraDataDetalhada} formatCurrency={formatCurrency} />
+
+      <ExportCotacoesModal open={exportModalOpen} onOpenChange={setExportModalOpen} />
+      <CotacoesAnalysisModal open={analysisModalOpen} onOpenChange={setAnalysisModalOpen} />
       </div>
     </>;
 };

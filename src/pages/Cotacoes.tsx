@@ -374,14 +374,6 @@ const Cotacoes = () => {
               <span className="md:hidden">Excluir ({selectedIds.size})</span>
             </Button>
           )}
-          <Button onClick={() => setAnalysisModalOpen(true)} variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Análise</span>
-          </Button>
-          <Button onClick={() => setExportModalOpen(true)} variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Exportar</span>
-          </Button>
           <Button onClick={() => setHistoricoGeralOpen(true)} variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">Histórico</span>
