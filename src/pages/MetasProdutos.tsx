@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Search, Target, Filter, Download, BarChart3 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Target, Download, BarChart3, X, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -29,12 +29,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProdutores } from '@/hooks/useSupabaseData';
 import MetaModal from '@/components/MetaModal';
-import { format, parse, startOfMonth } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { logger } from '@/lib/logger';
 import MetasProdutosComparison from '@/components/dashboard/MetasProdutosComparison';
@@ -136,15 +137,9 @@ const Metas = () => {
 
   const handleDeleteConfirm = async () => {
     if (!metaToDelete) return;
-
     try {
-      const { error } = await supabase
-        .from('metas')
-        .delete()
-        .eq('id', metaToDelete.id);
-
+      const { error } = await supabase.from('metas').delete().eq('id', metaToDelete.id);
       if (error) throw error;
-
       toast.success('Meta excluída com sucesso!');
       fetchMetas();
     } catch (error) {
@@ -166,41 +161,30 @@ const Metas = () => {
     handleModalClose();
   };
 
-  // Get unique months from metas for filter
   const uniqueMonths = useMemo(() => {
     const months = new Set<string>();
-    metas.forEach(meta => {
-      if (meta.mes) {
-        months.add(meta.mes);
-      }
-    });
+    metas.forEach(meta => { if (meta.mes) months.add(meta.mes); });
     return Array.from(months).sort().reverse();
   }, [metas]);
 
-  // Format month for display
   const formatMonth = (dateStr: string) => {
     try {
       const parts = dateStr.split('-').map(Number);
-      const year = parts[0];
-      const month = parts[1];
-      const date = new Date(year, month - 1, 1);
-      return format(date, 'MMMM/yyyy', { locale: ptBR });
+      const date = new Date(parts[0], parts[1] - 1, 1);
+      return format(date, 'MMM/yyyy', { locale: ptBR });
     } catch {
       return dateStr;
     }
   };
 
-  // Filtered metas
   const filteredMetas = useMemo(() => {
     return metas.filter(meta => {
-      const matchesSearch = 
+      const matchesSearch =
         meta.produtor?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         meta.tipo_meta?.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
-
       const matchesProdutor = filterProdutor === 'all' || meta.produtor_id === filterProdutor;
       const matchesTipoMeta = filterTipoMeta === 'all' || meta.tipo_meta_id === filterTipoMeta;
       const matchesMes = filterMes === 'all' || meta.mes === filterMes;
-
       return matchesSearch && matchesProdutor && matchesTipoMeta && matchesMes;
     });
   }, [metas, searchTerm, filterProdutor, filterTipoMeta, filterMes]);
@@ -214,38 +198,41 @@ const Metas = () => {
 
   const hasActiveFilters = searchTerm || filterProdutor !== 'all' || filterTipoMeta !== 'all' || filterMes !== 'all';
 
+  // Summary stats
+  const totalQuantidade = useMemo(() => filteredMetas.reduce((sum, m) => sum + m.quantidade, 0), [filteredMetas]);
+  const uniqueProdutores = useMemo(() => new Set(filteredMetas.map(m => m.produtor_id)).size, [filteredMetas]);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
-          <Target className="h-8 w-8 text-primary" />
+          <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10">
+            <Package className="h-5 w-5 text-primary" />
+          </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Metas</h1>
-            <p className="text-muted-foreground text-sm">
-              Gerenciamento de metas por produtor
+            <h1 className="text-2xl font-bold tracking-tight">Metas de Produtos</h1>
+            <p className="text-sm text-muted-foreground">
+              Coleta, Visita, Vídeo, Indicação, Cotação e Fechamento
             </p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant={showVisualization ? 'default' : 'outline'}
+            size="sm"
             onClick={() => setShowVisualization(!showVisualization)}
-            className="gap-2"
+            className="gap-1.5"
           >
             <BarChart3 className="h-4 w-4" />
-            {showVisualization ? 'Ver Tabela' : 'Ver Análise'}
+            {showVisualization ? 'Tabela' : 'Análise'}
           </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setIsExportModalOpen(true)}
-            className="gap-2"
-          >
+          <Button variant="outline" size="sm" onClick={() => setIsExportModalOpen(true)} className="gap-1.5">
             <Download className="h-4 w-4" />
             Exportar
           </Button>
           {canManage && (
-            <Button onClick={handleCreate} className="flex items-center gap-2">
+            <Button size="sm" onClick={handleCreate} className="gap-1.5">
               <Plus className="h-4 w-4" />
               Nova Meta
             </Button>
@@ -253,81 +240,69 @@ const Metas = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+      {/* Compact Filter Bar */}
+      <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 rounded-lg bg-muted/30">
+        <div className="relative flex-1 min-w-[160px] max-w-[220px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Buscar..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8 h-8 text-sm bg-background"
+          />
+        </div>
 
-            {/* Filter by Produtor */}
-            <Select value={filterProdutor} onValueChange={setFilterProdutor}>
-              <SelectTrigger>
-                <SelectValue placeholder="Produtor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos Produtores</SelectItem>
-                {produtores?.filter(p => p.ativo).map(produtor => (
-                  <SelectItem key={produtor.id} value={produtor.id}>
-                    {produtor.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <Select value={filterProdutor} onValueChange={setFilterProdutor}>
+          <SelectTrigger className="h-8 w-auto min-w-[140px] text-sm bg-background">
+            <SelectValue placeholder="Produtor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos Produtores</SelectItem>
+            {produtores?.filter(p => p.ativo).map(p => (
+              <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-            {/* Filter by Tipo Meta */}
-            <Select value={filterTipoMeta} onValueChange={setFilterTipoMeta}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tipo de Meta" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos Tipos</SelectItem>
-                {tiposMeta.map(tipo => (
-                  <SelectItem key={tipo.id} value={tipo.id}>
-                    {tipo.descricao}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <Select value={filterTipoMeta} onValueChange={setFilterTipoMeta}>
+          <SelectTrigger className="h-8 w-auto min-w-[130px] text-sm bg-background">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos Tipos</SelectItem>
+            {tiposMeta.map(t => (
+              <SelectItem key={t.id} value={t.id}>{t.descricao}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-            {/* Filter by Month */}
-            <Select value={filterMes} onValueChange={setFilterMes}>
-              <SelectTrigger>
-                <SelectValue placeholder="Mês" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos Meses</SelectItem>
-                {uniqueMonths.map(mes => (
-                  <SelectItem key={mes} value={mes}>
-                    {formatMonth(mes)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <Select value={filterMes} onValueChange={setFilterMes}>
+          <SelectTrigger className="h-8 w-auto min-w-[120px] text-sm bg-background">
+            <SelectValue placeholder="Mês" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos Meses</SelectItem>
+            {uniqueMonths.map(mes => (
+              <SelectItem key={mes} value={mes}>{formatMonth(mes)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-            {/* Clear Filters */}
-            {hasActiveFilters && (
-              <Button variant="outline" onClick={clearFilters}>
-                Limpar Filtros
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2 text-xs text-muted-foreground">
+            <X className="h-3.5 w-3.5 mr-1" />
+            Limpar
+          </Button>
+        )}
+
+        <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+          <span><strong className="text-foreground">{filteredMetas.length}</strong> metas</span>
+          <Separator orientation="vertical" className="h-3.5" />
+          <span><strong className="text-foreground">{uniqueProdutores}</strong> produtores</span>
+          <Separator orientation="vertical" className="h-3.5" />
+          <span>Total: <strong className="text-foreground">{totalQuantidade.toLocaleString('pt-BR')}</strong></span>
+        </div>
+      </div>
 
       {/* Visualization or Table */}
       {showVisualization ? (
@@ -339,94 +314,67 @@ const Metas = () => {
           produtorNome={produtores?.find(p => p.id === filterProdutor)?.nome || ''}
         />
       ) : (
-        <>
-          {/* Table */}
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Produtor</TableHead>
+                    <TableHead>Período</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="text-center">Qtd</TableHead>
+                    {canManage && <TableHead className="text-right w-[80px]">Ações</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
                     <TableRow>
-                      <TableHead>Produtor</TableHead>
-                      <TableHead>Mês</TableHead>
-                      <TableHead>Tipo de Meta</TableHead>
-                      <TableHead className="text-center">Quantidade</TableHead>
-                      {canManage && <TableHead className="text-right">Ações</TableHead>}
+                      <TableCell colSpan={canManage ? 5 : 4} className="text-center py-12">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mx-auto"></div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={canManage ? 5 : 4} className="text-center py-8">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                  ) : filteredMetas.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={canManage ? 5 : 4} className="text-center py-12 text-muted-foreground">
+                        {hasActiveFilters ? 'Nenhuma meta encontrada com os filtros aplicados.' : 'Nenhuma meta cadastrada.'}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredMetas.map((meta) => (
+                      <TableRow key={meta.id} className="group">
+                        <TableCell className="font-medium">{meta.produtor?.nome || '—'}</TableCell>
+                        <TableCell>
+                          <span className="text-sm capitalize">{formatMonth(meta.mes)}</span>
                         </TableCell>
-                      </TableRow>
-                    ) : filteredMetas.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={canManage ? 5 : 4} className="text-center py-8 text-muted-foreground">
-                          {hasActiveFilters ? 'Nenhuma meta encontrada com os filtros aplicados.' : 'Nenhuma meta cadastrada.'}
+                        <TableCell>
+                          <Badge variant="secondary" className="font-normal text-xs">
+                            {meta.tipo_meta?.descricao || '—'}
+                          </Badge>
                         </TableCell>
+                        <TableCell className="text-center">
+                          <span className="font-semibold tabular-nums">{meta.quantidade}</span>
+                        </TableCell>
+                        {canManage && (
+                          <TableCell className="text-right">
+                            <div className="flex gap-0.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(meta)} title="Editar">
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteClick(meta)} title="Excluir">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
-                    ) : (
-                      filteredMetas.map((meta) => (
-                        <TableRow key={meta.id}>
-                          <TableCell className="font-medium">
-                            {meta.produtor?.nome || '-'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="capitalize">
-                              {formatMonth(meta.mes)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary">
-                              {meta.tipo_meta?.descricao || '-'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <span className="font-semibold text-primary">
-                              {meta.quantidade}
-                            </span>
-                          </TableCell>
-                          {canManage && (
-                            <TableCell className="text-right">
-                              <div className="flex gap-1 justify-end">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleEdit(meta)}
-                                  title="Editar"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeleteClick(meta)}
-                                  title="Excluir"
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Summary */}
-          {filteredMetas.length > 0 && (
-            <div className="text-sm text-muted-foreground text-center">
-              Exibindo {filteredMetas.length} de {metas.length} metas
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
-          )}
-        </>
+          </CardContent>
+        </Card>
       )}
 
       {/* Modal */}
@@ -439,7 +387,7 @@ const Metas = () => {
         onTiposMetaChange={fetchTiposMeta}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -447,7 +395,7 @@ const Metas = () => {
             <AlertDialogDescription>
               Tem certeza que deseja excluir esta meta?
               <br />
-              <strong>{metaToDelete?.produtor?.nome}</strong> - {metaToDelete?.mes ? formatMonth(metaToDelete.mes) : ''} - {metaToDelete?.tipo_meta?.descricao}
+              <strong>{metaToDelete?.produtor?.nome}</strong> — {metaToDelete?.mes ? formatMonth(metaToDelete.mes) : ''} — {metaToDelete?.tipo_meta?.descricao}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
