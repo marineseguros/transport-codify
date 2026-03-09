@@ -14,6 +14,7 @@ import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
 
 interface Produto {
   id: string;
+  segurado: string;
   consultor: string;
   data_registro: string;
   tipo: string;

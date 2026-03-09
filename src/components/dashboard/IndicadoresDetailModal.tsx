@@ -13,6 +13,7 @@ import { CategoriaDetailPopup } from './CategoriaDetailPopup';
 
 interface Produto {
   id: string;
+  segurado: string;
   consultor: string;
   data_registro: string;
   tipo: string;
