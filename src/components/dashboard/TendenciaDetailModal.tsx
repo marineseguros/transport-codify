@@ -275,8 +275,34 @@ export function TendenciaDetailModal({
                     <thead>
                       <tr className="border-b text-xs text-muted-foreground">
                         <th className="text-left py-2 px-2">Mês</th>
-                        <th className="text-center py-2 px-2">Total</th>
-                        <th className="text-center py-2 px-2">Clientes Únicos</th>
+                        <th className="text-center py-2 px-2">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 cursor-help">
+                                  Total <Info className="h-3 w-3 text-muted-foreground/60" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[220px] text-xs">
+                                Quantidade total de cotações registradas no mês, independente do status.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </th>
+                        <th className="text-center py-2 px-2">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 cursor-help">
+                                  Clientes Únicos <Info className="h-3 w-3 text-muted-foreground/60" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[250px] text-xs">
+                                Quantidade de combinações distintas de CPF/CNPJ + Grupo de Ramo no mês. Usado como base para calcular a taxa de conversão.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </th>
                         <th className="text-center py-2 px-2 text-brand-orange">Em Cotação</th>
                         <th className="text-center py-2 px-2 text-success">Fechadas</th>
                         <th className="text-center py-2 px-2 text-destructive">Declinadas</th>
