@@ -301,7 +301,7 @@ export function TendenciaDetailModal({
                               <TooltipContent side="top" className="max-w-[250px] text-xs">
                                 Quantidade de combinações distintas de CPF/CNPJ + Grupo de Ramo no mês. Usado como base para calcular a taxa de conversão.
                               </TooltipContent>
-                            </Tooltip>
+                            </UITooltip>
                           </TooltipProvider>
                         </th>
                         <th className="text-center py-2 px-2 text-brand-orange">Em Cotação</th>
