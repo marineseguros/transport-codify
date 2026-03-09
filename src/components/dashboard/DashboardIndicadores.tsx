@@ -14,6 +14,7 @@ import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
 
 interface Produto {
   id: string;
+  segurado: string;
   consultor: string;
   data_registro: string;
   tipo: string;
@@ -105,7 +106,7 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
       try {
         setLoading(true);
         const [prodRes, metasRes] = await Promise.all([
-        supabase.from('produtos').select('id, consultor, data_registro, tipo, subtipo').order('data_registro', { ascending: false }),
+        supabase.from('produtos').select('id, segurado, consultor, data_registro, tipo, subtipo').order('data_registro', { ascending: false }),
         supabase.from('metas').select('*, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)').order('mes', { ascending: false })]
         );
         if (prodRes.error) throw prodRes.error;

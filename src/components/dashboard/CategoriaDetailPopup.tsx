@@ -8,6 +8,7 @@ import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
 
 interface Produto {
   id: string;
+  segurado: string;
   consultor: string;
   data_registro: string;
   tipo: string;
@@ -96,7 +97,7 @@ export const CategoriaDetailPopup = ({
 
     return filtered.map((p) => ({
       id: p.id,
-      segurado: (p as any).segurado || '—',
+      segurado: p.segurado || '—',
       consultor: p.consultor,
       data: p.data_registro,
       tipo: p.tipo,
