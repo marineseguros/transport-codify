@@ -232,7 +232,7 @@ export function TendenciaDetailModal({
                     <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
                     <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
                     <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} unit="%" domain={[0, 100]} />
-                    <Tooltip
+                    <RechartsTooltip
                       contentStyle={{
                         backgroundColor: "hsl(var(--popover))",
                         border: "1px solid hsl(var(--border))",
