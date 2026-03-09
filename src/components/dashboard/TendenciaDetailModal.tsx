@@ -278,7 +278,7 @@ export function TendenciaDetailModal({
                         <th className="text-left py-2 px-2">Mês</th>
                         <th className="text-center py-2 px-2">
                           <TooltipProvider>
-                            <Tooltip>
+                            <UITooltip>
                               <TooltipTrigger asChild>
                                 <span className="inline-flex items-center gap-1 cursor-help">
                                   Total <Info className="h-3 w-3 text-muted-foreground/60" />
