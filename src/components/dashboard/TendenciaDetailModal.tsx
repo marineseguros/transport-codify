@@ -287,7 +287,7 @@ export function TendenciaDetailModal({
                               <TooltipContent side="top" className="max-w-[220px] text-xs">
                                 Quantidade total de cotações registradas no mês, independente do status.
                               </TooltipContent>
-                            </Tooltip>
+                            </UITooltip>
                           </TooltipProvider>
                         </th>
                         <th className="text-center py-2 px-2">
