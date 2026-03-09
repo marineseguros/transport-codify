@@ -292,7 +292,7 @@ export function TendenciaDetailModal({
                         </th>
                         <th className="text-center py-2 px-2">
                           <TooltipProvider>
-                            <Tooltip>
+                            <UITooltip>
                               <TooltipTrigger asChild>
                                 <span className="inline-flex items-center gap-1 cursor-help">
                                   Clientes Únicos <Info className="h-3 w-3 text-muted-foreground/60" />
