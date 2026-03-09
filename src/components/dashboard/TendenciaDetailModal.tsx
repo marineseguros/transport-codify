@@ -51,10 +51,23 @@ export function TendenciaDetailModal({
   const [mesesFiltro, setMesesFiltro] = useState("6");
   const [produtorFilter, setProdutorFilter] = useState<string[]>([]);
 
-  const produtorOptions = useMemo(
-    () => produtoresDisponiveis.map((p) => ({ value: p.nome, label: p.nome })),
-    [produtoresDisponiveis]
-  );
+  // Build producer options dynamically from cotacoes with activity
+  const produtorOptions = useMemo(() => {
+    const nomes = new Set<string>();
+    cotacoes.forEach((c) => {
+      if (c.produtor_cotador?.nome) nomes.add(c.produtor_cotador.nome);
+      if (c.produtor_origem?.nome) nomes.add(c.produtor_origem.nome);
+    });
+    // Also include active producers from the list
+    produtoresDisponiveis.forEach((p) => {
+      // Keep only if active (prop comes from produtores which may have ativo flag)
+      // or if they already appeared in cotacoes
+      if (nomes.has(p.nome)) return;
+    });
+    return Array.from(nomes)
+      .sort((a, b) => a.localeCompare(b))
+      .map((nome) => ({ value: nome, label: nome }));
+  }, [cotacoes, produtoresDisponiveis]);
 
   // Compute monthly data with local producer filter
   const allMonthlyData = useMemo(() => {
