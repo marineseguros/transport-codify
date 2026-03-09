@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { TrendingUp, TrendingDown, LineChart, Zap } from "lucide-react";
-import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { TrendingUp, TrendingDown, LineChart, Zap, Info } from "lucide-react";
+import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend } from "recharts";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Cotacao } from "@/hooks/useSupabaseData";
 
 // Helpers duplicated from Dashboard to keep modal self-contained
@@ -231,7 +232,7 @@ export function TendenciaDetailModal({
                     <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
                     <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
                     <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} unit="%" domain={[0, 100]} />
-                    <Tooltip
+                    <RechartsTooltip
                       contentStyle={{
                         backgroundColor: "hsl(var(--popover))",
                         border: "1px solid hsl(var(--border))",
@@ -275,8 +276,34 @@ export function TendenciaDetailModal({
                     <thead>
                       <tr className="border-b text-xs text-muted-foreground">
                         <th className="text-left py-2 px-2">Mês</th>
-                        <th className="text-center py-2 px-2">Total</th>
-                        <th className="text-center py-2 px-2">Clientes Únicos</th>
+                        <th className="text-center py-2 px-2">
+                          <TooltipProvider>
+                            <UITooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 cursor-help">
+                                  Total <Info className="h-3 w-3 text-muted-foreground/60" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[220px] text-xs">
+                                Quantidade total de cotações registradas no mês, independente do status.
+                              </TooltipContent>
+                            </UITooltip>
+                          </TooltipProvider>
+                        </th>
+                        <th className="text-center py-2 px-2">
+                          <TooltipProvider>
+                            <UITooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 cursor-help">
+                                  Clientes Únicos <Info className="h-3 w-3 text-muted-foreground/60" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[250px] text-xs">
+                                Quantidade de combinações distintas de CPF/CNPJ + Grupo de Ramo no mês. Usado como base para calcular a taxa de conversão.
+                              </TooltipContent>
+                            </UITooltip>
+                          </TooltipProvider>
+                        </th>
                         <th className="text-center py-2 px-2 text-brand-orange">Em Cotação</th>
                         <th className="text-center py-2 px-2 text-success">Fechadas</th>
                         <th className="text-center py-2 px-2 text-destructive">Declinadas</th>
