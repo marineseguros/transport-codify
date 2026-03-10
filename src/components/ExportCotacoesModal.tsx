@@ -217,8 +217,16 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
       segmento: () => cotacao.segmento || "",
       tipo: () => cotacao.tipo || "",
       num_proposta: () => cotacao.num_proposta || "",
-      motivo_recusa: () => cotacao.status === "Declinado" ? "" : (cotacao.motivo_recusa || ""),
-      motivo_declinado: () => cotacao.status === "Declinado" ? (cotacao.motivo_recusa || "") : "",
+      motivo_recusa: () => {
+        const val = cotacao.motivo_recusa || "";
+        if (val.includes("||")) return val.split("||")[0].trim();
+        return cotacao.status === "Declinado" ? "" : val;
+      },
+      motivo_declinado: () => {
+        const val = cotacao.motivo_recusa || "";
+        if (val.includes("||")) return val.split("||")[1].trim();
+        return cotacao.status === "Declinado" ? val : "";
+      },
       observacoes: () => cotacao.observacoes || "",
       comentarios: () => cotacao.comentarios || "",
       unidade_codigo: () => cotacao.unidade?.codigo || "",
