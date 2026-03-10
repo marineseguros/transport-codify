@@ -689,9 +689,7 @@ export const MetasPremioComparison = ({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
-        {/* Monthly Comparison Card */}
-        
+      
 
 
 
@@ -738,58 +736,60 @@ export const MetasPremioComparison = ({
 
 
 
-        
 
-        {/* Accumulated Comparison Card */}
-        <Card className={`border ${getPercentageBgColor(accumulatedComparison.percentual)}`}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Meta Acumulada x Realizado
-              <span className="ml-auto text-sm font-normal text-muted-foreground">
-                {targetYear} (até {monthlyComparison.mesLabel})
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Meta Acumulada (Escadinha)</p>
-                <p className="text-xl font-bold">{formatCurrency(accumulatedComparison.metaAcumulada)}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Total Realizado no Ano</p>
-                <p className="text-xl font-bold">{formatCurrency(accumulatedComparison.valorRealizadoAno)}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between pt-2 border-t">
-              <span className="text-sm font-medium">Atingimento Acumulado</span>
-              <div className="flex items-center gap-2">
-                <span className={`text-2xl font-bold ${getPercentageColor(accumulatedComparison.percentual)}`}>
-                  {accumulatedComparison.percentual.toFixed(1)}%
-                </span>
-                {accumulatedComparison.percentual >= 100 ?
-                <Award className="h-5 w-5 text-success-alt" /> :
 
-                <Target className="h-5 w-5 text-muted-foreground" />
-                }
-              </div>
-            </div>
 
-            {/* Progress bar */}
-            <div className="w-full bg-secondary rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all ${
-                accumulatedComparison.percentual >= 100 ? 'bg-success-alt' :
-                accumulatedComparison.percentual >= 80 ? 'bg-amber-500' : 'bg-destructive'}`
-                }
-                style={{ width: `${Math.min(accumulatedComparison.percentual, 100)}%` }} />
-              
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
 
       {/* Month-by-Month Comparison Table with Escadinha Toggle */}
       <Card>
