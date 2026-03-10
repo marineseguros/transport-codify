@@ -524,8 +524,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         status: formData.status,
         observacoes: validatedData.observacoes || undefined,
         comentarios: validatedData.comentarios || undefined,
-        motivo_recusa:
-          formData.status === "Declinado" ? formData.motivo_declinado : formData.motivo_recusa || undefined,
+        motivo_recusa: [formData.motivo_recusa, formData.motivo_declinado].filter(Boolean).join(" || ") || undefined,
         data_cotacao: formData.data_cotacao,
         // When status is "Negócio fechado", save all required dates; otherwise set them to null
         data_fechamento: formData.status === "Negócio fechado" ? formData.data_fechamento : null,
