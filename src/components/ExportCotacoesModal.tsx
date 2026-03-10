@@ -220,12 +220,12 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
       motivo_recusa: () => {
         const val = cotacao.motivo_recusa || "";
         if (val.includes("||")) return val.split("||")[0].trim();
-        return cotacao.status === "Declinado" ? "" : val;
+        return val;
       },
       motivo_declinado: () => {
         const val = cotacao.motivo_recusa || "";
         if (val.includes("||")) return val.split("||")[1].trim();
-        return cotacao.status === "Declinado" ? val : "";
+        return "";
       },
       observacoes: () => cotacao.observacoes || "",
       comentarios: () => cotacao.comentarios || "",
