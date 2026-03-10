@@ -1375,10 +1375,10 @@ const Dashboard = () => {
 
         <div className="flex flex-wrap gap-2 md:gap-3 w-full sm:w-auto items-center">
           {/* Dashboard Edit Toolbar - Admin Only */}
-          <Button onClick={() => setAnalysisModalOpen(true)} variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Análise</span>
-          </Button>
+          
+
+
+          
           <Button onClick={() => setExportModalOpen(true)} variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Exportar</span>
