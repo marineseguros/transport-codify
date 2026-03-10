@@ -46,6 +46,7 @@ const COLUMN_GROUPS = {
     { key: "tipo", label: "Tipo" },
     { key: "num_proposta", label: "Nº Proposta" },
     { key: "motivo_recusa", label: "Motivo Recusa" },
+    { key: "motivo_declinado", label: "Motivo Declinado" },
     { key: "observacoes", label: "Observações" },
     { key: "comentarios", label: "Comentários" },
   ],
