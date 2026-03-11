@@ -84,6 +84,74 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
   const isMetaType = (descricao: string | undefined, target: string) =>
   normalizeLabel(descricao) === normalizeLabel(target);
 
+  // Calculate date range based on the dashboard date filter
+  const { filterStart, filterEnd, metaMonthPrefixes } = useMemo(() => {
+    const now = new Date();
+    let start: Date;
+    let end: Date = now;
+
+    switch (dateFilter) {
+      case 'hoje':
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case '7dias':
+        start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30dias':
+        start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90dias':
+        start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'mes_atual':
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'mes_anterior':
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        end = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case 'ano_atual':
+        start = new Date(now.getFullYear(), 0, 1);
+        end = new Date(now.getFullYear(), 11, 31);
+        break;
+      case 'ano_anterior':
+        start = new Date(now.getFullYear() - 1, 0, 1);
+        end = new Date(now.getFullYear() - 1, 11, 31);
+        break;
+      case 'ano_especifico': {
+        const year = parseInt(anoEspecifico || '') || now.getFullYear();
+        start = new Date(year, 0, 1);
+        end = new Date(year, 11, 31);
+        break;
+      }
+      case 'personalizado':
+      case 'personalizado_comparacao':
+        if (dateRange?.from) {
+          start = dateRange.from;
+          end = dateRange.to || dateRange.from;
+        } else {
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        }
+        break;
+      default:
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
+
+    // Build list of YYYY-MM prefixes covered by the filter range (for metas matching)
+    const prefixes: string[] = [];
+    const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+    const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+    while (cursor <= endMonth) {
+      prefixes.push(format(cursor, 'yyyy-MM'));
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    return { filterStart: start, filterEnd: end, metaMonthPrefixes: prefixes };
+  }, [dateFilter, dateRange, anoEspecifico]);
+
   const analysisDate = useMemo(() => {
     const timestamps: number[] = [];
     produtos.forEach((p) => {const t = new Date(p.data_registro).getTime();if (!Number.isNaN(t)) timestamps.push(t);});
@@ -97,34 +165,14 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
   }, [produtos, metas, filteredCotacoes]);
 
   const currentMonthStr = format(analysisDate, 'yyyy-MM');
-  const monthLabel = format(analysisDate, "MMMM 'de' yyyy", { locale: ptBR });
-  const startCurrent = startOfMonth(analysisDate);
-  const endCurrent = endOfMonth(analysisDate);
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        setLoading(true);
-        const [prodRes, metasRes] = await Promise.all([
-        supabase.from('produtos').select('id, segurado, consultor, data_registro, tipo, subtipo').order('data_registro', { ascending: false }),
-        supabase.from('metas').select('*, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)').order('mes', { ascending: false })]
-        );
-        if (prodRes.error) throw prodRes.error;
-        if (metasRes.error) throw metasRes.error;
-        setProdutos(prodRes.data || []);
-        setMetas(metasRes.data || []);
-      } catch (error: any) {
-        logger.error('Error fetching indicadores data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAll();
-  }, []);
-
-  const currentMonthProdutos = useMemo(() =>
-  produtos.filter((p) => {const d = new Date(p.data_registro);return d >= startCurrent && d <= endCurrent;}),
-  [produtos, startCurrent, endCurrent]);
+  // Filter produtos by the dashboard date range (not just a single month)
+  const filteredProdutos = useMemo(() =>
+    produtos.filter((p) => {
+      const d = new Date(p.data_registro);
+      return d >= filterStart && d <= filterEnd;
+    }),
+    [produtos, filterStart, filterEnd]);
 
   // Cotação Realizada: Clientes Únicos (distinct CPF/CNPJ + branch group) from filteredCotacoes
   const cotacaoRealizado = useMemo(() => {
