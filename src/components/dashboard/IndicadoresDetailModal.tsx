@@ -259,33 +259,31 @@ export const IndicadoresDetailModal = ({
     return { start, end };
   }, [dateFilter, anoEspecifico, dateRangeProp, localPeriodo, localDateFrom, localDateTo]);
 
-  const filterYear = dashboardDateRange.start.getFullYear();
+  const filterStartMonth = format(dashboardDateRange.start, 'yyyy-MM');
+  const filterEndMonth = format(dashboardDateRange.end, 'yyyy-MM');
 
-  // Current month for the main row: use the dashboard's start month
-  const currentMonthStr = format(dashboardDateRange.start, 'yyyy-MM');
-
-  // Distinct months restricted to the filtered year
+  // Distinct months restricted to the filtered date range
   const availableMonths = useMemo(() => {
+    const isInRange = (mk: string) => mk >= filterStartMonth && mk <= filterEndMonth;
     const months = new Set<string>();
     allMetas.forEach((m) => {
       const mk = m.mes.substring(0, 7);
-      if (mk.startsWith(String(filterYear))) months.add(mk);
+      if (isInRange(mk)) months.add(mk);
     });
     allProdutos.forEach((p) => {
       const mk = p.data_registro.substring(0, 7);
-      if (mk.startsWith(String(filterYear))) months.add(mk);
+      if (isInRange(mk)) months.add(mk);
     });
-    // Also add months from cotacoes
     (allCotacoes || []).forEach((c) => {
       const mk = c.data_cotacao.substring(0, 7);
-      if (mk.startsWith(String(filterYear))) months.add(mk);
+      if (isInRange(mk)) months.add(mk);
       if (c.data_fechamento) {
         const fk = c.data_fechamento.substring(0, 7);
-        if (fk.startsWith(String(filterYear))) months.add(fk);
+        if (isInRange(fk)) months.add(fk);
       }
     });
     return Array.from(months).sort();
-  }, [allMetas, allProdutos, allCotacoes, filterYear]);
+  }, [allMetas, allProdutos, allCotacoes, filterStartMonth, filterEndMonth]);
 
   // Monthly data per category (compute FIRST, then derive totals from it)
   const monthlyData = useMemo(() => {
