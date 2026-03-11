@@ -6,7 +6,8 @@ import { Target, TrendingUp, TrendingDown, Minus, Filter, ChevronRight, ChevronD
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
-import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, parseISO, parse, isValid } from 'date-fns';
+import { Label } from '@/components/ui/label';
 import { ptBR } from 'date-fns/locale';
 import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
 import { CategoriaDetailPopup } from './CategoriaDetailPopup';
@@ -174,6 +175,22 @@ export const IndicadoresDetailModal = ({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [detailCategoria, setDetailCategoria] = useState<string | null>(null);
   const [detailMonth, setDetailMonth] = useState<string | null>(null);
+  const [localPeriodo, setLocalPeriodo] = useState<string>('dashboard');
+  const [localDateFrom, setLocalDateFrom] = useState<string>('');
+  const [localDateTo, setLocalDateTo] = useState<string>('');
+
+  const parseBrDate = (v: string): Date | null => {
+    if (!v || v.length !== 10) return null;
+    const d = parse(v, 'dd/MM/yyyy', new Date());
+    return isValid(d) ? d : null;
+  };
+
+  const formatDateInput = (value: string, prev: string): string => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  };
 
   const toggleExpand = (cat: string) => {
     setExpandedCategories((prev) => {
@@ -192,6 +209,15 @@ export const IndicadoresDetailModal = ({
 
   // Compute the dashboard's active date range from filter props
   const dashboardDateRange = useMemo(() => {
+    // If local custom period is set, use it
+    if (localPeriodo === 'personalizado') {
+      const from = parseBrDate(localDateFrom);
+      const to = parseBrDate(localDateTo);
+      if (from && to) {
+        return { start: from, end: to };
+      }
+    }
+
     const now = new Date();
     let start: Date;
     let end: Date = now;
@@ -226,41 +252,38 @@ export const IndicadoresDetailModal = ({
         end = dateRangeProp?.to || start;
         break;
       default:
-        // "todos" — use full range from data
         start = new Date(2000, 0, 1);
         end = new Date(2099, 11, 31);
         break;
     }
     return { start, end };
-  }, [dateFilter, anoEspecifico, dateRangeProp]);
+  }, [dateFilter, anoEspecifico, dateRangeProp, localPeriodo, localDateFrom, localDateTo]);
 
-  const filterYear = dashboardDateRange.start.getFullYear();
+  const filterStartMonth = format(dashboardDateRange.start, 'yyyy-MM');
+  const filterEndMonth = format(dashboardDateRange.end, 'yyyy-MM');
 
-  // Current month for the main row: use the dashboard's start month
-  const currentMonthStr = format(dashboardDateRange.start, 'yyyy-MM');
-
-  // Distinct months restricted to the filtered year
+  // Distinct months restricted to the filtered date range
   const availableMonths = useMemo(() => {
+    const isInRange = (mk: string) => mk >= filterStartMonth && mk <= filterEndMonth;
     const months = new Set<string>();
     allMetas.forEach((m) => {
       const mk = m.mes.substring(0, 7);
-      if (mk.startsWith(String(filterYear))) months.add(mk);
+      if (isInRange(mk)) months.add(mk);
     });
     allProdutos.forEach((p) => {
       const mk = p.data_registro.substring(0, 7);
-      if (mk.startsWith(String(filterYear))) months.add(mk);
+      if (isInRange(mk)) months.add(mk);
     });
-    // Also add months from cotacoes
     (allCotacoes || []).forEach((c) => {
       const mk = c.data_cotacao.substring(0, 7);
-      if (mk.startsWith(String(filterYear))) months.add(mk);
+      if (isInRange(mk)) months.add(mk);
       if (c.data_fechamento) {
         const fk = c.data_fechamento.substring(0, 7);
-        if (fk.startsWith(String(filterYear))) months.add(fk);
+        if (isInRange(fk)) months.add(fk);
       }
     });
     return Array.from(months).sort();
-  }, [allMetas, allProdutos, allCotacoes, filterYear]);
+  }, [allMetas, allProdutos, allCotacoes, filterStartMonth, filterEndMonth]);
 
   // Monthly data per category (compute FIRST, then derive totals from it)
   const monthlyData = useMemo(() => {
@@ -421,6 +444,40 @@ export const IndicadoresDetailModal = ({
               <SelectItem value="critico">🔴 Crítico (&lt;70%)</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Custom period filter */}
+          <div className="flex items-center gap-2 ml-auto">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">Período:</Label>
+            <Select value={localPeriodo} onValueChange={setLocalPeriodo}>
+              <SelectTrigger className="w-[130px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dashboard">Do Dashboard</SelectItem>
+                <SelectItem value="personalizado">Personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+            {localPeriodo === 'personalizado' && (
+              <>
+                <input
+                  type="text"
+                  placeholder="dd/mm/aaaa"
+                  value={localDateFrom}
+                  onChange={(e) => setLocalDateFrom(formatDateInput(e.target.value, localDateFrom))}
+                  maxLength={10}
+                  className="w-[110px] h-8 text-xs px-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground"
+                />
+                <input
+                  type="text"
+                  placeholder="dd/mm/aaaa"
+                  value={localDateTo}
+                  onChange={(e) => setLocalDateTo(formatDateInput(e.target.value, localDateTo))}
+                  maxLength={10}
+                  className="w-[110px] h-8 text-xs px-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground"
+                />
+              </>
+            )}
+          </div>
         </div>
 
         {/* Summary */}
