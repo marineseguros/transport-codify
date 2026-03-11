@@ -939,7 +939,7 @@ export const MetasPremioComparison = ({
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">​Expectativa</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">%</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">Meta Acum.</th>
-                    <th className="py-2 px-3 text-right font-medium text-muted-foreground">Real. Acum.</th>
+                    <th className="py-2 px-3 text-right font-medium text-muted-foreground">Expec. Acum.</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">% Acum.</th>
                   </tr>
                 </thead>
