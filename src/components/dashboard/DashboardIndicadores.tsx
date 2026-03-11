@@ -265,21 +265,21 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
 
   const produtorData = useMemo(() => {
     const produtorNames = new Set<string>();
-    metas.filter((m) => m.mes.startsWith(currentMonthStr) && m.produtor?.nome).
+    metas.filter((m) => metaMonthPrefixes.some((prefix) => m.mes.startsWith(prefix)) && m.produtor?.nome).
     forEach((m) => produtorNames.add(m.produtor!.nome));
-    currentMonthProdutos.forEach((p) => produtorNames.add(p.consultor));
+    filteredProdutos.forEach((p) => produtorNames.add(p.consultor));
 
     return Array.from(produtorNames).map((nome) => {
       const prodMetas = metas.filter((m) =>
-      m.mes.startsWith(currentMonthStr) && m.produtor?.nome === nome
+      metaMonthPrefixes.some((prefix) => m.mes.startsWith(prefix)) && m.produtor?.nome === nome
       );
       const meta = prodMetas.reduce((s, m) => s + m.quantidade, 0);
-      const prods = currentMonthProdutos.filter((p) => p.consultor === nome);
+      const prods = filteredProdutos.filter((p) => p.consultor === nome);
       const realizado = prods.length;
       const pct = meta > 0 ? realizado / meta * 100 : 0;
       return { nome, meta, realizado, pct };
     }).filter((p) => p.meta > 0 || p.realizado > 0);
-  }, [metas, currentMonthProdutos, currentMonthStr]);
+  }, [metas, filteredProdutos, metaMonthPrefixes]);
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
