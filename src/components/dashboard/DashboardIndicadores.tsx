@@ -208,12 +208,12 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
 
   const chartData = useMemo(() => {
     const filteredProds = produtorFilter?.length ?
-    currentMonthProdutos.filter((p) => produtorFilter.includes(p.consultor)) :
-    currentMonthProdutos;
+    filteredProdutos.filter((p) => produtorFilter.includes(p.consultor)) :
+    filteredProdutos;
 
     const getMetaTotal = (target: string) =>
     metas.filter((m) =>
-    m.mes.startsWith(currentMonthStr) &&
+    metaMonthPrefixes.some((prefix) => m.mes.startsWith(prefix)) &&
     isMetaType(m.tipo_meta?.descricao, target) && (
     !produtorFilter?.length || m.produtor && produtorFilter.includes(m.produtor.nome))
     ).reduce((s, m) => s + m.quantidade, 0);
@@ -226,7 +226,7 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
     { categoria: 'Indicação', Meta: getMetaTotal('Indicação'), Realizado: filteredProds.filter((p) => p.tipo === 'Indicação').length },
     { categoria: 'Fechamento', Meta: getMetaTotal('Fechamento'), Realizado: fechamentoRealizado }];
 
-  }, [currentMonthProdutos, cotacaoRealizado, fechamentoRealizado, metas, produtorFilter, currentMonthStr]);
+  }, [filteredProdutos, cotacaoRealizado, fechamentoRealizado, metas, produtorFilter, metaMonthPrefixes]);
 
   const totals = useMemo(() => {
     const totalMeta = chartData.reduce((s, i) => s + i.Meta, 0);
