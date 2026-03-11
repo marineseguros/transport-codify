@@ -175,6 +175,22 @@ export const IndicadoresDetailModal = ({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [detailCategoria, setDetailCategoria] = useState<string | null>(null);
   const [detailMonth, setDetailMonth] = useState<string | null>(null);
+  const [localPeriodo, setLocalPeriodo] = useState<string>('dashboard');
+  const [localDateFrom, setLocalDateFrom] = useState<string>('');
+  const [localDateTo, setLocalDateTo] = useState<string>('');
+
+  const parseBrDate = (v: string): Date | null => {
+    if (!v || v.length !== 10) return null;
+    const d = parse(v, 'dd/MM/yyyy', new Date());
+    return isValid(d) ? d : null;
+  };
+
+  const formatDateInput = (value: string, prev: string): string => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  };
 
   const toggleExpand = (cat: string) => {
     setExpandedCategories((prev) => {
