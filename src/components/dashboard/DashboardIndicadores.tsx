@@ -81,6 +81,26 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
   const [loading, setLoading] = useState(true);
   const [showDetail, setShowDetail] = useState(false);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [produtosRes, metasRes] = await Promise.all([
+          supabase.from('produtos').select('id, segurado, consultor, data_registro, tipo, subtipo'),
+          supabase.from('metas').select('id, produtor_id, mes, quantidade, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)')
+        ]);
+
+        if (produtosRes.data) setProdutos(produtosRes.data as Produto[]);
+        if (metasRes.data) setMetas(metasRes.data as unknown as Meta[]);
+      } catch (err) {
+        logger.error('Error fetching indicadores data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const isMetaType = (descricao: string | undefined, target: string) =>
   normalizeLabel(descricao) === normalizeLabel(target);
 
