@@ -209,6 +209,15 @@ export const IndicadoresDetailModal = ({
 
   // Compute the dashboard's active date range from filter props
   const dashboardDateRange = useMemo(() => {
+    // If local custom period is set, use it
+    if (localPeriodo === 'personalizado') {
+      const from = parseBrDate(localDateFrom);
+      const to = parseBrDate(localDateTo);
+      if (from && to) {
+        return { start: from, end: to };
+      }
+    }
+
     const now = new Date();
     let start: Date;
     let end: Date = now;
@@ -243,13 +252,12 @@ export const IndicadoresDetailModal = ({
         end = dateRangeProp?.to || start;
         break;
       default:
-        // "todos" — use full range from data
         start = new Date(2000, 0, 1);
         end = new Date(2099, 11, 31);
         break;
     }
     return { start, end };
-  }, [dateFilter, anoEspecifico, dateRangeProp]);
+  }, [dateFilter, anoEspecifico, dateRangeProp, localPeriodo, localDateFrom, localDateTo]);
 
   const filterYear = dashboardDateRange.start.getFullYear();
 
