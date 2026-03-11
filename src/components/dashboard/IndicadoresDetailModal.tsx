@@ -446,6 +446,40 @@ export const IndicadoresDetailModal = ({
               <SelectItem value="critico">🔴 Crítico (&lt;70%)</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Custom period filter */}
+          <div className="flex items-center gap-2 ml-auto">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">Período:</Label>
+            <Select value={localPeriodo} onValueChange={setLocalPeriodo}>
+              <SelectTrigger className="w-[130px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dashboard">Do Dashboard</SelectItem>
+                <SelectItem value="personalizado">Personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+            {localPeriodo === 'personalizado' && (
+              <>
+                <input
+                  type="text"
+                  placeholder="dd/mm/aaaa"
+                  value={localDateFrom}
+                  onChange={(e) => setLocalDateFrom(formatDateInput(e.target.value, localDateFrom))}
+                  maxLength={10}
+                  className="w-[110px] h-8 text-xs px-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground"
+                />
+                <input
+                  type="text"
+                  placeholder="dd/mm/aaaa"
+                  value={localDateTo}
+                  onChange={(e) => setLocalDateTo(formatDateInput(e.target.value, localDateTo))}
+                  maxLength={10}
+                  className="w-[110px] h-8 text-xs px-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground"
+                />
+              </>
+            )}
+          </div>
         </div>
 
         {/* Summary */}
