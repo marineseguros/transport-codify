@@ -6,7 +6,8 @@ import { Target, TrendingUp, TrendingDown, Minus, Filter, ChevronRight, ChevronD
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
-import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, parseISO, parse, isValid } from 'date-fns';
+import { Label } from '@/components/ui/label';
 import { ptBR } from 'date-fns/locale';
 import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
 import { CategoriaDetailPopup } from './CategoriaDetailPopup';
