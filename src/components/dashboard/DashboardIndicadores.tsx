@@ -411,45 +411,55 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
             </div>
           </div>
 
-          {/* Chart */}
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={chartData} margin={{ top: 20, right: 10, left: -10, bottom: 5 }} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-              <XAxis
-                dataKey="categoria"
-                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                tickLine={false}
-                axisLine={false} />
-              
-              <YAxis
-                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                tickLine={false}
-                axisLine={false}
-                allowDecimals={false} />
-              
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
-              <Legend
-                wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                iconType="square"
-                iconSize={10} />
-              
-              <Bar dataKey="Meta" fill="hsl(var(--muted-foreground) / 0.35)" radius={[4, 4, 0, 0]} label={renderBarLabel} />
-              <Bar dataKey="Realizado" radius={[4, 4, 0, 0]} label={renderBarLabel}>
-                {chartData.map((entry, index) => {
-                  const pct = entry.Meta > 0 ? entry.Realizado / entry.Meta * 100 : 0;
-                  return <Cell key={index} fill={getBarColor(pct)} />;
-                })}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          {/* Chart + Vídeos side by side */}
+          <div className="flex gap-4">
+            {/* Chart */}
+            <div className="flex-1 min-w-0">
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={chartData} margin={{ top: 20, right: 10, left: -10, bottom: 5 }} barGap={4}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                  <XAxis
+                    dataKey="categoria"
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    tickLine={false}
+                    axisLine={false} />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
+                  <Legend
+                    wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                    iconType="square"
+                    iconSize={10} />
+                  <Bar dataKey="Meta" fill="hsl(var(--muted-foreground) / 0.35)" radius={[4, 4, 0, 0]} label={renderBarLabel} />
+                  <Bar dataKey="Realizado" radius={[4, 4, 0, 0]} label={renderBarLabel}>
+                    {chartData.map((entry, index) => {
+                      const pct = entry.Meta > 0 ? entry.Realizado / entry.Meta * 100 : 0;
+                      return <Cell key={index} fill={getBarColor(pct)} />;
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
 
-          {/* Activity breakdown mini-cards */}
-          
-
-
-
-
-
+            {/* Vídeos Section */}
+            <div className="w-[160px] shrink-0 flex flex-col items-center justify-center border-l pl-4">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Video className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-semibold text-foreground">Vídeos</span>
+              </div>
+              <div className="text-3xl font-bold text-primary mb-1">{videoCount}</div>
+              <p className="text-[10px] text-muted-foreground text-center leading-tight">registros no período</p>
+              <div className="mt-3 flex items-start gap-1 px-2 py-1.5 rounded-md bg-muted/40 border border-border/50">
+                <Info className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-[9px] text-muted-foreground leading-tight">
+                  Informativo — sem meta cadastrada, não participa do comparativo.
+                </p>
+              </div>
+            </div>
+          </div>
 
 
 
