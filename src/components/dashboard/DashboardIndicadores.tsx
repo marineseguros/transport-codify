@@ -226,6 +226,13 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
     return uniqueKeys.size + avulsoCount;
   }, [filteredCotacoes]);
 
+  const videoCount = useMemo(() => {
+    const filteredProds = produtorFilter?.length ?
+      filteredProdutos.filter((p) => produtorFilter.includes(p.consultor)) :
+      filteredProdutos;
+    return filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length;
+  }, [filteredProdutos, produtorFilter]);
+
   const chartData = useMemo(() => {
     const filteredProds = produtorFilter?.length ?
     filteredProdutos.filter((p) => produtorFilter.includes(p.consultor)) :
@@ -241,7 +248,6 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
     return [
     { categoria: 'Coleta', Meta: getMetaTotal('Coleta'), Realizado: filteredProds.filter((p) => p.tipo === 'Coleta').length },
     { categoria: 'Cotação', Meta: getMetaTotal('Cotação'), Realizado: cotacaoRealizado },
-    { categoria: 'Vídeo', Meta: getMetaTotal('Vídeo'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length },
     { categoria: 'Visita', Meta: getMetaTotal('Visita'), Realizado: filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'visita').length },
     { categoria: 'Indicação', Meta: getMetaTotal('Indicação'), Realizado: filteredProds.filter((p) => p.tipo === 'Indicação').length },
     { categoria: 'Fechamento', Meta: getMetaTotal('Fechamento'), Realizado: fechamentoRealizado }];
