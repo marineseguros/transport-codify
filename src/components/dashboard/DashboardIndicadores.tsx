@@ -226,12 +226,14 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
     return uniqueKeys.size + avulsoCount;
   }, [filteredCotacoes]);
 
-  const videoCount = useMemo(() => {
+  const videoRecords = useMemo(() => {
     const filteredProds = produtorFilter?.length ?
       filteredProdutos.filter((p) => produtorFilter.includes(p.consultor)) :
       filteredProdutos;
-    return filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length;
+    return filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video');
   }, [filteredProdutos, produtorFilter]);
+
+  const videoCount = videoRecords.length;
 
   const chartData = useMemo(() => {
     const filteredProds = produtorFilter?.length ?
@@ -445,14 +447,25 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
             </div>
 
             {/* Vídeos Section */}
-            <div className="w-[160px] shrink-0 flex flex-col items-center justify-center border-l pl-4">
+            <div className="w-[180px] shrink-0 flex flex-col border-l pl-4">
               <div className="flex items-center gap-1.5 mb-2">
                 <Video className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-semibold text-foreground">Vídeos</span>
               </div>
-              <div className="text-3xl font-bold text-primary mb-1">{videoCount}</div>
-              <p className="text-[10px] text-muted-foreground text-center leading-tight">registros no período</p>
-              <div className="mt-3 flex items-start gap-1 px-2 py-1.5 rounded-md bg-muted/40 border border-border/50">
+              <div className="text-3xl font-bold text-primary mb-1 text-center">{videoCount}</div>
+              <p className="text-[10px] text-muted-foreground text-center leading-tight mb-2">registros no período</p>
+              
+              {videoRecords.length > 0 && (
+                <div className="flex-1 overflow-y-auto max-h-[160px] space-y-0.5 mb-2">
+                  {videoRecords.map((v, i) => (
+                    <div key={v.id} className="text-[10px] text-muted-foreground truncate px-1 py-0.5 rounded hover:bg-muted/40">
+                      {v.segurado}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-start gap-1 px-2 py-1.5 rounded-md bg-muted/40 border border-border/50 mt-auto">
                 <Info className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
                 <p className="text-[9px] text-muted-foreground leading-tight">
                   Informativo — sem meta cadastrada, não participa do comparativo.
