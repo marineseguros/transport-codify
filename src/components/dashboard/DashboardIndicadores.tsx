@@ -10,6 +10,8 @@ import { ptBR } from 'date-fns/locale';
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Cell } from 'recharts';
 import { logger } from '@/lib/logger';
 import { IndicadoresDetailModal } from './IndicadoresDetailModal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
 
 interface Produto {
