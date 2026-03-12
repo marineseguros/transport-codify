@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Target, TrendingUp, TrendingDown, Minus, ExternalLink, BarChart3, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, Minus, ExternalLink, BarChart3, CheckCircle2, AlertTriangle, XCircle, Video, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth, getDaysInMonth, getDate } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
