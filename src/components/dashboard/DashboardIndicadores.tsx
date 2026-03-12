@@ -38,7 +38,7 @@ interface DashboardIndicadoresProps {
   allCotacoes?: DashboardCotacao[];
   dateFilter?: string;
   anoEspecifico?: string;
-  dateRange?: { from?: Date; to?: Date };
+  dateRange?: {from?: Date;to?: Date;};
 }
 
 const normalizeLabel = (value?: string | null) =>
@@ -89,9 +89,9 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
       try {
         setLoading(true);
         const [produtosRes, metasRes] = await Promise.all([
-          supabase.from('produtos').select('id, segurado, consultor, data_registro, tipo, subtipo'),
-          supabase.from('metas').select('id, produtor_id, mes, quantidade, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)')
-        ]);
+        supabase.from('produtos').select('id, segurado, consultor, data_registro, tipo, subtipo'),
+        supabase.from('metas').select('id, produtor_id, mes, quantidade, tipo_meta:tipos_meta(id, descricao), produtor:produtores(id, nome)')]
+        );
 
         if (produtosRes.data) setProdutos(produtosRes.data as Produto[]);
         if (metasRes.data) setMetas(metasRes.data as unknown as Meta[]);
@@ -142,12 +142,12 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
         start = new Date(now.getFullYear() - 1, 0, 1);
         end = new Date(now.getFullYear() - 1, 11, 31);
         break;
-      case 'ano_especifico': {
-        const year = parseInt(anoEspecifico || '') || now.getFullYear();
-        start = new Date(year, 0, 1);
-        end = new Date(year, 11, 31);
-        break;
-      }
+      case 'ano_especifico':{
+          const year = parseInt(anoEspecifico || '') || now.getFullYear();
+          start = new Date(year, 0, 1);
+          end = new Date(year, 11, 31);
+          break;
+        }
       case 'personalizado':
       case 'personalizado_comparacao':
         if (dateRange?.from) {
@@ -191,11 +191,11 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
 
   // Filter produtos by the dashboard date range (not just a single month)
   const filteredProdutos = useMemo(() =>
-    produtos.filter((p) => {
-      const d = new Date(p.data_registro);
-      return d >= filterStart && d <= filterEnd;
-    }),
-    [produtos, filterStart, filterEnd]);
+  produtos.filter((p) => {
+    const d = new Date(p.data_registro);
+    return d >= filterStart && d <= filterEnd;
+  }),
+  [produtos, filterStart, filterEnd]);
 
   // Cotação Realizada: Clientes Únicos (distinct CPF/CNPJ + branch group) from filteredCotacoes
   const cotacaoRealizado = useMemo(() => {
@@ -231,8 +231,8 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
 
   const videoRecords = useMemo(() => {
     const filteredProds = produtorFilter?.length ?
-      filteredProdutos.filter((p) => produtorFilter.includes(p.consultor)) :
-      filteredProdutos;
+    filteredProdutos.filter((p) => produtorFilter.includes(p.consultor)) :
+    filteredProdutos;
     return filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video');
   }, [filteredProdutos, produtorFilter]);
 
@@ -378,7 +378,7 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
                 <Target className="h-4.5 w-4.5 text-foreground" />
               </div>
               <div>
-                <span>Performance das Etapas (Meta x Realizado)</span>
+                <span>Performance dos Indicadores (Meta x Realizado)</span>
                 <p className="text-[11px] font-normal text-muted-foreground">
                   Dados do período selecionado • Clique em "Ver mais" para visão completa
                 </p>
@@ -458,8 +458,8 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
               <button
                 onClick={() => videoCount > 0 && setShowVideoPopup(true)}
                 className={`text-3xl font-bold text-primary mb-1 transition-colors ${videoCount > 0 ? 'hover:text-primary/70 cursor-pointer' : ''}`}
-                disabled={videoCount === 0}
-              >
+                disabled={videoCount === 0}>
+                
                 {videoCount}
               </button>
               <p className="text-[10px] text-muted-foreground text-center leading-tight">registros no período</p>
@@ -538,22 +538,22 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {videoRecords.map((v) => (
-                  <TableRow key={v.id}>
+                {videoRecords.map((v) =>
+                <TableRow key={v.id}>
                     <TableCell className="font-medium">{v.segurado}</TableCell>
                     <TableCell className="text-muted-foreground">{v.consultor}</TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       {format(new Date(v.data_registro), 'dd/MM/yyyy')}
                     </TableCell>
                   </TableRow>
-                ))}
-                {videoRecords.length === 0 && (
-                  <TableRow>
+                )}
+                {videoRecords.length === 0 &&
+                <TableRow>
                     <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                       Nenhum vídeo registrado no período.
                     </TableCell>
                   </TableRow>
-                )}
+                }
               </TableBody>
             </Table>
           </div>
