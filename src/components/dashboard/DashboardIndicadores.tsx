@@ -133,7 +133,7 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
         break;
       case 'ano_atual':
         start = new Date(now.getFullYear(), 0, 1);
-        end = new Date(now.getFullYear(), 11, 31);
+        end = now;
         break;
       case 'ano_anterior':
         start = new Date(now.getFullYear() - 1, 0, 1);
