@@ -226,12 +226,14 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
     return uniqueKeys.size + avulsoCount;
   }, [filteredCotacoes]);
 
-  const videoCount = useMemo(() => {
+  const videoRecords = useMemo(() => {
     const filteredProds = produtorFilter?.length ?
       filteredProdutos.filter((p) => produtorFilter.includes(p.consultor)) :
       filteredProdutos;
-    return filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video').length;
+    return filteredProds.filter((p) => p.tipo === 'Visita/Video' && normalizeLabel(p.subtipo) === 'video');
   }, [filteredProdutos, produtorFilter]);
+
+  const videoCount = videoRecords.length;
 
   const chartData = useMemo(() => {
     const filteredProds = produtorFilter?.length ?
