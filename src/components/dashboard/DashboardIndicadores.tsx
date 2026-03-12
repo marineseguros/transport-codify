@@ -514,6 +514,51 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
         dateFilter={dateFilter}
         anoEspecifico={anoEspecifico}
         dateRangeProp={dateRange} />
+
+      {/* Video Detail Popup */}
+      <Dialog open={showVideoPopup} onOpenChange={setShowVideoPopup}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Video className="h-5 w-5 text-primary" />
+              Vídeos no Período
+              <Badge variant="secondary" className="ml-2">{videoCount}</Badge>
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              Registros informativos — sem meta cadastrada, não participam do comparativo.
+            </p>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Segurado</TableHead>
+                  <TableHead>Produtor</TableHead>
+                  <TableHead className="text-right">Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {videoRecords.map((v) => (
+                  <TableRow key={v.id}>
+                    <TableCell className="font-medium">{v.segurado}</TableCell>
+                    <TableCell className="text-muted-foreground">{v.consultor}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {format(new Date(v.data_registro), 'dd/MM/yyyy')}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {videoRecords.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                      Nenhum vídeo registrado no período.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
       
     </>);
 
