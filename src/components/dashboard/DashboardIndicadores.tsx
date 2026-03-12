@@ -82,6 +82,7 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
   const [metas, setMetas] = useState<Meta[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDetail, setShowDetail] = useState(false);
+  const [showVideoPopup, setShowVideoPopup] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
