@@ -373,7 +373,7 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
                 <Target className="h-4.5 w-4.5 text-foreground" />
               </div>
               <div>
-                <span>Meta x Realizado</span>
+                <span>Performance das Etapas (Meta x Realizado)</span>
                 <p className="text-[11px] font-normal text-muted-foreground">
                   Dados do período selecionado • Clique em "Ver mais" para visão completa
                 </p>
