@@ -1736,7 +1736,9 @@ const Dashboard = () => {
       <DashboardIndicadores produtorFilter={filters.produtorFilter} filteredCotacoes={filteredCotacoes} allCotacoes={allQuotes} dateFilter={filters.dateFilter} anoEspecifico={filters.anoEspecifico} dateRange={filters.dateRange} />
 
       {/* Gráficos e Análises Avançadas */}
-      
+
+      {/* Análise de Funil */}
+      <FunnelAnalysisCard cotacoes={filteredCotacoes} />
 
 
 
