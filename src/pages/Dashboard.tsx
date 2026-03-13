@@ -27,6 +27,7 @@ import { MetasRealizadoChart } from "@/components/dashboard/MetasRealizadoChart"
 import { CotacoesEmAbertoChart } from "@/components/dashboard/CotacoesEmAbertoChart";
 import { MetasPremioComparison } from "@/components/dashboard/MetasPremioComparison";
 import { DashboardIndicadores } from "@/components/dashboard/DashboardIndicadores";
+import { FunnelAnalysisCard } from "@/components/dashboard/FunnelAnalysisCard";
 import { useNavigate } from "react-router-dom";
 
 // Helper function to determine branch group using ramo_agrupado from DB
@@ -1735,7 +1736,9 @@ const Dashboard = () => {
       <DashboardIndicadores produtorFilter={filters.produtorFilter} filteredCotacoes={filteredCotacoes} allCotacoes={allQuotes} dateFilter={filters.dateFilter} anoEspecifico={filters.anoEspecifico} dateRange={filters.dateRange} />
 
       {/* Gráficos e Análises Avançadas */}
-      
+
+      {/* Análise de Funil */}
+      <FunnelAnalysisCard cotacoes={filteredCotacoes} />
 
 
 
