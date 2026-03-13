@@ -1,12 +1,10 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Filter, ExternalLink, ArrowRight, Users } from 'lucide-react';
+import { Filter, ExternalLink } from 'lucide-react';
 import { type Cotacao } from '@/hooks/useSupabaseData';
 import { FunnelDetailModal } from './FunnelDetailModal';
 
-// Helper to get branch group
 const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
   if (!ramo) return 'Outros';
   if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
@@ -17,58 +15,56 @@ const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | nul
 
 const countDistinct = (cotacoes: Cotacao[], statuses: string[]): number => {
   const keys = new Set<string>();
-  let avulso = 0;
   cotacoes.forEach((c) => {
     if (statuses.includes(c.status)) {
-      if (c.ramo?.segmento === 'Avulso') avulso++;
-      else {
-        const bg = getBranchGroup(c.ramo);
-        keys.add(`${c.cpf_cnpj}_${bg}`);
-      }
+      const bg = getBranchGroup(c.ramo);
+      keys.add(`${c.cpf_cnpj}_${bg}`);
     }
   });
-  return keys.size + avulso;
+  return keys.size;
 };
 
 interface FunnelAnalysisCardProps {
   cotacoes: Cotacao[];
 }
 
+interface FunnelStage {
+  label: string;
+  value: number;
+  pct: number;
+  color: string;
+}
+
 export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
   const [showDetail, setShowDetail] = useState(false);
 
-  const funnel = useMemo(() => {
+  const stages = useMemo((): FunnelStage[] => {
+    const total = countDistinct(cotacoes, ['Em cotação', 'Negócio fechado', 'Fechamento congênere', 'Declinado']);
     const emCotacao = countDistinct(cotacoes, ['Em cotação']);
     const fechados = countDistinct(cotacoes, ['Negócio fechado', 'Fechamento congênere']);
     const declinados = countDistinct(cotacoes, ['Declinado']);
-    const total = emCotacao + fechados + declinados;
-    const taxaConversao = total > 0 ? (fechados / total) * 100 : 0;
-    const taxaDeclinio = total > 0 ? (declinados / total) * 100 : 0;
-    return { emCotacao, fechados, declinados, total, taxaConversao, taxaDeclinio };
+
+    return [
+      { label: 'Total no Pipeline', value: total, pct: 100, color: 'hsl(210, 50%, 25%)' },
+      { label: 'Em Cotação', value: emCotacao, pct: total > 0 ? (emCotacao / total) * 100 : 0, color: 'hsl(210, 55%, 45%)' },
+      { label: 'Fechados', value: fechados, pct: total > 0 ? (fechados / total) * 100 : 0, color: 'hsl(200, 60%, 55%)' },
+      { label: 'Declinados', value: declinados, pct: total > 0 ? (declinados / total) * 100 : 0, color: 'hsl(195, 70%, 60%)' },
+    ];
   }, [cotacoes]);
 
-  // Per-role summary
-  const roleSummary = useMemo(() => {
-    const roles: { key: 'produtor_origem' | 'produtor_negociador' | 'produtor_cotador'; label: string }[] = [
-      { key: 'produtor_origem', label: 'Origem' },
-      { key: 'produtor_negociador', label: 'Negociador' },
-      { key: 'produtor_cotador', label: 'Cotador' },
+  // Role counts for footer
+  const roleCounts = useMemo(() => {
+    const roles = [
+      { key: 'produtor_origem' as const, label: 'Origem' },
+      { key: 'produtor_negociador' as const, label: 'Negociador' },
+      { key: 'produtor_cotador' as const, label: 'Cotador' },
     ];
-
     return roles.map(({ key, label }) => {
       const names = new Set<string>();
-      cotacoes.forEach((c) => {
-        if (c[key]?.nome) names.add(c[key]!.nome);
-      });
+      cotacoes.forEach((c) => { if (c[key]?.nome) names.add(c[key]!.nome); });
       return { label, count: names.size };
     });
   }, [cotacoes]);
-
-  const stages = [
-    { label: 'Total Pipeline', value: funnel.total, pct: 100, colorClass: 'bg-primary' },
-    { label: 'Em Cotação', value: funnel.emCotacao, pct: funnel.total > 0 ? (funnel.emCotacao / funnel.total) * 100 : 0, colorClass: 'bg-warning' },
-    { label: 'Fechados', value: funnel.fechados, pct: funnel.total > 0 ? (funnel.fechados / funnel.total) * 100 : 0, colorClass: 'bg-success' },
-  ];
 
   return (
     <>
@@ -82,7 +78,7 @@ export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
               <div>
                 <span>Análise de Funil</span>
                 <p className="text-[11px] font-normal text-muted-foreground">
-                  Pipeline comercial • Progressão entre etapas
+                  Distribuição por papel comercial • Progressão do pipeline
                 </p>
               </div>
             </CardTitle>
@@ -98,65 +94,62 @@ export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4 pt-0">
-          {/* KPI strip */}
-          <div className="flex items-center justify-center gap-6 py-1">
-            <div className="text-center">
-              <p className="text-lg font-bold">{funnel.total}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pipeline</p>
-            </div>
-            <div className="h-8 w-px bg-border" />
-            <div className="text-center">
-              <p className="text-lg font-bold text-primary">{funnel.emCotacao}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Em Cotação</p>
-            </div>
-            <div className="h-8 w-px bg-border" />
-            <div className="text-center">
-              <p className="text-lg font-bold text-success">{funnel.fechados}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Fechados</p>
-            </div>
-            <div className="h-8 w-px bg-border" />
-            <div className="text-center">
-              <p className="text-lg font-bold text-destructive">{funnel.declinados}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Declinados</p>
-            </div>
-          </div>
-
-          {/* Funnel visualization */}
-          <div className="space-y-2">
-            {stages.map((stage) => (
-              <div key={stage.label} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">{stage.label}</span>
-                  <span className="font-semibold">{stage.value} <span className="text-muted-foreground">({stage.pct.toFixed(0)}%)</span></span>
-                </div>
-                <div className="h-5 bg-muted/30 rounded overflow-hidden flex items-center relative">
+        <CardContent className="pt-0">
+          {/* Funnel visual */}
+          <div className="flex items-center gap-6">
+            {/* Funnel shape */}
+            <div className="flex-1 flex flex-col items-center gap-1 py-2">
+              {stages.map((stage, i) => {
+                // Each stage gets progressively narrower to form a funnel
+                const widthPct = 100 - i * 18; // 100%, 82%, 64%, 46%
+                return (
                   <div
-                    className={`absolute left-0 top-0 h-full ${stage.colorClass} rounded transition-all duration-500`}
-                    style={{ width: `${Math.max(stage.pct, 2)}%` }}
-                  />
+                    key={stage.label}
+                    className="relative flex items-center justify-center transition-all duration-500"
+                    style={{
+                      width: `${widthPct}%`,
+                      height: '52px',
+                      backgroundColor: stage.color,
+                      clipPath: i === stages.length - 1
+                        ? 'polygon(4% 0%, 96% 0%, 88% 100%, 12% 100%)'
+                        : 'polygon(0% 0%, 100% 0%, 96% 100%, 4% 100%)',
+                      borderRadius: i === 0 ? '4px 4px 0 0' : undefined,
+                    }}
+                  >
+                    <div className="flex items-center gap-2 text-white z-10">
+                      <span className="text-sm font-semibold">{stage.label}</span>
+                      <span className="text-xs opacity-80">—</span>
+                      <span className="text-lg font-bold">{stage.value}</span>
+                      <span className="text-[10px] opacity-70">({stage.pct.toFixed(0)}%)</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Role summary sidebar */}
+            <div className="w-[140px] shrink-0 space-y-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Papéis Comerciais</p>
+              {roleCounts.map((r) => (
+                <div key={r.label} className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{r.label}</span>
+                  <span className="text-sm font-bold text-foreground">{r.count}</span>
+                </div>
+              ))}
+              <div className="pt-2 border-t">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">Conversão</span>
+                  <span className="text-xs font-bold text-success">
+                    {stages[0].value > 0 ? ((stages[2].value / stages[0].value) * 100).toFixed(1) : 0}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-muted-foreground">Declínio</span>
+                  <span className="text-xs font-bold text-destructive">
+                    {stages[0].value > 0 ? ((stages[3].value / stages[0].value) * 100).toFixed(1) : 0}%
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Conversion + Roles */}
-          <div className="flex items-center justify-between pt-2 border-t">
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1">
-                <ArrowRight className="h-3.5 w-3.5 text-success" />
-                Conversão: <span className="font-semibold text-success">{funnel.taxaConversao.toFixed(1)}%</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <ArrowRight className="h-3.5 w-3.5 text-destructive" />
-                Declínio: <span className="font-semibold text-destructive">{funnel.taxaDeclinio.toFixed(1)}%</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-              <Users className="h-3 w-3" />
-              {roleSummary.map((r) => (
-                <span key={r.label}>{r.label}: <span className="font-semibold text-foreground">{r.count}</span></span>
-              ))}
             </div>
           </div>
         </CardContent>
