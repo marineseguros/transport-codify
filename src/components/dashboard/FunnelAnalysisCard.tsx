@@ -1,18 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Filter, ExternalLink, ChevronRight } from 'lucide-react';
+import { Filter, ExternalLink } from 'lucide-react';
 import { type Cotacao } from '@/hooks/useSupabaseData';
 import { FunnelDetailModal } from './FunnelDetailModal';
-
-export interface FunnelStage {
-  key: string;
-  label: string;
-  value: number;
-  pct: number;
-  conversionToNext: number | null;
-  color: string;
-}
 
 interface FunnelAnalysisCardProps {
   cotacoes: Cotacao[];
@@ -21,52 +12,50 @@ interface FunnelAnalysisCardProps {
 export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
-  const stages = useMemo((): FunnelStage[] => {
-    // Count unique opportunities per role
+  const stages = useMemo(() => {
     const origemSet = new Set<string>();
-    const cotadorSet = new Set<string>();
     const negociadorSet = new Set<string>();
-    const fechadoSet = new Set<string>();
-    const declinadoSet = new Set<string>();
+    const cotadorSet = new Set<string>();
 
     cotacoes.forEach((c) => {
-      const key = c.id;
-      if (c.produtor_origem?.nome) origemSet.add(key);
-      if (c.produtor_cotador?.nome) cotadorSet.add(key);
-      if (c.produtor_negociador?.nome) negociadorSet.add(key);
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') fechadoSet.add(key);
-      if (c.status === 'Declinado') declinadoSet.add(key);
+      if (c.produtor_origem?.nome) origemSet.add(c.id);
+      if (c.produtor_negociador?.nome) negociadorSet.add(c.id);
+      if (c.produtor_cotador?.nome) cotadorSet.add(c.id);
     });
 
-    const origem = origemSet.size;
-    const cotador = cotadorSet.size;
-    const negociador = negociadorSet.size;
-    const fechado = fechadoSet.size;
-    const declinado = declinadoSet.size;
-    const total = origem || cotacoes.length;
+    const total = cotacoes.length;
 
-    const raw = [
-      { key: 'origem', label: 'Origem', value: origem, color: 'hsl(var(--primary))' },
-      { key: 'cotador', label: 'Cotador', value: cotador, color: 'hsl(210, 55%, 50%)' },
-      { key: 'negociador', label: 'Negociador', value: negociador, color: 'hsl(200, 60%, 55%)' },
-      { key: 'fechado', label: 'Fechado', value: fechado, color: 'hsl(156, 72%, 40%)' },
-      { key: 'declinado', label: 'Declinado', value: declinado, color: 'hsl(0, 84%, 55%)' },
+    return [
+      { key: 'origem', label: 'Origem', value: origemSet.size, pct: total > 0 ? (origemSet.size / total) * 100 : 0, color: 'hsl(210, 50%, 25%)' },
+      { key: 'negociador', label: 'Negociador', value: negociadorSet.size, pct: total > 0 ? (negociadorSet.size / total) * 100 : 0, color: 'hsl(210, 55%, 45%)' },
+      { key: 'cotador', label: 'Cotador', value: cotadorSet.size, pct: total > 0 ? (cotadorSet.size / total) * 100 : 0, color: 'hsl(200, 60%, 55%)' },
     ];
-
-    return raw.map((s, i) => ({
-      ...s,
-      pct: total > 0 ? (s.value / total) * 100 : 0,
-      conversionToNext: i < raw.length - 1 && s.value > 0
-        ? (raw[i + 1].value / s.value) * 100
-        : null,
-    }));
   }, [cotacoes]);
 
-  const overallConversion = useMemo(() => {
-    const origem = stages.find(s => s.key === 'origem')?.value || 0;
-    const fechado = stages.find(s => s.key === 'fechado')?.value || 0;
-    return origem > 0 ? ((fechado / origem) * 100).toFixed(1) : '0.0';
-  }, [stages]);
+  // Distinct producer counts per role
+  const roleCounts = useMemo(() => {
+    const roles = [
+      { key: 'produtor_origem' as const, label: 'Origem' },
+      { key: 'produtor_negociador' as const, label: 'Negociador' },
+      { key: 'produtor_cotador' as const, label: 'Cotador' },
+    ];
+    return roles.map(({ key, label }) => {
+      const names = new Set<string>();
+      cotacoes.forEach((c) => { if (c[key]?.nome) names.add(c[key]!.nome); });
+      return { label, count: names.size };
+    });
+  }, [cotacoes]);
+
+  // Conversion & decline rates
+  const rates = useMemo(() => {
+    const total = cotacoes.length;
+    const fechados = cotacoes.filter(c => c.status === 'Negócio fechado' || c.status === 'Fechamento congênere').length;
+    const declinados = cotacoes.filter(c => c.status === 'Declinado').length;
+    return {
+      conversao: total > 0 ? ((fechados / total) * 100).toFixed(1) : '0.0',
+      declinio: total > 0 ? ((declinados / total) * 100).toFixed(1) : '0.0',
+    };
+  }, [cotacoes]);
 
   return (
     <>
@@ -78,57 +67,76 @@ export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
                 <Filter className="h-4.5 w-4.5 text-foreground" />
               </div>
               <div>
-                <span>Funil Comercial</span>
+                <span>Análise de Funil</span>
                 <p className="text-[11px] font-normal text-muted-foreground">
-                  Desempenho por papel comercial • Conversão: {overallConversion}%
+                  Distribuição por papel comercial • Progressão do pipeline
                 </p>
               </div>
             </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-7 gap-1 text-muted-foreground hover:text-foreground"
+              onClick={() => setSelectedStage('origem')}
+            >
+              Ver análise completa
+              <ExternalLink className="h-3 w-3" />
+            </Button>
           </div>
         </CardHeader>
 
         <CardContent className="pt-0">
-          <div className="flex flex-col items-center gap-1 py-2">
-            {stages.map((stage, i) => {
-              const widthPct = Math.max(30, 100 - i * 16);
-              return (
-                <button
-                  key={stage.key}
-                  onClick={() => setSelectedStage(stage.key)}
-                  className="relative flex items-center justify-center transition-all duration-300 hover:opacity-90 hover:scale-[1.01] cursor-pointer group w-full"
-                  style={{ maxWidth: `${widthPct}%` }}
-                >
-                  <div
-                    className="w-full flex items-center justify-between px-4 py-3"
+          <div className="flex items-center gap-6">
+            {/* Funnel shape */}
+            <div className="flex-1 flex flex-col items-center gap-1 py-2">
+              {stages.map((stage, i) => {
+                const widthPct = 100 - i * 18;
+                return (
+                  <button
+                    key={stage.key}
+                    onClick={() => setSelectedStage(stage.key)}
+                    className="relative flex items-center justify-center transition-all duration-500 cursor-pointer hover:opacity-90 group"
                     style={{
+                      width: `${widthPct}%`,
+                      height: '52px',
                       backgroundColor: stage.color,
                       clipPath: i === stages.length - 1
-                        ? 'polygon(5% 0%, 95% 0%, 85% 100%, 15% 100%)'
-                        : 'polygon(0% 0%, 100% 0%, 95% 100%, 5% 100%)',
-                      borderRadius: i === 0 ? '6px 6px 0 0' : undefined,
-                      minHeight: '46px',
+                        ? 'polygon(4% 0%, 96% 0%, 88% 100%, 12% 100%)'
+                        : 'polygon(0% 0%, 100% 0%, 96% 100%, 4% 100%)',
+                      borderRadius: i === 0 ? '4px 4px 0 0' : undefined,
                     }}
                   >
-                    <div className="flex items-center gap-2 text-white z-10 ml-4">
+                    <div className="flex items-center gap-2 text-white z-10">
                       <span className="text-sm font-semibold">{stage.label}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-white z-10 mr-4">
+                      <span className="text-xs opacity-80">—</span>
                       <span className="text-lg font-bold">{stage.value}</span>
                       <span className="text-[10px] opacity-70">({stage.pct.toFixed(0)}%)</span>
-                      <ChevronRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
-                  </div>
-                  {/* Conversion arrow between stages */}
-                  {stage.conversionToNext !== null && (
-                    <div className="absolute -bottom-1 right-4 z-20">
-                      <span className="text-[9px] font-semibold text-muted-foreground bg-background/90 px-1.5 py-0.5 rounded-full border">
-                        ↓ {stage.conversionToNext.toFixed(0)}%
-                      </span>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Role summary sidebar */}
+            <div className="w-[140px] shrink-0 space-y-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Papéis Comerciais</p>
+              {roleCounts.map((r) => (
+                <div key={r.label} className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{r.label}</span>
+                  <span className="text-sm font-bold text-foreground">{r.count}</span>
+                </div>
+              ))}
+              <div className="pt-2 border-t">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">Conversão</span>
+                  <span className="text-xs font-bold text-success">{rates.conversao}%</span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-muted-foreground">Declínio</span>
+                  <span className="text-xs font-bold text-destructive">{rates.declinio}%</span>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
