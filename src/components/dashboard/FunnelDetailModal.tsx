@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import {
   Users, TrendingUp, DollarSign, Clock, BarChart3, AlertTriangle,
-  Building2, Layers, Search, ArrowRight, CheckCircle2, XCircle, FileText,
-} from 'lucide-react';
+  Building2, Layers, Search, ArrowRight, CheckCircle2, XCircle, FileText } from
+'lucide-react';
 import { type Cotacao } from '@/hooks/useSupabaseData';
 import { useMemo, useState, useEffect } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend } from 'recharts';
@@ -19,22 +19,22 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 const ROLE_KEY_MAP = {
   origem: 'produtor_origem' as const,
   negociador: 'produtor_negociador' as const,
-  cotador: 'produtor_cotador' as const,
+  cotador: 'produtor_cotador' as const
 };
 const ROLE_LABELS: Record<string, string> = {
   origem: 'Produtor Origem',
   negociador: 'Produtor Negociador',
-  cotador: 'Produtor Cotador',
+  cotador: 'Produtor Cotador'
 };
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   origem: 'Responsável pela captação e relacionamento comercial',
   negociador: 'Responsável pela negociação com o cliente',
-  cotador: 'Responsável operacional pela cotação',
+  cotador: 'Responsável operacional pela cotação'
 };
 const ROLE_COLORS: Record<string, string> = {
   origem: 'hsl(210, 50%, 25%)',
   negociador: 'hsl(210, 55%, 45%)',
-  cotador: 'hsl(200, 60%, 55%)',
+  cotador: 'hsl(200, 60%, 55%)'
 };
 
 const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -54,7 +54,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
   const [filterRamo, setFilterRamo] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => { if (open) { setActiveStage(initialStage); setFilterSeguradora('all'); setFilterProdutor('all'); setFilterRamo('all'); setSearchTerm(''); } }, [initialStage, open]);
+  useEffect(() => {if (open) {setActiveStage(initialStage);setFilterSeguradora('all');setFilterProdutor('all');setFilterRamo('all');setSearchTerm('');}}, [initialStage, open]);
 
   const roleKey = ROLE_KEY_MAP[activeStage as keyof typeof ROLE_KEY_MAP] || 'produtor_origem';
 
@@ -63,9 +63,9 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
     const seg = new Map<string, string>();
     const prod = new Map<string, string>();
     const ram = new Map<string, string>();
-    cotacoes.forEach(c => {
+    cotacoes.forEach((c) => {
       if (c.seguradora?.nome) seg.set(c.seguradora_id!, c.seguradora.nome);
-      [c.produtor_origem, c.produtor_negociador, c.produtor_cotador].forEach(p => {
+      [c.produtor_origem, c.produtor_negociador, c.produtor_cotador].forEach((p) => {
         if (p?.nome && p?.id) prod.set(p.id, p.nome);
       });
       if (c.ramo?.descricao) ram.set(c.ramo_id!, c.ramo.ramo_agrupado || c.ramo.descricao);
@@ -73,21 +73,21 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
     return {
       seguradoras: Array.from(seg, ([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome)),
       produtores: Array.from(prod, ([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome)),
-      ramos: Array.from(ram, ([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome)),
+      ramos: Array.from(ram, ([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome))
     };
   }, [cotacoes]);
 
   // Filtered cotacoes for active role
   const stageCotacoes = useMemo(() => {
-    let filtered = cotacoes.filter(c => !!c[roleKey]?.nome);
-    if (filterSeguradora !== 'all') filtered = filtered.filter(c => c.seguradora_id === filterSeguradora);
-    if (filterProdutor !== 'all') filtered = filtered.filter(c =>
-      c.produtor_origem_id === filterProdutor || c.produtor_negociador_id === filterProdutor || c.produtor_cotador_id === filterProdutor
+    let filtered = cotacoes.filter((c) => !!c[roleKey]?.nome);
+    if (filterSeguradora !== 'all') filtered = filtered.filter((c) => c.seguradora_id === filterSeguradora);
+    if (filterProdutor !== 'all') filtered = filtered.filter((c) =>
+    c.produtor_origem_id === filterProdutor || c.produtor_negociador_id === filterProdutor || c.produtor_cotador_id === filterProdutor
     );
-    if (filterRamo !== 'all') filtered = filtered.filter(c => c.ramo_id === filterRamo);
+    if (filterRamo !== 'all') filtered = filtered.filter((c) => c.ramo_id === filterRamo);
     if (searchTerm) {
       const t = searchTerm.toLowerCase();
-      filtered = filtered.filter(c => c.segurado.toLowerCase().includes(t) || c.cpf_cnpj.includes(t));
+      filtered = filtered.filter((c) => c.segurado.toLowerCase().includes(t) || c.cpf_cnpj.includes(t));
     }
     return filtered;
   }, [cotacoes, roleKey, filterSeguradora, filterProdutor, filterRamo, searchTerm]);
@@ -97,12 +97,12 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
     const total = stageCotacoes.length;
     const premio = stageCotacoes.reduce((s, c) => s + (c.valor_premio || 0), 0);
     const ticketMedio = total > 0 ? premio / total : 0;
-    const fechados = stageCotacoes.filter(c => c.status === 'Negócio fechado' || c.status === 'Fechamento congênere').length;
-    const declinados = stageCotacoes.filter(c => c.status === 'Declinado').length;
-    const emCotacao = stageCotacoes.filter(c => c.status === 'Em cotação').length;
-    const taxaConversao = total > 0 ? (fechados / total) * 100 : 0;
+    const fechados = stageCotacoes.filter((c) => c.status === 'Negócio fechado' || c.status === 'Fechamento congênere').length;
+    const declinados = stageCotacoes.filter((c) => c.status === 'Declinado').length;
+    const emCotacao = stageCotacoes.filter((c) => c.status === 'Em cotação').length;
+    const taxaConversao = total > 0 ? fechados / total * 100 : 0;
     const tempos: number[] = [];
-    stageCotacoes.forEach(c => {
+    stageCotacoes.forEach((c) => {
       const start = new Date(c.data_cotacao).getTime();
       const end = c.data_fechamento ? new Date(c.data_fechamento).getTime() : Date.now();
       tempos.push((end - start) / (1000 * 60 * 60 * 24));
@@ -113,7 +113,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
 
   // ─── Flow: cotação → origem → negociador → cotador → status ───
   const flowData = useMemo(() => {
-    return stageCotacoes.map(c => ({
+    return stageCotacoes.map((c) => ({
       id: c.id,
       numero: c.numero_cotacao,
       segurado: c.segurado,
@@ -125,48 +125,48 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
       ramo: c.ramo?.ramo_agrupado || c.ramo?.descricao || '—',
       premio: c.valor_premio || 0,
       status: c.status,
-      data: c.data_cotacao,
+      data: c.data_cotacao
     }));
   }, [stageCotacoes]);
 
   // ─── Ranking ───
   const ranking = useMemo(() => {
-    const map = new Map<string, { nome: string; total: number; fechados: number; declinados: number; emCotacao: number; premio: number }>();
-    stageCotacoes.forEach(c => {
+    const map = new Map<string, {nome: string;total: number;fechados: number;declinados: number;emCotacao: number;premio: number;}>();
+    stageCotacoes.forEach((c) => {
       const nome = c[roleKey]?.nome || '—';
       if (nome === '—') return;
       const e = map.get(nome) || { nome, total: 0, fechados: 0, declinados: 0, emCotacao: 0, premio: 0 };
       e.total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
+      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') {e.fechados++;e.premio += c.valor_premio || 0;}
       if (c.status === 'Declinado') e.declinados++;
       if (c.status === 'Em cotação') e.emCotacao++;
       map.set(nome, e);
     });
-    return Array.from(map.values())
-      .map(r => ({ ...r, conversao: r.total > 0 ? (r.fechados / r.total) * 100 : 0 }))
-      .sort((a, b) => b.total - a.total);
+    return Array.from(map.values()).
+    map((r) => ({ ...r, conversao: r.total > 0 ? r.fechados / r.total * 100 : 0 })).
+    sort((a, b) => b.total - a.total);
   }, [stageCotacoes, roleKey]);
 
   // ─── Seguradora & Ramo ───
   const seguradoraAnalysis = useMemo(() => {
-    const map = new Map<string, { nome: string; total: number; fechados: number; premio: number }>();
-    stageCotacoes.forEach(c => {
+    const map = new Map<string, {nome: string;total: number;fechados: number;premio: number;}>();
+    stageCotacoes.forEach((c) => {
       const nome = c.seguradora?.nome || 'Sem seguradora';
       const e = map.get(nome) || { nome, total: 0, fechados: 0, premio: 0 };
       e.total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
+      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') {e.fechados++;e.premio += c.valor_premio || 0;}
       map.set(nome, e);
     });
     return Array.from(map.values()).sort((a, b) => b.total - a.total);
   }, [stageCotacoes]);
 
   const ramoAnalysis = useMemo(() => {
-    const map = new Map<string, { nome: string; total: number; fechados: number; premio: number }>();
-    stageCotacoes.forEach(c => {
+    const map = new Map<string, {nome: string;total: number;fechados: number;premio: number;}>();
+    stageCotacoes.forEach((c) => {
       const nome = c.ramo?.ramo_agrupado || c.ramo?.descricao || 'Sem ramo';
       const e = map.get(nome) || { nome, total: 0, fechados: 0, premio: 0 };
       e.total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
+      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') {e.fechados++;e.premio += c.valor_premio || 0;}
       map.set(nome, e);
     });
     return Array.from(map.values()).sort((a, b) => b.total - a.total);
@@ -174,14 +174,14 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
 
   // ─── Time evolution ───
   const timeEvolution = useMemo(() => {
-    const monthMap = new Map<string, { mes: string; total: number; fechados: number; premio: number }>();
-    stageCotacoes.forEach(c => {
+    const monthMap = new Map<string, {mes: string;total: number;fechados: number;premio: number;}>();
+    stageCotacoes.forEach((c) => {
       const d = new Date(c.data_cotacao);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
       const e = monthMap.get(key) || { mes: label, total: 0, fechados: 0, premio: 0 };
       e.total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
+      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') {e.fechados++;e.premio += c.valor_premio || 0;}
       monthMap.set(key, e);
     });
     return Array.from(monthMap.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => v);
@@ -189,13 +189,13 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
 
   // ─── Bottlenecks ───
   const bottlenecks = useMemo(() => {
-    const issues: { type: 'warning' | 'critical'; message: string }[] = [];
+    const issues: {type: 'warning' | 'critical';message: string;}[] = [];
     if (kpis.tempoMedio > 30) issues.push({ type: 'critical', message: `Tempo médio de ${kpis.tempoMedio.toFixed(0)} dias é elevado para este papel` });
     if (kpis.taxaConversao < 20 && kpis.total > 5) issues.push({ type: 'warning', message: `Taxa de conversão de ${kpis.taxaConversao.toFixed(1)}% está abaixo do esperado` });
-    ranking.filter(r => r.total >= 5 && r.conversao < 15).forEach(r => {
+    ranking.filter((r) => r.total >= 5 && r.conversao < 15).forEach((r) => {
       issues.push({ type: 'warning', message: `${r.nome}: ${r.total} oportunidades, apenas ${r.conversao.toFixed(0)}% de conversão` });
     });
-    seguradoraAnalysis.filter(s => s.total >= 5 && s.fechados === 0).forEach(s => {
+    seguradoraAnalysis.filter((s) => s.total >= 5 && s.fechados === 0).forEach((s) => {
       issues.push({ type: 'critical', message: `${s.nome}: ${s.total} cotações sem fechamento` });
     });
     return issues.slice(0, 6);
@@ -221,20 +221,20 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
 
         {/* Stage pills */}
         <div className="flex gap-1.5 flex-wrap">
-          {Object.entries(ROLE_LABELS).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setActiveStage(key)}
-              className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all border ${
-                activeStage === key
-                  ? 'text-white border-transparent shadow-sm'
-                  : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
-              }`}
-              style={activeStage === key ? { backgroundColor: ROLE_COLORS[key] } : undefined}
-            >
+          {Object.entries(ROLE_LABELS).map(([key, label]) =>
+          <button
+            key={key}
+            onClick={() => setActiveStage(key)}
+            className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all border ${
+            activeStage === key ?
+            'text-white border-transparent shadow-sm' :
+            'bg-muted/50 text-muted-foreground border-border hover:bg-muted'}`
+            }
+            style={activeStage === key ? { backgroundColor: ROLE_COLORS[key] } : undefined}>
+            
               {label.replace('Produtor ', '')}
             </button>
-          ))}
+          )}
         </div>
 
         {/* Filters */}
@@ -245,15 +245,15 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
           </div>
           <Select value={filterSeguradora} onValueChange={setFilterSeguradora}>
             <SelectTrigger className="h-8 w-[155px] text-xs"><SelectValue placeholder="Seguradora" /></SelectTrigger>
-            <SelectContent>{[<SelectItem key="all" value="all">Todas seguradoras</SelectItem>, ...filterOptions.seguradoras.map(s => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)]}</SelectContent>
+            <SelectContent>{[<SelectItem key="all" value="all">Todas seguradoras</SelectItem>, ...filterOptions.seguradoras.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)]}</SelectContent>
           </Select>
           <Select value={filterProdutor} onValueChange={setFilterProdutor}>
             <SelectTrigger className="h-8 w-[155px] text-xs"><SelectValue placeholder="Produtor" /></SelectTrigger>
-            <SelectContent>{[<SelectItem key="all" value="all">Todos produtores</SelectItem>, ...filterOptions.produtores.map(p => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)]}</SelectContent>
+            <SelectContent>{[<SelectItem key="all" value="all">Todos produtores</SelectItem>, ...filterOptions.produtores.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)]}</SelectContent>
           </Select>
           <Select value={filterRamo} onValueChange={setFilterRamo}>
             <SelectTrigger className="h-8 w-[135px] text-xs"><SelectValue placeholder="Ramo" /></SelectTrigger>
-            <SelectContent>{[<SelectItem key="all" value="all">Todos ramos</SelectItem>, ...filterOptions.ramos.map(r => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)]}</SelectContent>
+            <SelectContent>{[<SelectItem key="all" value="all">Todos ramos</SelectItem>, ...filterOptions.ramos.map((r) => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)]}</SelectContent>
           </Select>
         </div>
 
@@ -262,22 +262,22 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
-                { icon: FileText, label: 'Cotações', value: kpis.total.toString(), color: 'text-foreground' },
-                { icon: DollarSign, label: 'Prêmio Total', value: formatCurrency(kpis.premio), color: 'text-foreground' },
-                { icon: BarChart3, label: 'Ticket Médio', value: formatCurrency(kpis.ticketMedio), color: 'text-foreground' },
-                { icon: TrendingUp, label: 'Conversão', value: `${kpis.taxaConversao.toFixed(1)}%`, color: kpis.taxaConversao >= 30 ? 'text-success' : 'text-destructive' },
-                { icon: Clock, label: 'Tempo Médio', value: `${kpis.tempoMedio.toFixed(0)} dias`, color: kpis.tempoMedio <= 30 ? 'text-success' : 'text-destructive' },
-              ].map(k => (
-                <Card key={k.label}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
-                      <k.icon className="h-3.5 w-3.5" />
-                      <span className="text-[10px] font-medium uppercase tracking-wider">{k.label}</span>
-                    </div>
-                    <p className={`text-lg font-bold ${k.color}`}>{k.value}</p>
-                  </CardContent>
+              { icon: FileText, label: 'Cotações', value: kpis.total.toString(), color: 'text-foreground' },
+              { icon: DollarSign, label: 'Prêmio Total', value: formatCurrency(kpis.premio), color: 'text-foreground' },
+              { icon: BarChart3, label: 'Ticket Médio', value: formatCurrency(kpis.ticketMedio), color: 'text-foreground' },
+              { icon: TrendingUp, label: 'Conversão', value: `${kpis.taxaConversao.toFixed(1)}%`, color: kpis.taxaConversao >= 30 ? 'text-success' : 'text-destructive' },
+              { icon: Clock, label: 'Tempo Médio', value: `${kpis.tempoMedio.toFixed(0)} dias`, color: kpis.tempoMedio <= 30 ? 'text-success' : 'text-destructive' }].
+              map((k) =>
+              <Card key={k.label}>
+                  
+
+
+
+
+
+                
                 </Card>
-              ))}
+              )}
             </div>
 
             <Tabs defaultValue="fluxo" className="space-y-3">
@@ -320,8 +320,8 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {flowData.slice(0, 50).map((row) => (
-                          <TableRow key={row.id}>
+                        {flowData.slice(0, 50).map((row) =>
+                        <TableRow key={row.id}>
                             <TableCell className="text-[10px] text-muted-foreground font-mono">{row.numero}</TableCell>
                             <TableCell className="font-medium text-xs max-w-[160px] truncate">{row.segurado}</TableCell>
                             <TableCell className="text-center text-xs">{row.origem}</TableCell>
@@ -338,15 +338,15 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                             </TableCell>
                             <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(row.premio)}</TableCell>
                           </TableRow>
-                        ))}
-                        {flowData.length === 0 && (
-                          <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">Nenhum dado disponível.</TableCell></TableRow>
                         )}
+                        {flowData.length === 0 &&
+                        <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">Nenhum dado disponível.</TableCell></TableRow>
+                        }
                       </TableBody>
                     </Table>
-                    {flowData.length > 50 && (
-                      <p className="text-[10px] text-muted-foreground text-center mt-2">Exibindo 50 de {flowData.length} registros</p>
-                    )}
+                    {flowData.length > 50 &&
+                    <p className="text-[10px] text-muted-foreground text-center mt-2">Exibindo 50 de {flowData.length} registros</p>
+                    }
                   </CardContent>
                 </Card>
 
@@ -395,12 +395,12 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Eficiência</p>
                         <p className="text-lg font-bold text-foreground">{kpis.tempoMedio.toFixed(0)} <span className="text-xs font-normal">dias</span></p>
                         <p className="text-[10px] text-muted-foreground">tempo médio no estágio</p>
-                        {bottlenecks.length > 0 && (
-                          <div className="flex items-center gap-1 mt-1">
+                        {bottlenecks.length > 0 &&
+                        <div className="flex items-center gap-1 mt-1">
                             <AlertTriangle className="h-3 w-3 text-yellow-500" />
                             <span className="text-[10px] text-yellow-600">{bottlenecks.length} alerta(s)</span>
                           </div>
-                        )}
+                        }
                       </div>
                     </div>
                   </CardContent>
@@ -429,8 +429,8 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {ranking.map((r, i) => (
-                          <TableRow key={r.nome}>
+                        {ranking.map((r, i) =>
+                        <TableRow key={r.nome}>
                             <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                             <TableCell className="font-medium">{r.nome}</TableCell>
                             <TableCell className="text-center font-semibold">{r.total}</TableCell>
@@ -444,10 +444,10 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                             </TableCell>
                             <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(r.premio)}</TableCell>
                           </TableRow>
-                        ))}
-                        {ranking.length === 0 && (
-                          <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Nenhum dado.</TableCell></TableRow>
                         )}
+                        {ranking.length === 0 &&
+                        <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Nenhum dado.</TableCell></TableRow>
+                        }
                       </TableBody>
                     </Table>
                   </CardContent>
@@ -483,14 +483,14 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {seguradoraAnalysis.map(s => (
-                            <TableRow key={s.nome}>
+                          {seguradoraAnalysis.map((s) =>
+                          <TableRow key={s.nome}>
                               <TableCell className="font-medium text-xs">{s.nome}</TableCell>
                               <TableCell className="text-center font-semibold">{s.total}</TableCell>
                               <TableCell className="text-center text-success font-semibold">{s.fechados}</TableCell>
                               <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(s.premio)}</TableCell>
                             </TableRow>
-                          ))}
+                          )}
                         </TableBody>
                       </Table>
                     </div>
@@ -527,14 +527,14 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {ramoAnalysis.map(r => (
-                            <TableRow key={r.nome}>
+                          {ramoAnalysis.map((r) =>
+                          <TableRow key={r.nome}>
                               <TableCell className="font-medium text-xs">{r.nome}</TableCell>
                               <TableCell className="text-center font-semibold">{r.total}</TableCell>
                               <TableCell className="text-center text-success font-semibold">{r.fechados}</TableCell>
                               <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(r.premio)}</TableCell>
                             </TableRow>
-                          ))}
+                          )}
                         </TableBody>
                       </Table>
                     </div>
@@ -568,6 +568,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
           </div>
         </ScrollArea>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>);
+
 }
