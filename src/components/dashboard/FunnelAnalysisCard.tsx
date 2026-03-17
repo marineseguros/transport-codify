@@ -12,37 +12,19 @@ interface FunnelAnalysisCardProps {
 export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
+  // Distinct producer counts per role (meaningful differentiation)
   const stages = useMemo(() => {
-    const origemSet = new Set<string>();
-    const negociadorSet = new Set<string>();
-    const cotadorSet = new Set<string>();
-
-    cotacoes.forEach((c) => {
-      if (c.produtor_origem?.nome) origemSet.add(c.id);
-      if (c.produtor_negociador?.nome) negociadorSet.add(c.id);
-      if (c.produtor_cotador?.nome) cotadorSet.add(c.id);
-    });
-
     const total = cotacoes.length;
-
-    return [
-      { key: 'origem', label: 'Origem', value: origemSet.size, pct: total > 0 ? (origemSet.size / total) * 100 : 0, color: 'hsl(210, 50%, 25%)' },
-      { key: 'negociador', label: 'Negociador', value: negociadorSet.size, pct: total > 0 ? (negociadorSet.size / total) * 100 : 0, color: 'hsl(210, 55%, 45%)' },
-      { key: 'cotador', label: 'Cotador', value: cotadorSet.size, pct: total > 0 ? (cotadorSet.size / total) * 100 : 0, color: 'hsl(200, 60%, 55%)' },
-    ];
-  }, [cotacoes]);
-
-  // Distinct producer counts per role
-  const roleCounts = useMemo(() => {
     const roles = [
-      { key: 'produtor_origem' as const, label: 'Origem' },
-      { key: 'produtor_negociador' as const, label: 'Negociador' },
-      { key: 'produtor_cotador' as const, label: 'Cotador' },
+      { key: 'origem', label: 'Origem', roleKey: 'produtor_origem' as const, color: 'hsl(210, 50%, 25%)' },
+      { key: 'negociador', label: 'Negociador', roleKey: 'produtor_negociador' as const, color: 'hsl(210, 55%, 45%)' },
+      { key: 'cotador', label: 'Cotador', roleKey: 'produtor_cotador' as const, color: 'hsl(200, 60%, 55%)' },
     ];
-    return roles.map(({ key, label }) => {
+
+    return roles.map((role) => {
       const names = new Set<string>();
-      cotacoes.forEach((c) => { if (c[key]?.nome) names.add(c[key]!.nome); });
-      return { label, count: names.size };
+      cotacoes.forEach((c) => { if (c[role.roleKey]?.nome) names.add(c[role.roleKey]!.nome); });
+      return { ...role, value: names.size };
     });
   }, [cotacoes]);
 
@@ -54,8 +36,11 @@ export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
     return {
       conversao: total > 0 ? ((fechados / total) * 100).toFixed(1) : '0.0',
       declinio: total > 0 ? ((declinados / total) * 100).toFixed(1) : '0.0',
+      total,
     };
   }, [cotacoes]);
+
+  const maxValue = Math.max(...stages.map(s => s.value), 1);
 
   return (
     <>
@@ -69,7 +54,7 @@ export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
               <div>
                 <span>Análise de Funil</span>
                 <p className="text-[11px] font-normal text-muted-foreground">
-                  Distribuição por papel comercial • Progressão do pipeline
+                  Produtores distintos por papel comercial • Clique para análise detalhada
                 </p>
               </div>
             </CardTitle>
@@ -88,9 +73,9 @@ export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
         <CardContent className="pt-0">
           <div className="flex items-center gap-6">
             {/* Funnel shape */}
-            <div className="flex-1 flex flex-col items-center gap-1 py-2">
+            <div className="flex-1 flex flex-col items-center gap-1.5 py-3">
               {stages.map((stage, i) => {
-                const widthPct = 100 - i * 18;
+                const widthPct = 100 - i * 16;
                 return (
                   <button
                     key={stage.key}
@@ -98,7 +83,7 @@ export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
                     className="relative flex items-center justify-center transition-all duration-500 cursor-pointer hover:opacity-90 group"
                     style={{
                       width: `${widthPct}%`,
-                      height: '52px',
+                      height: '62px',
                       backgroundColor: stage.color,
                       clipPath: i === stages.length - 1
                         ? 'polygon(4% 0%, 96% 0%, 88% 100%, 12% 100%)'
@@ -106,32 +91,30 @@ export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
                       borderRadius: i === 0 ? '4px 4px 0 0' : undefined,
                     }}
                   >
-                    <div className="flex items-center gap-2 text-white z-10">
+                    <div className="flex items-center gap-3 text-white z-10">
                       <span className="text-sm font-semibold">{stage.label}</span>
-                      <span className="text-xs opacity-80">—</span>
-                      <span className="text-lg font-bold">{stage.value}</span>
-                      <span className="text-[10px] opacity-70">({stage.pct.toFixed(0)}%)</span>
+                      <span className="text-xs opacity-60">—</span>
+                      <span className="text-xl font-bold">{stage.value}</span>
+                      <span className="text-[10px] opacity-70">produtores</span>
                     </div>
                   </button>
                 );
               })}
             </div>
 
-            {/* Role summary sidebar */}
+            {/* Summary sidebar */}
             <div className="w-[140px] shrink-0 space-y-3">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Papéis Comerciais</p>
-              {roleCounts.map((r) => (
-                <div key={r.label} className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{r.label}</span>
-                  <span className="text-sm font-bold text-foreground">{r.count}</span>
-                </div>
-              ))}
-              <div className="pt-2 border-t">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Pipeline</p>
+              <div className="text-center">
+                <span className="text-2xl font-bold text-foreground">{rates.total}</span>
+                <p className="text-[10px] text-muted-foreground">cotações</p>
+              </div>
+              <div className="pt-2 border-t space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Conversão</span>
                   <span className="text-xs font-bold text-success">{rates.conversao}%</span>
                 </div>
-                <div className="flex items-center justify-between mt-1">
+                <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">Declínio</span>
                   <span className="text-xs font-bold text-destructive">{rates.declinio}%</span>
                 </div>
