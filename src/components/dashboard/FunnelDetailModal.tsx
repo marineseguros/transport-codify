@@ -6,11 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import {
   Users, TrendingUp, DollarSign, Clock, BarChart3, AlertTriangle,
-  Building2, Layers, Search, ArrowRight, CheckCircle2, XCircle, FileText } from
-'lucide-react';
+  Building2, Layers, Search, ArrowRight, CheckCircle2, XCircle, FileText, RefreshCw, Zap
+} from 'lucide-react';
 import { type Cotacao } from '@/hooks/useSupabaseData';
 import { useMemo, useState, useEffect } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend } from 'recharts';
@@ -54,7 +53,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
   const [filterRamo, setFilterRamo] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {if (open) {setActiveStage(initialStage);setFilterSeguradora('all');setFilterProdutor('all');setFilterRamo('all');setSearchTerm('');}}, [initialStage, open]);
+  useEffect(() => { if (open) { setActiveStage(initialStage); setFilterSeguradora('all'); setFilterProdutor('all'); setFilterRamo('all'); setSearchTerm(''); } }, [initialStage, open]);
 
   const roleKey = ROLE_KEY_MAP[activeStage as keyof typeof ROLE_KEY_MAP] || 'produtor_origem';
 
@@ -82,7 +81,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
     let filtered = cotacoes.filter((c) => !!c[roleKey]?.nome);
     if (filterSeguradora !== 'all') filtered = filtered.filter((c) => c.seguradora_id === filterSeguradora);
     if (filterProdutor !== 'all') filtered = filtered.filter((c) =>
-    c.produtor_origem_id === filterProdutor || c.produtor_negociador_id === filterProdutor || c.produtor_cotador_id === filterProdutor
+      c.produtor_origem_id === filterProdutor || c.produtor_negociador_id === filterProdutor || c.produtor_cotador_id === filterProdutor
     );
     if (filterRamo !== 'all') filtered = filtered.filter((c) => c.ramo_id === filterRamo);
     if (searchTerm) {
@@ -108,65 +107,63 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
       tempos.push((end - start) / (1000 * 60 * 60 * 24));
     });
     const tempoMedio = tempos.length > 0 ? tempos.reduce((a, b) => a + b, 0) / tempos.length : 0;
-    return { total, premio, ticketMedio, taxaConversao, tempoMedio, fechados, declinados, emCotacao };
+    const premioFechado = stageCotacoes.filter((c) => c.status === 'Negócio fechado' || c.status === 'Fechamento congênere').reduce((s, c) => s + (c.valor_premio || 0), 0);
+    const premioEmAberto = stageCotacoes.filter((c) => c.status === 'Em cotação').reduce((s, c) => s + (c.valor_premio || 0), 0);
+    return { total, premio, ticketMedio, taxaConversao, tempoMedio, fechados, declinados, emCotacao, premioFechado, premioEmAberto };
   }, [stageCotacoes]);
 
-  // ─── Flow: cotação → origem → negociador → cotador → status ───
+  // ─── Flow data ───
   const flowData = useMemo(() => {
     return stageCotacoes.map((c) => ({
       id: c.id,
       numero: c.numero_cotacao,
       segurado: c.segurado,
-      cpf_cnpj: c.cpf_cnpj,
       origem: c.produtor_origem?.nome || '—',
       negociador: c.produtor_negociador?.nome || '—',
       cotador: c.produtor_cotador?.nome || '—',
-      seguradora: c.seguradora?.nome || '—',
-      ramo: c.ramo?.ramo_agrupado || c.ramo?.descricao || '—',
       premio: c.valor_premio || 0,
       status: c.status,
-      data: c.data_cotacao
     }));
   }, [stageCotacoes]);
 
   // ─── Ranking ───
   const ranking = useMemo(() => {
-    const map = new Map<string, {nome: string;total: number;fechados: number;declinados: number;emCotacao: number;premio: number;}>();
+    const map = new Map<string, { nome: string; total: number; fechados: number; declinados: number; emCotacao: number; premio: number; premioEmAberto: number }>();
     stageCotacoes.forEach((c) => {
       const nome = c[roleKey]?.nome || '—';
       if (nome === '—') return;
-      const e = map.get(nome) || { nome, total: 0, fechados: 0, declinados: 0, emCotacao: 0, premio: 0 };
+      const e = map.get(nome) || { nome, total: 0, fechados: 0, declinados: 0, emCotacao: 0, premio: 0, premioEmAberto: 0 };
       e.total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') {e.fechados++;e.premio += c.valor_premio || 0;}
+      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
       if (c.status === 'Declinado') e.declinados++;
-      if (c.status === 'Em cotação') e.emCotacao++;
+      if (c.status === 'Em cotação') { e.emCotacao++; e.premioEmAberto += c.valor_premio || 0; }
       map.set(nome, e);
     });
-    return Array.from(map.values()).
-    map((r) => ({ ...r, conversao: r.total > 0 ? r.fechados / r.total * 100 : 0 })).
-    sort((a, b) => b.total - a.total);
+    return Array.from(map.values())
+      .map((r) => ({ ...r, conversao: r.total > 0 ? r.fechados / r.total * 100 : 0 }))
+      .sort((a, b) => b.total - a.total);
   }, [stageCotacoes, roleKey]);
 
   // ─── Seguradora & Ramo ───
   const seguradoraAnalysis = useMemo(() => {
-    const map = new Map<string, {nome: string;total: number;fechados: number;premio: number;}>();
+    const map = new Map<string, { nome: string; total: number; fechados: number; premio: number }>();
     stageCotacoes.forEach((c) => {
       const nome = c.seguradora?.nome || 'Sem seguradora';
       const e = map.get(nome) || { nome, total: 0, fechados: 0, premio: 0 };
       e.total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') {e.fechados++;e.premio += c.valor_premio || 0;}
+      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
       map.set(nome, e);
     });
     return Array.from(map.values()).sort((a, b) => b.total - a.total);
   }, [stageCotacoes]);
 
   const ramoAnalysis = useMemo(() => {
-    const map = new Map<string, {nome: string;total: number;fechados: number;premio: number;}>();
+    const map = new Map<string, { nome: string; total: number; fechados: number; premio: number }>();
     stageCotacoes.forEach((c) => {
       const nome = c.ramo?.ramo_agrupado || c.ramo?.descricao || 'Sem ramo';
       const e = map.get(nome) || { nome, total: 0, fechados: 0, premio: 0 };
       e.total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') {e.fechados++;e.premio += c.valor_premio || 0;}
+      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
       map.set(nome, e);
     });
     return Array.from(map.values()).sort((a, b) => b.total - a.total);
@@ -174,14 +171,14 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
 
   // ─── Time evolution ───
   const timeEvolution = useMemo(() => {
-    const monthMap = new Map<string, {mes: string;total: number;fechados: number;premio: number;}>();
+    const monthMap = new Map<string, { mes: string; total: number; fechados: number; premio: number }>();
     stageCotacoes.forEach((c) => {
       const d = new Date(c.data_cotacao);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
       const e = monthMap.get(key) || { mes: label, total: 0, fechados: 0, premio: 0 };
       e.total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') {e.fechados++;e.premio += c.valor_premio || 0;}
+      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
       monthMap.set(key, e);
     });
     return Array.from(monthMap.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => v);
@@ -189,23 +186,26 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
 
   // ─── Bottlenecks ───
   const bottlenecks = useMemo(() => {
-    const issues: {type: 'warning' | 'critical';message: string;}[] = [];
-    if (kpis.tempoMedio > 30) issues.push({ type: 'critical', message: `Tempo médio de ${kpis.tempoMedio.toFixed(0)} dias é elevado para este papel` });
-    if (kpis.taxaConversao < 20 && kpis.total > 5) issues.push({ type: 'warning', message: `Taxa de conversão de ${kpis.taxaConversao.toFixed(1)}% está abaixo do esperado` });
+    const issues: { type: 'warning' | 'critical'; message: string }[] = [];
+    if (kpis.tempoMedio > 30) issues.push({ type: 'critical', message: `Tempo médio de ${kpis.tempoMedio.toFixed(0)} dias é elevado` });
+    if (kpis.taxaConversao < 20 && kpis.total > 5) issues.push({ type: 'warning', message: `Taxa de conversão de ${kpis.taxaConversao.toFixed(1)}% abaixo do esperado` });
     ranking.filter((r) => r.total >= 5 && r.conversao < 15).forEach((r) => {
-      issues.push({ type: 'warning', message: `${r.nome}: ${r.total} oportunidades, apenas ${r.conversao.toFixed(0)}% de conversão` });
+      issues.push({ type: 'warning', message: `${r.nome}: ${r.total} oportunidades, apenas ${r.conversao.toFixed(0)}% conversão` });
     });
-    seguradoraAnalysis.filter((s) => s.total >= 5 && s.fechados === 0).forEach((s) => {
-      issues.push({ type: 'critical', message: `${s.nome}: ${s.total} cotações sem fechamento` });
-    });
-    return issues.slice(0, 6);
-  }, [kpis, ranking, seguradoraAnalysis]);
+    return issues.slice(0, 4);
+  }, [kpis, ranking]);
 
-  const statusIcon = (status: string) => {
-    if (status === 'Negócio fechado' || status === 'Fechamento congênere') return <CheckCircle2 className="h-3.5 w-3.5 text-success" />;
-    if (status === 'Declinado') return <XCircle className="h-3.5 w-3.5 text-destructive" />;
-    return <Clock className="h-3.5 w-3.5 text-primary" />;
+  const statusBadge = (status: string) => {
+    if (status === 'Negócio fechado' || status === 'Fechamento congênere')
+      return <Badge className="bg-success/15 text-success border-success/30 text-[10px] gap-1"><CheckCircle2 className="h-3 w-3" />{status === 'Negócio fechado' ? 'Fechado' : 'Congênere'}</Badge>;
+    if (status === 'Declinado')
+      return <Badge className="bg-destructive/15 text-destructive border-destructive/30 text-[10px] gap-1"><XCircle className="h-3 w-3" />Declinado</Badge>;
+    return <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px] gap-1"><Clock className="h-3 w-3" />{status}</Badge>;
   };
+
+  // Potencial
+  const avgConversao = kpis.taxaConversao;
+  const potencial = kpis.premioEmAberto * (avgConversao / 100);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -222,16 +222,14 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
         {/* Stage pills */}
         <div className="flex gap-1.5 flex-wrap">
           {Object.entries(ROLE_LABELS).map(([key, label]) =>
-          <button
-            key={key}
-            onClick={() => setActiveStage(key)}
-            className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all border ${
-            activeStage === key ?
-            'text-white border-transparent shadow-sm' :
-            'bg-muted/50 text-muted-foreground border-border hover:bg-muted'}`
-            }
-            style={activeStage === key ? { backgroundColor: ROLE_COLORS[key] } : undefined}>
-            
+            <button
+              key={key}
+              onClick={() => setActiveStage(key)}
+              className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all border ${activeStage === key
+                ? 'text-white border-transparent shadow-sm'
+                : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'}`}
+              style={activeStage === key ? { backgroundColor: ROLE_COLORS[key] } : undefined}
+            >
               {label.replace('Produtor ', '')}
             </button>
           )}
@@ -259,25 +257,31 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
 
         <ScrollArea className="flex-1">
           <div className="space-y-4 pr-2">
-            {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {[
-              { icon: FileText, label: 'Cotações', value: kpis.total.toString(), color: 'text-foreground' },
-              { icon: DollarSign, label: 'Prêmio Total', value: formatCurrency(kpis.premio), color: 'text-foreground' },
-              { icon: BarChart3, label: 'Ticket Médio', value: formatCurrency(kpis.ticketMedio), color: 'text-foreground' },
-              { icon: TrendingUp, label: 'Conversão', value: `${kpis.taxaConversao.toFixed(1)}%`, color: kpis.taxaConversao >= 30 ? 'text-success' : 'text-destructive' },
-              { icon: Clock, label: 'Tempo Médio', value: `${kpis.tempoMedio.toFixed(0)} dias`, color: kpis.tempoMedio <= 30 ? 'text-success' : 'text-destructive' }].
-              map((k) =>
-              <Card key={k.label}>
-                  
-
-
-
-
-
-                
-                </Card>
-              )}
+            {/* KPIs - Styled like TopProdutoresModal */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 bg-muted/30 rounded-lg">
+              <div className="text-center">
+                <p className="text-xl font-bold text-primary">{kpis.total}</p>
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  Cotações
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-success">{formatCurrency(kpis.premioFechado)}</p>
+                <p className="text-xs text-muted-foreground">Prêmio Fechado</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-brand-orange">{formatCurrency(kpis.premioEmAberto)}</p>
+                <p className="text-xs text-muted-foreground">Em Aberto</p>
+              </div>
+              <div className="text-center">
+                <p className={`text-xl font-bold ${kpis.taxaConversao >= 30 ? 'text-success' : 'text-destructive'}`}>{kpis.taxaConversao.toFixed(1)}%</p>
+                <p className="text-xs text-muted-foreground">Conversão</p>
+              </div>
+              <div className="text-center">
+                <p className={`text-xl font-bold ${kpis.tempoMedio <= 30 ? 'text-foreground' : 'text-destructive'}`}>{kpis.tempoMedio.toFixed(0)} dias</p>
+                <p className="text-xs text-muted-foreground">Tempo Médio</p>
+              </div>
             </div>
 
             <Tabs defaultValue="fluxo" className="space-y-3">
@@ -304,15 +308,15 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                           <TableHead className="w-[60px]">Nº</TableHead>
                           <TableHead>Segurado</TableHead>
                           <TableHead className="text-center">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted">Origem</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold">Origem</span>
                           </TableHead>
                           <TableHead className="text-center w-[20px]" />
                           <TableHead className="text-center">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted">Negociador</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-orange/10 text-brand-orange font-semibold">Negociador</span>
                           </TableHead>
                           <TableHead className="text-center w-[20px]" />
                           <TableHead className="text-center">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted">Cotador</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-semibold">Cotador</span>
                           </TableHead>
                           <TableHead className="text-center w-[20px]" />
                           <TableHead className="text-center">Status</TableHead>
@@ -321,137 +325,142 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                       </TableHeader>
                       <TableBody>
                         {flowData.slice(0, 50).map((row) =>
-                        <TableRow key={row.id}>
+                          <TableRow key={row.id} className="hover:bg-muted/30">
                             <TableCell className="text-[10px] text-muted-foreground font-mono">{row.numero}</TableCell>
                             <TableCell className="font-medium text-xs max-w-[160px] truncate">{row.segurado}</TableCell>
-                            <TableCell className="text-center text-xs">{row.origem}</TableCell>
-                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/50 mx-auto" /></TableCell>
-                            <TableCell className="text-center text-xs">{row.negociador}</TableCell>
-                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/50 mx-auto" /></TableCell>
-                            <TableCell className="text-center text-xs">{row.cotador}</TableCell>
-                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/50 mx-auto" /></TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                {statusIcon(row.status)}
-                                <span className="text-[10px]">{row.status === 'Negócio fechado' ? 'Fechado' : row.status === 'Fechamento congênere' ? 'Congênere' : row.status}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(row.premio)}</TableCell>
+                            <TableCell className="text-center text-xs font-medium text-primary">{row.origem}</TableCell>
+                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
+                            <TableCell className="text-center text-xs font-medium text-brand-orange">{row.negociador}</TableCell>
+                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
+                            <TableCell className="text-center text-xs font-medium text-success">{row.cotador}</TableCell>
+                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
+                            <TableCell className="text-center">{statusBadge(row.status)}</TableCell>
+                            <TableCell className="text-right text-xs font-semibold">{formatCurrency(row.premio)}</TableCell>
                           </TableRow>
                         )}
                         {flowData.length === 0 &&
-                        <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">Nenhum dado disponível.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">Nenhum dado disponível.</TableCell></TableRow>
                         }
                       </TableBody>
                     </Table>
                     {flowData.length > 50 &&
-                    <p className="text-[10px] text-muted-foreground text-center mt-2">Exibindo 50 de {flowData.length} registros</p>
+                      <p className="text-[10px] text-muted-foreground text-center mt-2">Exibindo 50 de {flowData.length} registros</p>
                     }
                   </CardContent>
                 </Card>
 
-                {/* Mini Fechamento Gerencial */}
-                <Card className="border-primary/20 bg-primary/[0.02]">
-                  <CardContent className="p-4">
-                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-primary" />
-                      Fechamento Gerencial — {ROLE_LABELS[activeStage]?.replace('Produtor ', '')}
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pipeline</p>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-bold text-foreground">{kpis.total}</span>
-                          <span className="text-xs text-muted-foreground">cotações</span>
-                        </div>
-                        <div className="flex gap-2 mt-1">
-                          <span className="text-[10px] text-primary">Em cotação: {kpis.emCotacao}</span>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Resultados</p>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                            <span className="text-lg font-bold text-success">{kpis.fechados}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <XCircle className="h-3.5 w-3.5 text-destructive" />
-                            <span className="text-lg font-bold text-destructive">{kpis.declinados}</span>
-                          </div>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground">
-                          Conversão: <span className="font-semibold text-foreground">{kpis.taxaConversao.toFixed(1)}%</span>
-                        </p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Financeiro</p>
-                        <p className="text-lg font-bold text-foreground">{formatCurrency(kpis.premio)}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          Ticket médio: <span className="font-semibold text-foreground">{formatCurrency(kpis.ticketMedio)}</span>
-                        </p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Eficiência</p>
-                        <p className="text-lg font-bold text-foreground">{kpis.tempoMedio.toFixed(0)} <span className="text-xs font-normal">dias</span></p>
-                        <p className="text-[10px] text-muted-foreground">tempo médio no estágio</p>
-                        {bottlenecks.length > 0 &&
-                        <div className="flex items-center gap-1 mt-1">
-                            <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                            <span className="text-[10px] text-yellow-600">{bottlenecks.length} alerta(s)</span>
-                          </div>
-                        }
-                      </div>
+                {/* Mini Fechamento Gerencial - Styled like TopProdutoresModal forecast */}
+                <div className="border-t pt-4">
+                  <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-warning" />
+                    Fechamento Gerencial — {ROLE_LABELS[activeStage]?.replace('Produtor ', '')}
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                      <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                        <FileText className="h-3 w-3" />
+                        Pipeline
+                      </p>
+                      <p className="text-xl font-bold text-primary">{kpis.total}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Em cotação: <span className="font-semibold text-primary">{kpis.emCotacao}</span>
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="p-4 bg-gradient-to-br from-success/10 to-success/5 rounded-lg border border-success/20">
+                      <p className="text-xs text-muted-foreground mb-1">Resultados</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                          <span className="text-lg font-bold text-success">{kpis.fechados}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <XCircle className="h-3.5 w-3.5 text-destructive" />
+                          <span className="text-lg font-bold text-destructive">{kpis.declinados}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Conversão: <span className="font-semibold text-success">{kpis.taxaConversao.toFixed(1)}%</span>
+                      </p>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-lg border border-amber-500/20">
+                      <p className="text-xs text-muted-foreground mb-1">Financeiro</p>
+                      <p className="text-lg font-bold text-success">{formatCurrency(kpis.premioFechado)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Ticket: <span className="font-semibold text-foreground">{formatCurrency(kpis.ticketMedio)}</span>
+                      </p>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-destructive/10 to-destructive/5 rounded-lg border border-destructive/20">
+                      <p className="text-xs text-muted-foreground mb-1">Eficiência</p>
+                      <p className="text-lg font-bold text-foreground">{kpis.tempoMedio.toFixed(0)} <span className="text-xs font-normal">dias</span></p>
+                      {bottlenecks.length > 0 &&
+                        <div className="flex items-center gap-1 mt-1">
+                          <AlertTriangle className="h-3 w-3 text-warning" />
+                          <span className="text-[10px] text-warning">{bottlenecks.length} alerta(s)</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
               </TabsContent>
 
               {/* ─── Tab: Ranking ─── */}
               <TabsContent value="ranking">
-                <Card>
-                  <CardContent className="p-4">
-                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <Users className="h-4 w-4 text-primary" />
-                      Ranking — {ROLE_LABELS[activeStage]?.replace('Produtor ', '')}
-                    </h4>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>#</TableHead>
-                          <TableHead>Produtor</TableHead>
-                          <TableHead className="text-center">Total</TableHead>
-                          <TableHead className="text-center">Em Cotação</TableHead>
-                          <TableHead className="text-center">Fechados</TableHead>
-                          <TableHead className="text-center">Declinados</TableHead>
-                          <TableHead className="text-center">Conversão</TableHead>
-                          <TableHead className="text-right">Prêmio</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {ranking.map((r, i) =>
-                        <TableRow key={r.nome}>
-                            <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                            <TableCell className="font-medium">{r.nome}</TableCell>
-                            <TableCell className="text-center font-semibold">{r.total}</TableCell>
-                            <TableCell className="text-center text-primary font-semibold">{r.emCotacao}</TableCell>
-                            <TableCell className="text-center text-success font-semibold">{r.fechados}</TableCell>
-                            <TableCell className="text-center text-destructive font-semibold">{r.declinados}</TableCell>
-                            <TableCell className="text-center">
-                              <Badge variant={r.conversao >= 50 ? 'default' : r.conversao >= 25 ? 'secondary' : 'outline'} className="text-[10px]">
-                                {r.conversao.toFixed(1)}%
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(r.premio)}</TableCell>
-                          </TableRow>
-                        )}
-                        {ranking.length === 0 &&
-                        <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Nenhum dado.</TableCell></TableRow>
-                        }
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-xs text-muted-foreground">
+                        <th className="text-left py-2 px-2 font-medium">#</th>
+                        <th className="text-left py-2 px-2 font-medium">Produtor</th>
+                        <th className="text-center py-2 px-2 font-medium text-success">Fechados</th>
+                        <th className="text-center py-2 px-2 font-medium text-brand-orange">Em Aberto</th>
+                        <th className="text-center py-2 px-2 font-medium text-destructive">Declinados</th>
+                        <th className="text-center py-2 px-2 font-medium">Conversão</th>
+                        <th className="text-right py-2 px-2 font-medium">Prêmio Fechado</th>
+                        <th className="text-right py-2 px-2 font-medium">Prêmio Aberto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ranking.map((r, i) =>
+                        <tr key={r.nome} className="border-b border-border/50 hover:bg-muted/30">
+                          <td className="py-2 px-2">
+                            <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${i === 0 ? 'bg-amber-500 text-amber-950' :
+                              i === 1 ? 'bg-slate-400 text-slate-950' :
+                                i === 2 ? 'bg-amber-700 text-amber-100' :
+                                  'bg-muted text-muted-foreground'
+                              }`}>
+                              {i + 1}
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 font-medium">{r.nome}</td>
+                          <td className="py-2 px-2 text-center">
+                            <span className="font-semibold text-success">{r.fechados}</span>
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <span className="font-semibold text-brand-orange">{r.emCotacao}</span>
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <span className="font-semibold text-destructive">{r.declinados}</span>
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <Badge
+                              variant={r.conversao >= 50 ? 'default' : r.conversao >= 25 ? 'secondary' : 'outline'}
+                              className={`text-xs ${r.conversao >= 50 ? 'bg-success/15 text-success border-success/30' :
+                                r.conversao >= 25 ? 'bg-warning/15 text-warning border-warning/30' :
+                                  'bg-destructive/15 text-destructive border-destructive/30'}`}
+                            >
+                              {r.conversao.toFixed(1)}%
+                            </Badge>
+                          </td>
+                          <td className="py-2 px-2 text-right font-semibold text-success">{formatCurrency(r.premio)}</td>
+                          <td className="py-2 px-2 text-right font-medium text-brand-orange">{formatCurrency(r.premioEmAberto)}</td>
+                        </tr>
+                      )}
+                      {ranking.length === 0 &&
+                        <tr><td colSpan={8} className="text-center text-muted-foreground py-6">Nenhum dado.</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
               </TabsContent>
 
               {/* ─── Tab: Seguradora ─── */}
@@ -470,29 +479,29 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                           <YAxis dataKey="nome" type="category" width={100} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
                           <Bar dataKey="total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Total" />
-                          <Bar dataKey="fechados" fill="hsl(156, 72%, 40%)" radius={[0, 4, 4, 0]} name="Fechados" />
+                          <Bar dataKey="fechados" fill="hsl(156, 62%, 52%)" radius={[0, 4, 4, 0]} name="Fechados" />
                         </BarChart>
                       </ResponsiveContainer>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Seguradora</TableHead>
-                            <TableHead className="text-center">Total</TableHead>
-                            <TableHead className="text-center">Fechados</TableHead>
-                            <TableHead className="text-right">Prêmio</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b text-xs text-muted-foreground">
+                            <th className="text-left py-2 px-2 font-medium">Seguradora</th>
+                            <th className="text-center py-2 px-2 font-medium">Total</th>
+                            <th className="text-center py-2 px-2 font-medium text-success">Fechados</th>
+                            <th className="text-right py-2 px-2 font-medium">Prêmio</th>
+                          </tr>
+                        </thead>
+                        <tbody>
                           {seguradoraAnalysis.map((s) =>
-                          <TableRow key={s.nome}>
-                              <TableCell className="font-medium text-xs">{s.nome}</TableCell>
-                              <TableCell className="text-center font-semibold">{s.total}</TableCell>
-                              <TableCell className="text-center text-success font-semibold">{s.fechados}</TableCell>
-                              <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(s.premio)}</TableCell>
-                            </TableRow>
+                            <tr key={s.nome} className="border-b border-border/50 hover:bg-muted/30">
+                              <td className="py-2 px-2 font-medium text-xs">{s.nome}</td>
+                              <td className="py-2 px-2 text-center font-semibold">{s.total}</td>
+                              <td className="py-2 px-2 text-center font-semibold text-success">{s.fechados}</td>
+                              <td className="py-2 px-2 text-right text-xs font-semibold text-success">{formatCurrency(s.premio)}</td>
+                            </tr>
                           )}
-                        </TableBody>
-                      </Table>
+                        </tbody>
+                      </table>
                     </div>
                   </CardContent>
                 </Card>
@@ -514,29 +523,29 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                           <YAxis dataKey="nome" type="category" width={120} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
                           <Bar dataKey="total" fill="hsl(210, 55%, 50%)" radius={[0, 4, 4, 0]} name="Total" />
-                          <Bar dataKey="fechados" fill="hsl(156, 72%, 40%)" radius={[0, 4, 4, 0]} name="Fechados" />
+                          <Bar dataKey="fechados" fill="hsl(156, 62%, 52%)" radius={[0, 4, 4, 0]} name="Fechados" />
                         </BarChart>
                       </ResponsiveContainer>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Ramo</TableHead>
-                            <TableHead className="text-center">Total</TableHead>
-                            <TableHead className="text-center">Fechados</TableHead>
-                            <TableHead className="text-right">Prêmio</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b text-xs text-muted-foreground">
+                            <th className="text-left py-2 px-2 font-medium">Ramo</th>
+                            <th className="text-center py-2 px-2 font-medium">Total</th>
+                            <th className="text-center py-2 px-2 font-medium text-success">Fechados</th>
+                            <th className="text-right py-2 px-2 font-medium">Prêmio</th>
+                          </tr>
+                        </thead>
+                        <tbody>
                           {ramoAnalysis.map((r) =>
-                          <TableRow key={r.nome}>
-                              <TableCell className="font-medium text-xs">{r.nome}</TableCell>
-                              <TableCell className="text-center font-semibold">{r.total}</TableCell>
-                              <TableCell className="text-center text-success font-semibold">{r.fechados}</TableCell>
-                              <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(r.premio)}</TableCell>
-                            </TableRow>
+                            <tr key={r.nome} className="border-b border-border/50 hover:bg-muted/30">
+                              <td className="py-2 px-2 font-medium text-xs">{r.nome}</td>
+                              <td className="py-2 px-2 text-center font-semibold">{r.total}</td>
+                              <td className="py-2 px-2 text-center font-semibold text-success">{r.fechados}</td>
+                              <td className="py-2 px-2 text-right text-xs font-semibold text-success">{formatCurrency(r.premio)}</td>
+                            </tr>
                           )}
-                        </TableBody>
-                      </Table>
+                        </tbody>
+                      </table>
                     </div>
                   </CardContent>
                 </Card>
@@ -558,7 +567,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                         <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
                         <Legend wrapperStyle={{ fontSize: 11 }} />
                         <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} name="Total" />
-                        <Line type="monotone" dataKey="fechados" stroke="hsl(156, 72%, 40%)" strokeWidth={2} dot={{ r: 3 }} name="Fechados" />
+                        <Line type="monotone" dataKey="fechados" stroke="hsl(156, 62%, 52%)" strokeWidth={2} dot={{ r: 3 }} name="Fechados" />
                       </LineChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -568,6 +577,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
           </div>
         </ScrollArea>
       </DialogContent>
-    </Dialog>);
-
+    </Dialog>
+  );
 }
