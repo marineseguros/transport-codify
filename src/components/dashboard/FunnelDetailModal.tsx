@@ -3,18 +3,17 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import {
   TrendingUp, DollarSign, Clock, BarChart3, AlertTriangle,
   Building2, Layers, Search, ArrowRight, CheckCircle2, XCircle, FileText, Zap,
-  ArrowUpDown, ArrowUp, ArrowDown, PieChart
+  ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { type Cotacao } from '@/hooks/useSupabaseData';
 import { useMemo, useState, useEffect } from 'react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend, Cell, PieChart as RechartsPie, Pie } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend } from 'recharts';
 
 const ROLE_KEY_MAP = {
   origem: 'produtor_origem' as const,
@@ -38,13 +37,6 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-const STATUS_COLORS = [
-  'hsl(var(--primary))',
-  'hsl(156, 62%, 52%)',
-  'hsl(0, 84%, 60%)',
-  'hsl(45, 93%, 47%)',
-];
 
 interface FunnelDetailModalProps {
   open: boolean;
@@ -97,19 +89,43 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
     };
   }, [cotacoes]);
 
+  // Filter cotações: must have a producer assigned for the active role
   const stageCotacoes = useMemo(() => {
     let filtered = cotacoes.filter((c) => !!c[roleKey]?.nome);
     if (filterSeguradora !== 'all') filtered = filtered.filter((c) => c.seguradora_id === filterSeguradora);
-    if (filterProdutor !== 'all') filtered = filtered.filter((c) =>
-      c.produtor_origem_id === filterProdutor || c.produtor_negociador_id === filterProdutor || c.produtor_cotador_id === filterProdutor
-    );
+    if (filterProdutor !== 'all') {
+      // Filter by the active role's producer specifically
+      filtered = filtered.filter((c) => {
+        const prodId = activeStage === 'origem' ? c.produtor_origem_id
+          : activeStage === 'negociador' ? c.produtor_negociador_id
+          : c.produtor_cotador_id;
+        return prodId === filterProdutor;
+      });
+    }
     if (filterRamo !== 'all') filtered = filtered.filter((c) => c.ramo_id === filterRamo);
     if (searchTerm) {
       const t = searchTerm.toLowerCase();
       filtered = filtered.filter((c) => c.segurado.toLowerCase().includes(t) || c.cpf_cnpj.includes(t));
     }
     return filtered;
-  }, [cotacoes, roleKey, filterSeguradora, filterProdutor, filterRamo, searchTerm]);
+  }, [cotacoes, roleKey, activeStage, filterSeguradora, filterProdutor, filterRamo, searchTerm]);
+
+  // Producer ranking for the active role
+  const produtorRanking = useMemo(() => {
+    const map = new Map<string, { nome: string; total: number; fechados: number; declinados: number; emCotacao: number; premio: number }>();
+    stageCotacoes.forEach((c) => {
+      const prod = c[roleKey];
+      if (!prod?.nome) return;
+      const nome = prod.nome;
+      const e = map.get(nome) || { nome, total: 0, fechados: 0, declinados: 0, emCotacao: 0, premio: 0 };
+      e.total++;
+      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
+      if (c.status === 'Declinado') e.declinados++;
+      if (c.status === 'Em cotação') e.emCotacao++;
+      map.set(nome, e);
+    });
+    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+  }, [stageCotacoes, roleKey]);
 
   // KPIs
   const kpis = useMemo(() => {
@@ -155,37 +171,37 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
     return rows;
   }, [stageCotacoes, sortField, sortDir]);
 
-  // Seguradora analysis - enhanced
+  // Seguradora analysis
   const seguradoraAnalysis = useMemo(() => {
-    const map = new Map<string, { nome: string; total: number; fechados: number; declinados: number; emCotacao: number; premio: number; premioAberto: number }>();
+    const map = new Map<string, { nome: string; total: number; fechados: number; declinados: number; emCotacao: number; premio: number }>();
     stageCotacoes.forEach((c) => {
       const nome = c.seguradora?.nome || 'Sem seguradora';
-      const e = map.get(nome) || { nome, total: 0, fechados: 0, declinados: 0, emCotacao: 0, premio: 0, premioAberto: 0 };
+      const e = map.get(nome) || { nome, total: 0, fechados: 0, declinados: 0, emCotacao: 0, premio: 0 };
       e.total++;
       if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
       if (c.status === 'Declinado') e.declinados++;
-      if (c.status === 'Em cotação') { e.emCotacao++; e.premioAberto += c.valor_premio || 0; }
+      if (c.status === 'Em cotação') e.emCotacao++;
       map.set(nome, e);
     });
     return Array.from(map.values()).sort((a, b) => b.total - a.total);
   }, [stageCotacoes]);
 
-  // Ramo analysis - enhanced
+  // Ramo analysis
   const ramoAnalysis = useMemo(() => {
-    const map = new Map<string, { nome: string; total: number; fechados: number; declinados: number; emCotacao: number; premio: number; premioAberto: number }>();
+    const map = new Map<string, { nome: string; total: number; fechados: number; declinados: number; emCotacao: number; premio: number }>();
     stageCotacoes.forEach((c) => {
       const nome = c.ramo?.ramo_agrupado || c.ramo?.descricao || 'Sem ramo';
-      const e = map.get(nome) || { nome, total: 0, fechados: 0, declinados: 0, emCotacao: 0, premio: 0, premioAberto: 0 };
+      const e = map.get(nome) || { nome, total: 0, fechados: 0, declinados: 0, emCotacao: 0, premio: 0 };
       e.total++;
       if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
       if (c.status === 'Declinado') e.declinados++;
-      if (c.status === 'Em cotação') { e.emCotacao++; e.premioAberto += c.valor_premio || 0; }
+      if (c.status === 'Em cotação') e.emCotacao++;
       map.set(nome, e);
     });
     return Array.from(map.values()).sort((a, b) => b.total - a.total);
   }, [stageCotacoes]);
 
-  // Time evolution - enhanced
+  // Time evolution
   const timeEvolution = useMemo(() => {
     const monthMap = new Map<string, { mes: string; total: number; fechados: number; declinados: number; premio: number; premioFechado: number }>();
     stageCotacoes.forEach((c) => {
@@ -212,15 +228,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
     return issues.slice(0, 4);
   }, [kpis]);
 
-  // Status distribution for mini viz
-  const statusDistribution = useMemo(() => {
-    return [
-      { name: 'Em cotação', value: kpis.emCotacao, color: 'hsl(var(--primary))' },
-      { name: 'Fechados', value: kpis.fechados, color: 'hsl(156, 62%, 52%)' },
-      { name: 'Declinados', value: kpis.declinados, color: 'hsl(0, 84%, 60%)' },
-    ].filter(s => s.value > 0);
-  }, [kpis]);
-
   const statusBadge = (status: string) => {
     if (status === 'Negócio fechado' || status === 'Fechamento congênere')
       return <Badge className="bg-success/15 text-success border-success/30 text-[10px] gap-1"><CheckCircle2 className="h-3 w-3" />{status === 'Negócio fechado' ? 'Fechado' : 'Congênere'}</Badge>;
@@ -239,53 +246,66 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
     return sortDir === 'asc' ? <ArrowUp className="h-3 w-3 text-primary" /> : <ArrowDown className="h-3 w-3 text-primary" />;
   };
 
+  // Active role column highlight style
+  const roleColumnStyle = (role: string) => {
+    if (role === activeStage) return 'font-bold';
+    return 'opacity-50';
+  };
+
+  // Chart height based on data rows
+  const segChartHeight = Math.max(200, Math.min(seguradoraAnalysis.length * 38, 500));
+  const ramoChartHeight = Math.max(200, Math.min(ramoAnalysis.length * 38, 500));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[92vh] overflow-hidden flex flex-col">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: ROLE_COLORS[activeStage] || ROLE_COLORS.origem }} />
-            {ROLE_LABELS[activeStage] || 'Produtor Origem'}
-            <Badge variant="secondary" className="text-xs">{kpis.total} cotações</Badge>
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground">{ROLE_DESCRIPTIONS[activeStage]}</p>
-        </DialogHeader>
+      <DialogContent className="max-w-6xl max-h-[92vh] p-0 overflow-hidden flex flex-col">
+        <div className="px-6 pt-6 pb-2">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: ROLE_COLORS[activeStage] || ROLE_COLORS.origem }} />
+              {ROLE_LABELS[activeStage] || 'Produtor Origem'}
+              <Badge variant="secondary" className="text-xs">{kpis.total} cotações</Badge>
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">{ROLE_DESCRIPTIONS[activeStage]}</p>
+          </DialogHeader>
 
-        {/* Stage pills + Filters - all on same line */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {Object.entries(ROLE_LABELS).map(([key, label]) =>
-            <button
-              key={key}
-              onClick={() => setActiveStage(key)}
-              className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all border ${activeStage === key
-                ? 'text-white border-transparent shadow-sm'
-                : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'}`}
-              style={activeStage === key ? { backgroundColor: ROLE_COLORS[key] } : undefined}
-            >
-              {label.replace('Produtor ', '')}
-            </button>
-          )}
-          <div className="h-5 w-px bg-border mx-1" />
-          <div className="relative min-w-[160px]">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-8 pl-8 text-xs" />
+          {/* Stage pills + Filters */}
+          <div className="flex items-center gap-2 flex-wrap mt-1">
+            {Object.entries(ROLE_LABELS).map(([key, label]) =>
+              <button
+                key={key}
+                onClick={() => { setActiveStage(key); setFilterProdutor('all'); }}
+                className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all border ${activeStage === key
+                  ? 'text-white border-transparent shadow-sm'
+                  : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'}`}
+                style={activeStage === key ? { backgroundColor: ROLE_COLORS[key] } : undefined}
+              >
+                {label.replace('Produtor ', '')}
+              </button>
+            )}
+            <div className="h-5 w-px bg-border mx-1" />
+            <div className="relative min-w-[160px]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-8 pl-8 text-xs" />
+            </div>
+            <Select value={filterSeguradora} onValueChange={setFilterSeguradora}>
+              <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue placeholder="Seguradora" /></SelectTrigger>
+              <SelectContent>{[<SelectItem key="all" value="all">Todas seguradoras</SelectItem>, ...filterOptions.seguradoras.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)]}</SelectContent>
+            </Select>
+            <Select value={filterProdutor} onValueChange={setFilterProdutor}>
+              <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue placeholder="Produtor" /></SelectTrigger>
+              <SelectContent>{[<SelectItem key="all" value="all">Todos produtores</SelectItem>, ...filterOptions.produtores.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)]}</SelectContent>
+            </Select>
+            <Select value={filterRamo} onValueChange={setFilterRamo}>
+              <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Ramo" /></SelectTrigger>
+              <SelectContent>{[<SelectItem key="all" value="all">Todos ramos</SelectItem>, ...filterOptions.ramos.map((r) => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)]}</SelectContent>
+            </Select>
           </div>
-          <Select value={filterSeguradora} onValueChange={setFilterSeguradora}>
-            <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue placeholder="Seguradora" /></SelectTrigger>
-            <SelectContent>{[<SelectItem key="all" value="all">Todas seguradoras</SelectItem>, ...filterOptions.seguradoras.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)]}</SelectContent>
-          </Select>
-          <Select value={filterProdutor} onValueChange={setFilterProdutor}>
-            <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue placeholder="Produtor" /></SelectTrigger>
-            <SelectContent>{[<SelectItem key="all" value="all">Todos produtores</SelectItem>, ...filterOptions.produtores.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)]}</SelectContent>
-          </Select>
-          <Select value={filterRamo} onValueChange={setFilterRamo}>
-            <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Ramo" /></SelectTrigger>
-            <SelectContent>{[<SelectItem key="all" value="all">Todos ramos</SelectItem>, ...filterOptions.ramos.map((r) => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)]}</SelectContent>
-          </Select>
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="space-y-4 pr-2">
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          <div className="space-y-4">
             <Tabs defaultValue="fluxo" className="space-y-3">
               <TabsList className="grid w-full grid-cols-4 h-9">
                 <TabsTrigger value="fluxo" className="text-xs">Fluxo Comercial</TabsTrigger>
@@ -296,69 +316,63 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
 
               {/* ─── Tab: Fluxo Comercial ─── */}
               <TabsContent value="fluxo" className="space-y-4">
-                {/* Quick visual summary */}
-                <div className="grid grid-cols-12 gap-3">
-                  <div className="col-span-8 grid grid-cols-4 gap-2">
-                    {[
-                      { label: 'Em Cotação', value: kpis.emCotacao, premio: kpis.premioEmAberto, pct: kpis.total > 0 ? (kpis.emCotacao / kpis.total * 100) : 0, color: 'primary' },
-                      { label: 'Fechados', value: kpis.fechados, premio: kpis.premioFechado, pct: kpis.total > 0 ? (kpis.fechados / kpis.total * 100) : 0, color: 'success' },
-                      { label: 'Declinados', value: kpis.declinados, premio: 0, pct: kpis.total > 0 ? (kpis.declinados / kpis.total * 100) : 0, color: 'destructive' },
-                      { label: 'Tempo Médio', value: null, premio: null, pct: null, color: 'muted-foreground' },
-                    ].map((item) => (
-                      <div key={item.label} className="p-3 rounded-lg border bg-muted/20">
-                        {item.value !== null ? (
-                          <>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] text-muted-foreground font-medium">{item.label}</span>
-                              <span className={`text-[10px] font-semibold text-${item.color}`}>{item.pct?.toFixed(1)}%</span>
+                {/* Producer ranking for active role - horizontal bar chart */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-primary" />
+                      Distribuição por {ROLE_LABELS[activeStage]?.replace('Produtor ', '')}
+                    </h4>
+                    <div className="space-y-2">
+                      {produtorRanking.map((p, i) => {
+                        const maxTotal = produtorRanking[0]?.total || 1;
+                        const conv = p.total > 0 ? (p.fechados / p.total * 100) : 0;
+                        return (
+                          <div key={p.nome} className="flex items-center gap-3">
+                            <span className="text-xs font-semibold text-muted-foreground w-5 text-right">{i + 1}.</span>
+                            <span className="text-xs font-medium w-[100px] truncate">{p.nome}</span>
+                            <div className="flex-1 flex items-center gap-1 h-6">
+                              {p.emCotacao > 0 && (
+                                <div
+                                  className="h-full rounded-l bg-primary/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[18px]"
+                                  style={{ width: `${(p.emCotacao / maxTotal) * 100}%` }}
+                                  title={`Em cotação: ${p.emCotacao}`}
+                                >{p.emCotacao}</div>
+                              )}
+                              {p.fechados > 0 && (
+                                <div
+                                  className="h-full bg-success/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[18px]"
+                                  style={{ width: `${(p.fechados / maxTotal) * 100}%` }}
+                                  title={`Fechados: ${p.fechados}`}
+                                >{p.fechados}</div>
+                              )}
+                              {p.declinados > 0 && (
+                                <div
+                                  className="h-full rounded-r bg-destructive/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[18px]"
+                                  style={{ width: `${(p.declinados / maxTotal) * 100}%` }}
+                                  title={`Declinados: ${p.declinados}`}
+                                >{p.declinados}</div>
+                              )}
                             </div>
-                            <p className={`text-lg font-bold text-${item.color}`}>{item.value}</p>
-                            {item.premio !== null && item.premio > 0 && (
-                              <p className="text-[10px] text-muted-foreground mt-0.5">{formatCurrency(item.premio)}</p>
-                            )}
-                            <Progress value={item.pct || 0} className="h-1 mt-1.5" />
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-[10px] text-muted-foreground font-medium">{item.label}</span>
-                            <p className={`text-lg font-bold mt-1 ${kpis.tempoMedio > 30 ? 'text-destructive' : 'text-foreground'}`}>
-                              {kpis.tempoMedio.toFixed(0)} <span className="text-xs font-normal">dias</span>
-                            </p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">
-                              Ticket: {formatCurrency(kpis.ticketMedio)}
-                            </p>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="col-span-4 flex items-center justify-center">
-                    {statusDistribution.length > 0 ? (
-                      <div className="flex items-center gap-4">
-                        <ResponsiveContainer width={100} height={100}>
-                          <RechartsPie>
-                            <Pie data={statusDistribution} dataKey="value" cx="50%" cy="50%" innerRadius={25} outerRadius={42} paddingAngle={3} strokeWidth={0}>
-                              {statusDistribution.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                            </Pie>
-                          </RechartsPie>
-                        </ResponsiveContainer>
-                        <div className="space-y-1.5">
-                          {statusDistribution.map((s) => (
-                            <div key={s.name} className="flex items-center gap-1.5">
-                              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                              <span className="text-[10px] text-muted-foreground">{s.name}</span>
-                              <span className="text-[10px] font-bold">{s.value}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">Sem dados</p>
-                    )}
-                  </div>
-                </div>
+                            <Badge className={`text-[9px] shrink-0 ${conv >= 40 ? 'bg-success/15 text-success border-success/30' : conv >= 20 ? 'bg-warning/15 text-warning border-warning/30' : 'bg-muted text-muted-foreground border-border'}`}>
+                              {conv.toFixed(0)}%
+                            </Badge>
+                            <span className="text-[10px] text-success font-semibold w-[80px] text-right shrink-0">{formatCurrency(p.premio)}</span>
+                          </div>
+                        );
+                      })}
+                      {produtorRanking.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Nenhum produtor encontrado.</p>}
+                    </div>
+                    {/* Legend */}
+                    <div className="flex items-center gap-4 mt-3 pt-2 border-t">
+                      <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-sm bg-primary/80" /><span className="text-[10px] text-muted-foreground">Em cotação</span></div>
+                      <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-sm bg-success/80" /><span className="text-[10px] text-muted-foreground">Fechados</span></div>
+                      <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-sm bg-destructive/80" /><span className="text-[10px] text-muted-foreground">Declinados</span></div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                {/* Table with sorting */}
+                {/* Table with sorting - highlight active role column */}
                 <Card>
                   <CardContent className="p-4">
                     <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -376,15 +390,15 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                             <div className="flex items-center gap-1">Segurado <SortIcon field="segurado" /></div>
                           </TableHead>
                           <TableHead className="text-center">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold">Origem</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${activeStage === 'origem' ? 'bg-primary/20 text-primary ring-1 ring-primary/40' : 'bg-primary/10 text-primary'}`}>Origem</span>
                           </TableHead>
                           <TableHead className="text-center w-[20px]" />
                           <TableHead className="text-center">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-orange/10 text-brand-orange font-semibold">Negociador</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${activeStage === 'negociador' ? 'bg-brand-orange/20 text-brand-orange ring-1 ring-brand-orange/40' : 'bg-brand-orange/10 text-brand-orange'}`}>Negociador</span>
                           </TableHead>
                           <TableHead className="text-center w-[20px]" />
                           <TableHead className="text-center">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success font-semibold">Cotador</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${activeStage === 'cotador' ? 'bg-success/20 text-success ring-1 ring-success/40' : 'bg-success/10 text-success'}`}>Cotador</span>
                           </TableHead>
                           <TableHead className="text-center w-[20px]" />
                           <TableHead className="text-center cursor-pointer" onClick={() => toggleSort('status')}>
@@ -400,11 +414,11 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                           <TableRow key={row.id} className="hover:bg-muted/30">
                             <TableCell className="text-[10px] text-muted-foreground font-mono">{row.numero}</TableCell>
                             <TableCell className="font-medium text-xs max-w-[160px] truncate">{row.segurado}</TableCell>
-                            <TableCell className="text-center text-xs font-medium text-primary">{row.origem}</TableCell>
+                            <TableCell className={`text-center text-xs font-medium text-primary ${roleColumnStyle('origem')}`}>{row.origem}</TableCell>
                             <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
-                            <TableCell className="text-center text-xs font-medium text-brand-orange">{row.negociador}</TableCell>
+                            <TableCell className={`text-center text-xs font-medium text-brand-orange ${roleColumnStyle('negociador')}`}>{row.negociador}</TableCell>
                             <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
-                            <TableCell className="text-center text-xs font-medium text-success">{row.cotador}</TableCell>
+                            <TableCell className={`text-center text-xs font-medium text-success ${roleColumnStyle('cotador')}`}>{row.cotador}</TableCell>
                             <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
                             <TableCell className="text-center">{statusBadge(row.status)}</TableCell>
                             <TableCell className="text-right text-xs font-semibold">{formatCurrency(row.premio)}</TableCell>
@@ -456,7 +470,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
 
               {/* ─── Tab: Seguradora ─── */}
               <TabsContent value="seguradora" className="space-y-4">
-                {/* Summary cards */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3 rounded-lg border bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
                     <p className="text-[10px] text-muted-foreground">Seguradoras Ativas</p>
@@ -487,8 +500,8 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                         <BarChart3 className="h-4 w-4 text-primary" />
                         Volume por Seguradora
                       </h4>
-                      <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={seguradoraAnalysis.slice(0, 8)} layout="vertical" margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
+                      <ResponsiveContainer width="100%" height={segChartHeight}>
+                        <BarChart data={seguradoraAnalysis} layout="vertical" margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
                           <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                           <YAxis dataKey="nome" type="category" width={100} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
@@ -547,7 +560,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
 
               {/* ─── Tab: Ramo ─── */}
               <TabsContent value="ramo" className="space-y-4">
-                {/* Summary cards */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3 rounded-lg border bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
                     <p className="text-[10px] text-muted-foreground">Ramos Ativos</p>
@@ -575,8 +587,8 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                         <BarChart3 className="h-4 w-4 text-primary" />
                         Volume por Ramo
                       </h4>
-                      <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={ramoAnalysis.slice(0, 8)} layout="vertical" margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
+                      <ResponsiveContainer width="100%" height={ramoChartHeight}>
+                        <BarChart data={ramoAnalysis} layout="vertical" margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
                           <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                           <YAxis dataKey="nome" type="category" width={120} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
@@ -678,7 +690,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                   </Card>
                 </div>
 
-                {/* Monthly table */}
                 <Card>
                   <CardContent className="p-4">
                     <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -722,7 +733,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
               </TabsContent>
             </Tabs>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
