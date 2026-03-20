@@ -17,9 +17,9 @@ export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCa
   const stages = useMemo(() => {
     const total = cotacoes.length;
     const roles = [
-      { key: 'origem', label: 'Origem', roleKey: 'produtor_origem' as const, color: 'hsl(210, 50%, 25%)' },
-      { key: 'negociador', label: 'Negociador', roleKey: 'produtor_negociador' as const, color: 'hsl(210, 55%, 45%)' },
-      { key: 'cotador', label: 'Cotador', roleKey: 'produtor_cotador' as const, color: 'hsl(200, 60%, 55%)' },
+      { key: 'origem', label: 'Origem', roleKey: 'produtor_origem' as const, toneClass: 'bg-primary/45' },
+      { key: 'negociador', label: 'Negociador', roleKey: 'produtor_negociador' as const, toneClass: 'bg-primary/65' },
+      { key: 'cotador', label: 'Cotador', roleKey: 'produtor_cotador' as const, toneClass: 'bg-primary' },
     ];
 
     return roles.map((role) => {
@@ -45,11 +45,11 @@ export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCa
 
   return (
     <>
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden border-border/70 bg-card shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/30">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/15">
                 <Filter className="h-4.5 w-4.5 text-foreground" />
               </div>
               <div>
@@ -62,7 +62,7 @@ export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCa
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs h-7 gap-1 text-muted-foreground hover:text-foreground"
+              className="h-8 gap-1 rounded-full border border-border/60 bg-muted/20 px-3 text-xs text-muted-foreground hover:bg-muted/40 hover:text-foreground"
               onClick={() => setSelectedStage('origem')}
             >
               Ver análise completa
@@ -74,24 +74,24 @@ export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCa
         <CardContent className="pt-0">
           <div className="flex items-center gap-6">
             {/* Funnel shape */}
-            <div className="flex-1 flex flex-col items-center gap-1.5 py-3">
+            <div className="flex flex-1 flex-col items-center gap-2 py-3">
               {stages.map((stage, i) => {
                 const widthPct = 100 - i * 16;
                 return (
                   <button
                     key={stage.key}
                     onClick={() => setSelectedStage(stage.key)}
-                    className="relative flex items-center justify-center transition-all duration-500 cursor-pointer hover:opacity-90 group"
+                    className={`group relative flex items-center justify-center overflow-hidden ring-1 ring-white/10 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${stage.toneClass}`}
                     style={{
                       width: `${widthPct}%`,
                       height: '62px',
-                      backgroundColor: stage.color,
                       clipPath: i === stages.length - 1
                         ? 'polygon(4% 0%, 96% 0%, 88% 100%, 12% 100%)'
                         : 'polygon(0% 0%, 100% 0%, 96% 100%, 4% 100%)',
                       borderRadius: i === 0 ? '4px 4px 0 0' : undefined,
                     }}
                   >
+                    <div className="absolute inset-x-0 top-0 h-px bg-white/25" />
                     <div className="flex items-center gap-3 text-white z-10">
                       <span className="text-sm font-semibold">{stage.label}</span>
                       <span className="text-xs opacity-60">—</span>
@@ -104,7 +104,7 @@ export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCa
             </div>
 
             {/* Summary sidebar */}
-            <div className="w-[140px] shrink-0 space-y-3">
+            <div className="w-[148px] shrink-0 space-y-3 rounded-2xl border border-border/60 bg-muted/15 p-4">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Pipeline</p>
               <div className="text-center">
                 <span className="text-2xl font-bold text-foreground">{rates.total}</span>
@@ -129,6 +129,7 @@ export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCa
         open={!!selectedStage}
         onOpenChange={(open) => !open && setSelectedStage(null)}
         cotacoes={cotacoes}
+        totalDistinct={totalDistinct}
         initialStage={selectedStage || 'origem'}
       />
     </>
