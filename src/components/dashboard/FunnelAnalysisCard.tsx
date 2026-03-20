@@ -10,7 +10,7 @@ interface FunnelAnalysisCardProps {
   totalDistinct?: number;
 }
 
-export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
+export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCardProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
   // Distinct producer counts per role (meaningful differentiation)
