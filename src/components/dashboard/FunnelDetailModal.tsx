@@ -30,10 +30,15 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   negociador: 'Responsável pela negociação com o cliente',
   cotador: 'Responsável operacional pela cotação'
 };
-const ROLE_COLORS: Record<string, string> = {
-  origem: 'hsl(210, 50%, 25%)',
-  negociador: 'hsl(210, 55%, 45%)',
-  cotador: 'hsl(200, 60%, 55%)'
+const ROLE_DOT_CLASSES: Record<string, string> = {
+  origem: 'bg-primary',
+  negociador: 'bg-brand-orange',
+  cotador: 'bg-success'
+};
+const ROLE_BUTTON_CLASSES: Record<string, string> = {
+  origem: 'bg-primary text-primary-foreground border-primary/30 shadow-sm',
+  negociador: 'bg-brand-orange text-brand-orange-foreground border-brand-orange/30 shadow-sm',
+  cotador: 'bg-success text-success-foreground border-success/30 shadow-sm'
 };
 
 const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -43,12 +48,13 @@ interface FunnelDetailModalProps {
   onOpenChange: (open: boolean) => void;
   cotacoes: Cotacao[];
   initialStage: string;
+  totalDistinct?: number;
 }
 
 type SortField = 'numero' | 'segurado' | 'origem' | 'negociador' | 'cotador' | 'status' | 'premio';
 type SortDir = 'asc' | 'desc';
 
-export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }: FunnelDetailModalProps) {
+export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, totalDistinct }: FunnelDetailModalProps) {
   const [activeStage, setActiveStage] = useState(initialStage);
   const [filterSeguradora, setFilterSeguradora] = useState('all');
   const [filterProdutor, setFilterProdutor] = useState('all');
@@ -147,6 +153,8 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
     const premioEmAberto = stageCotacoes.filter((c) => c.status === 'Em cotação').reduce((s, c) => s + (c.valor_premio || 0), 0);
     return { total, premio, ticketMedio, taxaConversao, tempoMedio, fechados, declinados, emCotacao, premioFechado, premioEmAberto };
   }, [stageCotacoes]);
+
+  const headerTotal = totalDistinct ?? kpis.total;
 
   // Flow data with sorting
   const flowData = useMemo(() => {
@@ -259,47 +267,50 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[92vh] p-0 overflow-hidden flex flex-col">
-        <div className="px-6 pt-6 pb-2">
+        <div className="border-b border-border/60 bg-gradient-to-b from-muted/20 to-transparent px-6 pt-6 pb-4">
           <DialogHeader className="pb-2">
             <DialogTitle className="flex items-center gap-2 text-lg">
-              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: ROLE_COLORS[activeStage] || ROLE_COLORS.origem }} />
+              <div className={`h-3 w-3 rounded-full ${ROLE_DOT_CLASSES[activeStage] || ROLE_DOT_CLASSES.origem}`} />
               {ROLE_LABELS[activeStage] || 'Produtor Origem'}
-              <Badge variant="secondary" className="text-xs">{kpis.total} cotações</Badge>
+              <Badge variant="secondary" className="border-border/60 bg-muted/60 text-xs font-medium">{headerTotal} cotações</Badge>
             </DialogTitle>
             <p className="text-sm text-muted-foreground">{ROLE_DESCRIPTIONS[activeStage]}</p>
           </DialogHeader>
 
           {/* Stage pills + Filters */}
-          <div className="flex items-center gap-2 flex-wrap mt-1">
-            {Object.entries(ROLE_LABELS).map(([key, label]) =>
-              <button
-                key={key}
-                onClick={() => { setActiveStage(key); setFilterProdutor('all'); }}
-                className={`px-3 py-1.5 text-xs rounded-full font-medium transition-all border ${activeStage === key
-                  ? 'text-white border-transparent shadow-sm'
-                  : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'}`}
-                style={activeStage === key ? { backgroundColor: ROLE_COLORS[key] } : undefined}
-              >
-                {label.replace('Produtor ', '')}
-              </button>
-            )}
-            <div className="h-5 w-px bg-border mx-1" />
-            <div className="relative min-w-[160px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-8 pl-8 text-xs" />
+          <div className="mt-2 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-muted/25 p-1.5 shadow-sm">
+              {Object.entries(ROLE_LABELS).map(([key, label]) =>
+                <button
+                  key={key}
+                  onClick={() => { setActiveStage(key); setFilterProdutor('all'); }}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${activeStage === key
+                    ? ROLE_BUTTON_CLASSES[key]
+                    : 'border-transparent bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                >
+                  {label.replace('Produtor ', '')}
+                </button>
+              )}
             </div>
-            <Select value={filterSeguradora} onValueChange={setFilterSeguradora}>
-              <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue placeholder="Seguradora" /></SelectTrigger>
-              <SelectContent>{[<SelectItem key="all" value="all">Todas seguradoras</SelectItem>, ...filterOptions.seguradoras.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)]}</SelectContent>
-            </Select>
-            <Select value={filterProdutor} onValueChange={setFilterProdutor}>
-              <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue placeholder="Produtor" /></SelectTrigger>
-              <SelectContent>{[<SelectItem key="all" value="all">Todos produtores</SelectItem>, ...filterOptions.produtores.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)]}</SelectContent>
-            </Select>
-            <Select value={filterRamo} onValueChange={setFilterRamo}>
-              <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Ramo" /></SelectTrigger>
-              <SelectContent>{[<SelectItem key="all" value="all">Todos ramos</SelectItem>, ...filterOptions.ramos.map((r) => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)]}</SelectContent>
-            </Select>
+
+            <div className="flex flex-1 flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-background/80 p-2 xl:ml-3 xl:justify-end">
+              <div className="relative min-w-[180px] flex-1 xl:max-w-[240px] xl:flex-none">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-8 border-border/60 bg-background pl-8 text-xs" />
+              </div>
+              <Select value={filterSeguradora} onValueChange={setFilterSeguradora}>
+                <SelectTrigger className="h-8 w-[160px] border-border/60 bg-background text-xs"><SelectValue placeholder="Seguradora" /></SelectTrigger>
+                <SelectContent>{[<SelectItem key="all" value="all">Todas seguradoras</SelectItem>, ...filterOptions.seguradoras.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)]}</SelectContent>
+              </Select>
+              <Select value={filterProdutor} onValueChange={setFilterProdutor}>
+                <SelectTrigger className="h-8 w-[160px] border-border/60 bg-background text-xs"><SelectValue placeholder="Produtor" /></SelectTrigger>
+                <SelectContent>{[<SelectItem key="all" value="all">Todos produtores</SelectItem>, ...filterOptions.produtores.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)]}</SelectContent>
+              </Select>
+              <Select value={filterRamo} onValueChange={setFilterRamo}>
+                <SelectTrigger className="h-8 w-[140px] border-border/60 bg-background text-xs"><SelectValue placeholder="Ramo" /></SelectTrigger>
+                <SelectContent>{[<SelectItem key="all" value="all">Todos ramos</SelectItem>, ...filterOptions.ramos.map((r) => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)]}</SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -452,7 +463,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">Conversão: <span className="font-semibold text-success">{kpis.taxaConversao.toFixed(1)}%</span></p>
                     </div>
-                    <div className="p-4 bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-lg border border-amber-500/20">
+                    <div className="p-4 bg-gradient-to-br from-brand-orange/10 to-brand-orange/5 rounded-lg border border-brand-orange/20">
                       <p className="text-xs text-muted-foreground mb-1">Financeiro</p>
                       <p className="text-lg font-bold text-success">{formatCurrency(kpis.premioFechado)}</p>
                       <p className="text-xs text-muted-foreground mt-1">Ticket: <span className="font-semibold text-foreground">{formatCurrency(kpis.ticketMedio)}</span></p>
@@ -479,7 +490,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                     <p className="text-[10px] text-muted-foreground">Prêmio Fechado Total</p>
                     <p className="text-lg font-bold text-success">{formatCurrency(seguradoraAnalysis.reduce((s, x) => s + x.premio, 0))}</p>
                   </div>
-                  <div className="p-3 rounded-lg border bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
+                  <div className="p-3 rounded-lg border bg-gradient-to-br from-brand-orange/10 to-brand-orange/5 border-brand-orange/20">
                     <p className="text-[10px] text-muted-foreground">Melhor Conversão</p>
                     {(() => {
                       const best = seguradoraAnalysis.filter(s => s.total >= 3).sort((a, b) => (b.fechados / b.total) - (a.fechados / a.total))[0];
@@ -569,7 +580,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage }
                     <p className="text-[10px] text-muted-foreground">Prêmio Fechado Total</p>
                     <p className="text-lg font-bold text-success">{formatCurrency(ramoAnalysis.reduce((s, x) => s + x.premio, 0))}</p>
                   </div>
-                  <div className="p-3 rounded-lg border bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
+                  <div className="p-3 rounded-lg border bg-gradient-to-br from-brand-orange/10 to-brand-orange/5 border-brand-orange/20">
                     <p className="text-[10px] text-muted-foreground">Maior Volume</p>
                     {ramoAnalysis[0] ? (
                       <>
