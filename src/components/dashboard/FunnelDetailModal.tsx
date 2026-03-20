@@ -519,8 +519,8 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
                           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
                           <Legend wrapperStyle={{ fontSize: 10 }} />
                           <Bar dataKey="emCotacao" stackId="a" fill="hsl(var(--primary))" name="Em Cotação" />
-                          <Bar dataKey="fechados" stackId="a" fill="hsl(156, 62%, 52%)" name="Fechados" />
-                          <Bar dataKey="declinados" stackId="a" fill="hsl(0, 84%, 60%)" name="Declinados" radius={[0, 4, 4, 0]} />
+                          <Bar dataKey="fechados" stackId="a" fill="hsl(var(--success))" name="Fechados" />
+                          <Bar dataKey="declinados" stackId="a" fill="hsl(var(--destructive))" name="Declinados" radius={[0, 4, 4, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </CardContent>
