@@ -7,6 +7,7 @@ import { FunnelDetailModal } from './FunnelDetailModal';
 
 interface FunnelAnalysisCardProps {
   cotacoes: Cotacao[];
+  totalDistinct?: number;
 }
 
 export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
