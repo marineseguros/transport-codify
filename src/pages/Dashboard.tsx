@@ -1738,7 +1738,7 @@ const Dashboard = () => {
       {/* Gráficos e Análises Avançadas */}
 
       {/* Análise de Funil */}
-      <FunnelAnalysisCard cotacoes={filteredCotacoes} totalDistinct={monthlyStats.emCotacao + monthlyStats.fechados + monthlyStats.declinados} />
+      <FunnelAnalysisCard cotacoes={filteredCotacoes} totalDistinct={monthlyStats.emCotacao} />
 
 
 
