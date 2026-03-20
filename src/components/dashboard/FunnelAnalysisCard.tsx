@@ -7,9 +7,10 @@ import { FunnelDetailModal } from './FunnelDetailModal';
 
 interface FunnelAnalysisCardProps {
   cotacoes: Cotacao[];
+  totalDistinct?: number;
 }
 
-export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
+export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCardProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
   // Distinct producer counts per role (meaningful differentiation)
@@ -28,9 +29,9 @@ export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
     });
   }, [cotacoes]);
 
-  // Conversion & decline rates
+  // Conversion & decline rates using distinct counting
   const rates = useMemo(() => {
-    const total = cotacoes.length;
+    const total = totalDistinct ?? cotacoes.length;
     const fechados = cotacoes.filter(c => c.status === 'Negócio fechado' || c.status === 'Fechamento congênere').length;
     const declinados = cotacoes.filter(c => c.status === 'Declinado').length;
     return {
@@ -38,7 +39,7 @@ export function FunnelAnalysisCard({ cotacoes }: FunnelAnalysisCardProps) {
       declinio: total > 0 ? ((declinados / total) * 100).toFixed(1) : '0.0',
       total,
     };
-  }, [cotacoes]);
+  }, [cotacoes, totalDistinct]);
 
   const maxValue = Math.max(...stages.map(s => s.value), 1);
 
