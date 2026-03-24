@@ -14,6 +14,7 @@ import {
 import { type Cotacao } from '@/hooks/useSupabaseData';
 import { useMemo, useState, useEffect } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend } from 'recharts';
+import { getRamoGroup } from '@/lib/ramoClassification';
 
 const ROLE_KEY_MAP = {
   origem: 'produtor_origem' as const,
@@ -42,6 +43,71 @@ const ROLE_BUTTON_CLASSES: Record<string, string> = {
 };
 
 const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const CLOSED_STATUSES = ['Negócio fechado', 'Fechamento congênere'];
+
+const getDistinctQuoteKey = (cotacao: Cotacao) => {
+  if (cotacao.ramo?.segmento === 'Avulso') return cotacao.id;
+  return `${cotacao.cpf_cnpj}_${getRamoGroup(cotacao.ramo)}`;
+};
+
+const countDistinctByStatus = (cotacoes: Cotacao[], statuses: string[]) => {
+  const keys = new Set<string>();
+
+  cotacoes.forEach((cotacao) => {
+    if (statuses.includes(cotacao.status)) {
+      keys.add(getDistinctQuoteKey(cotacao));
+    }
+  });
+
+  return keys.size;
+};
+
+const buildDistinctGroupedAnalysis = (
+  cotacoes: Cotacao[],
+  getGroupName: (cotacao: Cotacao) => string,
+) => {
+  const map = new Map<string, {
+    nome: string;
+    emCotacaoKeys: Set<string>;
+    fechadosKeys: Set<string>;
+    declinadosKeys: Set<string>;
+    premio: number;
+  }>();
+
+  cotacoes.forEach((cotacao) => {
+    const nome = getGroupName(cotacao);
+    const entry = map.get(nome) || {
+      nome,
+      emCotacaoKeys: new Set<string>(),
+      fechadosKeys: new Set<string>(),
+      declinadosKeys: new Set<string>(),
+      premio: 0,
+    };
+
+    const distinctKey = getDistinctQuoteKey(cotacao);
+
+    if (cotacao.status === 'Em cotação') entry.emCotacaoKeys.add(distinctKey);
+    if (CLOSED_STATUSES.includes(cotacao.status)) {
+      entry.fechadosKeys.add(distinctKey);
+      entry.premio += cotacao.valor_premio || 0;
+    }
+    if (cotacao.status === 'Declinado') entry.declinadosKeys.add(distinctKey);
+
+    map.set(nome, entry);
+  });
+
+  return Array.from(map.values())
+    .map((entry) => ({
+      nome: entry.nome,
+      total: entry.emCotacaoKeys.size,
+      fechados: entry.fechadosKeys.size,
+      declinados: entry.declinadosKeys.size,
+      emCotacao: entry.emCotacaoKeys.size,
+      oportunidades: entry.emCotacaoKeys.size + entry.fechadosKeys.size + entry.declinadosKeys.size,
+      premio: entry.premio,
+    }))
+    .sort((a, b) => b.total - a.total || b.fechados - a.fechados);
+};
 
 interface FunnelDetailModalProps {
   open: boolean;
@@ -135,12 +201,12 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
 
   // KPIs
   const kpis = useMemo(() => {
-    const total = stageCotacoes.length;
+    const total = totalDistinct ?? countDistinctByStatus(stageCotacoes, ['Em cotação']);
     const premio = stageCotacoes.reduce((s, c) => s + (c.valor_premio || 0), 0);
     const ticketMedio = total > 0 ? premio / total : 0;
-    const fechados = stageCotacoes.filter((c) => c.status === 'Negócio fechado' || c.status === 'Fechamento congênere').length;
-    const declinados = stageCotacoes.filter((c) => c.status === 'Declinado').length;
-    const emCotacao = stageCotacoes.filter((c) => c.status === 'Em cotação').length;
+    const fechados = countDistinctByStatus(stageCotacoes, CLOSED_STATUSES);
+    const declinados = countDistinctByStatus(stageCotacoes, ['Declinado']);
+    const emCotacao = total;
     const taxaConversao = total > 0 ? fechados / total * 100 : 0;
     const tempos: number[] = [];
     stageCotacoes.forEach((c) => {
@@ -152,7 +218,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
     const premioFechado = stageCotacoes.filter((c) => c.status === 'Negócio fechado' || c.status === 'Fechamento congênere').reduce((s, c) => s + (c.valor_premio || 0), 0);
     const premioEmAberto = stageCotacoes.filter((c) => c.status === 'Em cotação').reduce((s, c) => s + (c.valor_premio || 0), 0);
     return { total, premio, ticketMedio, taxaConversao, tempoMedio, fechados, declinados, emCotacao, premioFechado, premioEmAberto };
-  }, [stageCotacoes]);
+  }, [stageCotacoes, totalDistinct]);
 
   const headerTotal = totalDistinct ?? kpis.total;
 
@@ -181,51 +247,65 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
 
   // Seguradora analysis
   const seguradoraAnalysis = useMemo(() => {
-    const map = new Map<string, { nome: string; total: number; fechados: number; declinados: number; emCotacao: number; premio: number }>();
-    stageCotacoes.forEach((c) => {
-      const nome = c.seguradora?.nome || 'Sem seguradora';
-      const e = map.get(nome) || { nome, total: 0, fechados: 0, declinados: 0, emCotacao: 0, premio: 0 };
-      e.total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
-      if (c.status === 'Declinado') e.declinados++;
-      if (c.status === 'Em cotação') e.emCotacao++;
-      map.set(nome, e);
-    });
-    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+    return buildDistinctGroupedAnalysis(stageCotacoes, (cotacao) => cotacao.seguradora?.nome || 'Sem seguradora');
   }, [stageCotacoes]);
 
   // Ramo analysis
   const ramoAnalysis = useMemo(() => {
-    const map = new Map<string, { nome: string; total: number; fechados: number; declinados: number; emCotacao: number; premio: number }>();
-    stageCotacoes.forEach((c) => {
-      const nome = c.ramo?.ramo_agrupado || c.ramo?.descricao || 'Sem ramo';
-      const e = map.get(nome) || { nome, total: 0, fechados: 0, declinados: 0, emCotacao: 0, premio: 0 };
-      e.total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
-      if (c.status === 'Declinado') e.declinados++;
-      if (c.status === 'Em cotação') e.emCotacao++;
-      map.set(nome, e);
-    });
-    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+    return buildDistinctGroupedAnalysis(stageCotacoes, (cotacao) => cotacao.ramo?.ramo_agrupado || cotacao.ramo?.descricao || 'Sem ramo');
   }, [stageCotacoes]);
 
   // Time evolution
   const timeEvolution = useMemo(() => {
-    const monthMap = new Map<string, { mes: string; total: number; fechados: number; declinados: number; premio: number; premioFechado: number }>();
+    const monthMap = new Map<string, {
+      mes: string;
+      emCotacaoKeys: Set<string>;
+      fechadosKeys: Set<string>;
+      declinadosKeys: Set<string>;
+      premio: number;
+      premioFechado: number;
+    }>();
+
     stageCotacoes.forEach((c) => {
       const d = new Date(c.data_cotacao);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-      const e = monthMap.get(key) || { mes: label, total: 0, fechados: 0, declinados: 0, premio: 0, premioFechado: 0 };
-      e.total++;
+      const e = monthMap.get(key) || {
+        mes: label,
+        emCotacaoKeys: new Set<string>(),
+        fechadosKeys: new Set<string>(),
+        declinadosKeys: new Set<string>(),
+        premio: 0,
+        premioFechado: 0,
+      };
+      const distinctKey = getDistinctQuoteKey(c);
+
+      if (c.status === 'Em cotação') e.emCotacaoKeys.add(distinctKey);
+      if (c.status === 'Declinado') e.declinadosKeys.add(distinctKey);
+      if (CLOSED_STATUSES.includes(c.status)) e.fechadosKeys.add(distinctKey);
+
       e.premio += c.valor_premio || 0;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premioFechado += c.valor_premio || 0; }
-      if (c.status === 'Declinado') e.declinados++;
+      if (CLOSED_STATUSES.includes(c.status)) e.premioFechado += c.valor_premio || 0;
       monthMap.set(key, e);
     });
+
     return Array.from(monthMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([, v]) => ({ ...v, conversao: v.total > 0 ? (v.fechados / v.total * 100) : 0 }));
+      .map(([, v]) => {
+        const total = v.emCotacaoKeys.size;
+        const fechados = v.fechadosKeys.size;
+        const declinados = v.declinadosKeys.size;
+
+        return {
+          mes: v.mes,
+          total,
+          fechados,
+          declinados,
+          premio: v.premio,
+          premioFechado: v.premioFechado,
+          conversao: total > 0 ? (fechados / total * 100) : 0,
+        };
+      });
   }, [stageCotacoes]);
 
   // Bottlenecks
@@ -545,7 +625,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
                           </thead>
                           <tbody>
                             {seguradoraAnalysis.map((s) => {
-                              const conv = s.total > 0 ? (s.fechados / s.total * 100) : 0;
+                               const conv = s.oportunidades > 0 ? (s.fechados / s.oportunidades * 100) : 0;
                               return (
                                 <tr key={s.nome} className="border-b border-border/50 hover:bg-muted/30">
                                   <td className="py-2 px-2 font-medium text-xs">{s.nome}</td>
@@ -606,8 +686,8 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
                           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
                           <Legend wrapperStyle={{ fontSize: 10 }} />
                           <Bar dataKey="emCotacao" stackId="a" fill="hsl(var(--primary))" name="Em Cotação" />
-                          <Bar dataKey="fechados" stackId="a" fill="hsl(156, 62%, 52%)" name="Fechados" />
-                          <Bar dataKey="declinados" stackId="a" fill="hsl(0, 84%, 60%)" name="Declinados" radius={[0, 4, 4, 0]} />
+                           <Bar dataKey="fechados" stackId="a" fill="hsl(var(--success))" name="Fechados" />
+                           <Bar dataKey="declinados" stackId="a" fill="hsl(var(--destructive))" name="Declinados" radius={[0, 4, 4, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </CardContent>
@@ -632,7 +712,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
                           </thead>
                           <tbody>
                             {ramoAnalysis.map((r) => {
-                              const conv = r.total > 0 ? (r.fechados / r.total * 100) : 0;
+                               const conv = r.oportunidades > 0 ? (r.fechados / r.oportunidades * 100) : 0;
                               return (
                                 <tr key={r.nome} className="border-b border-border/50 hover:bg-muted/30">
                                   <td className="py-2 px-2 font-medium text-xs">{r.nome}</td>
@@ -693,7 +773,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
                           <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} unit="%" />
                           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
                           <Legend wrapperStyle={{ fontSize: 10 }} />
-                          <Line yAxisId="left" type="monotone" dataKey="premioFechado" stroke="hsl(156, 62%, 52%)" strokeWidth={2} dot={{ r: 3 }} name="Prêmio Fechado" />
+                           <Line yAxisId="left" type="monotone" dataKey="premioFechado" stroke="hsl(var(--success))" strokeWidth={2} dot={{ r: 3 }} name="Prêmio Fechado" />
                           <Line yAxisId="right" type="monotone" dataKey="conversao" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} name="Conversão %" />
                         </LineChart>
                       </ResponsiveContainer>
