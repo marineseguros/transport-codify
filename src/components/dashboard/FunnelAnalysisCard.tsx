@@ -45,11 +45,11 @@ export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCa
 
   return (
     <>
-      <Card className="overflow-hidden border-border/70 bg-card shadow-sm">
+      <Card className="overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/15">
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/30">
                 <Filter className="h-4.5 w-4.5 text-foreground" />
               </div>
               <div>
@@ -62,7 +62,7 @@ export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCa
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1 rounded-full border border-border/60 bg-muted/20 px-3 text-xs text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+              className="text-xs h-7 gap-1 text-muted-foreground hover:text-foreground"
               onClick={() => setSelectedStage('origem')}
             >
               Ver análise completa
