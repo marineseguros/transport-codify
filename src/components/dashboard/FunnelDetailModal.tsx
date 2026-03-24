@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { DatePickerWithRange } from '@/components/ui/date-picker';
 import {
   TrendingUp, DollarSign, Clock, BarChart3, AlertTriangle,
   Building2, Layers, Search, ArrowRight, CheckCircle2, XCircle, FileText, Zap,
@@ -13,8 +14,10 @@ import {
 } from 'lucide-react';
 import { type Cotacao } from '@/hooks/useSupabaseData';
 import { useMemo, useState, useEffect } from 'react';
+import type { DateRange } from 'react-day-picker';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend } from 'recharts';
 import { getRamoGroup } from '@/lib/ramoClassification';
+import type { DashboardFilterValues } from './DashboardFilters';
 
 const ROLE_KEY_MAP = {
   origem: 'produtor_origem' as const,
@@ -113,6 +116,8 @@ interface FunnelDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   cotacoes: Cotacao[];
+  allCotacoes: Cotacao[];
+  dashboardFilters: DashboardFilterValues;
   initialStage: string;
   totalDistinct?: number;
 }
@@ -120,7 +125,72 @@ interface FunnelDetailModalProps {
 type SortField = 'numero' | 'segurado' | 'origem' | 'negociador' | 'cotador' | 'status' | 'premio';
 type SortDir = 'asc' | 'desc';
 
-export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, totalDistinct }: FunnelDetailModalProps) {
+const getDateRangeFromFilter = (filters: DashboardFilterValues): { start?: Date; end?: Date } => {
+  const now = new Date();
+  let start: Date;
+  let end: Date = now;
+
+  switch (filters.dateFilter) {
+    case '30dias':
+      start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case 'mes_atual':
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      break;
+    case 'mes_anterior':
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0);
+      break;
+    case 'ano_atual':
+      start = new Date(now.getFullYear(), 0, 1);
+      end = new Date(now.getFullYear(), 11, 31);
+      break;
+    case 'ano_anterior':
+      start = new Date(now.getFullYear() - 1, 0, 1);
+      end = new Date(now.getFullYear() - 1, 11, 31);
+      break;
+    case 'ano_especifico': {
+      const year = parseInt(filters.anoEspecifico) || now.getFullYear();
+      start = new Date(year, 0, 1);
+      end = new Date(year, 11, 31);
+      break;
+    }
+    case 'personalizado':
+      if (!filters.dateRange?.from) return {};
+      start = filters.dateRange.from;
+      end = filters.dateRange.to || filters.dateRange.from;
+      break;
+    default:
+      return {};
+  }
+
+  return { start, end };
+};
+
+const isWithinPeriod = (value: string | null | undefined, start?: Date, end?: Date) => {
+  if (!start || !end || !value) return false;
+  const date = new Date(value);
+  return date >= start && date <= end;
+};
+
+const matchesDashboardNonDateFilters = (cotacao: Cotacao, filters: DashboardFilterValues) => {
+  const produtorMatch = filters.produtorFilter.length === 0 || (
+    cotacao.status === 'Em cotação'
+      ? !!cotacao.produtor_cotador?.nome && filters.produtorFilter.includes(cotacao.produtor_cotador.nome)
+      : !!cotacao.produtor_origem?.nome && filters.produtorFilter.includes(cotacao.produtor_origem.nome)
+  );
+
+  const seguradoraMatch = filters.seguradoraFilter.length === 0 || (!!cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome));
+  const ramoMatch = filters.ramoFilter.length === 0 || (!!cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao));
+  const segmentoMatch = filters.segmentoFilter.length === 0 || (!!cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento));
+  const regraMatch = filters.regraFilter.length === 0 || (!!cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra));
+  const unidadeMatch = filters.unidadeFilter.length === 0 || (!!cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao));
+
+  return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
+};
+
+export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, dashboardFilters, initialStage, totalDistinct }: FunnelDetailModalProps) {
   const [activeStage, setActiveStage] = useState(initialStage);
   const [filterSeguradora, setFilterSeguradora] = useState('all');
   const [filterProdutor, setFilterProdutor] = useState('all');
@@ -128,6 +198,8 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('numero');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [resultPeriodMode, setResultPeriodMode] = useState<'dashboard' | 'custom'>('dashboard');
+  const [resultDateRange, setResultDateRange] = useState<DateRange | undefined>(dashboardFilters.dateRange);
 
   useEffect(() => {
     if (open) {
@@ -138,8 +210,10 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
       setSearchTerm('');
       setSortField('numero');
       setSortDir('desc');
+      setResultPeriodMode('dashboard');
+      setResultDateRange(dashboardFilters.dateRange);
     }
-  }, [initialStage, open]);
+  }, [dashboardFilters.dateRange, initialStage, open]);
 
   const roleKey = ROLE_KEY_MAP[activeStage as keyof typeof ROLE_KEY_MAP] || 'produtor_origem';
 
@@ -161,12 +235,32 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
     };
   }, [cotacoes]);
 
-  // Filter cotações: must have a producer assigned for the active role
+  const resultPeriod = useMemo(() => {
+    if (resultPeriodMode === 'custom') {
+      return {
+        start: resultDateRange?.from,
+        end: resultDateRange?.to || resultDateRange?.from,
+      };
+    }
+
+    return getDateRangeFromFilter(dashboardFilters);
+  }, [dashboardFilters, resultDateRange, resultPeriodMode]);
+
   const stageCotacoes = useMemo(() => {
-    let filtered = cotacoes.filter((c) => !!c[roleKey]?.nome);
+    const dashboardScoped = allCotacoes.filter((c) => matchesDashboardNonDateFilters(c, dashboardFilters));
+
+    let filtered = dashboardScoped.filter((c) => {
+      if (!c[roleKey]?.nome) return false;
+
+      if (c.status === 'Em cotação') return true;
+      if (c.status === 'Declinado') return isWithinPeriod(c.data_cotacao, resultPeriod.start, resultPeriod.end);
+      if (CLOSED_STATUSES.includes(c.status)) return isWithinPeriod(c.data_fechamento, resultPeriod.start, resultPeriod.end);
+
+      return false;
+    });
+
     if (filterSeguradora !== 'all') filtered = filtered.filter((c) => c.seguradora_id === filterSeguradora);
     if (filterProdutor !== 'all') {
-      // Filter by the active role's producer specifically
       filtered = filtered.filter((c) => {
         const prodId = activeStage === 'origem' ? c.produtor_origem_id
           : activeStage === 'negociador' ? c.produtor_negociador_id
@@ -180,7 +274,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
       filtered = filtered.filter((c) => c.segurado.toLowerCase().includes(t) || c.cpf_cnpj.includes(t));
     }
     return filtered;
-  }, [cotacoes, roleKey, activeStage, filterSeguradora, filterProdutor, filterRamo, searchTerm]);
+  }, [allCotacoes, dashboardFilters, roleKey, activeStage, filterSeguradora, filterProdutor, filterRamo, searchTerm, resultPeriod]);
 
   // Producer ranking for the active role
   const produtorRanking = useMemo(() => {
@@ -201,15 +295,15 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
 
   // KPIs
   const kpis = useMemo(() => {
-    const total = totalDistinct ?? countDistinctByStatus(stageCotacoes, ['Em cotação']);
-    const premio = stageCotacoes.reduce((s, c) => s + (c.valor_premio || 0), 0);
-    const ticketMedio = total > 0 ? premio / total : 0;
+    const emCotacao = countDistinctByStatus(stageCotacoes, ['Em cotação']);
     const fechados = countDistinctByStatus(stageCotacoes, CLOSED_STATUSES);
     const declinados = countDistinctByStatus(stageCotacoes, ['Declinado']);
-    const emCotacao = total;
-    const taxaConversao = total > 0 ? fechados / total * 100 : 0;
+    const oportunidades = emCotacao + fechados + declinados;
+    const premio = stageCotacoes.filter((c) => CLOSED_STATUSES.includes(c.status)).reduce((s, c) => s + (c.valor_premio || 0), 0);
+    const ticketMedio = fechados > 0 ? premio / fechados : 0;
+    const taxaConversao = oportunidades > 0 ? fechados / oportunidades * 100 : 0;
     const tempos: number[] = [];
-    stageCotacoes.forEach((c) => {
+    stageCotacoes.filter((c) => c.status === 'Declinado' || CLOSED_STATUSES.includes(c.status)).forEach((c) => {
       const start = new Date(c.data_cotacao).getTime();
       const end = c.data_fechamento ? new Date(c.data_fechamento).getTime() : Date.now();
       tempos.push((end - start) / (1000 * 60 * 60 * 24));
@@ -217,10 +311,10 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
     const tempoMedio = tempos.length > 0 ? tempos.reduce((a, b) => a + b, 0) / tempos.length : 0;
     const premioFechado = stageCotacoes.filter((c) => c.status === 'Negócio fechado' || c.status === 'Fechamento congênere').reduce((s, c) => s + (c.valor_premio || 0), 0);
     const premioEmAberto = stageCotacoes.filter((c) => c.status === 'Em cotação').reduce((s, c) => s + (c.valor_premio || 0), 0);
-    return { total, premio, ticketMedio, taxaConversao, tempoMedio, fechados, declinados, emCotacao, premioFechado, premioEmAberto };
-  }, [stageCotacoes, totalDistinct]);
+    return { total: emCotacao, oportunidades, premio, ticketMedio, taxaConversao, tempoMedio, fechados, declinados, emCotacao, premioFechado, premioEmAberto };
+  }, [stageCotacoes]);
 
-  const headerTotal = totalDistinct ?? kpis.total;
+  const headerTotal = kpis.total;
 
   // Flow data with sorting
   const flowData = useMemo(() => {
@@ -374,6 +468,20 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, initialStage, 
             </div>
 
             <div className="flex flex-1 flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-background/80 p-2 xl:ml-3 xl:justify-end">
+               <Select value={resultPeriodMode} onValueChange={(value: 'dashboard' | 'custom') => setResultPeriodMode(value)}>
+                 <SelectTrigger className="h-8 w-[170px] border-border/60 bg-background text-xs"><SelectValue placeholder="Período" /></SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="dashboard">Período do dashboard</SelectItem>
+                   <SelectItem value="custom">Período do modal</SelectItem>
+                 </SelectContent>
+               </Select>
+               {resultPeriodMode === 'custom' && (
+                 <DatePickerWithRange
+                   date={resultDateRange}
+                   onDateChange={setResultDateRange}
+                   className="h-8 min-w-[240px]"
+                 />
+               )}
               <div className="relative min-w-[180px] flex-1 xl:max-w-[240px] xl:flex-none">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-8 border-border/60 bg-background pl-8 text-xs" />
