@@ -4,13 +4,33 @@ import { Button } from '@/components/ui/button';
 import { Filter, ExternalLink } from 'lucide-react';
 import { type Cotacao } from '@/hooks/useSupabaseData';
 import { FunnelDetailModal } from './FunnelDetailModal';
+import { getRamoGroup } from '@/lib/ramoClassification';
+import type { DashboardFilterValues } from './DashboardFilters';
 
 interface FunnelAnalysisCardProps {
   cotacoes: Cotacao[];
+  allCotacoes: Cotacao[];
+  dashboardFilters: DashboardFilterValues;
   totalDistinct?: number;
 }
 
-export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCardProps) {
+const CLOSED_STATUSES = ['Negócio fechado', 'Fechamento congênere'];
+
+const getDistinctQuoteKey = (cotacao: Cotacao) => `${cotacao.cpf_cnpj}_${getRamoGroup(cotacao.ramo)}`;
+
+const countDistinctByStatus = (cotacoes: Cotacao[], statuses: string[]) => {
+  const keys = new Set<string>();
+
+  cotacoes.forEach((cotacao) => {
+    if (statuses.includes(cotacao.status)) {
+      keys.add(getDistinctQuoteKey(cotacao));
+    }
+  });
+
+  return keys.size;
+};
+
+export function FunnelAnalysisCard({ cotacoes, allCotacoes, dashboardFilters, totalDistinct }: FunnelAnalysisCardProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
   // Distinct producer counts per role (meaningful differentiation)
@@ -32,8 +52,8 @@ export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCa
   // Conversion & decline rates using distinct counting
   const rates = useMemo(() => {
     const total = totalDistinct ?? cotacoes.length;
-    const fechados = cotacoes.filter(c => c.status === 'Negócio fechado' || c.status === 'Fechamento congênere').length;
-    const declinados = cotacoes.filter(c => c.status === 'Declinado').length;
+    const fechados = countDistinctByStatus(cotacoes, CLOSED_STATUSES);
+    const declinados = countDistinctByStatus(cotacoes, ['Declinado']);
     return {
       conversao: total > 0 ? ((fechados / total) * 100).toFixed(1) : '0.0',
       declinio: total > 0 ? ((declinados / total) * 100).toFixed(1) : '0.0',
@@ -129,6 +149,8 @@ export function FunnelAnalysisCard({ cotacoes, totalDistinct }: FunnelAnalysisCa
         open={!!selectedStage}
         onOpenChange={(open) => !open && setSelectedStage(null)}
         cotacoes={cotacoes}
+        allCotacoes={allCotacoes}
+        dashboardFilters={dashboardFilters}
         totalDistinct={totalDistinct}
         initialStage={selectedStage || 'origem'}
       />

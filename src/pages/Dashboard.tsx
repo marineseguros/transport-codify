@@ -1738,7 +1738,7 @@ const Dashboard = () => {
       {/* Gráficos e Análises Avançadas */}
 
       {/* Análise de Funil */}
-      <FunnelAnalysisCard cotacoes={filteredCotacoes} totalDistinct={globalEmAbertoDistinct} />
+      <FunnelAnalysisCard cotacoes={filteredCotacoes} allCotacoes={allQuotes} dashboardFilters={filters} totalDistinct={globalEmAbertoDistinct} />
 
 
 
