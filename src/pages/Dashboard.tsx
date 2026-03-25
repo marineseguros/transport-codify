@@ -691,6 +691,12 @@ const Dashboard = () => {
     return countDistinctByStatus(filtered, ["Em cotação"]);
   }, [allQuotes, filters.produtorFilter, filters.seguradoraFilter, filters.ramoFilter, filters.segmentoFilter, filters.regraFilter, filters.unidadeFilter]);
 
+  const funnelDashboardCounts = useMemo(() => ({
+    emCotacao: globalEmAbertoDistinct,
+    fechados: monthlyStats.fechados,
+    declinados: monthlyStats.declinados,
+  }), [globalEmAbertoDistinct, monthlyStats.fechados, monthlyStats.declinados]);
+
   // Calculate TOTAL open quotes ignoring date filters (for "Em Aberto Total" column)
   const totalEmAbertoByProdutor = useMemo(() => {
     const stats: Record<string, {
@@ -1738,7 +1744,7 @@ const Dashboard = () => {
       {/* Gráficos e Análises Avançadas */}
 
       {/* Análise de Funil */}
-      <FunnelAnalysisCard cotacoes={filteredCotacoes} allCotacoes={allQuotes} dashboardFilters={filters} totalDistinct={globalEmAbertoDistinct} />
+      <FunnelAnalysisCard cotacoes={filteredCotacoes} allCotacoes={allQuotes} dashboardFilters={filters} totalDistinct={globalEmAbertoDistinct} dashboardCounts={funnelDashboardCounts} />
 
 
 

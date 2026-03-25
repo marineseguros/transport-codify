@@ -120,6 +120,11 @@ interface FunnelDetailModalProps {
   dashboardFilters: DashboardFilterValues;
   initialStage: string;
   totalDistinct?: number;
+  dashboardCounts?: {
+    emCotacao: number;
+    fechados: number;
+    declinados: number;
+  };
 }
 
 type SortField = 'numero' | 'segurado' | 'origem' | 'negociador' | 'cotador' | 'status' | 'premio';
@@ -190,7 +195,7 @@ const matchesDashboardNonDateFilters = (cotacao: Cotacao, filters: DashboardFilt
   return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
 };
 
-export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, dashboardFilters, initialStage, totalDistinct }: FunnelDetailModalProps) {
+export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, dashboardFilters, initialStage, totalDistinct, dashboardCounts }: FunnelDetailModalProps) {
   const [activeStage, setActiveStage] = useState(initialStage);
   const [filterSeguradora, setFilterSeguradora] = useState('all');
   const [filterProdutor, setFilterProdutor] = useState('all');
@@ -278,26 +283,68 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
 
   // Producer ranking for the active role
   const produtorRanking = useMemo(() => {
-    const map = new Map<string, { nome: string; total: number; fechados: number; declinados: number; emCotacao: number; premio: number }>();
+    const map = new Map<string, {
+      nome: string;
+      emCotacaoKeys: Set<string>;
+      fechadosKeys: Set<string>;
+      declinadosKeys: Set<string>;
+      premio: number;
+    }>();
+
     stageCotacoes.forEach((c) => {
       const prod = c[roleKey];
       if (!prod?.nome) return;
       const nome = prod.nome;
-      const e = map.get(nome) || { nome, total: 0, fechados: 0, declinados: 0, emCotacao: 0, premio: 0 };
-      e.total++;
-      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') { e.fechados++; e.premio += c.valor_premio || 0; }
-      if (c.status === 'Declinado') e.declinados++;
-      if (c.status === 'Em cotação') e.emCotacao++;
+      const e = map.get(nome) || {
+        nome,
+        emCotacaoKeys: new Set<string>(),
+        fechadosKeys: new Set<string>(),
+        declinadosKeys: new Set<string>(),
+        premio: 0,
+      };
+      const distinctKey = getDistinctQuoteKey(c);
+
+      if (c.status === 'Em cotação') e.emCotacaoKeys.add(distinctKey);
+      if (c.status === 'Declinado') e.declinadosKeys.add(distinctKey);
+      if (c.status === 'Negócio fechado' || c.status === 'Fechamento congênere') {
+        e.fechadosKeys.add(distinctKey);
+        e.premio += c.valor_premio || 0;
+      }
+
       map.set(nome, e);
     });
-    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+
+    return Array.from(map.values())
+      .map((entry) => {
+        const emCotacao = entry.emCotacaoKeys.size;
+        const fechados = entry.fechadosKeys.size;
+        const declinados = entry.declinadosKeys.size;
+
+        return {
+          nome: entry.nome,
+          emCotacao,
+          fechados,
+          declinados,
+          total: emCotacao + fechados + declinados,
+          premio: entry.premio,
+        };
+      })
+      .sort((a, b) => b.total - a.total || b.fechados - a.fechados);
   }, [stageCotacoes, roleKey]);
 
   // KPIs
   const kpis = useMemo(() => {
-    const emCotacao = countDistinctByStatus(stageCotacoes, ['Em cotação']);
-    const fechados = countDistinctByStatus(stageCotacoes, CLOSED_STATUSES);
-    const declinados = countDistinctByStatus(stageCotacoes, ['Declinado']);
+    const emCotacaoDistinct = countDistinctByStatus(stageCotacoes, ['Em cotação']);
+    const fechadosDistinct = countDistinctByStatus(stageCotacoes, CLOSED_STATUSES);
+    const declinadosDistinct = countDistinctByStatus(stageCotacoes, ['Declinado']);
+    const usingDashboardTotals = resultPeriodMode === 'dashboard'
+      && filterSeguradora === 'all'
+      && filterProdutor === 'all'
+      && filterRamo === 'all'
+      && !searchTerm.trim();
+    const emCotacao = usingDashboardTotals ? (dashboardCounts?.emCotacao ?? totalDistinct ?? emCotacaoDistinct) : emCotacaoDistinct;
+    const fechados = usingDashboardTotals ? (dashboardCounts?.fechados ?? fechadosDistinct) : fechadosDistinct;
+    const declinados = usingDashboardTotals ? (dashboardCounts?.declinados ?? declinadosDistinct) : declinadosDistinct;
     const oportunidades = emCotacao + fechados + declinados;
     const premio = stageCotacoes.filter((c) => CLOSED_STATUSES.includes(c.status)).reduce((s, c) => s + (c.valor_premio || 0), 0);
     const ticketMedio = fechados > 0 ? premio / fechados : 0;
@@ -312,7 +359,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     const premioFechado = stageCotacoes.filter((c) => c.status === 'Negócio fechado' || c.status === 'Fechamento congênere').reduce((s, c) => s + (c.valor_premio || 0), 0);
     const premioEmAberto = stageCotacoes.filter((c) => c.status === 'Em cotação').reduce((s, c) => s + (c.valor_premio || 0), 0);
     return { total: emCotacao, oportunidades, premio, ticketMedio, taxaConversao, tempoMedio, fechados, declinados, emCotacao, premioFechado, premioEmAberto };
-  }, [stageCotacoes]);
+  }, [stageCotacoes, resultPeriodMode, filterSeguradora, filterProdutor, filterRamo, searchTerm, dashboardCounts, totalDistinct]);
 
   const headerTotal = kpis.total;
 
