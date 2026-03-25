@@ -48,9 +48,15 @@ const ROLE_BUTTON_CLASSES: Record<string, string> = {
 const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const CLOSED_STATUSES = ['Negócio fechado', 'Fechamento congênere'];
 
-const getDistinctQuoteKey = (cotacao: Cotacao) => {
-  if (cotacao.ramo?.segmento === 'Avulso') return cotacao.id;
-  return `${cotacao.cpf_cnpj}_${getRamoGroup(cotacao.ramo)}`;
+const getDistinctQuoteKey = (cotacao: Cotacao) => `${cotacao.cpf_cnpj}_${getRamoGroup(cotacao.ramo)}`;
+
+const getQuoteTimestamp = (cotacao: Cotacao) => {
+  const referenceDate = CLOSED_STATUSES.includes(cotacao.status)
+    ? cotacao.data_fechamento || cotacao.updated_at || cotacao.data_cotacao
+    : cotacao.updated_at || cotacao.data_cotacao;
+
+  const parsed = referenceDate ? new Date(referenceDate).getTime() : 0;
+  return Number.isNaN(parsed) ? 0 : parsed;
 };
 
 const countDistinctByStatus = (cotacoes: Cotacao[], statuses: string[]) => {
@@ -110,6 +116,84 @@ const buildDistinctGroupedAnalysis = (
       premio: entry.premio,
     }))
     .sort((a, b) => b.total - a.total || b.fechados - a.fechados);
+};
+
+const buildDistinctInsurerAnalysis = (cotacoes: Cotacao[]) => {
+  const latestOpenByKey = new Map<string, Cotacao>();
+  const latestClosedByKey = new Map<string, Cotacao>();
+  const latestDeclinedByKey = new Map<string, Cotacao>();
+
+  cotacoes.forEach((cotacao) => {
+    const distinctKey = getDistinctQuoteKey(cotacao);
+
+    if (cotacao.status === 'Em cotação') {
+      const current = latestOpenByKey.get(distinctKey);
+      if (!current || getQuoteTimestamp(cotacao) >= getQuoteTimestamp(current)) {
+        latestOpenByKey.set(distinctKey, cotacao);
+      }
+      return;
+    }
+
+    if (CLOSED_STATUSES.includes(cotacao.status)) {
+      const current = latestClosedByKey.get(distinctKey);
+      if (!current || getQuoteTimestamp(cotacao) >= getQuoteTimestamp(current)) {
+        latestClosedByKey.set(distinctKey, cotacao);
+      }
+      return;
+    }
+
+    if (cotacao.status === 'Declinado') {
+      const current = latestDeclinedByKey.get(distinctKey);
+      if (!current || getQuoteTimestamp(cotacao) >= getQuoteTimestamp(current)) {
+        latestDeclinedByKey.set(distinctKey, cotacao);
+      }
+    }
+  });
+
+  const insurerMap = new Map<string, {
+    nome: string;
+    emCotacaoKeys: Set<string>;
+    fechadosKeys: Set<string>;
+    declinadosKeys: Set<string>;
+    premio: number;
+  }>();
+
+  const assignToInsurer = (cotacao: Cotacao, bucket: 'emCotacao' | 'fechados' | 'declinados') => {
+    const nome = cotacao.seguradora?.nome || 'Sem seguradora';
+    const distinctKey = getDistinctQuoteKey(cotacao);
+    const entry = insurerMap.get(nome) || {
+      nome,
+      emCotacaoKeys: new Set<string>(),
+      fechadosKeys: new Set<string>(),
+      declinadosKeys: new Set<string>(),
+      premio: 0,
+    };
+
+    if (bucket === 'emCotacao') entry.emCotacaoKeys.add(distinctKey);
+    if (bucket === 'fechados') {
+      entry.fechadosKeys.add(distinctKey);
+      entry.premio += cotacao.valor_premio || 0;
+    }
+    if (bucket === 'declinados') entry.declinadosKeys.add(distinctKey);
+
+    insurerMap.set(nome, entry);
+  };
+
+  latestOpenByKey.forEach((cotacao) => assignToInsurer(cotacao, 'emCotacao'));
+  latestClosedByKey.forEach((cotacao) => assignToInsurer(cotacao, 'fechados'));
+  latestDeclinedByKey.forEach((cotacao) => assignToInsurer(cotacao, 'declinados'));
+
+  return Array.from(insurerMap.values())
+    .map((entry) => ({
+      nome: entry.nome,
+      total: entry.emCotacaoKeys.size,
+      fechados: entry.fechadosKeys.size,
+      declinados: entry.declinadosKeys.size,
+      emCotacao: entry.emCotacaoKeys.size,
+      oportunidades: entry.emCotacaoKeys.size + entry.fechadosKeys.size + entry.declinadosKeys.size,
+      premio: entry.premio,
+    }))
+    .sort((a, b) => b.total - a.total || b.fechados - a.fechados || b.declinados - a.declinados);
 };
 
 interface FunnelDetailModalProps {
@@ -387,9 +471,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
   }, [stageCotacoes, sortField, sortDir]);
 
   // Seguradora analysis
-  const seguradoraAnalysis = useMemo(() => {
-    return buildDistinctGroupedAnalysis(stageCotacoes, (cotacao) => cotacao.seguradora?.nome || 'Sem seguradora');
-  }, [stageCotacoes]);
+  const seguradoraAnalysis = useMemo(() => buildDistinctInsurerAnalysis(stageCotacoes), [stageCotacoes]);
 
   // Ramo analysis
   const ramoAnalysis = useMemo(() => {
@@ -482,30 +564,30 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
   };
 
   // Chart height based on data rows
-  const segChartHeight = Math.max(200, Math.min(seguradoraAnalysis.length * 38, 500));
-  const ramoChartHeight = Math.max(200, Math.min(ramoAnalysis.length * 38, 500));
+  const segChartHeight = Math.max(170, Math.min(seguradoraAnalysis.length * 28, 420));
+  const ramoChartHeight = Math.max(170, Math.min(ramoAnalysis.length * 28, 420));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[92vh] p-0 overflow-hidden flex flex-col">
-        <div className="border-b border-border/60 bg-gradient-to-b from-muted/20 to-transparent px-6 pt-6 pb-4">
+      <DialogContent className="h-[92vh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-hidden p-0 flex flex-col">
+        <div className="border-b border-border/60 bg-gradient-to-b from-muted/20 to-transparent px-4 pt-4 pb-3">
           <DialogHeader className="pb-2">
-            <DialogTitle className="flex items-center gap-2 text-lg">
+            <DialogTitle className="flex items-center gap-2 text-base">
               <div className={`h-3 w-3 rounded-full ${ROLE_DOT_CLASSES[activeStage] || ROLE_DOT_CLASSES.origem}`} />
               {ROLE_LABELS[activeStage] || 'Produtor Origem'}
               <Badge variant="secondary" className="border-border/60 bg-muted/60 text-xs font-medium">{headerTotal} cotações</Badge>
             </DialogTitle>
-            <p className="text-sm text-muted-foreground">{ROLE_DESCRIPTIONS[activeStage]}</p>
+            <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[activeStage]}</p>
           </DialogHeader>
 
           {/* Stage pills + Filters */}
-          <div className="mt-2 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-muted/25 p-1.5 shadow-sm">
+          <div className="mt-2 flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border/60 bg-muted/25 p-1 shadow-sm">
               {Object.entries(ROLE_LABELS).map(([key, label]) =>
                 <button
                   key={key}
                   onClick={() => { setActiveStage(key); setFilterProdutor('all'); }}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${activeStage === key
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all ${activeStage === key
                     ? ROLE_BUTTON_CLASSES[key]
                     : 'border-transparent bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                 >
@@ -514,9 +596,9 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
               )}
             </div>
 
-            <div className="flex flex-1 flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-background/80 p-2 xl:ml-3 xl:justify-end">
+            <div className="grid flex-1 grid-cols-1 gap-1.5 rounded-xl border border-border/60 bg-background/80 p-1.5 sm:grid-cols-2 xl:ml-2 xl:grid-cols-[150px_minmax(180px,1fr)_140px_140px_130px] xl:items-center">
                <Select value={resultPeriodMode} onValueChange={(value: 'dashboard' | 'custom') => setResultPeriodMode(value)}>
-                 <SelectTrigger className="h-8 w-[170px] border-border/60 bg-background text-xs"><SelectValue placeholder="Período" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Período" /></SelectTrigger>
                  <SelectContent>
                    <SelectItem value="dashboard">Período do dashboard</SelectItem>
                    <SelectItem value="custom">Período do modal</SelectItem>
@@ -526,23 +608,23 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                  <DatePickerWithRange
                    date={resultDateRange}
                    onDateChange={setResultDateRange}
-                   className="h-8 min-w-[240px]"
+                    className="h-7 w-full"
                  />
                )}
-              <div className="relative min-w-[180px] flex-1 xl:max-w-[240px] xl:flex-none">
+              <div className={`relative ${resultPeriodMode === 'custom' ? '' : 'sm:col-span-1 xl:col-auto'} ${resultPeriodMode !== 'custom' ? 'xl:col-span-1' : ''}`}>
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-8 border-border/60 bg-background pl-8 text-xs" />
+                 <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-7 border-border/60 bg-background pl-8 text-[11px]" />
               </div>
               <Select value={filterSeguradora} onValueChange={setFilterSeguradora}>
-                <SelectTrigger className="h-8 w-[160px] border-border/60 bg-background text-xs"><SelectValue placeholder="Seguradora" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Seguradora" /></SelectTrigger>
                 <SelectContent>{[<SelectItem key="all" value="all">Todas seguradoras</SelectItem>, ...filterOptions.seguradoras.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)]}</SelectContent>
               </Select>
               <Select value={filterProdutor} onValueChange={setFilterProdutor}>
-                <SelectTrigger className="h-8 w-[160px] border-border/60 bg-background text-xs"><SelectValue placeholder="Produtor" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Produtor" /></SelectTrigger>
                 <SelectContent>{[<SelectItem key="all" value="all">Todos produtores</SelectItem>, ...filterOptions.produtores.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)]}</SelectContent>
               </Select>
               <Select value={filterRamo} onValueChange={setFilterRamo}>
-                <SelectTrigger className="h-8 w-[140px] border-border/60 bg-background text-xs"><SelectValue placeholder="Ramo" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Ramo" /></SelectTrigger>
                 <SelectContent>{[<SelectItem key="all" value="all">Todos ramos</SelectItem>, ...filterOptions.ramos.map((r) => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)]}</SelectContent>
               </Select>
             </div>
@@ -550,14 +632,14 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
         </div>
 
         {/* Scrollable content area */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
-          <div className="space-y-4">
-            <Tabs defaultValue="fluxo" className="space-y-3">
-              <TabsList className="grid w-full grid-cols-4 h-9">
-                <TabsTrigger value="fluxo" className="text-xs">Fluxo Comercial</TabsTrigger>
-                <TabsTrigger value="seguradora" className="text-xs">Seguradora</TabsTrigger>
-                <TabsTrigger value="ramo" className="text-xs">Ramo</TabsTrigger>
-                <TabsTrigger value="evolucao" className="text-xs">Evolução</TabsTrigger>
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
+          <div className="space-y-3">
+            <Tabs defaultValue="fluxo" className="space-y-2">
+              <TabsList className="grid h-8 w-full grid-cols-4">
+                <TabsTrigger value="fluxo" className="text-[11px]">Fluxo Comercial</TabsTrigger>
+                <TabsTrigger value="seguradora" className="text-[11px]">Seguradora</TabsTrigger>
+                <TabsTrigger value="ramo" className="text-[11px]">Ramo</TabsTrigger>
+                <TabsTrigger value="evolucao" className="text-[11px]">Evolução</TabsTrigger>
               </TabsList>
 
               {/* ─── Tab: Fluxo Comercial ─── */}
@@ -716,22 +798,22 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
 
               {/* ─── Tab: Seguradora ─── */}
               <TabsContent value="seguradora" className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 rounded-lg border bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                  <div className="rounded-lg border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 p-2.5">
                     <p className="text-[10px] text-muted-foreground">Seguradoras Ativas</p>
-                    <p className="text-2xl font-bold text-primary">{seguradoraAnalysis.length}</p>
+                    <p className="text-xl font-bold text-primary">{seguradoraAnalysis.length}</p>
                   </div>
-                  <div className="p-3 rounded-lg border bg-gradient-to-br from-success/10 to-success/5 border-success/20">
+                  <div className="rounded-lg border border-success/20 bg-gradient-to-br from-success/10 to-success/5 p-2.5">
                     <p className="text-[10px] text-muted-foreground">Prêmio Fechado Total</p>
-                    <p className="text-lg font-bold text-success">{formatCurrency(seguradoraAnalysis.reduce((s, x) => s + x.premio, 0))}</p>
+                    <p className="text-base font-bold text-success">{formatCurrency(seguradoraAnalysis.reduce((s, x) => s + x.premio, 0))}</p>
                   </div>
-                  <div className="p-3 rounded-lg border bg-gradient-to-br from-brand-orange/10 to-brand-orange/5 border-brand-orange/20">
+                  <div className="rounded-lg border border-brand-orange/20 bg-gradient-to-br from-brand-orange/10 to-brand-orange/5 p-2.5">
                     <p className="text-[10px] text-muted-foreground">Melhor Conversão</p>
                     {(() => {
                       const best = seguradoraAnalysis.filter(s => s.total >= 3).sort((a, b) => (b.fechados / b.total) - (a.fechados / a.total))[0];
                       return best ? (
                         <>
-                          <p className="text-sm font-bold text-foreground truncate">{best.nome}</p>
+                          <p className="text-xs font-bold text-foreground truncate">{best.nome}</p>
                           <p className="text-[10px] text-success font-semibold">{(best.fechados / best.total * 100).toFixed(1)}%</p>
                         </>
                       ) : <p className="text-xs text-muted-foreground">—</p>;
@@ -739,10 +821,10 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.15fr_0.95fr]">
                   <Card>
-                    <CardContent className="p-4">
-                      <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <CardContent className="p-3">
+                      <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold">
                         <BarChart3 className="h-4 w-4 text-primary" />
                         Volume por Seguradora
                       </h4>
@@ -750,7 +832,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                         <BarChart data={seguradoraAnalysis} layout="vertical" margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
                           <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                          <YAxis dataKey="nome" type="category" width={100} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                          <YAxis dataKey="nome" type="category" width={88} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
                           <Legend wrapperStyle={{ fontSize: 10 }} />
                           <Bar dataKey="emCotacao" stackId="a" fill="hsl(var(--primary))" name="Em Cotação" />
@@ -761,21 +843,21 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                     </CardContent>
                   </Card>
                   <Card>
-                    <CardContent className="p-4">
-                      <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <CardContent className="p-3">
+                      <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold">
                         <Building2 className="h-4 w-4 text-primary" />
                         Detalhamento
                       </h4>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                      <div className="max-h-[420px] overflow-auto">
+                        <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b text-xs text-muted-foreground">
-                              <th className="text-left py-2 px-2 font-medium">Seguradora</th>
-                              <th className="text-center py-2 px-2 font-medium">Total</th>
-                              <th className="text-center py-2 px-2 font-medium text-success">Fech.</th>
-                              <th className="text-center py-2 px-2 font-medium text-destructive">Decl.</th>
-                              <th className="text-center py-2 px-2 font-medium">Conv.</th>
-                              <th className="text-right py-2 px-2 font-medium">Prêmio</th>
+                              <th className="sticky top-0 bg-card text-left px-2 py-1.5 font-medium">Seguradora</th>
+                              <th className="sticky top-0 bg-card text-center px-2 py-1.5 font-medium">Total</th>
+                              <th className="sticky top-0 bg-card text-center px-2 py-1.5 font-medium text-success">Fech.</th>
+                              <th className="sticky top-0 bg-card text-center px-2 py-1.5 font-medium text-destructive">Decl.</th>
+                              <th className="sticky top-0 bg-card text-center px-2 py-1.5 font-medium">Conv.</th>
+                              <th className="sticky top-0 bg-card text-right px-2 py-1.5 font-medium">Prêmio</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -783,16 +865,16 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                                const conv = s.oportunidades > 0 ? (s.fechados / s.oportunidades * 100) : 0;
                               return (
                                 <tr key={s.nome} className="border-b border-border/50 hover:bg-muted/30">
-                                  <td className="py-2 px-2 font-medium text-xs">{s.nome}</td>
-                                  <td className="py-2 px-2 text-center font-semibold">{s.total}</td>
-                                  <td className="py-2 px-2 text-center font-semibold text-success">{s.fechados}</td>
-                                  <td className="py-2 px-2 text-center font-semibold text-destructive">{s.declinados}</td>
-                                  <td className="py-2 px-2 text-center">
+                                  <td className="px-2 py-1.5 font-medium">{s.nome}</td>
+                                  <td className="px-2 py-1.5 text-center font-semibold">{s.total}</td>
+                                  <td className="px-2 py-1.5 text-center font-semibold text-success">{s.fechados}</td>
+                                  <td className="px-2 py-1.5 text-center font-semibold text-destructive">{s.declinados}</td>
+                                  <td className="px-2 py-1.5 text-center">
                                     <Badge className={`text-[10px] ${conv >= 40 ? 'bg-success/15 text-success border-success/30' : conv >= 20 ? 'bg-warning/15 text-warning border-warning/30' : 'bg-destructive/15 text-destructive border-destructive/30'}`}>
                                       {conv.toFixed(1)}%
                                     </Badge>
                                   </td>
-                                  <td className="py-2 px-2 text-right text-xs font-semibold text-success">{formatCurrency(s.premio)}</td>
+                                  <td className="px-2 py-1.5 text-right font-semibold text-success">{formatCurrency(s.premio)}</td>
                                 </tr>
                               );
                             })}
@@ -908,8 +990,8 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                           <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
                           <Legend wrapperStyle={{ fontSize: 10 }} />
                           <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Total" />
-                          <Bar dataKey="fechados" fill="hsl(156, 62%, 52%)" radius={[4, 4, 0, 0]} name="Fechados" />
-                          <Bar dataKey="declinados" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} name="Declinados" />
+                          <Bar dataKey="fechados" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} name="Fechados" />
+                          <Bar dataKey="declinados" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} name="Declinados" />
                         </BarChart>
                       </ResponsiveContainer>
                     </CardContent>
