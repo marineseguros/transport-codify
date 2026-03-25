@@ -12,6 +12,11 @@ interface FunnelAnalysisCardProps {
   allCotacoes: Cotacao[];
   dashboardFilters: DashboardFilterValues;
   totalDistinct?: number;
+  dashboardCounts?: {
+    emCotacao: number;
+    fechados: number;
+    declinados: number;
+  };
 }
 
 const CLOSED_STATUSES = ['Negócio fechado', 'Fechamento congênere'];
@@ -30,7 +35,7 @@ const countDistinctByStatus = (cotacoes: Cotacao[], statuses: string[]) => {
   return keys.size;
 };
 
-export function FunnelAnalysisCard({ cotacoes, allCotacoes, dashboardFilters, totalDistinct }: FunnelAnalysisCardProps) {
+export function FunnelAnalysisCard({ cotacoes, allCotacoes, dashboardFilters, totalDistinct, dashboardCounts }: FunnelAnalysisCardProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
   // Distinct producer counts per role (meaningful differentiation)
@@ -52,14 +57,14 @@ export function FunnelAnalysisCard({ cotacoes, allCotacoes, dashboardFilters, to
   // Conversion & decline rates using distinct counting
   const rates = useMemo(() => {
     const total = totalDistinct ?? cotacoes.length;
-    const fechados = countDistinctByStatus(cotacoes, CLOSED_STATUSES);
-    const declinados = countDistinctByStatus(cotacoes, ['Declinado']);
+    const fechados = dashboardCounts?.fechados ?? countDistinctByStatus(cotacoes, CLOSED_STATUSES);
+    const declinados = dashboardCounts?.declinados ?? countDistinctByStatus(cotacoes, ['Declinado']);
     return {
       conversao: total > 0 ? ((fechados / total) * 100).toFixed(1) : '0.0',
       declinio: total > 0 ? ((declinados / total) * 100).toFixed(1) : '0.0',
       total,
     };
-  }, [cotacoes, totalDistinct]);
+  }, [cotacoes, totalDistinct, dashboardCounts]);
 
   const maxValue = Math.max(...stages.map(s => s.value), 1);
 
@@ -152,6 +157,7 @@ export function FunnelAnalysisCard({ cotacoes, allCotacoes, dashboardFilters, to
         allCotacoes={allCotacoes}
         dashboardFilters={dashboardFilters}
         totalDistinct={totalDistinct}
+        dashboardCounts={dashboardCounts}
         initialStage={selectedStage || 'origem'}
       />
     </>
