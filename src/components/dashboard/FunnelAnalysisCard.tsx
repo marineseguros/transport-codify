@@ -26,26 +26,22 @@ const getDistinctQuoteKey = (cotacao: Cotacao) => `${cotacao.cpf_cnpj}_${getRamo
 
 const countDistinctByStatus = (cotacoes: Cotacao[], statuses: string[]) => {
   const keys = new Set<string>();
-
   cotacoes.forEach((cotacao) => {
     if (statuses.includes(cotacao.status)) {
       keys.add(getDistinctQuoteKey(cotacao));
     }
   });
-
   return keys.size;
 };
 
 export function FunnelAnalysisCard({ cotacoes, allCotacoes, dashboardFilters, totalDistinct, dashboardCounts }: FunnelAnalysisCardProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
-  // Distinct producer counts per role (meaningful differentiation)
   const stages = useMemo(() => {
-    const total = cotacoes.length;
     const roles = [
-      { key: 'origem', label: 'Origem', roleKey: 'produtor_origem' as const, toneClass: 'bg-primary' },
-      { key: 'negociador', label: 'Negociador', roleKey: 'produtor_negociador' as const, toneClass: 'bg-brand-orange' },
-      { key: 'cotador', label: 'Cotador', roleKey: 'produtor_cotador' as const, toneClass: 'bg-success' },
+      { key: 'origem', label: 'Origem', roleKey: 'produtor_origem' as const },
+      { key: 'negociador', label: 'Negociador', roleKey: 'produtor_negociador' as const },
+      { key: 'cotador', label: 'Cotador', roleKey: 'produtor_cotador' as const },
     ];
 
     return roles.map((role) => {
@@ -55,19 +51,17 @@ export function FunnelAnalysisCard({ cotacoes, allCotacoes, dashboardFilters, to
     });
   }, [cotacoes]);
 
-  // Conversion & decline rates using distinct counting
   const rates = useMemo(() => {
     const total = totalDistinct ?? cotacoes.length;
-    const fechados = dashboardCounts?.fechados ?? countDistinctByStatus(cotacoes, CLOSED_STATUSES);
-    const declinados = dashboardCounts?.declinados ?? countDistinctByStatus(cotacoes, ['Declinado']);
-    return {
-      conversao: total > 0 ? ((fechados / total) * 100).toFixed(1) : '0.0',
-      declinio: total > 0 ? ((declinados / total) * 100).toFixed(1) : '0.0',
-      total,
-    };
-  }, [cotacoes, totalDistinct, dashboardCounts]);
+    return { total };
+  }, [cotacoes, totalDistinct]);
 
-  const maxValue = Math.max(...stages.map(s => s.value), 1);
+  // Monochromatic blue palette – darker at top, lighter at bottom
+  const funnelColors = [
+    { bg: 'hsl(var(--primary))', shadow: 'hsl(var(--primary) / 0.35)' },
+    { bg: 'hsl(var(--primary) / 0.72)', shadow: 'hsl(var(--primary) / 0.25)' },
+    { bg: 'hsl(var(--primary) / 0.48)', shadow: 'hsl(var(--primary) / 0.18)' },
+  ];
 
   return (
     <>
@@ -100,31 +94,39 @@ export function FunnelAnalysisCard({ cotacoes, allCotacoes, dashboardFilters, to
         <CardContent className="pt-0">
           <TooltipProvider delayDuration={200}>
             <div className="flex items-center gap-6">
-              {/* Funnel shape */}
-              <div className="flex flex-1 flex-col items-center gap-2 py-3">
+              {/* Modern funnel */}
+              <div className="flex flex-1 flex-col items-center gap-1.5 py-2">
                 {stages.map((stage, i) => {
-                  const widthPct = 100 - i * 16;
+                  const widthPct = 92 - i * 14;
+                  const color = funnelColors[i];
                   return (
                     <Tooltip key={stage.key}>
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => setSelectedStage(stage.key)}
-                          className={`group relative flex items-center justify-center overflow-hidden ring-1 ring-white/10 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${stage.toneClass}`}
+                          className="group relative flex items-center justify-center overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110"
                           style={{
                             width: `${widthPct}%`,
-                            height: '62px',
-                            clipPath: i === stages.length - 1
-                              ? 'polygon(4% 0%, 96% 0%, 88% 100%, 12% 100%)'
-                              : 'polygon(0% 0%, 100% 0%, 96% 100%, 4% 100%)',
-                            borderRadius: i === 0 ? '4px 4px 0 0' : undefined,
+                            height: '56px',
+                            background: color.bg,
+                            borderRadius: i === 0 ? '16px 16px 12px 12px' : i === stages.length - 1 ? '12px 12px 16px 16px' : '12px',
+                            boxShadow: `0 4px 16px -4px ${color.shadow}, inset 0 1px 0 rgba(255,255,255,0.15)`,
                           }}
                         >
-                          <div className="absolute inset-x-0 top-0 h-px bg-white/25" />
+                          {/* Top highlight for glass effect */}
+                          <div
+                            className="absolute inset-x-0 top-0 pointer-events-none"
+                            style={{
+                              height: '50%',
+                              background: 'linear-gradient(to bottom, rgba(255,255,255,0.12), transparent)',
+                              borderRadius: 'inherit',
+                            }}
+                          />
                           <div className="flex items-center gap-3 text-white z-10">
-                            <span className="text-sm font-semibold">{stage.label}</span>
-                            <span className="text-xs opacity-60">—</span>
+                            <span className="text-sm font-semibold tracking-wide">{stage.label}</span>
+                            <span className="h-4 w-px bg-white/25" />
                             <span className="text-xl font-bold">{stage.value}</span>
-                            <span className="text-[10px] opacity-70">produtores</span>
+                            <span className="text-[10px] opacity-70 font-medium">produtores</span>
                           </div>
                         </button>
                       </TooltipTrigger>
