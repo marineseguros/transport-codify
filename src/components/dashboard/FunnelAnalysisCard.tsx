@@ -50,7 +50,7 @@ export function FunnelAnalysisCard({ cotacoes, allCotacoes, dashboardFilters, to
     return roles.map((role) => {
       const names = new Set<string>();
       cotacoes.forEach((c) => { if (c[role.roleKey]?.nome) names.add(c[role.roleKey]!.nome); });
-      return { ...role, value: names.size };
+      return { ...role, value: names.size, producers: Array.from(names).sort((a, b) => a.localeCompare(b)) };
     });
   }, [cotacoes]);
 
