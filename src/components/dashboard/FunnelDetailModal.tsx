@@ -596,9 +596,9 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
               )}
             </div>
 
-            <div className="grid flex-1 grid-cols-1 gap-1.5 rounded-xl border border-border/60 bg-background/80 p-1.5 sm:grid-cols-2 xl:ml-2 xl:grid-cols-[150px_minmax(180px,1fr)_140px_140px_130px] xl:items-center">
+            <div className="flex flex-1 flex-wrap items-center gap-1.5 rounded-xl border border-border/60 bg-background/80 p-1.5 xl:ml-2">
                <Select value={resultPeriodMode} onValueChange={(value: 'dashboard' | 'custom') => setResultPeriodMode(value)}>
-                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Período" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-[150px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Período" /></SelectTrigger>
                  <SelectContent>
                    <SelectItem value="dashboard">Período do dashboard</SelectItem>
                    <SelectItem value="custom">Período do modal</SelectItem>
@@ -608,23 +608,23 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                  <DatePickerWithRange
                    date={resultDateRange}
                    onDateChange={setResultDateRange}
-                    className="h-7 w-full"
+                    className="h-7"
                  />
                )}
-              <div className={`relative ${resultPeriodMode === 'custom' ? '' : 'sm:col-span-1 xl:col-auto'} ${resultPeriodMode !== 'custom' ? 'xl:col-span-1' : ''}`}>
+              <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                 <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-7 border-border/60 bg-background pl-8 text-[11px]" />
+                 <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-7 w-[140px] border-border/60 bg-background pl-8 text-[11px]" />
               </div>
               <Select value={filterSeguradora} onValueChange={setFilterSeguradora}>
-                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Seguradora" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-[140px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Seguradora" /></SelectTrigger>
                 <SelectContent>{[<SelectItem key="all" value="all">Todas seguradoras</SelectItem>, ...filterOptions.seguradoras.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)]}</SelectContent>
               </Select>
               <Select value={filterProdutor} onValueChange={setFilterProdutor}>
-                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Produtor" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-[140px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Produtor" /></SelectTrigger>
                 <SelectContent>{[<SelectItem key="all" value="all">Todos produtores</SelectItem>, ...filterOptions.produtores.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)]}</SelectContent>
               </Select>
               <Select value={filterRamo} onValueChange={setFilterRamo}>
-                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Ramo" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-[130px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Ramo" /></SelectTrigger>
                 <SelectContent>{[<SelectItem key="all" value="all">Todos ramos</SelectItem>, ...filterOptions.ramos.map((r) => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)]}</SelectContent>
               </Select>
             </div>
@@ -635,11 +635,11 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
         <div className="flex-1 overflow-y-auto px-4 pb-4">
           <div className="space-y-3">
             <Tabs defaultValue="fluxo" className="space-y-2">
-              <TabsList className="grid h-8 w-full grid-cols-4">
-                <TabsTrigger value="fluxo" className="text-[11px]">Fluxo Comercial</TabsTrigger>
-                <TabsTrigger value="seguradora" className="text-[11px]">Seguradora</TabsTrigger>
-                <TabsTrigger value="ramo" className="text-[11px]">Ramo</TabsTrigger>
-                <TabsTrigger value="evolucao" className="text-[11px]">Evolução</TabsTrigger>
+              <TabsList className="h-9 w-full">
+                <TabsTrigger value="fluxo" className="flex-1 text-[11px]">Fluxo Comercial</TabsTrigger>
+                <TabsTrigger value="seguradora" className="flex-1 text-[11px]">Seguradora</TabsTrigger>
+                <TabsTrigger value="ramo" className="flex-1 text-[11px]">Ramo</TabsTrigger>
+                <TabsTrigger value="evolucao" className="flex-1 text-[11px]">Evolução</TabsTrigger>
               </TabsList>
 
               {/* ─── Tab: Fluxo Comercial ─── */}
@@ -739,17 +739,17 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                       </TableHeader>
                       <TableBody>
                         {flowData.map((row) =>
-                          <TableRow key={row.id} className="hover:bg-muted/30">
-                            <TableCell className="text-[10px] text-muted-foreground font-mono">{row.numero}</TableCell>
-                            <TableCell className="font-medium text-xs max-w-[160px] truncate">{row.segurado}</TableCell>
-                            <TableCell className={`text-center text-xs font-medium text-primary ${roleColumnStyle('origem')}`}>{row.origem}</TableCell>
-                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
-                            <TableCell className={`text-center text-xs font-medium text-brand-orange ${roleColumnStyle('negociador')}`}>{row.negociador}</TableCell>
-                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
-                            <TableCell className={`text-center text-xs font-medium text-success ${roleColumnStyle('cotador')}`}>{row.cotador}</TableCell>
-                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
-                            <TableCell className="text-center">{statusBadge(row.status)}</TableCell>
-                            <TableCell className="text-right text-xs font-semibold">{formatCurrency(row.premio)}</TableCell>
+                          <TableRow key={row.id} className="hover:bg-muted/30 h-8">
+                            <TableCell className="text-[10px] text-muted-foreground font-mono py-1">{row.numero}</TableCell>
+                            <TableCell className="font-medium text-xs max-w-[160px] truncate py-1">{row.segurado}</TableCell>
+                            <TableCell className={`text-center text-xs font-medium text-primary py-1 ${roleColumnStyle('origem')}`}>{row.origem}</TableCell>
+                            <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
+                            <TableCell className={`text-center text-xs font-medium text-brand-orange py-1 ${roleColumnStyle('negociador')}`}>{row.negociador}</TableCell>
+                            <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
+                            <TableCell className={`text-center text-xs font-medium text-success py-1 ${roleColumnStyle('cotador')}`}>{row.cotador}</TableCell>
+                            <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
+                            <TableCell className="text-center py-1">{statusBadge(row.status)}</TableCell>
+                            <TableCell className="text-right text-xs font-semibold py-1">{formatCurrency(row.premio)}</TableCell>
                           </TableRow>
                         )}
                         {flowData.length === 0 &&
