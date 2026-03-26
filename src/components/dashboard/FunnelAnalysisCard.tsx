@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Filter, ExternalLink } from 'lucide-react';
 import { type Cotacao } from '@/hooks/useSupabaseData';
 import { FunnelDetailModal } from './FunnelDetailModal';
