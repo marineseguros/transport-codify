@@ -596,9 +596,9 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
               )}
             </div>
 
-            <div className="grid flex-1 grid-cols-1 gap-1.5 rounded-xl border border-border/60 bg-background/80 p-1.5 sm:grid-cols-2 xl:ml-2 xl:grid-cols-[150px_minmax(180px,1fr)_140px_140px_130px] xl:items-center">
+            <div className="flex flex-1 flex-wrap items-center gap-1.5 rounded-xl border border-border/60 bg-background/80 p-1.5 xl:ml-2">
                <Select value={resultPeriodMode} onValueChange={(value: 'dashboard' | 'custom') => setResultPeriodMode(value)}>
-                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Período" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-[150px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Período" /></SelectTrigger>
                  <SelectContent>
                    <SelectItem value="dashboard">Período do dashboard</SelectItem>
                    <SelectItem value="custom">Período do modal</SelectItem>
@@ -608,23 +608,23 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                  <DatePickerWithRange
                    date={resultDateRange}
                    onDateChange={setResultDateRange}
-                    className="h-7 w-full"
+                    className="h-7"
                  />
                )}
-              <div className={`relative ${resultPeriodMode === 'custom' ? '' : 'sm:col-span-1 xl:col-auto'} ${resultPeriodMode !== 'custom' ? 'xl:col-span-1' : ''}`}>
+              <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                 <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-7 border-border/60 bg-background pl-8 text-[11px]" />
+                 <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-7 w-[140px] border-border/60 bg-background pl-8 text-[11px]" />
               </div>
               <Select value={filterSeguradora} onValueChange={setFilterSeguradora}>
-                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Seguradora" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-[140px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Seguradora" /></SelectTrigger>
                 <SelectContent>{[<SelectItem key="all" value="all">Todas seguradoras</SelectItem>, ...filterOptions.seguradoras.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)]}</SelectContent>
               </Select>
               <Select value={filterProdutor} onValueChange={setFilterProdutor}>
-                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Produtor" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-[140px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Produtor" /></SelectTrigger>
                 <SelectContent>{[<SelectItem key="all" value="all">Todos produtores</SelectItem>, ...filterOptions.produtores.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)]}</SelectContent>
               </Select>
               <Select value={filterRamo} onValueChange={setFilterRamo}>
-                 <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Ramo" /></SelectTrigger>
+                 <SelectTrigger className="h-7 w-[130px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Ramo" /></SelectTrigger>
                 <SelectContent>{[<SelectItem key="all" value="all">Todos ramos</SelectItem>, ...filterOptions.ramos.map((r) => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)]}</SelectContent>
               </Select>
             </div>
