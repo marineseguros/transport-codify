@@ -564,12 +564,12 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
   };
 
   // Chart height based on data rows
-  const segChartHeight = Math.max(170, Math.min(seguradoraAnalysis.length * 28, 420));
-  const ramoChartHeight = Math.max(170, Math.min(ramoAnalysis.length * 28, 420));
+  const segChartHeight = Math.max(220, Math.min(seguradoraAnalysis.length * 34, 500));
+  const ramoChartHeight = Math.max(220, Math.min(ramoAnalysis.length * 34, 500));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[92vh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-hidden p-0 flex flex-col">
+      <DialogContent className="max-w-7xl max-h-[85vh] overflow-hidden p-0 flex flex-col">
         <div className="border-b border-border/60 bg-gradient-to-b from-muted/20 to-transparent px-4 pt-4 pb-3">
           <DialogHeader className="pb-2">
             <DialogTitle className="flex items-center gap-2 text-base">
