@@ -635,11 +635,11 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
         <div className="flex-1 overflow-y-auto px-4 pb-4">
           <div className="space-y-3">
             <Tabs defaultValue="fluxo" className="space-y-2">
-              <TabsList className="grid h-8 w-full grid-cols-4">
-                <TabsTrigger value="fluxo" className="text-[11px]">Fluxo Comercial</TabsTrigger>
-                <TabsTrigger value="seguradora" className="text-[11px]">Seguradora</TabsTrigger>
-                <TabsTrigger value="ramo" className="text-[11px]">Ramo</TabsTrigger>
-                <TabsTrigger value="evolucao" className="text-[11px]">Evolução</TabsTrigger>
+              <TabsList className="h-9 w-full">
+                <TabsTrigger value="fluxo" className="flex-1 text-[11px]">Fluxo Comercial</TabsTrigger>
+                <TabsTrigger value="seguradora" className="flex-1 text-[11px]">Seguradora</TabsTrigger>
+                <TabsTrigger value="ramo" className="flex-1 text-[11px]">Ramo</TabsTrigger>
+                <TabsTrigger value="evolucao" className="flex-1 text-[11px]">Evolução</TabsTrigger>
               </TabsList>
 
               {/* ─── Tab: Fluxo Comercial ─── */}
