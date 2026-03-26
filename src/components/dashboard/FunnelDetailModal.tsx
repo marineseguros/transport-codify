@@ -739,17 +739,17 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                       </TableHeader>
                       <TableBody>
                         {flowData.map((row) =>
-                          <TableRow key={row.id} className="hover:bg-muted/30">
-                            <TableCell className="text-[10px] text-muted-foreground font-mono">{row.numero}</TableCell>
-                            <TableCell className="font-medium text-xs max-w-[160px] truncate">{row.segurado}</TableCell>
-                            <TableCell className={`text-center text-xs font-medium text-primary ${roleColumnStyle('origem')}`}>{row.origem}</TableCell>
-                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
-                            <TableCell className={`text-center text-xs font-medium text-brand-orange ${roleColumnStyle('negociador')}`}>{row.negociador}</TableCell>
-                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
-                            <TableCell className={`text-center text-xs font-medium text-success ${roleColumnStyle('cotador')}`}>{row.cotador}</TableCell>
-                            <TableCell className="text-center"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
-                            <TableCell className="text-center">{statusBadge(row.status)}</TableCell>
-                            <TableCell className="text-right text-xs font-semibold">{formatCurrency(row.premio)}</TableCell>
+                          <TableRow key={row.id} className="hover:bg-muted/30 h-8">
+                            <TableCell className="text-[10px] text-muted-foreground font-mono py-1">{row.numero}</TableCell>
+                            <TableCell className="font-medium text-xs max-w-[160px] truncate py-1">{row.segurado}</TableCell>
+                            <TableCell className={`text-center text-xs font-medium text-primary py-1 ${roleColumnStyle('origem')}`}>{row.origem}</TableCell>
+                            <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
+                            <TableCell className={`text-center text-xs font-medium text-brand-orange py-1 ${roleColumnStyle('negociador')}`}>{row.negociador}</TableCell>
+                            <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
+                            <TableCell className={`text-center text-xs font-medium text-success py-1 ${roleColumnStyle('cotador')}`}>{row.cotador}</TableCell>
+                            <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
+                            <TableCell className="text-center py-1">{statusBadge(row.status)}</TableCell>
+                            <TableCell className="text-right text-xs font-semibold py-1">{formatCurrency(row.premio)}</TableCell>
                           </TableRow>
                         )}
                         {flowData.length === 0 &&
