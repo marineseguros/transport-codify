@@ -1,16 +1,18 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DatePickerWithRange } from '@/components/ui/date-picker';
 import {
   TrendingUp, DollarSign, Clock, BarChart3, AlertTriangle,
   Building2, Layers, Search, ArrowRight, CheckCircle2, XCircle, FileText, Zap,
-  ArrowUpDown, ArrowUp, ArrowDown
+  ArrowUpDown, ArrowUp, ArrowDown, SlidersHorizontal
 } from 'lucide-react';
 import { type Cotacao } from '@/hooks/useSupabaseData';
 import { useMemo, useState, useEffect } from 'react';
@@ -581,53 +583,88 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
           </DialogHeader>
 
           {/* Stage pills + Filters */}
-          <div className="mt-2 flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border/60 bg-muted/25 p-1 shadow-sm">
+          <div className="mt-2 flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/25 p-0.5">
               {Object.entries(ROLE_LABELS).map(([key, label]) =>
                 <button
                   key={key}
                   onClick={() => { setActiveStage(key); setFilterProdutor('all'); }}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all ${activeStage === key
+                  className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-all ${activeStage === key
                     ? ROLE_BUTTON_CLASSES[key]
-                    : 'border-transparent bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                 >
                   {label.replace('Produtor ', '')}
                 </button>
               )}
             </div>
 
-            <div className="flex flex-1 flex-wrap items-center gap-1.5 rounded-xl border border-border/60 bg-background/80 p-1.5 xl:ml-2">
-               <Select value={resultPeriodMode} onValueChange={(value: 'dashboard' | 'custom') => setResultPeriodMode(value)}>
-                 <SelectTrigger className="h-7 w-[150px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Período" /></SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="dashboard">Período do dashboard</SelectItem>
-                   <SelectItem value="custom">Período do modal</SelectItem>
-                 </SelectContent>
-               </Select>
-               {resultPeriodMode === 'custom' && (
-                 <DatePickerWithRange
-                   date={resultDateRange}
-                   onDateChange={setResultDateRange}
-                    className="h-7"
-                 />
-               )}
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                 <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-7 w-[140px] border-border/60 bg-background pl-8 text-[11px]" />
-              </div>
-              <Select value={filterSeguradora} onValueChange={setFilterSeguradora}>
-                 <SelectTrigger className="h-7 w-[140px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Seguradora" /></SelectTrigger>
-                <SelectContent>{[<SelectItem key="all" value="all">Todas seguradoras</SelectItem>, ...filterOptions.seguradoras.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)]}</SelectContent>
-              </Select>
-              <Select value={filterProdutor} onValueChange={setFilterProdutor}>
-                 <SelectTrigger className="h-7 w-[140px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Produtor" /></SelectTrigger>
-                <SelectContent>{[<SelectItem key="all" value="all">Todos produtores</SelectItem>, ...filterOptions.produtores.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)]}</SelectContent>
-              </Select>
-              <Select value={filterRamo} onValueChange={setFilterRamo}>
-                 <SelectTrigger className="h-7 w-[130px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Ramo" /></SelectTrigger>
-                <SelectContent>{[<SelectItem key="all" value="all">Todos ramos</SelectItem>, ...filterOptions.ramos.map((r) => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)]}</SelectContent>
-              </Select>
+            <Select value={resultPeriodMode} onValueChange={(value: 'dashboard' | 'custom') => setResultPeriodMode(value)}>
+              <SelectTrigger className="h-7 w-[150px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Período" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dashboard">Período do dashboard</SelectItem>
+                <SelectItem value="custom">Período do modal</SelectItem>
+              </SelectContent>
+            </Select>
+            {resultPeriodMode === 'custom' && (
+              <DatePickerWithRange
+                date={resultDateRange}
+                onDateChange={setResultDateRange}
+                className="h-7"
+              />
+            )}
+
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Buscar segurado..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-7 w-[140px] border-border/60 bg-background pl-8 text-[11px]" />
             </div>
+
+            <Select value={filterSeguradora} onValueChange={setFilterSeguradora}>
+              <SelectTrigger className="h-7 w-[140px] border-border/60 bg-background text-[11px]"><SelectValue placeholder="Todas seguradoras" /></SelectTrigger>
+              <SelectContent>{[<SelectItem key="all" value="all">Todas seguradoras</SelectItem>, ...filterOptions.seguradoras.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)]}</SelectContent>
+            </Select>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 gap-1.5 border-border/60 text-[11px] text-muted-foreground hover:text-foreground">
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Mais filtros
+                  {(filterProdutor !== 'all' || filterRamo !== 'all') && (
+                    <Badge className="h-4 min-w-[16px] rounded-full bg-primary px-1 text-[9px] text-primary-foreground">
+                      {[filterProdutor !== 'all', filterRamo !== 'all'].filter(Boolean).length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[260px] space-y-3 p-3">
+                <p className="text-xs font-semibold text-muted-foreground">Filtros adicionais</p>
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-[10px] text-muted-foreground font-medium mb-1 block">Produtor</label>
+                    <Select value={filterProdutor} onValueChange={setFilterProdutor}>
+                      <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Todos produtores" /></SelectTrigger>
+                      <SelectContent>{[<SelectItem key="all" value="all">Todos produtores</SelectItem>, ...filterOptions.produtores.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)]}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground font-medium mb-1 block">Ramo</label>
+                    <Select value={filterRamo} onValueChange={setFilterRamo}>
+                      <SelectTrigger className="h-7 w-full border-border/60 bg-background text-[11px]"><SelectValue placeholder="Todos ramos" /></SelectTrigger>
+                      <SelectContent>{[<SelectItem key="all" value="all">Todos ramos</SelectItem>, ...filterOptions.ramos.map((r) => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)]}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {(filterProdutor !== 'all' || filterRamo !== 'all') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-full text-[10px] text-muted-foreground"
+                    onClick={() => { setFilterProdutor('all'); setFilterRamo('all'); }}
+                  >
+                    Limpar filtros
+                  </Button>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
