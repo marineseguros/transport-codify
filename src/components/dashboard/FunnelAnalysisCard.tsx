@@ -42,9 +42,9 @@ export function FunnelAnalysisCard({ cotacoes, allCotacoes, dashboardFilters, to
   const stages = useMemo(() => {
     const total = cotacoes.length;
     const roles = [
-      { key: 'origem', label: 'Origem', roleKey: 'produtor_origem' as const, toneClass: 'bg-primary/45' },
-      { key: 'negociador', label: 'Negociador', roleKey: 'produtor_negociador' as const, toneClass: 'bg-primary/65' },
-      { key: 'cotador', label: 'Cotador', roleKey: 'produtor_cotador' as const, toneClass: 'bg-primary' },
+      { key: 'origem', label: 'Origem', roleKey: 'produtor_origem' as const, toneClass: 'bg-primary' },
+      { key: 'negociador', label: 'Negociador', roleKey: 'produtor_negociador' as const, toneClass: 'bg-brand-orange' },
+      { key: 'cotador', label: 'Cotador', roleKey: 'produtor_cotador' as const, toneClass: 'bg-success' },
     ];
 
     return roles.map((role) => {
