@@ -449,18 +449,97 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
 
   const headerTotal = kpis.total;
 
-  // Flow data with sorting
+  // Flow data with consolidation: same CNPJ + Ramo Group + Origem=Negociador=Cotador → 1 row
   const flowData = useMemo(() => {
-    const rows = stageCotacoes.map((c) => ({
-      id: c.id,
-      numero: c.numero_cotacao,
-      segurado: c.segurado,
-      origem: c.produtor_origem?.nome || '—',
-      negociador: c.produtor_negociador?.nome || '—',
-      cotador: c.produtor_cotador?.nome || '—',
-      premio: c.valor_premio || 0,
-      status: c.status,
-    }));
+    // Group cotacoes by consolidation key
+    const consolidationMap = new Map<string, {
+      ids: string[];
+      numeros: string[];
+      segurado: string;
+      ramoAgrupado: string;
+      origem: string;
+      negociador: string;
+      cotador: string;
+      premio: number;
+      statuses: string[];
+      statusList: string[];
+      canConsolidate: boolean;
+      dias: number;
+      cotacoes: Cotacao[];
+    }>();
+
+    stageCotacoes.forEach((c) => {
+      const origemNome = c.produtor_origem?.nome || '—';
+      const negociadorNome = c.produtor_negociador?.nome || '—';
+      const cotadorNome = c.produtor_cotador?.nome || '—';
+      const ramoGroup = getRamoGroup(c.ramo);
+      const canConsolidate = origemNome === negociadorNome && negociadorNome === cotadorNome && origemNome !== '—';
+
+      const consolidationKey = canConsolidate
+        ? `${c.cpf_cnpj}_${ramoGroup}_${origemNome}`
+        : c.id; // unique key for non-consolidatable rows
+
+      const existing = consolidationMap.get(consolidationKey);
+      if (existing) {
+        existing.ids.push(c.id);
+        existing.numeros.push(c.numero_cotacao);
+        existing.premio += c.valor_premio || 0;
+        existing.statuses.push(c.status);
+        if (!existing.statusList.includes(c.status)) existing.statusList.push(c.status);
+        existing.cotacoes.push(c);
+      } else {
+        // Calculate dias
+        const startDate = new Date(c.data_cotacao).getTime();
+        const endDate = c.data_fechamento ? new Date(c.data_fechamento).getTime() : Date.now();
+        const dias = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+        consolidationMap.set(consolidationKey, {
+          ids: [c.id],
+          numeros: [c.numero_cotacao],
+          segurado: c.segurado,
+          ramoAgrupado: ramoGroup,
+          origem: origemNome,
+          negociador: negociadorNome,
+          cotador: cotadorNome,
+          premio: c.valor_premio || 0,
+          statuses: [c.status],
+          statusList: [c.status],
+          canConsolidate,
+          dias,
+          cotacoes: [c],
+        });
+      }
+    });
+
+    // Recalculate dias for consolidated rows (max range)
+    const rows = Array.from(consolidationMap.values()).map((group) => {
+      let dias = group.dias;
+      if (group.cotacoes.length > 1) {
+        const starts = group.cotacoes.map(c => new Date(c.data_cotacao).getTime());
+        const ends = group.cotacoes.map(c => c.data_fechamento ? new Date(c.data_fechamento).getTime() : Date.now());
+        const minStart = Math.min(...starts);
+        const maxEnd = Math.max(...ends);
+        dias = Math.floor((maxEnd - minStart) / (1000 * 60 * 60 * 24));
+      }
+
+      return {
+        id: group.ids[0],
+        ids: group.ids,
+        numeros: group.numeros,
+        numero: group.numeros[0],
+        segurado: group.segurado,
+        ramoAgrupado: group.ramoAgrupado,
+        origem: group.origem,
+        negociador: group.negociador,
+        cotador: group.cotador,
+        premio: group.premio,
+        status: group.statusList.length === 1 ? group.statusList[0] : 'Múltiplos',
+        statusList: group.statusList,
+        statusCount: group.statuses.length,
+        consolidated: group.cotacoes.length > 1,
+        dias,
+      };
+    });
 
     rows.sort((a, b) => {
       let cmp = 0;
@@ -754,6 +833,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                           <TableHead className="cursor-pointer" onClick={() => toggleSort('segurado')}>
                             <div className="flex items-center gap-1">Segurado <SortIcon field="segurado" /></div>
                           </TableHead>
+                          <TableHead className="text-center text-[10px]">Ramo</TableHead>
                           <TableHead className="text-center">
                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${activeStage === 'origem' ? 'bg-primary/20 text-primary ring-1 ring-primary/40' : 'bg-primary/10 text-primary'}`}>Origem</span>
                           </TableHead>
@@ -769,6 +849,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                           <TableHead className="text-center cursor-pointer" onClick={() => toggleSort('status')}>
                             <div className="flex items-center justify-center gap-1">Status <SortIcon field="status" /></div>
                           </TableHead>
+                          <TableHead className="text-center text-[10px]">Dias</TableHead>
                           <TableHead className="text-right cursor-pointer" onClick={() => toggleSort('premio')}>
                             <div className="flex items-center justify-end gap-1">Prêmio <SortIcon field="premio" /></div>
                           </TableHead>
@@ -777,20 +858,43 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                       <TableBody>
                         {flowData.map((row) =>
                           <TableRow key={row.id} className="hover:bg-muted/30 h-8">
-                            <TableCell className="text-[10px] text-muted-foreground font-mono py-1">{row.numero}</TableCell>
+                            <TableCell className="text-[10px] text-muted-foreground font-mono py-1">
+                              {row.consolidated ? (
+                                <span title={row.numeros.join(', ')}>{row.numeros[0]} <span className="text-primary/70">(+{row.numeros.length - 1})</span></span>
+                              ) : row.numero}
+                            </TableCell>
                             <TableCell className="font-medium text-xs max-w-[160px] truncate py-1">{row.segurado}</TableCell>
+                            <TableCell className="text-center text-[10px] text-muted-foreground py-1 max-w-[100px] truncate" title={row.ramoAgrupado}>{row.ramoAgrupado}</TableCell>
                             <TableCell className={`text-center text-xs font-medium text-primary py-1 ${roleColumnStyle('origem')}`}>{row.origem}</TableCell>
                             <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
                             <TableCell className={`text-center text-xs font-medium text-brand-orange py-1 ${roleColumnStyle('negociador')}`}>{row.negociador}</TableCell>
                             <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
                             <TableCell className={`text-center text-xs font-medium text-success py-1 ${roleColumnStyle('cotador')}`}>{row.cotador}</TableCell>
                             <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
-                            <TableCell className="text-center py-1">{statusBadge(row.status)}</TableCell>
+                            <TableCell className="text-center py-1">
+                              {row.consolidated ? (
+                                <div className="flex flex-col items-center gap-0.5" title={row.statusList.join(', ')}>
+                                  <Badge className="bg-muted text-muted-foreground border-border text-[9px] gap-1">
+                                    {row.statusCount}x
+                                  </Badge>
+                                  <div className="flex items-center gap-0.5">
+                                    {row.statusList.map((s) => (
+                                      <div key={s} className={`h-1.5 w-1.5 rounded-full ${
+                                        s === 'Em cotação' ? 'bg-primary' :
+                                        CLOSED_STATUSES.includes(s) ? 'bg-success' :
+                                        s === 'Declinado' ? 'bg-destructive' : 'bg-muted-foreground'
+                                      }`} title={s} />
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : statusBadge(row.status)}
+                            </TableCell>
+                            <TableCell className="text-center text-[10px] text-muted-foreground py-1">{row.dias}d</TableCell>
                             <TableCell className="text-right text-xs font-semibold py-1">{formatCurrency(row.premio)}</TableCell>
                           </TableRow>
                         )}
                         {flowData.length === 0 &&
-                          <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">Nenhum dado disponível.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-6">Nenhum dado disponível.</TableCell></TableRow>
                         }
                       </TableBody>
                     </Table>
