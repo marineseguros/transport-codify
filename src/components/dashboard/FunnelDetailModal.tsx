@@ -552,6 +552,52 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     return rows;
   }, [stageCotacoes, sortField, sortDir]);
 
+  // Composition by status with segurado names (using same consolidation criteria)
+  const statusComposition = useMemo(() => {
+    const statusMap = new Map<string, { count: number; segurados: string[]; premio: number }>();
+
+    flowData.forEach((row) => {
+      if (row.consolidated) {
+        // Consolidated row may have multiple statuses
+        row.statusList.forEach((s) => {
+          const entry = statusMap.get(s) || { count: 0, segurados: [], premio: 0 };
+          entry.count += 1;
+          if (!entry.segurados.includes(row.segurado)) entry.segurados.push(row.segurado);
+          statusMap.set(s, entry);
+        });
+        // Assign premio proportionally or to first status
+        const firstStatus = row.statusList[0];
+        const entry = statusMap.get(firstStatus)!;
+        entry.premio += row.premio;
+        statusMap.set(firstStatus, entry);
+      } else {
+        const entry = statusMap.get(row.status) || { count: 0, segurados: [], premio: 0 };
+        entry.count += 1;
+        if (!entry.segurados.includes(row.segurado)) entry.segurados.push(row.segurado);
+        entry.premio += row.premio;
+        statusMap.set(row.status, entry);
+      }
+    });
+
+    const totalCount = flowData.length;
+    const statusOrder = ['Em cotação', 'Negócio fechado', 'Fechamento congênere', 'Declinado'];
+    return {
+      total: totalCount,
+      items: statusOrder
+        .filter((s) => statusMap.has(s))
+        .map((s) => {
+          const data = statusMap.get(s)!;
+          return {
+            status: s,
+            count: data.count,
+            segurados: data.segurados.sort((a, b) => a.localeCompare(b)),
+            premio: data.premio,
+            pct: totalCount > 0 ? (data.count / totalCount) * 100 : 0,
+          };
+        }),
+    };
+  }, [flowData]);
+
   // Seguradora analysis
   const seguradoraAnalysis = useMemo(() => buildDistinctInsurerAnalysis(stageCotacoes), [stageCotacoes]);
 
