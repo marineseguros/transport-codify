@@ -807,132 +807,123 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
 
               {/* ─── Tab: Fluxo Comercial ─── */}
               <TabsContent value="fluxo" className="space-y-4">
-                {/* Producer ranking for active role - horizontal bar chart */}
-                <Card>
-                  <CardContent className="p-4">
-                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-primary" />
-                      Distribuição por {ROLE_LABELS[activeStage]?.replace('Produtor ', '')}
-                    </h4>
-                    <div className="space-y-2">
-                      {produtorRanking.map((p, i) => {
-                        const maxTotal = produtorRanking[0]?.total || 1;
-                        const conv = p.total > 0 ? (p.fechados / p.total * 100) : 0;
-                        return (
-                          <div key={p.nome} className="flex items-center gap-3">
-                            <span className="text-xs font-semibold text-muted-foreground w-5 text-right">{i + 1}.</span>
-                            <span className="text-xs font-medium w-[100px] truncate">{p.nome}</span>
-                            <div className="flex-1 flex items-center gap-1 h-6">
-                              {p.emCotacao > 0 && (
-                                <div
-                                  className="h-full rounded-l bg-primary/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[18px]"
-                                  style={{ width: `${(p.emCotacao / maxTotal) * 100}%` }}
-                                  title={`Em cotação: ${p.emCotacao}`}
-                                >{p.emCotacao}</div>
-                              )}
-                              {p.fechados > 0 && (
-                                <div
-                                  className="h-full bg-success/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[18px]"
-                                  style={{ width: `${(p.fechados / maxTotal) * 100}%` }}
-                                  title={`Fechados: ${p.fechados}`}
-                                >{p.fechados}</div>
-                              )}
-                              {p.declinados > 0 && (
-                                <div
-                                  className="h-full rounded-r bg-destructive/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[18px]"
-                                  style={{ width: `${(p.declinados / maxTotal) * 100}%` }}
-                                  title={`Declinados: ${p.declinados}`}
-                                >{p.declinados}</div>
-                              )}
+                {/* Distribution + Composition side by side */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Distribution by active role */}
+                  <Card>
+                    <CardContent className="p-3">
+                      <h4 className="text-xs font-semibold mb-2 flex items-center gap-2">
+                        <BarChart3 className="h-3.5 w-3.5 text-primary" />
+                        Distribuição por {ROLE_LABELS[activeStage]?.replace('Produtor ', '')}
+                      </h4>
+                      <div className="space-y-1.5">
+                        {produtorRanking.map((p, i) => {
+                          const maxTotal = produtorRanking[0]?.total || 1;
+                          const conv = p.total > 0 ? (p.fechados / p.total * 100) : 0;
+                          return (
+                            <div key={p.nome} className="flex items-center gap-2">
+                              <span className="text-[10px] font-semibold text-muted-foreground w-4 text-right">{i + 1}.</span>
+                              <span className="text-[10px] font-medium w-[80px] truncate">{p.nome}</span>
+                              <div className="flex-1 flex items-center gap-0.5 h-5">
+                                {p.emCotacao > 0 && (
+                                  <div
+                                    className="h-full rounded-l bg-primary/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[16px]"
+                                    style={{ width: `${(p.emCotacao / maxTotal) * 100}%` }}
+                                    title={`Em cotação: ${p.emCotacao}`}
+                                  >{p.emCotacao}</div>
+                                )}
+                                {p.fechados > 0 && (
+                                  <div
+                                    className="h-full bg-success/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[16px]"
+                                    style={{ width: `${(p.fechados / maxTotal) * 100}%` }}
+                                    title={`Fechados: ${p.fechados}`}
+                                  >{p.fechados}</div>
+                                )}
+                                {p.declinados > 0 && (
+                                  <div
+                                    className="h-full rounded-r bg-destructive/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[16px]"
+                                    style={{ width: `${(p.declinados / maxTotal) * 100}%` }}
+                                    title={`Declinados: ${p.declinados}`}
+                                  >{p.declinados}</div>
+                                )}
+                              </div>
+                              <Badge className={`text-[8px] shrink-0 ${conv >= 40 ? 'bg-success/15 text-success border-success/30' : conv >= 20 ? 'bg-warning/15 text-warning border-warning/30' : 'bg-muted text-muted-foreground border-border'}`}>
+                                {conv.toFixed(0)}%
+                              </Badge>
+                              <span className="text-[9px] text-success font-semibold w-[65px] text-right shrink-0">{formatCurrency(p.premio)}</span>
                             </div>
-                            <Badge className={`text-[9px] shrink-0 ${conv >= 40 ? 'bg-success/15 text-success border-success/30' : conv >= 20 ? 'bg-warning/15 text-warning border-warning/30' : 'bg-muted text-muted-foreground border-border'}`}>
-                              {conv.toFixed(0)}%
-                            </Badge>
-                            <span className="text-[10px] text-success font-semibold w-[80px] text-right shrink-0">{formatCurrency(p.premio)}</span>
-                          </div>
-                        );
-                      })}
-                      {produtorRanking.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Nenhum produtor encontrado.</p>}
-                    </div>
-                    {/* Legend */}
-                    <div className="flex items-center gap-4 mt-3 pt-2 border-t">
-                      <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-sm bg-primary/80" /><span className="text-[10px] text-muted-foreground">Em cotação</span></div>
-                      <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-sm bg-success/80" /><span className="text-[10px] text-muted-foreground">Fechados</span></div>
-                      <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-sm bg-destructive/80" /><span className="text-[10px] text-muted-foreground">Declinados</span></div>
-                    </div>
-                  </CardContent>
-                </Card>
+                          );
+                        })}
+                        {produtorRanking.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Nenhum produtor encontrado.</p>}
+                      </div>
+                      <div className="flex items-center gap-3 mt-2 pt-1.5 border-t">
+                        <div className="flex items-center gap-1"><div className="h-2 w-2 rounded-sm bg-primary/80" /><span className="text-[9px] text-muted-foreground">Em cotação</span></div>
+                        <div className="flex items-center gap-1"><div className="h-2 w-2 rounded-sm bg-success/80" /><span className="text-[9px] text-muted-foreground">Fechados</span></div>
+                        <div className="flex items-center gap-1"><div className="h-2 w-2 rounded-sm bg-destructive/80" /><span className="text-[9px] text-muted-foreground">Declinados</span></div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                {/* Composição por Status */}
-                <Card>
-                  <CardContent className="p-4">
-                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <Layers className="h-4 w-4 text-primary" />
-                      Composição por Status
-                      <span className="text-[10px] text-muted-foreground font-normal ml-auto">{statusComposition.total} registros consolidados</span>
-                    </h4>
-                    <TooltipProvider delayDuration={200}>
-                      {/* Stacked bar */}
-                      <div className="flex items-center gap-0.5 h-8 rounded-lg overflow-hidden mb-3">
-                        {statusComposition.items.map((item) => {
-                          const bgClass = item.status === 'Em cotação' ? 'bg-primary'
-                            : CLOSED_STATUSES.includes(item.status) ? 'bg-success'
-                            : item.status === 'Declinado' ? 'bg-destructive' : 'bg-muted';
-                          return (
-                            <UITooltip key={item.status}>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className={`h-full ${bgClass} flex items-center justify-center text-[10px] text-white font-bold cursor-default transition-opacity hover:opacity-90`}
-                                  style={{ width: `${Math.max(item.pct, 3)}%` }}
-                                >
-                                  {item.pct >= 8 ? `${item.count}` : ''}
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent side="bottom" className="max-w-[280px]">
-                                <p className="font-semibold text-xs mb-1">{item.status} — {item.count} registro(s)</p>
-                                <div className="max-h-[200px] overflow-y-auto space-y-0.5">
-                                  {item.segurados.map((s) => (
-                                    <p key={s} className="text-[11px] text-muted-foreground">• {s}</p>
-                                  ))}
-                                </div>
-                              </TooltipContent>
-                            </UITooltip>
-                          );
-                        })}
-                      </div>
-                      {/* Status cards */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {statusComposition.items.map((item) => {
-                          const colorClass = item.status === 'Em cotação' ? 'text-primary border-primary/20 bg-primary/5'
-                            : CLOSED_STATUSES.includes(item.status) ? 'text-success border-success/20 bg-success/5'
-                            : item.status === 'Declinado' ? 'text-destructive border-destructive/20 bg-destructive/5' : 'text-muted-foreground border-border bg-muted/5';
-                          return (
-                            <UITooltip key={item.status}>
-                              <TooltipTrigger asChild>
-                                <div className={`rounded-lg border p-2.5 cursor-default ${colorClass}`}>
-                                  <p className="text-[10px] text-muted-foreground">{item.status}</p>
-                                  <div className="flex items-baseline gap-2">
-                                    <span className="text-lg font-bold">{item.count}</span>
-                                    <span className="text-[10px] text-muted-foreground">({item.pct.toFixed(0)}%)</span>
+                  {/* Composição por Produtor (Origem → Negociador → Cotador) */}
+                  <Card>
+                    <CardContent className="p-3">
+                      <h4 className="text-xs font-semibold mb-2 flex items-center gap-2">
+                        <Layers className="h-3.5 w-3.5 text-primary" />
+                        Composição por Produtor
+                        <span className="text-[9px] text-muted-foreground font-normal ml-auto">{statusComposition.total} registros</span>
+                      </h4>
+                      <TooltipProvider delayDuration={200}>
+                        <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+                          {flowData.reduce<{ key: string; origem: string; negociador: string; cotador: string; count: number; segurados: string[]; premio: number }[]>((acc, row) => {
+                            const key = `${row.origem}→${row.negociador}→${row.cotador}`;
+                            const existing = acc.find(a => a.key === key);
+                            if (existing) {
+                              existing.count += 1;
+                              if (!existing.segurados.includes(row.segurado)) existing.segurados.push(row.segurado);
+                              existing.premio += row.premio;
+                            } else {
+                              acc.push({ key, origem: row.origem, negociador: row.negociador, cotador: row.cotador, count: 1, segurados: [row.segurado], premio: row.premio });
+                            }
+                            return acc;
+                          }, []).sort((a, b) => b.count - a.count).map((group) => {
+                            const maxCount = flowData.length || 1;
+                            return (
+                              <UITooltip key={group.key}>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center gap-2 cursor-default group hover:bg-muted/30 rounded px-1 py-0.5">
+                                    <div className="flex items-center gap-1 shrink-0 w-[200px]">
+                                      <span className="text-[10px] font-medium text-primary truncate max-w-[60px]" title={group.origem}>{group.origem}</span>
+                                      <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/50 shrink-0" />
+                                      <span className="text-[10px] font-medium text-brand-orange truncate max-w-[60px]" title={group.negociador}>{group.negociador}</span>
+                                      <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/50 shrink-0" />
+                                      <span className="text-[10px] font-medium text-success truncate max-w-[60px]" title={group.cotador}>{group.cotador}</span>
+                                    </div>
+                                    <div className="flex-1 h-4 bg-muted/30 rounded overflow-hidden">
+                                      <div
+                                        className="h-full bg-primary/60 rounded flex items-center justify-center text-[8px] text-white font-bold"
+                                        style={{ width: `${(group.count / maxCount) * 100}%`, minWidth: '16px' }}
+                                      >{group.count}</div>
+                                    </div>
+                                    <span className="text-[9px] text-muted-foreground font-medium w-[60px] text-right shrink-0">{formatCurrency(group.premio)}</span>
                                   </div>
-                                  {item.premio > 0 && <p className="text-[10px] font-medium mt-0.5">{formatCurrency(item.premio)}</p>}
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent side="bottom" className="max-w-[280px]">
-                                <p className="font-semibold text-xs mb-1">Segurados — {item.status}</p>
-                                <div className="max-h-[200px] overflow-y-auto space-y-0.5">
-                                  {item.segurados.map((s) => (
-                                    <p key={s} className="text-[11px] text-muted-foreground">• {s}</p>
-                                  ))}
-                                </div>
-                              </TooltipContent>
-                            </UITooltip>
-                          );
-                        })}
-                      </div>
-                    </TooltipProvider>
-                  </CardContent>
-                </Card>
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="max-w-[300px]">
+                                  <p className="font-semibold text-xs mb-1">{group.origem} → {group.negociador} → {group.cotador}</p>
+                                  <p className="text-[10px] text-muted-foreground mb-1.5">{group.count} cotação(ões) · {formatCurrency(group.premio)}</p>
+                                  <div className="max-h-[200px] overflow-y-auto space-y-0.5">
+                                    {group.segurados.sort((a, b) => a.localeCompare(b)).map((s) => (
+                                      <p key={s} className="text-[11px] text-muted-foreground">• {s}</p>
+                                    ))}
+                                  </div>
+                                </TooltipContent>
+                              </UITooltip>
+                            );
+                          })}
+                        </div>
+                      </TooltipProvider>
+                    </CardContent>
+                  </Card>
+                </div>
 
                 {/* Table with sorting - highlight active role column */}
                 <Card>
