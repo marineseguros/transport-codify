@@ -833,6 +833,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                           <TableHead className="cursor-pointer" onClick={() => toggleSort('segurado')}>
                             <div className="flex items-center gap-1">Segurado <SortIcon field="segurado" /></div>
                           </TableHead>
+                          <TableHead className="text-center text-[10px]">Ramo</TableHead>
                           <TableHead className="text-center">
                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${activeStage === 'origem' ? 'bg-primary/20 text-primary ring-1 ring-primary/40' : 'bg-primary/10 text-primary'}`}>Origem</span>
                           </TableHead>
@@ -848,6 +849,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                           <TableHead className="text-center cursor-pointer" onClick={() => toggleSort('status')}>
                             <div className="flex items-center justify-center gap-1">Status <SortIcon field="status" /></div>
                           </TableHead>
+                          <TableHead className="text-center text-[10px]">Dias</TableHead>
                           <TableHead className="text-right cursor-pointer" onClick={() => toggleSort('premio')}>
                             <div className="flex items-center justify-end gap-1">Prêmio <SortIcon field="premio" /></div>
                           </TableHead>
@@ -856,20 +858,43 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                       <TableBody>
                         {flowData.map((row) =>
                           <TableRow key={row.id} className="hover:bg-muted/30 h-8">
-                            <TableCell className="text-[10px] text-muted-foreground font-mono py-1">{row.numero}</TableCell>
+                            <TableCell className="text-[10px] text-muted-foreground font-mono py-1">
+                              {row.consolidated ? (
+                                <span title={row.numeros.join(', ')}>{row.numeros[0]} <span className="text-primary/70">(+{row.numeros.length - 1})</span></span>
+                              ) : row.numero}
+                            </TableCell>
                             <TableCell className="font-medium text-xs max-w-[160px] truncate py-1">{row.segurado}</TableCell>
+                            <TableCell className="text-center text-[10px] text-muted-foreground py-1 max-w-[100px] truncate" title={row.ramoAgrupado}>{row.ramoAgrupado}</TableCell>
                             <TableCell className={`text-center text-xs font-medium text-primary py-1 ${roleColumnStyle('origem')}`}>{row.origem}</TableCell>
                             <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
                             <TableCell className={`text-center text-xs font-medium text-brand-orange py-1 ${roleColumnStyle('negociador')}`}>{row.negociador}</TableCell>
                             <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
                             <TableCell className={`text-center text-xs font-medium text-success py-1 ${roleColumnStyle('cotador')}`}>{row.cotador}</TableCell>
                             <TableCell className="text-center py-1"><ArrowRight className="h-3 w-3 text-muted-foreground/40 mx-auto" /></TableCell>
-                            <TableCell className="text-center py-1">{statusBadge(row.status)}</TableCell>
+                            <TableCell className="text-center py-1">
+                              {row.consolidated ? (
+                                <div className="flex flex-col items-center gap-0.5" title={row.statusList.join(', ')}>
+                                  <Badge className="bg-muted text-muted-foreground border-border text-[9px] gap-1">
+                                    {row.statusCount}x
+                                  </Badge>
+                                  <div className="flex items-center gap-0.5">
+                                    {row.statusList.map((s) => (
+                                      <div key={s} className={`h-1.5 w-1.5 rounded-full ${
+                                        s === 'Em cotação' ? 'bg-primary' :
+                                        CLOSED_STATUSES.includes(s) ? 'bg-success' :
+                                        s === 'Declinado' ? 'bg-destructive' : 'bg-muted-foreground'
+                                      }`} title={s} />
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : statusBadge(row.status)}
+                            </TableCell>
+                            <TableCell className="text-center text-[10px] text-muted-foreground py-1">{row.dias}d</TableCell>
                             <TableCell className="text-right text-xs font-semibold py-1">{formatCurrency(row.premio)}</TableCell>
                           </TableRow>
                         )}
                         {flowData.length === 0 &&
-                          <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">Nenhum dado disponível.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-6">Nenhum dado disponível.</TableCell></TableRow>
                         }
                       </TableBody>
                     </Table>
