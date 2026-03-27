@@ -863,6 +863,77 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                   </CardContent>
                 </Card>
 
+                {/* Composição por Status */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-primary" />
+                      Composição por Status
+                      <span className="text-[10px] text-muted-foreground font-normal ml-auto">{statusComposition.total} registros consolidados</span>
+                    </h4>
+                    <TooltipProvider delayDuration={200}>
+                      {/* Stacked bar */}
+                      <div className="flex items-center gap-0.5 h-8 rounded-lg overflow-hidden mb-3">
+                        {statusComposition.items.map((item) => {
+                          const bgClass = item.status === 'Em cotação' ? 'bg-primary'
+                            : CLOSED_STATUSES.includes(item.status) ? 'bg-success'
+                            : item.status === 'Declinado' ? 'bg-destructive' : 'bg-muted';
+                          return (
+                            <UITooltip key={item.status}>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className={`h-full ${bgClass} flex items-center justify-center text-[10px] text-white font-bold cursor-default transition-opacity hover:opacity-90`}
+                                  style={{ width: `${Math.max(item.pct, 3)}%` }}
+                                >
+                                  {item.pct >= 8 ? `${item.count}` : ''}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-[280px]">
+                                <p className="font-semibold text-xs mb-1">{item.status} — {item.count} registro(s)</p>
+                                <div className="max-h-[200px] overflow-y-auto space-y-0.5">
+                                  {item.segurados.map((s) => (
+                                    <p key={s} className="text-[11px] text-muted-foreground">• {s}</p>
+                                  ))}
+                                </div>
+                              </TooltipContent>
+                            </UITooltip>
+                          );
+                        })}
+                      </div>
+                      {/* Status cards */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {statusComposition.items.map((item) => {
+                          const colorClass = item.status === 'Em cotação' ? 'text-primary border-primary/20 bg-primary/5'
+                            : CLOSED_STATUSES.includes(item.status) ? 'text-success border-success/20 bg-success/5'
+                            : item.status === 'Declinado' ? 'text-destructive border-destructive/20 bg-destructive/5' : 'text-muted-foreground border-border bg-muted/5';
+                          return (
+                            <UITooltip key={item.status}>
+                              <TooltipTrigger asChild>
+                                <div className={`rounded-lg border p-2.5 cursor-default ${colorClass}`}>
+                                  <p className="text-[10px] text-muted-foreground">{item.status}</p>
+                                  <div className="flex items-baseline gap-2">
+                                    <span className="text-lg font-bold">{item.count}</span>
+                                    <span className="text-[10px] text-muted-foreground">({item.pct.toFixed(0)}%)</span>
+                                  </div>
+                                  {item.premio > 0 && <p className="text-[10px] font-medium mt-0.5">{formatCurrency(item.premio)}</p>}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-[280px]">
+                                <p className="font-semibold text-xs mb-1">Segurados — {item.status}</p>
+                                <div className="max-h-[200px] overflow-y-auto space-y-0.5">
+                                  {item.segurados.map((s) => (
+                                    <p key={s} className="text-[11px] text-muted-foreground">• {s}</p>
+                                  ))}
+                                </div>
+                              </TooltipContent>
+                            </UITooltip>
+                          );
+                        })}
+                      </div>
+                    </TooltipProvider>
+                  </CardContent>
+                </Card>
+
                 {/* Table with sorting - highlight active role column */}
                 <Card>
                   <CardContent className="p-4">
