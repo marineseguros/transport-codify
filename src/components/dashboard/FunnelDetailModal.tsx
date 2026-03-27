@@ -449,18 +449,97 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
 
   const headerTotal = kpis.total;
 
-  // Flow data with sorting
+  // Flow data with consolidation: same CNPJ + Ramo Group + Origem=Negociador=Cotador → 1 row
   const flowData = useMemo(() => {
-    const rows = stageCotacoes.map((c) => ({
-      id: c.id,
-      numero: c.numero_cotacao,
-      segurado: c.segurado,
-      origem: c.produtor_origem?.nome || '—',
-      negociador: c.produtor_negociador?.nome || '—',
-      cotador: c.produtor_cotador?.nome || '—',
-      premio: c.valor_premio || 0,
-      status: c.status,
-    }));
+    // Group cotacoes by consolidation key
+    const consolidationMap = new Map<string, {
+      ids: string[];
+      numeros: string[];
+      segurado: string;
+      ramoAgrupado: string;
+      origem: string;
+      negociador: string;
+      cotador: string;
+      premio: number;
+      statuses: string[];
+      statusList: string[];
+      canConsolidate: boolean;
+      dias: number;
+      cotacoes: Cotacao[];
+    }>();
+
+    stageCotacoes.forEach((c) => {
+      const origemNome = c.produtor_origem?.nome || '—';
+      const negociadorNome = c.produtor_negociador?.nome || '—';
+      const cotadorNome = c.produtor_cotador?.nome || '—';
+      const ramoGroup = getRamoGroup(c.ramo);
+      const canConsolidate = origemNome === negociadorNome && negociadorNome === cotadorNome && origemNome !== '—';
+
+      const consolidationKey = canConsolidate
+        ? `${c.cpf_cnpj}_${ramoGroup}_${origemNome}`
+        : c.id; // unique key for non-consolidatable rows
+
+      const existing = consolidationMap.get(consolidationKey);
+      if (existing) {
+        existing.ids.push(c.id);
+        existing.numeros.push(c.numero_cotacao);
+        existing.premio += c.valor_premio || 0;
+        existing.statuses.push(c.status);
+        if (!existing.statusList.includes(c.status)) existing.statusList.push(c.status);
+        existing.cotacoes.push(c);
+      } else {
+        // Calculate dias
+        const startDate = new Date(c.data_cotacao).getTime();
+        const endDate = c.data_fechamento ? new Date(c.data_fechamento).getTime() : Date.now();
+        const dias = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+        consolidationMap.set(consolidationKey, {
+          ids: [c.id],
+          numeros: [c.numero_cotacao],
+          segurado: c.segurado,
+          ramoAgrupado: ramoGroup,
+          origem: origemNome,
+          negociador: negociadorNome,
+          cotador: cotadorNome,
+          premio: c.valor_premio || 0,
+          statuses: [c.status],
+          statusList: [c.status],
+          canConsolidate,
+          dias,
+          cotacoes: [c],
+        });
+      }
+    });
+
+    // Recalculate dias for consolidated rows (max range)
+    const rows = Array.from(consolidationMap.values()).map((group) => {
+      let dias = group.dias;
+      if (group.cotacoes.length > 1) {
+        const starts = group.cotacoes.map(c => new Date(c.data_cotacao).getTime());
+        const ends = group.cotacoes.map(c => c.data_fechamento ? new Date(c.data_fechamento).getTime() : Date.now());
+        const minStart = Math.min(...starts);
+        const maxEnd = Math.max(...ends);
+        dias = Math.floor((maxEnd - minStart) / (1000 * 60 * 60 * 24));
+      }
+
+      return {
+        id: group.ids[0],
+        ids: group.ids,
+        numeros: group.numeros,
+        numero: group.numeros[0],
+        segurado: group.segurado,
+        ramoAgrupado: group.ramoAgrupado,
+        origem: group.origem,
+        negociador: group.negociador,
+        cotador: group.cotador,
+        premio: group.premio,
+        status: group.statusList.length === 1 ? group.statusList[0] : 'Múltiplos',
+        statusList: group.statusList,
+        statusCount: group.statuses.length,
+        consolidated: group.cotacoes.length > 1,
+        dias,
+      };
+    });
 
     rows.sort((a, b) => {
       let cmp = 0;
