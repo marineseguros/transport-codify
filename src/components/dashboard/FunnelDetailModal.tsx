@@ -1276,6 +1276,228 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
           </div>
         </div>
       </DialogContent>
+
+      {/* ─── Sub-Modal: Flow Detail ─── */}
+      {selectedFlow && (
+        <FlowDetailSubModal
+          open={!!selectedFlow}
+          onOpenChange={(o) => !o && setSelectedFlow(null)}
+          flow={selectedFlow}
+          flowRecords={flowData.filter(r => r.origem === selectedFlow.origem && r.negociador === selectedFlow.negociador && r.cotador === selectedFlow.cotador)}
+          stageCotacoes={stageCotacoes}
+          formatCurrency={formatCurrency}
+          statusBadge={statusBadge}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+/* ─── Flow Detail Sub-Modal ─── */
+function FlowDetailSubModal({
+  open, onOpenChange, flow, flowRecords, stageCotacoes, formatCurrency: fmtCurrency, statusBadge
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  flow: { origem: string; negociador: string; cotador: string };
+  flowRecords: typeof Array.prototype[];
+  stageCotacoes: Cotacao[];
+  formatCurrency: (v: number) => string;
+  statusBadge: (status: string) => React.ReactNode;
+}) {
+  const flowCotacoes = useMemo(() => {
+    return stageCotacoes.filter(c => {
+      const o = c.produtor_origem?.nome || '—';
+      const n = c.produtor_negociador?.nome || '—';
+      const ct = c.produtor_cotador?.nome || '—';
+      return o === flow.origem && n === flow.negociador && ct === flow.cotador;
+    });
+  }, [stageCotacoes, flow]);
+
+  const totalPremio = flowCotacoes.reduce((s, c) => s + (c.valor_premio || 0), 0);
+
+  // Seguradora breakdown
+  const seguradoraData = useMemo(() => {
+    const map = new Map<string, { nome: string; count: number; premio: number; segurados: Set<string> }>();
+    flowCotacoes.forEach(c => {
+      const nome = c.seguradora?.nome || 'Sem seguradora';
+      const entry = map.get(nome) || { nome, count: 0, premio: 0, segurados: new Set<string>() };
+      entry.count += 1;
+      entry.premio += c.valor_premio || 0;
+      entry.segurados.add(c.segurado);
+      map.set(nome, entry);
+    });
+    return Array.from(map.values())
+      .map(e => ({ ...e, segurados: Array.from(e.segurados).sort((a, b) => a.localeCompare(b)) }))
+      .sort((a, b) => b.count - a.count);
+  }, [flowCotacoes]);
+
+  // Ramo breakdown
+  const ramoData = useMemo(() => {
+    const map = new Map<string, { nome: string; count: number; premio: number; segurados: Set<string> }>();
+    flowCotacoes.forEach(c => {
+      const nome = c.ramo?.ramo_agrupado || c.ramo?.descricao || 'Sem ramo';
+      const entry = map.get(nome) || { nome, count: 0, premio: 0, segurados: new Set<string>() };
+      entry.count += 1;
+      entry.premio += c.valor_premio || 0;
+      entry.segurados.add(c.segurado);
+      map.set(nome, entry);
+    });
+    return Array.from(map.values())
+      .map(e => ({ ...e, segurados: Array.from(e.segurados).sort((a, b) => a.localeCompare(b)) }))
+      .sort((a, b) => b.count - a.count);
+  }, [flowCotacoes]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden p-0 flex flex-col">
+        <div className="border-b border-border/60 bg-gradient-to-b from-muted/20 to-transparent px-5 pt-4 pb-3">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <Layers className="h-4 w-4 text-primary" />
+              Detalhamento do Fluxo
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-2 flex items-center gap-2">
+            <Badge className="bg-primary/15 text-primary border-primary/30 text-[11px]">{flow.origem}</Badge>
+            <ArrowRight className="h-3 w-3 text-muted-foreground/50" />
+            <Badge className="bg-brand-orange/15 text-brand-orange border-brand-orange/30 text-[11px]">{flow.negociador}</Badge>
+            <ArrowRight className="h-3 w-3 text-muted-foreground/50" />
+            <Badge className="bg-success/15 text-success border-success/30 text-[11px]">{flow.cotador}</Badge>
+            <span className="ml-3 text-xs text-muted-foreground">{flowCotacoes.length} cotações · {fmtCurrency(totalPremio)}</span>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 pb-4">
+          <Tabs defaultValue="geral" className="mt-3">
+            <TabsList className="h-8 w-full">
+              <TabsTrigger value="geral" className="flex-1 text-[11px]">Geral</TabsTrigger>
+              <TabsTrigger value="seguradoras" className="flex-1 text-[11px]">Seguradoras</TabsTrigger>
+              <TabsTrigger value="ramo" className="flex-1 text-[11px]">Ramo</TabsTrigger>
+            </TabsList>
+
+            {/* Geral */}
+            <TabsContent value="geral" className="mt-3">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[80px] text-[10px]">Nº</TableHead>
+                    <TableHead className="text-[10px]">Segurado</TableHead>
+                    <TableHead className="text-center text-[10px]">Ramo</TableHead>
+                    <TableHead className="text-center text-[10px]">Seguradora</TableHead>
+                    <TableHead className="text-center text-[10px]">Status</TableHead>
+                    <TableHead className="text-center text-[10px]">Dias</TableHead>
+                    <TableHead className="text-right text-[10px]">Prêmio</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {flowCotacoes.map(c => {
+                    const dias = Math.floor(((c.data_fechamento ? new Date(c.data_fechamento).getTime() : Date.now()) - new Date(c.data_cotacao).getTime()) / (1000 * 60 * 60 * 24));
+                    return (
+                      <TableRow key={c.id} className="hover:bg-muted/30 h-8">
+                        <TableCell className="text-[10px] text-muted-foreground font-mono py-1">{c.numero_cotacao}</TableCell>
+                        <TableCell className="font-medium text-xs max-w-[180px] truncate py-1">{c.segurado}</TableCell>
+                        <TableCell className="text-center text-[10px] text-muted-foreground py-1">{c.ramo?.ramo_agrupado || c.ramo?.descricao || '—'}</TableCell>
+                        <TableCell className="text-center text-[10px] text-muted-foreground py-1">{c.seguradora?.nome || '—'}</TableCell>
+                        <TableCell className="text-center py-1">{statusBadge(c.status)}</TableCell>
+                        <TableCell className="text-center text-[10px] text-muted-foreground py-1">{dias}d</TableCell>
+                        <TableCell className="text-right text-xs font-semibold py-1">{fmtCurrency(c.valor_premio || 0)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {flowCotacoes.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Nenhum registro.</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+            </TabsContent>
+
+            {/* Seguradoras */}
+            <TabsContent value="seguradoras" className="mt-3 space-y-3">
+              {seguradoraData.map(seg => (
+                <Card key={seg.nome}>
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-xs font-semibold flex items-center gap-2">
+                        <Building2 className="h-3.5 w-3.5 text-primary" />
+                        {seg.nome}
+                      </h5>
+                      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                        <span>{seg.count} cotações</span>
+                        <span className="font-semibold text-success">{fmtCurrency(seg.premio)}</span>
+                      </div>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px] text-[10px]">Nº</TableHead>
+                          <TableHead className="text-[10px]">Segurado</TableHead>
+                          <TableHead className="text-center text-[10px]">Ramo</TableHead>
+                          <TableHead className="text-center text-[10px]">Status</TableHead>
+                          <TableHead className="text-right text-[10px]">Prêmio</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {flowCotacoes.filter(c => (c.seguradora?.nome || 'Sem seguradora') === seg.nome).map(c => (
+                          <TableRow key={c.id} className="hover:bg-muted/30 h-8">
+                            <TableCell className="text-[10px] text-muted-foreground font-mono py-1">{c.numero_cotacao}</TableCell>
+                            <TableCell className="font-medium text-xs max-w-[180px] truncate py-1">{c.segurado}</TableCell>
+                            <TableCell className="text-center text-[10px] text-muted-foreground py-1">{c.ramo?.ramo_agrupado || c.ramo?.descricao || '—'}</TableCell>
+                            <TableCell className="text-center py-1">{statusBadge(c.status)}</TableCell>
+                            <TableCell className="text-right text-xs font-semibold py-1">{fmtCurrency(c.valor_premio || 0)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              ))}
+              {seguradoraData.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">Nenhuma seguradora encontrada.</p>}
+            </TabsContent>
+
+            {/* Ramo */}
+            <TabsContent value="ramo" className="mt-3 space-y-3">
+              {ramoData.map(ramo => (
+                <Card key={ramo.nome}>
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-xs font-semibold flex items-center gap-2">
+                        <Layers className="h-3.5 w-3.5 text-primary" />
+                        {ramo.nome}
+                      </h5>
+                      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                        <span>{ramo.count} cotações</span>
+                        <span className="font-semibold text-success">{fmtCurrency(ramo.premio)}</span>
+                      </div>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px] text-[10px]">Nº</TableHead>
+                          <TableHead className="text-[10px]">Segurado</TableHead>
+                          <TableHead className="text-center text-[10px]">Seguradora</TableHead>
+                          <TableHead className="text-center text-[10px]">Status</TableHead>
+                          <TableHead className="text-right text-[10px]">Prêmio</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {flowCotacoes.filter(c => (c.ramo?.ramo_agrupado || c.ramo?.descricao || 'Sem ramo') === ramo.nome).map(c => (
+                          <TableRow key={c.id} className="hover:bg-muted/30 h-8">
+                            <TableCell className="text-[10px] text-muted-foreground font-mono py-1">{c.numero_cotacao}</TableCell>
+                            <TableCell className="font-medium text-xs max-w-[180px] truncate py-1">{c.segurado}</TableCell>
+                            <TableCell className="text-center text-[10px] text-muted-foreground py-1">{c.seguradora?.nome || '—'}</TableCell>
+                            <TableCell className="text-center py-1">{statusBadge(c.status)}</TableCell>
+                            <TableCell className="text-right text-xs font-semibold py-1">{fmtCurrency(c.valor_premio || 0)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              ))}
+              {ramoData.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">Nenhum ramo encontrado.</p>}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </DialogContent>
     </Dialog>
   );
 }
