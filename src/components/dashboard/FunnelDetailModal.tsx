@@ -13,7 +13,7 @@ import { DatePickerWithRange } from '@/components/ui/date-picker';
 import {
   TrendingUp, DollarSign, Clock, BarChart3, AlertTriangle,
   Building2, Layers, Search, ArrowRight, CheckCircle2, XCircle, FileText, Zap,
-  ArrowUpDown, ArrowUp, ArrowDown, SlidersHorizontal
+  ArrowUpDown, ArrowUp, ArrowDown, SlidersHorizontal, ExternalLink
 } from 'lucide-react';
 import { type Cotacao } from '@/hooks/useSupabaseData';
 import { useMemo, useState, useEffect } from 'react';
