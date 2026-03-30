@@ -1300,7 +1300,7 @@ function FlowDetailSubModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   flow: { origem: string; negociador: string; cotador: string };
-  flowRecords: typeof Array.prototype[];
+  flowRecords: any[];
   stageCotacoes: Cotacao[];
   formatCurrency: (v: number) => string;
   statusBadge: (status: string) => React.ReactNode;
