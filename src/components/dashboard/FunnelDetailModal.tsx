@@ -808,123 +808,85 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
 
               {/* ─── Tab: Fluxo Comercial ─── */}
               <TabsContent value="fluxo" className="space-y-4">
-                {/* Distribution + Composition side by side */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* Distribution by active role */}
-                  <Card>
-                    <CardContent className="p-3">
-                      <h4 className="text-xs font-semibold mb-2 flex items-center gap-2">
-                        <BarChart3 className="h-3.5 w-3.5 text-primary" />
-                        Distribuição por {ROLE_LABELS[activeStage]?.replace('Produtor ', '')}
-                      </h4>
-                      <div className="space-y-1.5">
-                        {produtorRanking.map((p, i) => {
-                          const maxTotal = produtorRanking[0]?.total || 1;
-                          const conv = p.total > 0 ? (p.fechados / p.total * 100) : 0;
-                          return (
-                            <div key={p.nome} className="flex items-center gap-2">
-                              <span className="text-[10px] font-semibold text-muted-foreground w-4 text-right">{i + 1}.</span>
-                              <span className="text-[10px] font-medium w-[80px] truncate">{p.nome}</span>
-                              <div className="flex-1 flex items-center gap-0.5 h-5">
-                                {p.emCotacao > 0 && (
-                                  <div
-                                    className="h-full rounded-l bg-primary/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[16px]"
-                                    style={{ width: `${(p.emCotacao / maxTotal) * 100}%` }}
-                                    title={`Em cotação: ${p.emCotacao}`}
-                                  >{p.emCotacao}</div>
-                                )}
-                                {p.fechados > 0 && (
-                                  <div
-                                    className="h-full bg-success/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[16px]"
-                                    style={{ width: `${(p.fechados / maxTotal) * 100}%` }}
-                                    title={`Fechados: ${p.fechados}`}
-                                  >{p.fechados}</div>
-                                )}
-                                {p.declinados > 0 && (
-                                  <div
-                                    className="h-full rounded-r bg-destructive/80 flex items-center justify-center text-[9px] text-white font-bold min-w-[16px]"
-                                    style={{ width: `${(p.declinados / maxTotal) * 100}%` }}
-                                    title={`Declinados: ${p.declinados}`}
-                                  >{p.declinados}</div>
-                                )}
-                              </div>
-                              <Badge className={`text-[8px] shrink-0 ${conv >= 40 ? 'bg-success/15 text-success border-success/30' : conv >= 20 ? 'bg-warning/15 text-warning border-warning/30' : 'bg-muted text-muted-foreground border-border'}`}>
-                                {conv.toFixed(0)}%
-                              </Badge>
-                              <span className="text-[9px] text-success font-semibold w-[65px] text-right shrink-0">{formatCurrency(p.premio)}</span>
-                            </div>
-                          );
-                        })}
-                        {produtorRanking.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Nenhum produtor encontrado.</p>}
-                      </div>
-                      <div className="flex items-center gap-3 mt-2 pt-1.5 border-t">
-                        <div className="flex items-center gap-1"><div className="h-2 w-2 rounded-sm bg-primary/80" /><span className="text-[9px] text-muted-foreground">Em cotação</span></div>
-                        <div className="flex items-center gap-1"><div className="h-2 w-2 rounded-sm bg-success/80" /><span className="text-[9px] text-muted-foreground">Fechados</span></div>
-                        <div className="flex items-center gap-1"><div className="h-2 w-2 rounded-sm bg-destructive/80" /><span className="text-[9px] text-muted-foreground">Declinados</span></div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Composição por Produtor (Origem → Negociador → Cotador) */}
-                  <Card>
-                    <CardContent className="p-3">
-                      <h4 className="text-xs font-semibold mb-2 flex items-center gap-2">
-                        <Layers className="h-3.5 w-3.5 text-primary" />
-                        Composição por Produtor
-                        <span className="text-[9px] text-muted-foreground font-normal ml-auto">{statusComposition.total} registros</span>
-                      </h4>
-                      <TooltipProvider delayDuration={200}>
-                        <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
-                          {flowData.reduce<{ key: string; origem: string; negociador: string; cotador: string; count: number; segurados: string[]; premio: number }[]>((acc, row) => {
+                {/* Composição por Produtor — Principal */}
+                <Card className="border-primary/30">
+                  <CardContent className="p-4">
+                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-primary" />
+                      Composição por Produtor
+                      <span className="text-[10px] text-muted-foreground font-normal ml-1">Origem → Negociador → Cotador</span>
+                      <span className="text-[10px] text-muted-foreground font-normal ml-auto">{(() => {
+                        const groups = flowData.reduce<{ key: string }[]>((acc, row) => {
+                          const key = `${row.origem}→${row.negociador}→${row.cotador}`;
+                          if (!acc.find(a => a.key === key)) acc.push({ key });
+                          return acc;
+                        }, []);
+                        return `${groups.length} fluxos · ${flowData.length} registros`;
+                      })()}</span>
+                    </h4>
+                    <TooltipProvider delayDuration={200}>
+                      <div className="space-y-1 max-h-[340px] overflow-y-auto pr-1">
+                        {flowData.reduce<{ key: string; origem: string; negociador: string; cotador: string; count: number; segurados: string[]; premio: number }[]>((acc, row) => {
+                          const key = `${row.origem}→${row.negociador}→${row.cotador}`;
+                          const existing = acc.find(a => a.key === key);
+                          if (existing) {
+                            existing.count += 1;
+                            if (!existing.segurados.includes(row.segurado)) existing.segurados.push(row.segurado);
+                            existing.premio += row.premio;
+                          } else {
+                            acc.push({ key, origem: row.origem, negociador: row.negociador, cotador: row.cotador, count: 1, segurados: [row.segurado], premio: row.premio });
+                          }
+                          return acc;
+                        }, []).sort((a, b) => b.count - a.count).map((group) => {
+                          const maxCount = flowData.reduce<{ key: string; count: number }[]>((acc, row) => {
                             const key = `${row.origem}→${row.negociador}→${row.cotador}`;
                             const existing = acc.find(a => a.key === key);
-                            if (existing) {
-                              existing.count += 1;
-                              if (!existing.segurados.includes(row.segurado)) existing.segurados.push(row.segurado);
-                              existing.premio += row.premio;
-                            } else {
-                              acc.push({ key, origem: row.origem, negociador: row.negociador, cotador: row.cotador, count: 1, segurados: [row.segurado], premio: row.premio });
-                            }
+                            if (existing) existing.count += 1;
+                            else acc.push({ key, count: 1 });
                             return acc;
-                          }, []).sort((a, b) => b.count - a.count).map((group) => {
-                            const maxCount = flowData.length || 1;
-                            return (
-                              <UITooltip key={group.key}>
-                                <TooltipTrigger asChild>
-                                  <div className="flex items-center gap-2 cursor-default group hover:bg-muted/30 rounded px-1 py-0.5">
-                                    <div className="flex items-center gap-1 shrink-0 w-[200px]">
-                                      <span className="text-[10px] font-medium text-primary truncate max-w-[60px]" title={group.origem}>{group.origem}</span>
-                                      <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/50 shrink-0" />
-                                      <span className="text-[10px] font-medium text-brand-orange truncate max-w-[60px]" title={group.negociador}>{group.negociador}</span>
-                                      <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/50 shrink-0" />
-                                      <span className="text-[10px] font-medium text-success truncate max-w-[60px]" title={group.cotador}>{group.cotador}</span>
-                                    </div>
-                                    <div className="flex-1 h-4 bg-muted/30 rounded overflow-hidden">
-                                      <div
-                                        className="h-full bg-primary/60 rounded flex items-center justify-center text-[8px] text-white font-bold"
-                                        style={{ width: `${(group.count / maxCount) * 100}%`, minWidth: '16px' }}
-                                      >{group.count}</div>
-                                    </div>
-                                    <span className="text-[9px] text-muted-foreground font-medium w-[60px] text-right shrink-0">{formatCurrency(group.premio)}</span>
+                          }, []).sort((a, b) => b.count - a.count)[0]?.count || 1;
+                          return (
+                            <UITooltip key={group.key}>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => setSelectedFlow({ origem: group.origem, negociador: group.negociador, cotador: group.cotador })}
+                                  className="flex items-center gap-2 w-full text-left cursor-pointer group hover:bg-primary/5 rounded-lg px-2 py-1.5 transition-colors border border-transparent hover:border-primary/20"
+                                >
+                                  <div className="flex items-center gap-1 shrink-0 w-[220px]">
+                                    <span className="text-[11px] font-medium text-primary truncate max-w-[65px]" title={group.origem}>{group.origem}</span>
+                                    <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/50 shrink-0" />
+                                    <span className="text-[11px] font-medium text-brand-orange truncate max-w-[65px]" title={group.negociador}>{group.negociador}</span>
+                                    <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/50 shrink-0" />
+                                    <span className="text-[11px] font-medium text-success truncate max-w-[65px]" title={group.cotador}>{group.cotador}</span>
                                   </div>
-                                </TooltipTrigger>
-                                <TooltipContent side="left" className="max-w-[300px]">
-                                  <p className="font-semibold text-xs mb-1">{group.origem} → {group.negociador} → {group.cotador}</p>
-                                  <p className="text-[10px] text-muted-foreground mb-1.5">{group.count} cotação(ões) · {formatCurrency(group.premio)}</p>
-                                  <div className="max-h-[200px] overflow-y-auto space-y-0.5">
-                                    {group.segurados.sort((a, b) => a.localeCompare(b)).map((s) => (
-                                      <p key={s} className="text-[11px] text-muted-foreground">• {s}</p>
-                                    ))}
+                                  <div className="flex-1 h-5 bg-muted/30 rounded-md overflow-hidden">
+                                    <div
+                                      className="h-full bg-primary/60 rounded-md flex items-center justify-center text-[9px] text-white font-bold transition-all group-hover:bg-primary/80"
+                                      style={{ width: `${(group.count / maxCount) * 100}%`, minWidth: '20px' }}
+                                    >{group.count}</div>
                                   </div>
-                                </TooltipContent>
-                              </UITooltip>
-                            );
-                          })}
-                        </div>
-                      </TooltipProvider>
-                    </CardContent>
-                  </Card>
-                </div>
+                                  <span className="text-[10px] text-muted-foreground font-medium w-[70px] text-right shrink-0">{formatCurrency(group.premio)}</span>
+                                  <ExternalLink className="h-3 w-3 text-muted-foreground/40 group-hover:text-primary shrink-0 transition-colors" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="max-w-[300px]">
+                                <p className="font-semibold text-xs mb-1">{group.origem} → {group.negociador} → {group.cotador}</p>
+                                <p className="text-[10px] text-muted-foreground mb-1.5">{group.count} cotação(ões) · {formatCurrency(group.premio)}</p>
+                                <p className="text-[10px] text-muted-foreground mb-1 font-semibold">Segurados:</p>
+                                <div className="max-h-[200px] overflow-y-auto space-y-0.5">
+                                  {group.segurados.sort((a, b) => a.localeCompare(b)).map((s) => (
+                                    <p key={s} className="text-[11px] text-muted-foreground">• {s}</p>
+                                  ))}
+                                </div>
+                              </TooltipContent>
+                            </UITooltip>
+                          );
+                        })}
+                        {flowData.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">Nenhum fluxo encontrado.</p>}
+                      </div>
+                    </TooltipProvider>
+                  </CardContent>
+                </Card>
 
                 {/* Table with sorting - highlight active role column */}
                 <Card>
