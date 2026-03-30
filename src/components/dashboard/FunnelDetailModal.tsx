@@ -292,6 +292,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [resultPeriodMode, setResultPeriodMode] = useState<'dashboard' | 'custom'>('dashboard');
   const [resultDateRange, setResultDateRange] = useState<DateRange | undefined>(dashboardFilters.dateRange);
+  const [selectedFlow, setSelectedFlow] = useState<{ origem: string; negociador: string; cotador: string } | null>(null);
 
   useEffect(() => {
     if (open) {
