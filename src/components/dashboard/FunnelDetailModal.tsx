@@ -387,21 +387,21 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                     {/* Producer names with role highlight */}
                     <div className="flex items-center gap-1.5 shrink-0" style={{ minWidth: '280px' }}>
                       <span className={`text-xs whitespace-nowrap ${
-                        roleHighlight === 'origem'
+                        activeStage === 'origem'
                           ? 'font-bold text-primary text-[13px]'
-                          : roleHighlight ? 'font-normal text-muted-foreground' : 'font-semibold text-primary'
+                          : 'font-normal text-muted-foreground'
                       }`}>{group.origem}</span>
                       <ArrowRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />
                       <span className={`text-xs whitespace-nowrap ${
-                        roleHighlight === 'negociador'
+                        activeStage === 'negociador'
                           ? 'font-bold text-brand-orange text-[13px]'
-                          : roleHighlight ? 'font-normal text-muted-foreground' : 'font-semibold text-brand-orange'
+                          : 'font-normal text-muted-foreground'
                       }`}>{group.negociador}</span>
                       <ArrowRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />
                       <span className={`text-xs whitespace-nowrap ${
-                        roleHighlight === 'cotador'
+                        activeStage === 'cotador'
                           ? 'font-bold text-success text-[13px]'
-                          : roleHighlight ? 'font-normal text-muted-foreground' : 'font-semibold text-success'
+                          : 'font-normal text-muted-foreground'
                       }`}>{group.cotador}</span>
                     </div>
 
