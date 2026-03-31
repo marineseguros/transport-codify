@@ -251,7 +251,19 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     return rows;
   }, [stageCotacoes]);
 
-  // Grouped by flow — with optional role filter
+  // Unique producers for the active stage role
+  const produtoresDoTipo = useMemo(() => {
+    const roleField = activeStage as keyof typeof ROLE_KEY_MAP;
+    const field = ROLE_KEY_MAP[roleField] || 'produtor_origem';
+    const names = new Set<string>();
+    stageCotacoes.forEach(c => {
+      const nome = c[field]?.nome;
+      if (nome) names.add(nome);
+    });
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [stageCotacoes, activeStage]);
+
+  // Grouped by flow
   const flowGroups = useMemo(() => {
     const groups: { key: string; origem: string; negociador: string; cotador: string; count: number; segurados: string[]; premio: number }[] = [];
     flowData.forEach((row) => {
@@ -268,15 +280,15 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     return groups.sort((a, b) => b.count - a.count);
   }, [flowData]);
 
-  // Filter by selected role highlight (filter by unique producer name for the role)
+  // Filter flow groups by selected producer of the active role
   const filteredFlowGroups = useMemo(() => {
-    if (!roleHighlight) return flowGroups;
-    // Get unique producers for the highlighted role and sort; no actual filter — just reorder by that role
-    return flowGroups;
-  }, [flowGroups, roleHighlight]);
+    if (!selectedProdutor) return flowGroups;
+    const roleField = activeStage as 'origem' | 'negociador' | 'cotador';
+    return flowGroups.filter(g => g[roleField] === selectedProdutor);
+  }, [flowGroups, selectedProdutor, activeStage]);
 
   const maxCount = filteredFlowGroups[0]?.count || 1;
-  const totalRegistros = flowData.length;
+  const totalRegistros = filteredFlowGroups.reduce((s, g) => s + g.count, 0);
 
   const statusBadge = (status: string) => {
     if (status === 'Negócio fechado' || status === 'Fechamento congênere')
