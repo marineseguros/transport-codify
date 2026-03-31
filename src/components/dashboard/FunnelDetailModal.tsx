@@ -2,7 +2,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Layers, ArrowRight, CheckCircle2, XCircle, Clock, ExternalLink, Building2
@@ -36,6 +35,12 @@ const ROLE_BUTTON_CLASSES: Record<string, string> = {
   origem: 'bg-primary text-primary-foreground border-primary/30 shadow-sm',
   negociador: 'bg-brand-orange text-brand-orange-foreground border-brand-orange/30 shadow-sm',
   cotador: 'bg-success text-success-foreground border-success/30 shadow-sm'
+};
+
+const ROLE_FILTER_LABELS: Record<string, string> = {
+  origem: 'Origem',
+  negociador: 'Negociador',
+  cotador: 'Cotador'
 };
 
 const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -124,10 +129,14 @@ interface FunnelDetailModalProps {
 export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, dashboardFilters, initialStage, totalDistinct, dashboardCounts }: FunnelDetailModalProps) {
   const [activeStage, setActiveStage] = useState(initialStage);
   const [selectedFlow, setSelectedFlow] = useState<{ origem: string; negociador: string; cotador: string } | null>(null);
+  const [roleHighlight, setRoleHighlight] = useState<string | null>(null);
+  const [hoveredFlow, setHoveredFlow] = useState<string | null>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (open) {
       setActiveStage(initialStage);
+      setRoleHighlight(null);
     }
   }, [initialStage, open]);
 
@@ -237,7 +246,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     return rows;
   }, [stageCotacoes]);
 
-  // Grouped by flow
+  // Grouped by flow — with optional role filter
   const flowGroups = useMemo(() => {
     const groups: { key: string; origem: string; negociador: string; cotador: string; count: number; segurados: string[]; premio: number }[] = [];
     flowData.forEach((row) => {
@@ -254,7 +263,14 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     return groups.sort((a, b) => b.count - a.count);
   }, [flowData]);
 
-  const maxCount = flowGroups[0]?.count || 1;
+  // Filter by selected role highlight (filter by unique producer name for the role)
+  const filteredFlowGroups = useMemo(() => {
+    if (!roleHighlight) return flowGroups;
+    // Get unique producers for the highlighted role and sort; no actual filter — just reorder by that role
+    return flowGroups;
+  }, [flowGroups, roleHighlight]);
+
+  const maxCount = filteredFlowGroups[0]?.count || 1;
   const totalRegistros = flowData.length;
 
   const statusBadge = (status: string) => {
@@ -263,6 +279,12 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     if (status === 'Declinado')
       return <Badge className="bg-destructive/15 text-destructive border-destructive/30 text-[10px] gap-1"><XCircle className="h-3 w-3" />Declinado</Badge>;
     return <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px] gap-1"><Clock className="h-3 w-3" />{status}</Badge>;
+  };
+
+  const hoveredGroup = hoveredFlow ? filteredFlowGroups.find(g => g.key === hoveredFlow) : null;
+
+  const handleFlowMouseMove = (e: React.MouseEvent) => {
+    setTooltipPos({ x: e.clientX, y: e.clientY });
   };
 
   return (
@@ -278,7 +300,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
             <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[activeStage]}</p>
           </DialogHeader>
 
-          {/* Stage pills only */}
+          {/* Stage pills */}
           <div className="mt-2 flex items-center gap-1 rounded-lg border border-border/60 bg-muted/25 p-0.5 w-fit">
             {Object.entries(ROLE_LABELS).map(([key, label]) =>
               <button
@@ -298,60 +320,105 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
         <div className="flex-1 overflow-y-auto px-5 py-4 flex items-start justify-center">
           <Card className="border-primary/20 w-full max-w-3xl">
             <CardContent className="p-5">
-              <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <Layers className="h-4 w-4 text-primary" />
-                Composição por Produtor
-                <span className="text-[11px] text-muted-foreground font-normal ml-1">Origem → Negociador → Cotador</span>
-                <span className="text-[11px] text-muted-foreground font-normal ml-auto">{flowGroups.length} fluxos · {totalRegistros} registros</span>
-              </h4>
-              <TooltipProvider delayDuration={200}>
-                <div className="space-y-1.5 max-h-[55vh] overflow-y-auto pr-1">
-                  {flowGroups.map((group) => (
-                    <UITooltip key={group.key}>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => setSelectedFlow({ origem: group.origem, negociador: group.negociador, cotador: group.cotador })}
-                          className="flex items-center gap-3 w-full text-left cursor-pointer group hover:bg-primary/5 rounded-lg px-3 py-2 transition-colors border border-transparent hover:border-primary/20"
-                        >
-                          {/* Producer names — full, no truncation */}
-                          <div className="flex items-center gap-1.5 shrink-0" style={{ minWidth: '280px' }}>
-                            <span className="text-xs font-semibold text-primary whitespace-nowrap">{group.origem}</span>
-                            <ArrowRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />
-                            <span className="text-xs font-semibold text-brand-orange whitespace-nowrap">{group.negociador}</span>
-                            <ArrowRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />
-                            <span className="text-xs font-semibold text-success whitespace-nowrap">{group.cotador}</span>
-                          </div>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  Composição por Produtor
+                  <span className="text-[11px] text-muted-foreground font-normal ml-1">Origem → Negociador → Cotador</span>
+                </h4>
+                <span className="text-[11px] text-muted-foreground font-normal">{filteredFlowGroups.length} fluxos · {totalRegistros} registros</span>
+              </div>
 
-                          {/* Bar — constrained width */}
-                          <div className="flex-1 max-w-[220px] h-6 bg-muted/30 rounded-md overflow-hidden">
-                            <div
-                              className="h-full bg-primary/60 rounded-md flex items-center justify-center text-[10px] text-white font-bold transition-all group-hover:bg-primary/80"
-                              style={{ width: `${(group.count / maxCount) * 100}%`, minWidth: '24px' }}
-                            >{group.count}</div>
-                          </div>
+              {/* Role filter chips */}
+              <div className="flex items-center gap-1.5 mb-4">
+                <span className="text-[10px] text-muted-foreground mr-1">Destacar:</span>
+                {(['origem', 'negociador', 'cotador'] as const).map((role) => (
+                  <button
+                    key={role}
+                    onClick={() => setRoleHighlight(prev => prev === role ? null : role)}
+                    className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all border ${
+                      roleHighlight === role
+                        ? ROLE_BUTTON_CLASSES[role]
+                        : 'border-border/60 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    }`}
+                  >
+                    {ROLE_FILTER_LABELS[role]}
+                  </button>
+                ))}
+              </div>
 
-                          <span className="text-[11px] text-muted-foreground font-medium w-[90px] text-right shrink-0">{formatCurrency(group.premio)}</span>
-                          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-primary shrink-0 transition-colors" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="left" className="max-w-[320px]">
-                        <p className="font-semibold text-xs mb-1">{group.origem} → {group.negociador} → {group.cotador}</p>
-                        <p className="text-[10px] text-muted-foreground mb-1.5">{group.count} cotação(ões) · {formatCurrency(group.premio)}</p>
-                        <p className="text-[10px] text-muted-foreground mb-1 font-semibold">Segurados:</p>
-                        <div className="max-h-[200px] overflow-y-auto space-y-0.5">
-                          {group.segurados.sort((a, b) => a.localeCompare(b)).map((s) => (
-                            <p key={s} className="text-[11px] text-muted-foreground">• {s}</p>
-                          ))}
-                        </div>
-                      </TooltipContent>
-                    </UITooltip>
-                  ))}
-                  {flowGroups.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">Nenhum fluxo encontrado.</p>}
-                </div>
-              </TooltipProvider>
+              <div className="space-y-1.5 max-h-[55vh] overflow-y-auto pr-1">
+                {filteredFlowGroups.map((group) => (
+                  <button
+                    key={group.key}
+                    onClick={() => setSelectedFlow({ origem: group.origem, negociador: group.negociador, cotador: group.cotador })}
+                    onMouseEnter={() => setHoveredFlow(group.key)}
+                    onMouseMove={handleFlowMouseMove}
+                    onMouseLeave={() => setHoveredFlow(null)}
+                    className="flex items-center gap-3 w-full text-left cursor-pointer group hover:bg-primary/5 rounded-lg px-3 py-2 transition-colors border border-transparent hover:border-primary/20"
+                  >
+                    {/* Producer names with role highlight */}
+                    <div className="flex items-center gap-1.5 shrink-0" style={{ minWidth: '280px' }}>
+                      <span className={`text-xs whitespace-nowrap ${
+                        roleHighlight === 'origem'
+                          ? 'font-bold text-primary text-[13px]'
+                          : roleHighlight ? 'font-normal text-muted-foreground' : 'font-semibold text-primary'
+                      }`}>{group.origem}</span>
+                      <ArrowRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+                      <span className={`text-xs whitespace-nowrap ${
+                        roleHighlight === 'negociador'
+                          ? 'font-bold text-brand-orange text-[13px]'
+                          : roleHighlight ? 'font-normal text-muted-foreground' : 'font-semibold text-brand-orange'
+                      }`}>{group.negociador}</span>
+                      <ArrowRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+                      <span className={`text-xs whitespace-nowrap ${
+                        roleHighlight === 'cotador'
+                          ? 'font-bold text-success text-[13px]'
+                          : roleHighlight ? 'font-normal text-muted-foreground' : 'font-semibold text-success'
+                      }`}>{group.cotador}</span>
+                    </div>
+
+                    {/* Bar */}
+                    <div className="flex-1 max-w-[220px] h-6 bg-muted/30 rounded-md overflow-hidden">
+                      <div
+                        className="h-full bg-primary/60 rounded-md flex items-center justify-center text-[10px] text-white font-bold transition-all group-hover:bg-primary/80"
+                        style={{ width: `${(group.count / maxCount) * 100}%`, minWidth: '24px' }}
+                      >{group.count}</div>
+                    </div>
+
+                    <span className="text-[11px] text-muted-foreground font-medium w-[90px] text-right shrink-0">{formatCurrency(group.premio)}</span>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-primary shrink-0 transition-colors" />
+                  </button>
+                ))}
+                {filteredFlowGroups.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">Nenhum fluxo encontrado.</p>}
+              </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Mouse-following tooltip for flow items */}
+        {hoveredGroup && (
+          <div
+            className="fixed z-[9999] pointer-events-none animate-in fade-in-0 duration-100"
+            style={{
+              left: tooltipPos.x + 16,
+              top: tooltipPos.y - 12,
+            }}
+          >
+            <div className="rounded-xl border border-border/80 bg-popover px-4 py-3 shadow-xl backdrop-blur-sm min-w-[200px] max-w-[300px]">
+              <p className="text-xs font-bold text-foreground mb-1">
+                {hoveredGroup.origem} → {hoveredGroup.negociador} → {hoveredGroup.cotador}
+              </p>
+              <p className="text-[10px] text-muted-foreground mb-2">{hoveredGroup.count} cotação(ões) · {formatCurrency(hoveredGroup.premio)}</p>
+              <p className="text-[10px] text-muted-foreground font-semibold mb-1">Segurados:</p>
+              <div className="max-h-[180px] overflow-y-auto space-y-0.5">
+                {hoveredGroup.segurados.sort((a, b) => a.localeCompare(b)).map((s) => (
+                  <p key={s} className="text-[11px] text-muted-foreground leading-relaxed">• {s}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </DialogContent>
 
       {/* Sub-Modal: Flow Detail */}
