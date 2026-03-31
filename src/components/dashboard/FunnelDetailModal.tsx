@@ -129,16 +129,21 @@ interface FunnelDetailModalProps {
 export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, dashboardFilters, initialStage, totalDistinct, dashboardCounts }: FunnelDetailModalProps) {
   const [activeStage, setActiveStage] = useState(initialStage);
   const [selectedFlow, setSelectedFlow] = useState<{ origem: string; negociador: string; cotador: string } | null>(null);
-  const [roleHighlight, setRoleHighlight] = useState<string | null>(null);
+  const [selectedProdutor, setSelectedProdutor] = useState<string | null>(null);
   const [hoveredFlow, setHoveredFlow] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (open) {
       setActiveStage(initialStage);
-      setRoleHighlight(null);
+      setSelectedProdutor(null);
     }
   }, [initialStage, open]);
+
+  // Reset producer filter when stage changes
+  useEffect(() => {
+    setSelectedProdutor(null);
+  }, [activeStage]);
 
   const roleKey = ROLE_KEY_MAP[activeStage as keyof typeof ROLE_KEY_MAP] || 'produtor_origem';
 
