@@ -346,20 +346,30 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                 <span className="text-[11px] text-muted-foreground font-normal">{filteredFlowGroups.length} fluxos · {totalRegistros} registros</span>
               </div>
 
-              {/* Role filter chips */}
-              <div className="flex items-center gap-1.5 mb-4">
-                <span className="text-[10px] text-muted-foreground mr-1">Destacar:</span>
-                {(['origem', 'negociador', 'cotador'] as const).map((role) => (
+              {/* Producer slicer based on active role */}
+              <div className="flex items-center gap-1.5 mb-4 flex-wrap">
+                <span className="text-[10px] text-muted-foreground mr-1">Filtrar {ROLE_FILTER_LABELS[activeStage]}:</span>
+                <button
+                  onClick={() => setSelectedProdutor(null)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all border ${
+                    !selectedProdutor
+                      ? ROLE_BUTTON_CLASSES[activeStage]
+                      : 'border-border/60 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  }`}
+                >
+                  Todos
+                </button>
+                {produtoresDoTipo.map((nome) => (
                   <button
-                    key={role}
-                    onClick={() => setRoleHighlight(prev => prev === role ? null : role)}
+                    key={nome}
+                    onClick={() => setSelectedProdutor(prev => prev === nome ? null : nome)}
                     className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all border ${
-                      roleHighlight === role
-                        ? ROLE_BUTTON_CLASSES[role]
+                      selectedProdutor === nome
+                        ? ROLE_BUTTON_CLASSES[activeStage]
                         : 'border-border/60 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                     }`}
                   >
-                    {ROLE_FILTER_LABELS[role]}
+                    {nome}
                   </button>
                 ))}
               </div>
