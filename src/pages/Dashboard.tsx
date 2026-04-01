@@ -1436,83 +1436,39 @@ const Dashboard = () => {
 
       {/* KPIs Mensais com Comparativos */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
-        <Card>
+        <Card className="cursor-pointer hover:border-brand-orange/50 transition-colors" onClick={() => setKpiModalOpen('emCotacao')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Em Cotação</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="pb-3">
-            <TooltipProvider>
-              <UITooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <div className="text-2xl font-bold text-brand-orange">{globalEmAbertoDistinct}</div>
-                     <div className="text-[10px] text-muted-foreground mt-0.5">Total do período selecionado</div>
-                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                       <span>Mês: <span className="font-semibold text-brand-orange">{monthlyStats.emCotacao}</span></span>
-                       {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
-                     </div>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Clientes em Cotação no Período</h4>
-                    {clientesEmCotacao.length > 0 ? <div className="space-y-1">
-                        {clientesEmCotacao.map((cotacao) => <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
-                            <div className="font-medium">{cotacao.segurado}</div>
-                            <div className="text-muted-foreground">
-                              Data Cotação: {formatDate(cotacao.data_cotacao)}
-                            </div>
-                            <div className="text-muted-foreground">Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
-                          </div>)}
-                      </div> : <p className="text-xs text-muted-foreground">Nenhum cliente em cotação no período</p>}
-                  </div>
-                </TooltipContent>
-              </UITooltip>
-            </TooltipProvider>
+            <div className="text-2xl font-bold text-brand-orange">{globalEmAbertoDistinct}</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">Total do período selecionado</div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+              <span>Mês: <span className="font-semibold text-brand-orange">{monthlyStats.emCotacao}</span></span>
+              {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:border-success/50 transition-colors" onClick={() => setKpiModalOpen('fechado')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Negócio Fechado</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="pb-3">
-            <TooltipProvider>
-              <UITooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <div className="text-2xl font-bold text-success">{monthlyStats.fechados}</div>
-                    {formatComparison(monthlyStats.fechadosComp.diff, monthlyStats.fechadosComp.percentage)}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Clientes Fechados no Período</h4>
-                    {clientesFechados.length > 0 ? <div className="space-y-1">
-                        {clientesFechados.map((cotacao, index) => <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
-                            <div className="font-medium">{cotacao.segurado}</div>
-                            <div className="text-muted-foreground">
-                              Fechamento: {cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : "N/A"}
-                            </div>
-                            <div className="text-muted-foreground">Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
-                          </div>)}
-                      </div> : <p className="text-xs text-muted-foreground">Nenhum cliente fechado no período</p>}
-                  </div>
-                </TooltipContent>
-              </UITooltip>
-            </TooltipProvider>
+            <div className="text-2xl font-bold text-success">{monthlyStats.fechados}</div>
+            {formatComparison(monthlyStats.fechadosComp.diff, monthlyStats.fechadosComp.percentage)}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:border-destructive/50 transition-colors" onClick={() => setKpiModalOpen('declinado')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Declinado</CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="pb-3">
-            <div className="text-2xl font-bold text-destructive">{monthlyStats.declinados}</div>
+            <div className="text-destructive text-2xl font-bold">{monthlyStats.declinados}</div>
             {formatComparison(monthlyStats.declinadosComp.diff, monthlyStats.declinadosComp.percentage)}
           </CardContent>
         </Card>
