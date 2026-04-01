@@ -639,6 +639,7 @@ const Dashboard = () => {
   const [showSeguradoraDetailModal, setShowSeguradoraDetailModal] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
+  const [kpiModalOpen, setKpiModalOpen] = useState<'emCotacao' | 'fechado' | 'declinado' | null>(null);
   const [selectedProdutor, setSelectedProdutor] = useState<{
     nome: string;
     totalDistinct: number;
