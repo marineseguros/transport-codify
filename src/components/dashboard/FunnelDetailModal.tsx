@@ -415,30 +415,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
             </CardContent>
           </Card>
         </div>
-
-        {/* Mouse-following tooltip for flow items */}
-        {hoveredGroup && (
-          <div
-            className="fixed z-[9999] pointer-events-none animate-in fade-in-0 duration-100"
-            style={{
-              left: tooltipPos.x + 16,
-              top: tooltipPos.y - 12,
-            }}
-          >
-            <div className="rounded-xl border border-border/80 bg-popover px-4 py-3 shadow-xl backdrop-blur-sm min-w-[200px] max-w-[300px]">
-              <p className="text-xs font-bold text-foreground mb-1">
-                {hoveredGroup.origem} → {hoveredGroup.negociador} → {hoveredGroup.cotador}
-              </p>
-              <p className="text-[10px] text-muted-foreground mb-2">{hoveredGroup.count} cotação(ões) · {formatCurrency(hoveredGroup.premio)}</p>
-              <p className="text-[10px] text-muted-foreground font-semibold mb-1">Segurados:</p>
-              <div className="max-h-[180px] overflow-y-auto space-y-0.5">
-                {hoveredGroup.segurados.sort((a, b) => a.localeCompare(b)).map((s) => (
-                  <p key={s} className="text-[11px] text-muted-foreground leading-relaxed">• {s}</p>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </DialogContent>
 
       {/* Sub-Modal: Flow Detail */}
