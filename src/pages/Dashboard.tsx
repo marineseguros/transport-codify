@@ -1,4 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getRegraRamo } from "@/lib/ramoClassification";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -639,6 +641,7 @@ const Dashboard = () => {
   const [showSeguradoraDetailModal, setShowSeguradoraDetailModal] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
+  const [kpiModalOpen, setKpiModalOpen] = useState<'emCotacao' | 'fechado' | 'declinado' | null>(null);
   const [selectedProdutor, setSelectedProdutor] = useState<{
     nome: string;
     totalDistinct: number;
@@ -696,6 +699,26 @@ const Dashboard = () => {
     fechados: monthlyStats.fechados,
     declinados: monthlyStats.declinados,
   }), [globalEmAbertoDistinct, monthlyStats.fechados, monthlyStats.declinados]);
+
+  // Cotações filtradas sem filtro de período (para Análise de Funil - sempre período total)
+  const funnelBaseCotacoes = useMemo(() => {
+    return allQuotes.filter((cotacao) => {
+      let produtorMatch = true;
+      if (filters.produtorFilter.length > 0) {
+        if (cotacao.status === "Em cotação") {
+          produtorMatch = cotacao.produtor_cotador?.nome ? filters.produtorFilter.includes(cotacao.produtor_cotador.nome) : false;
+        } else {
+          produtorMatch = cotacao.produtor_origem?.nome ? filters.produtorFilter.includes(cotacao.produtor_origem.nome) : false;
+        }
+      }
+      const seguradoraMatch = filters.seguradoraFilter.length === 0 || cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome);
+      const ramoMatch = filters.ramoFilter.length === 0 || cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao);
+      const segmentoMatch = filters.segmentoFilter.length === 0 || cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento);
+      const regraMatch = filters.regraFilter.length === 0 || cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra);
+      const unidadeMatch = filters.unidadeFilter.length === 0 || cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao);
+      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
+    });
+  }, [allQuotes, filters.produtorFilter, filters.seguradoraFilter, filters.ramoFilter, filters.segmentoFilter, filters.regraFilter, filters.unidadeFilter]);
 
   // Calculate TOTAL open quotes ignoring date filters (for "Em Aberto Total" column)
   const totalEmAbertoByProdutor = useMemo(() => {
@@ -927,14 +950,19 @@ const Dashboard = () => {
     });
   }, [filteredCotacoes, totalEmAbertoByProdutor]);
 
-  // Clientes fechados para o tooltip - include "Fechamento congênere"
+  // Clientes fechados para o modal
   const clientesFechados = useMemo(() => {
-    return filteredCotacoes.filter((cotacao) => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere").sort((a, b) => new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime()).slice(0, 10);
+    return filteredCotacoes.filter((cotacao) => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere").sort((a, b) => new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime());
   }, [filteredCotacoes]);
 
-  // Clientes em cotação para o tooltip
+  // Clientes em cotação para o modal
   const clientesEmCotacao = useMemo(() => {
-    return filteredCotacoes.filter((cotacao) => cotacao.status === "Em cotação").sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime()).slice(0, 10);
+    return filteredCotacoes.filter((cotacao) => cotacao.status === "Em cotação").sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime());
+  }, [filteredCotacoes]);
+
+  // Clientes declinados para o modal
+  const clientesDeclinados = useMemo(() => {
+    return filteredCotacoes.filter((cotacao) => cotacao.status === "Declinado").sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime());
   }, [filteredCotacoes]);
 
   // View mode state for recent quotes
@@ -1410,83 +1438,39 @@ const Dashboard = () => {
 
       {/* KPIs Mensais com Comparativos */}
       <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
-        <Card>
+        <Card className="cursor-pointer hover:border-brand-orange/50 transition-colors" onClick={() => setKpiModalOpen('emCotacao')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Em Cotação</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="pb-3">
-            <TooltipProvider>
-              <UITooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <div className="text-2xl font-bold text-brand-orange">{globalEmAbertoDistinct}</div>
-                     <div className="text-[10px] text-muted-foreground mt-0.5">Total do período selecionado</div>
-                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                       <span>Mês: <span className="font-semibold text-brand-orange">{monthlyStats.emCotacao}</span></span>
-                       {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
-                     </div>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Clientes em Cotação no Período</h4>
-                    {clientesEmCotacao.length > 0 ? <div className="space-y-1">
-                        {clientesEmCotacao.map((cotacao) => <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
-                            <div className="font-medium">{cotacao.segurado}</div>
-                            <div className="text-muted-foreground">
-                              Data Cotação: {formatDate(cotacao.data_cotacao)}
-                            </div>
-                            <div className="text-muted-foreground">Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
-                          </div>)}
-                      </div> : <p className="text-xs text-muted-foreground">Nenhum cliente em cotação no período</p>}
-                  </div>
-                </TooltipContent>
-              </UITooltip>
-            </TooltipProvider>
+            <div className="text-2xl font-bold text-brand-orange">{globalEmAbertoDistinct}</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">Total do período selecionado</div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+              <span>Mês: <span className="font-semibold text-brand-orange">{monthlyStats.emCotacao}</span></span>
+              {formatComparison(monthlyStats.emCotacaoComp.diff, monthlyStats.emCotacaoComp.percentage)}
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:border-success/50 transition-colors" onClick={() => setKpiModalOpen('fechado')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Negócio Fechado</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="pb-3">
-            <TooltipProvider>
-              <UITooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <div className="text-2xl font-bold text-success">{monthlyStats.fechados}</div>
-                    {formatComparison(monthlyStats.fechadosComp.diff, monthlyStats.fechadosComp.percentage)}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-sm max-h-64 overflow-y-auto">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Clientes Fechados no Período</h4>
-                    {clientesFechados.length > 0 ? <div className="space-y-1">
-                        {clientesFechados.map((cotacao, index) => <div key={cotacao.id} className="text-xs border-b pb-1 last:border-b-0">
-                            <div className="font-medium">{cotacao.segurado}</div>
-                            <div className="text-muted-foreground">
-                              Fechamento: {cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : "N/A"}
-                            </div>
-                            <div className="text-muted-foreground">Prêmio: {formatCurrency(cotacao.valor_premio)}</div>
-                          </div>)}
-                      </div> : <p className="text-xs text-muted-foreground">Nenhum cliente fechado no período</p>}
-                  </div>
-                </TooltipContent>
-              </UITooltip>
-            </TooltipProvider>
+            <div className="text-2xl font-bold text-success">{monthlyStats.fechados}</div>
+            {formatComparison(monthlyStats.fechadosComp.diff, monthlyStats.fechadosComp.percentage)}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:border-destructive/50 transition-colors" onClick={() => setKpiModalOpen('declinado')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
             <CardTitle className="text-sm font-medium">Declinado</CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="pb-3">
-            <div className="text-2xl font-bold text-destructive">{monthlyStats.declinados}</div>
+            <div className="text-destructive text-2xl font-bold">{monthlyStats.declinados}</div>
             {formatComparison(monthlyStats.declinadosComp.diff, monthlyStats.declinadosComp.percentage)}
           </CardContent>
         </Card>
@@ -1744,7 +1728,11 @@ const Dashboard = () => {
       {/* Gráficos e Análises Avançadas */}
 
       {/* Análise de Funil */}
-      <FunnelAnalysisCard cotacoes={filteredCotacoes} allCotacoes={allQuotes} dashboardFilters={filters} totalDistinct={globalEmAbertoDistinct} dashboardCounts={funnelDashboardCounts} />
+      <FunnelAnalysisCard cotacoes={funnelBaseCotacoes} allCotacoes={allQuotes} dashboardFilters={filters} totalDistinct={countDistinctByStatus(funnelBaseCotacoes, ["Em cotação", "Negócio fechado", "Fechamento congênere", "Declinado"])} dashboardCounts={{
+        emCotacao: countDistinctByStatus(funnelBaseCotacoes, ["Em cotação"]),
+        fechados: countDistinctByStatus(funnelBaseCotacoes, ["Negócio fechado", "Fechamento congênere"]),
+        declinados: countDistinctByStatus(funnelBaseCotacoes, ["Declinado"]),
+      }} />
 
 
 
@@ -2148,6 +2136,60 @@ const Dashboard = () => {
 
       <ExportCotacoesModal open={exportModalOpen} onOpenChange={setExportModalOpen} />
       <CotacoesAnalysisModal open={analysisModalOpen} onOpenChange={setAnalysisModalOpen} />
+
+      {/* KPI Detail Modal */}
+      <Dialog open={!!kpiModalOpen} onOpenChange={(open) => !open && setKpiModalOpen(null)}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              {kpiModalOpen === 'emCotacao' && 'Clientes em Cotação no Período'}
+              {kpiModalOpen === 'fechado' && 'Clientes Fechados no Período'}
+              {kpiModalOpen === 'declinado' && 'Clientes Declinados no Período'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Segurado</TableHead>
+                  <TableHead className="text-xs">CPF/CNPJ</TableHead>
+                  <TableHead className="text-xs">Ramo</TableHead>
+                  <TableHead className="text-xs">Seguradora</TableHead>
+                  <TableHead className="text-xs">Captação</TableHead>
+                  <TableHead className="text-xs">Produtor Origem</TableHead>
+                  {kpiModalOpen === 'fechado' && <TableHead className="text-xs">Fechamento</TableHead>}
+                  {kpiModalOpen !== 'fechado' && <TableHead className="text-xs">Data Cotação</TableHead>}
+                  <TableHead className="text-xs">Início Vigência</TableHead>
+                  <TableHead className="text-xs text-right">Prêmio</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(kpiModalOpen === 'emCotacao' ? clientesEmCotacao : kpiModalOpen === 'fechado' ? clientesFechados : clientesDeclinados).map((cotacao) => (
+                  <TableRow key={cotacao.id} className="h-8">
+                    <TableCell className="text-xs py-1 font-medium">{cotacao.segurado}</TableCell>
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.cpf_cnpj}</TableCell>
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.ramo?.descricao || '—'}</TableCell>
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.seguradora?.nome || '—'}</TableCell>
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.captacao?.descricao || '—'}</TableCell>
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.produtor_origem?.nome || '—'}</TableCell>
+                    {kpiModalOpen === 'fechado' && <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : '—'}</TableCell>}
+                    {kpiModalOpen !== 'fechado' && <TableCell className="text-xs py-1 text-muted-foreground">{formatDate(cotacao.data_cotacao)}</TableCell>}
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.inicio_vigencia ? formatDate(cotacao.inicio_vigencia) : '—'}</TableCell>
+                    <TableCell className="text-xs py-1 text-right font-medium">{formatCurrency(cotacao.valor_premio)}</TableCell>
+                  </TableRow>
+                ))}
+                {(kpiModalOpen === 'emCotacao' ? clientesEmCotacao : kpiModalOpen === 'fechado' ? clientesFechados : clientesDeclinados).length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center text-xs text-muted-foreground py-8">
+                      Nenhum registro encontrado no período
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </>;
 };
