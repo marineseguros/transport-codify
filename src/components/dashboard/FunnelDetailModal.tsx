@@ -130,8 +130,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
   const [activeStage, setActiveStage] = useState(initialStage);
   const [selectedFlow, setSelectedFlow] = useState<{ origem: string; negociador: string; cotador: string } | null>(null);
   const [roleHighlight, setRoleHighlight] = useState<string | null>(null);
-  const [hoveredFlow, setHoveredFlow] = useState<string | null>(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [selectedProducer, setSelectedProducer] = useState<string>('');
   const [selectedProducer, setSelectedProducer] = useState<string>('');
 
   useEffect(() => {
