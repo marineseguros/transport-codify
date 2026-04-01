@@ -329,6 +329,20 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
               </button>
             )}
           </div>
+
+          {/* Producer filter */}
+          <div className="mt-3">
+            <select
+              value={selectedProducer}
+              onChange={(e) => setSelectedProducer(e.target.value)}
+              className="h-8 rounded-md border border-border/60 bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[220px]"
+            >
+              <option value="">Todos os produtores</option>
+              {producerOptions.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Content — Only Composição por Produtor */}
