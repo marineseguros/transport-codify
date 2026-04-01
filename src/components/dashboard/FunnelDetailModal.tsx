@@ -296,11 +296,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     return <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px] gap-1"><Clock className="h-3 w-3" />{status}</Badge>;
   };
 
-  const hoveredGroup = hoveredFlow ? filteredFlowGroups.find(g => g.key === hoveredFlow) : null;
-
-  const handleFlowMouseMove = (e: React.MouseEvent) => {
-    setTooltipPos({ x: e.clientX, y: e.clientY });
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
