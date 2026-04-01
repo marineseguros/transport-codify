@@ -315,27 +315,26 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
             <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[activeStage]}</p>
           </DialogHeader>
 
-          {/* Stage pills */}
-          <div className="mt-2 flex items-center gap-1 rounded-lg border border-border/60 bg-muted/25 p-0.5 w-fit">
-            {Object.entries(ROLE_LABELS).map(([key, label]) =>
-              <button
-                key={key}
-                onClick={() => setActiveStage(key)}
-                className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-all ${activeStage === key
-                  ? ROLE_BUTTON_CLASSES[key]
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-              >
-                {label.replace('Produtor ', '')}
-              </button>
-            )}
-          </div>
+          {/* Stage pills + Producer filter inline */}
+          <div className="mt-2 flex items-center gap-3">
+            <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/25 p-0.5 w-fit">
+              {Object.entries(ROLE_LABELS).map(([key, label]) =>
+                <button
+                  key={key}
+                  onClick={() => setActiveStage(key)}
+                  className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-all ${activeStage === key
+                    ? ROLE_BUTTON_CLASSES[key]
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                >
+                  {label.replace('Produtor ', '')}
+                </button>
+              )}
+            </div>
 
-          {/* Producer filter */}
-          <div className="mt-3">
             <select
               value={selectedProducer}
               onChange={(e) => setSelectedProducer(e.target.value)}
-              className="h-8 rounded-md border border-border/60 bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[220px]"
+              className="h-7 rounded-md border border-border/60 bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[180px]"
             >
               <option value="">Todos os produtores</option>
               {producerOptions.map(name => (
