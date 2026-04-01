@@ -2136,6 +2136,60 @@ const Dashboard = () => {
 
       <ExportCotacoesModal open={exportModalOpen} onOpenChange={setExportModalOpen} />
       <CotacoesAnalysisModal open={analysisModalOpen} onOpenChange={setAnalysisModalOpen} />
+
+      {/* KPI Detail Modal */}
+      <Dialog open={!!kpiModalOpen} onOpenChange={(open) => !open && setKpiModalOpen(null)}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              {kpiModalOpen === 'emCotacao' && 'Clientes em Cotação no Período'}
+              {kpiModalOpen === 'fechado' && 'Clientes Fechados no Período'}
+              {kpiModalOpen === 'declinado' && 'Clientes Declinados no Período'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Segurado</TableHead>
+                  <TableHead className="text-xs">CPF/CNPJ</TableHead>
+                  <TableHead className="text-xs">Ramo</TableHead>
+                  <TableHead className="text-xs">Seguradora</TableHead>
+                  <TableHead className="text-xs">Captação</TableHead>
+                  <TableHead className="text-xs">Produtor Origem</TableHead>
+                  {kpiModalOpen === 'fechado' && <TableHead className="text-xs">Fechamento</TableHead>}
+                  {kpiModalOpen !== 'fechado' && <TableHead className="text-xs">Data Cotação</TableHead>}
+                  <TableHead className="text-xs">Início Vigência</TableHead>
+                  <TableHead className="text-xs text-right">Prêmio</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(kpiModalOpen === 'emCotacao' ? clientesEmCotacao : kpiModalOpen === 'fechado' ? clientesFechados : clientesDeclinados).map((cotacao) => (
+                  <TableRow key={cotacao.id} className="h-8">
+                    <TableCell className="text-xs py-1 font-medium">{cotacao.segurado}</TableCell>
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.cpf_cnpj}</TableCell>
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.ramo?.descricao || '—'}</TableCell>
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.seguradora?.nome || '—'}</TableCell>
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.captacao?.descricao || '—'}</TableCell>
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.produtor_origem?.nome || '—'}</TableCell>
+                    {kpiModalOpen === 'fechado' && <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : '—'}</TableCell>}
+                    {kpiModalOpen !== 'fechado' && <TableCell className="text-xs py-1 text-muted-foreground">{formatDate(cotacao.data_cotacao)}</TableCell>}
+                    <TableCell className="text-xs py-1 text-muted-foreground">{cotacao.inicio_vigencia ? formatDate(cotacao.inicio_vigencia) : '—'}</TableCell>
+                    <TableCell className="text-xs py-1 text-right font-medium">{formatCurrency(cotacao.valor_premio)}</TableCell>
+                  </TableRow>
+                ))}
+                {(kpiModalOpen === 'emCotacao' ? clientesEmCotacao : kpiModalOpen === 'fechado' ? clientesFechados : clientesDeclinados).length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center text-xs text-muted-foreground py-8">
+                      Nenhum registro encontrado no período
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </>;
 };
