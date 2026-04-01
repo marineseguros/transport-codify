@@ -138,8 +138,14 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     if (open) {
       setActiveStage(initialStage);
       setRoleHighlight(null);
+      setSelectedProducer('');
     }
   }, [initialStage, open]);
+
+  // Reset producer filter when stage changes
+  useEffect(() => {
+    setSelectedProducer('');
+  }, [activeStage]);
 
   const roleKey = ROLE_KEY_MAP[activeStage as keyof typeof ROLE_KEY_MAP] || 'produtor_origem';
 
