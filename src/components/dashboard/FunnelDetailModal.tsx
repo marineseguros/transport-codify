@@ -132,13 +132,20 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
   const [roleHighlight, setRoleHighlight] = useState<string | null>(null);
   const [hoveredFlow, setHoveredFlow] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [selectedProducer, setSelectedProducer] = useState<string>('');
 
   useEffect(() => {
     if (open) {
       setActiveStage(initialStage);
       setRoleHighlight(null);
+      setSelectedProducer('');
     }
   }, [initialStage, open]);
+
+  // Reset producer filter when stage changes
+  useEffect(() => {
+    setSelectedProducer('');
+  }, [activeStage]);
 
   const roleKey = ROLE_KEY_MAP[activeStage as keyof typeof ROLE_KEY_MAP] || 'produtor_origem';
 
@@ -263,12 +270,20 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     return groups.sort((a, b) => b.count - a.count);
   }, [flowData]);
 
-  // Filter by selected role highlight (filter by unique producer name for the role)
+  // Unique producers for the active stage role
+  const producerOptions = useMemo(() => {
+    const roleField = activeStage as 'origem' | 'negociador' | 'cotador';
+    const names = new Set<string>();
+    flowGroups.forEach(g => names.add(g[roleField]));
+    return Array.from(names).filter(n => n !== '—').sort((a, b) => a.localeCompare(b));
+  }, [flowGroups, activeStage]);
+
+  // Filter by selected producer for the active role
   const filteredFlowGroups = useMemo(() => {
-    if (!roleHighlight) return flowGroups;
-    // Get unique producers for the highlighted role and sort; no actual filter — just reorder by that role
-    return flowGroups;
-  }, [flowGroups, roleHighlight]);
+    if (!selectedProducer) return flowGroups;
+    const roleField = activeStage as 'origem' | 'negociador' | 'cotador';
+    return flowGroups.filter(g => g[roleField] === selectedProducer);
+  }, [flowGroups, selectedProducer, activeStage]);
 
   const maxCount = filteredFlowGroups[0]?.count || 1;
   const totalRegistros = flowData.length;
@@ -313,6 +328,20 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                 {label.replace('Produtor ', '')}
               </button>
             )}
+          </div>
+
+          {/* Producer filter */}
+          <div className="mt-3">
+            <select
+              value={selectedProducer}
+              onChange={(e) => setSelectedProducer(e.target.value)}
+              className="h-8 rounded-md border border-border/60 bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[220px]"
+            >
+              <option value="">Todos os produtores</option>
+              {producerOptions.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
           </div>
         </div>
 
