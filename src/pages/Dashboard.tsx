@@ -1726,7 +1726,11 @@ const Dashboard = () => {
       {/* Gráficos e Análises Avançadas */}
 
       {/* Análise de Funil */}
-      <FunnelAnalysisCard cotacoes={filteredCotacoes} allCotacoes={allQuotes} dashboardFilters={filters} totalDistinct={globalEmAbertoDistinct} dashboardCounts={funnelDashboardCounts} />
+      <FunnelAnalysisCard cotacoes={funnelBaseCotacoes} allCotacoes={allQuotes} dashboardFilters={filters} totalDistinct={countDistinctByStatus(funnelBaseCotacoes, ["Em cotação", "Negócio fechado", "Fechamento congênere", "Declinado"])} dashboardCounts={{
+        emCotacao: countDistinctByStatus(funnelBaseCotacoes, ["Em cotação"]),
+        fechados: countDistinctByStatus(funnelBaseCotacoes, ["Negócio fechado", "Fechamento congênere"]),
+        declinados: countDistinctByStatus(funnelBaseCotacoes, ["Declinado"]),
+      }} />
 
 
 
