@@ -325,16 +325,18 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
               )}
             </div>
 
-            <select
-              value={selectedProducer}
-              onChange={(e) => setSelectedProducer(e.target.value)}
-              className="h-7 rounded-md border border-border/60 bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[180px]"
-            >
-              <option value="">Todos os produtores</option>
-              {producerOptions.map(name => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
+            <Select value={selectedProducer} onValueChange={(v) => setSelectedProducer(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="h-7 w-[200px] text-xs border-border/60 bg-background">
+                <span className="text-muted-foreground mr-1">Produtor:</span>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos</SelectItem>
+                {producerOptions.map(name => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
