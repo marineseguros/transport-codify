@@ -270,12 +270,20 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     return groups.sort((a, b) => b.count - a.count);
   }, [flowData]);
 
-  // Filter by selected role highlight (filter by unique producer name for the role)
+  // Unique producers for the active stage role
+  const producerOptions = useMemo(() => {
+    const roleField = activeStage as 'origem' | 'negociador' | 'cotador';
+    const names = new Set<string>();
+    flowGroups.forEach(g => names.add(g[roleField]));
+    return Array.from(names).filter(n => n !== '—').sort((a, b) => a.localeCompare(b));
+  }, [flowGroups, activeStage]);
+
+  // Filter by selected producer for the active role
   const filteredFlowGroups = useMemo(() => {
-    if (!roleHighlight) return flowGroups;
-    // Get unique producers for the highlighted role and sort; no actual filter — just reorder by that role
-    return flowGroups;
-  }, [flowGroups, roleHighlight]);
+    if (!selectedProducer) return flowGroups;
+    const roleField = activeStage as 'origem' | 'negociador' | 'cotador';
+    return flowGroups.filter(g => g[roleField] === selectedProducer);
+  }, [flowGroups, selectedProducer, activeStage]);
 
   const maxCount = filteredFlowGroups[0]?.count || 1;
   const totalRegistros = flowData.length;
