@@ -376,7 +376,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                     key={group.key}
                     onClick={() => setSelectedFlow({ origem: group.origem, negociador: group.negociador, cotador: group.cotador })}
                     className="flex items-center gap-3 w-full text-left cursor-pointer group hover:bg-primary/5 rounded-lg px-3 py-2 transition-colors border border-transparent hover:border-primary/20"
-                    className="flex items-center gap-3 w-full text-left cursor-pointer group hover:bg-primary/5 rounded-lg px-3 py-2 transition-colors border border-transparent hover:border-primary/20"
                   >
                     {/* Producer names with role highlight */}
                     <div className="flex items-center gap-1.5 shrink-0" style={{ minWidth: '280px' }}>
