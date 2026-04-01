@@ -698,6 +698,26 @@ const Dashboard = () => {
     declinados: monthlyStats.declinados,
   }), [globalEmAbertoDistinct, monthlyStats.fechados, monthlyStats.declinados]);
 
+  // Cotações filtradas sem filtro de período (para Análise de Funil - sempre período total)
+  const funnelBaseCotacoes = useMemo(() => {
+    return allQuotes.filter((cotacao) => {
+      let produtorMatch = true;
+      if (filters.produtorFilter.length > 0) {
+        if (cotacao.status === "Em cotação") {
+          produtorMatch = cotacao.produtor_cotador?.nome ? filters.produtorFilter.includes(cotacao.produtor_cotador.nome) : false;
+        } else {
+          produtorMatch = cotacao.produtor_origem?.nome ? filters.produtorFilter.includes(cotacao.produtor_origem.nome) : false;
+        }
+      }
+      const seguradoraMatch = filters.seguradoraFilter.length === 0 || cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome);
+      const ramoMatch = filters.ramoFilter.length === 0 || cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao);
+      const segmentoMatch = filters.segmentoFilter.length === 0 || cotacao.ramo?.segmento && filters.segmentoFilter.includes(cotacao.ramo.segmento);
+      const regraMatch = filters.regraFilter.length === 0 || cotacao.ramo?.regra && filters.regraFilter.includes(cotacao.ramo.regra);
+      const unidadeMatch = filters.unidadeFilter.length === 0 || cotacao.unidade?.descricao && filters.unidadeFilter.includes(cotacao.unidade.descricao);
+      return produtorMatch && seguradoraMatch && ramoMatch && segmentoMatch && regraMatch && unidadeMatch;
+    });
+  }, [allQuotes, filters.produtorFilter, filters.seguradoraFilter, filters.ramoFilter, filters.segmentoFilter, filters.regraFilter, filters.unidadeFilter]);
+
   // Calculate TOTAL open quotes ignoring date filters (for "Em Aberto Total" column)
   const totalEmAbertoByProdutor = useMemo(() => {
     const stats: Record<string, {
