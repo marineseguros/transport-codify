@@ -928,14 +928,19 @@ const Dashboard = () => {
     });
   }, [filteredCotacoes, totalEmAbertoByProdutor]);
 
-  // Clientes fechados para o tooltip - include "Fechamento congênere"
+  // Clientes fechados para o modal
   const clientesFechados = useMemo(() => {
-    return filteredCotacoes.filter((cotacao) => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere").sort((a, b) => new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime()).slice(0, 10);
+    return filteredCotacoes.filter((cotacao) => cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere").sort((a, b) => new Date(b.data_fechamento || b.created_at).getTime() - new Date(a.data_fechamento || a.created_at).getTime());
   }, [filteredCotacoes]);
 
-  // Clientes em cotação para o tooltip
+  // Clientes em cotação para o modal
   const clientesEmCotacao = useMemo(() => {
-    return filteredCotacoes.filter((cotacao) => cotacao.status === "Em cotação").sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime()).slice(0, 10);
+    return filteredCotacoes.filter((cotacao) => cotacao.status === "Em cotação").sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime());
+  }, [filteredCotacoes]);
+
+  // Clientes declinados para o modal
+  const clientesDeclinados = useMemo(() => {
+    return filteredCotacoes.filter((cotacao) => cotacao.status === "Declinado").sort((a, b) => new Date(b.data_cotacao).getTime() - new Date(a.data_cotacao).getTime());
   }, [filteredCotacoes]);
 
   // View mode state for recent quotes
