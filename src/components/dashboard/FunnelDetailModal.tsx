@@ -132,6 +132,7 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
   const [roleHighlight, setRoleHighlight] = useState<string | null>(null);
   const [hoveredFlow, setHoveredFlow] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [selectedProducer, setSelectedProducer] = useState<string>('');
 
   useEffect(() => {
     if (open) {
