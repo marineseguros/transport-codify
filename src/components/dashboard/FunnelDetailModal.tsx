@@ -130,8 +130,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
   const [activeStage, setActiveStage] = useState(initialStage);
   const [selectedFlow, setSelectedFlow] = useState<{ origem: string; negociador: string; cotador: string } | null>(null);
   const [roleHighlight, setRoleHighlight] = useState<string | null>(null);
-  const [hoveredFlow, setHoveredFlow] = useState<string | null>(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [selectedProducer, setSelectedProducer] = useState<string>('');
 
   useEffect(() => {
@@ -296,11 +294,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
     return <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px] gap-1"><Clock className="h-3 w-3" />{status}</Badge>;
   };
 
-  const hoveredGroup = hoveredFlow ? filteredFlowGroups.find(g => g.key === hoveredFlow) : null;
-
-  const handleFlowMouseMove = (e: React.MouseEvent) => {
-    setTooltipPos({ x: e.clientX, y: e.clientY });
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -315,27 +308,26 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
             <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[activeStage]}</p>
           </DialogHeader>
 
-          {/* Stage pills */}
-          <div className="mt-2 flex items-center gap-1 rounded-lg border border-border/60 bg-muted/25 p-0.5 w-fit">
-            {Object.entries(ROLE_LABELS).map(([key, label]) =>
-              <button
-                key={key}
-                onClick={() => setActiveStage(key)}
-                className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-all ${activeStage === key
-                  ? ROLE_BUTTON_CLASSES[key]
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-              >
-                {label.replace('Produtor ', '')}
-              </button>
-            )}
-          </div>
+          {/* Stage pills + Producer filter inline */}
+          <div className="mt-2 flex items-center gap-3">
+            <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/25 p-0.5 w-fit">
+              {Object.entries(ROLE_LABELS).map(([key, label]) =>
+                <button
+                  key={key}
+                  onClick={() => setActiveStage(key)}
+                  className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-all ${activeStage === key
+                    ? ROLE_BUTTON_CLASSES[key]
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                >
+                  {label.replace('Produtor ', '')}
+                </button>
+              )}
+            </div>
 
-          {/* Producer filter */}
-          <div className="mt-3">
             <select
               value={selectedProducer}
               onChange={(e) => setSelectedProducer(e.target.value)}
-              className="h-8 rounded-md border border-border/60 bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[220px]"
+              className="h-7 rounded-md border border-border/60 bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[180px]"
             >
               <option value="">Todos os produtores</option>
               {producerOptions.map(name => (
@@ -381,9 +373,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
                   <button
                     key={group.key}
                     onClick={() => setSelectedFlow({ origem: group.origem, negociador: group.negociador, cotador: group.cotador })}
-                    onMouseEnter={() => setHoveredFlow(group.key)}
-                    onMouseMove={handleFlowMouseMove}
-                    onMouseLeave={() => setHoveredFlow(null)}
                     className="flex items-center gap-3 w-full text-left cursor-pointer group hover:bg-primary/5 rounded-lg px-3 py-2 transition-colors border border-transparent hover:border-primary/20"
                   >
                     {/* Producer names with role highlight */}
@@ -424,30 +413,6 @@ export function FunnelDetailModal({ open, onOpenChange, cotacoes, allCotacoes, d
             </CardContent>
           </Card>
         </div>
-
-        {/* Mouse-following tooltip for flow items */}
-        {hoveredGroup && (
-          <div
-            className="fixed z-[9999] pointer-events-none animate-in fade-in-0 duration-100"
-            style={{
-              left: tooltipPos.x + 16,
-              top: tooltipPos.y - 12,
-            }}
-          >
-            <div className="rounded-xl border border-border/80 bg-popover px-4 py-3 shadow-xl backdrop-blur-sm min-w-[200px] max-w-[300px]">
-              <p className="text-xs font-bold text-foreground mb-1">
-                {hoveredGroup.origem} → {hoveredGroup.negociador} → {hoveredGroup.cotador}
-              </p>
-              <p className="text-[10px] text-muted-foreground mb-2">{hoveredGroup.count} cotação(ões) · {formatCurrency(hoveredGroup.premio)}</p>
-              <p className="text-[10px] text-muted-foreground font-semibold mb-1">Segurados:</p>
-              <div className="max-h-[180px] overflow-y-auto space-y-0.5">
-                {hoveredGroup.segurados.sort((a, b) => a.localeCompare(b)).map((s) => (
-                  <p key={s} className="text-[11px] text-muted-foreground leading-relaxed">• {s}</p>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </DialogContent>
 
       {/* Sub-Modal: Flow Detail */}
