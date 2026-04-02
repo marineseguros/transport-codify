@@ -80,14 +80,14 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
           <DialogTitle className="flex items-center gap-2 text-base">
             <FileText className="h-5 w-5" />
             <span>{config.title}</span>
-            <Badge variant={config.badgeVariant} className="ml-2">{groups.length} segmentos</Badge>
+            <Badge variant={config.badgeVariant} className="ml-2">{cardDistinctCount} segmentos</Badge>
             <Badge variant="secondary" className="ml-1">{cotacoes.length} cotações</Badge>
           </DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-3 gap-3 p-3 bg-muted/30 rounded-lg">
           <div className="text-center">
-            <p className={`text-xl font-bold ${config.color}`}>{groups.length}</p>
+            <p className={`text-xl font-bold ${config.color}`}>{cardDistinctCount}</p>
             <p className="text-xs text-muted-foreground">Segmentos</p>
           </div>
           <div className="text-center">
