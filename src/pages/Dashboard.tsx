@@ -2141,7 +2141,8 @@ const Dashboard = () => {
           open={!!kpiModalOpen}
           onClose={() => setKpiModalOpen(null)}
           type={kpiModalOpen}
-          cotacoes={kpiModalOpen === 'emCotacao' ? clientesEmCotacao : kpiModalOpen === 'fechado' ? clientesFechados : clientesDeclinados}
+          cotacoes={kpiModalOpen === 'emCotacao' ? funnelBaseCotacoes : kpiModalOpen === 'fechado' ? clientesFechados : clientesDeclinados}
+          cardDistinctCount={kpiModalOpen === 'emCotacao' ? globalEmAbertoDistinct : kpiModalOpen === 'fechado' ? monthlyStats.fechados : monthlyStats.declinados}
           formatCurrency={formatCurrency}
           formatDate={formatDate}
         />
