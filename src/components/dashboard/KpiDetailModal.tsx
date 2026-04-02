@@ -16,6 +16,7 @@ interface KpiDetailModalProps {
   onClose: () => void;
   type: KpiType;
   cotacoes: Cotacao[];
+  cardDistinctCount: number;
   formatCurrency: (value: number) => string;
   formatDate: (dateString: string) => string;
 }
