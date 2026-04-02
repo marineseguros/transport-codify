@@ -6,9 +6,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, FileText, Building, DollarSign } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Building } from "lucide-react";
 import { type Cotacao } from "@/hooks/useSupabaseData";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 type KpiType = 'emCotacao' | 'fechado' | 'declinado';
 
@@ -54,14 +53,7 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, formatCurrency, 
       const ramoGroup = getBranchGroup(c.ramo);
       const key = `${c.cpf_cnpj}_${ramoGroup}`;
       if (!map.has(key)) {
-        map.set(key, {
-          key,
-          segurado: c.segurado,
-          cpfCnpj: c.cpf_cnpj,
-          ramoGroup,
-          premioTotal: 0,
-          cotacoes: [],
-        });
+        map.set(key, { key, segurado: c.segurado, cpfCnpj: c.cpf_cnpj, ramoGroup, premioTotal: 0, cotacoes: [] });
       }
       const g = map.get(key)!;
       g.premioTotal += c.valor_premio || 0;
@@ -75,8 +67,7 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, formatCurrency, 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
   };
@@ -88,16 +79,11 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, formatCurrency, 
           <DialogTitle className="flex items-center gap-2 text-base">
             <FileText className="h-5 w-5" />
             <span>{config.title}</span>
-            <Badge variant={config.badgeVariant} className="ml-2">
-              {groups.length} segmentos
-            </Badge>
-            <Badge variant="secondary" className="ml-1">
-              {cotacoes.length} cotações
-            </Badge>
+            <Badge variant={config.badgeVariant} className="ml-2">{groups.length} segmentos</Badge>
+            <Badge variant="secondary" className="ml-1">{cotacoes.length} cotações</Badge>
           </DialogTitle>
         </DialogHeader>
 
-        {/* Summary */}
         <div className="grid grid-cols-3 gap-3 p-3 bg-muted/30 rounded-lg">
           <div className="text-center">
             <p className={`text-xl font-bold ${config.color}`}>{groups.length}</p>
@@ -113,7 +99,6 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, formatCurrency, 
           </div>
         </div>
 
-        {/* Table */}
         <div className="overflow-y-auto flex-1">
           <table className="min-w-full text-sm">
             <thead className="sticky top-0 bg-background z-10">
@@ -137,82 +122,76 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, formatCurrency, 
               {groups.map((group) => {
                 const isExpanded = expandedGroups.has(group.key);
                 return (
-                  <Collapsible key={group.key} open={isExpanded} onOpenChange={() => toggleGroup(group.key)} asChild>
-                    <>
-                      <CollapsibleTrigger asChild>
-                        <tr className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors">
-                          <td className="py-2 px-3">
-                            {isExpanded ? (
-                              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                            )}
-                          </td>
-                          <td className="py-2 px-2">
-                            <div className="flex items-center gap-2">
-                              <Building className="h-3 w-3 text-muted-foreground shrink-0" />
-                              <span className="font-medium">{group.segurado}</span>
+                  <>
+                    <tr
+                      key={group.key}
+                      className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
+                      onClick={() => toggleGroup(group.key)}
+                    >
+                      <td className="py-2 px-3">
+                        {isExpanded
+                          ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                          : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </td>
+                      <td className="py-2 px-2">
+                        <div className="flex items-center gap-2">
+                          <Building className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <span className="font-medium">{group.segurado}</span>
+                        </div>
+                      </td>
+                      <td className="py-2 px-2 text-xs text-muted-foreground font-mono">{group.cpfCnpj}</td>
+                      <td className="py-2 px-2">
+                        <Badge variant="outline" className="text-xs">{group.ramoGroup}</Badge>
+                      </td>
+                      <td className="py-2 px-2 text-center">
+                        <Badge variant="secondary" className="text-xs">{group.cotacoes.length}</Badge>
+                      </td>
+                      <td className="py-2 px-2 text-right">
+                        <span className={`font-semibold ${config.color}`}>{formatCurrency(group.premioTotal)}</span>
+                      </td>
+                    </tr>
+                    {isExpanded && group.cotacoes.map((cotacao) => (
+                      <tr key={cotacao.id} className="bg-muted/10 border-b border-border/30">
+                        <td className="py-1.5 px-3"></td>
+                        <td colSpan={5} className="py-1.5 px-2">
+                          <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-2 text-xs text-muted-foreground items-center">
+                            <div>
+                              <span className="text-[10px] text-muted-foreground/60 block">Ramo</span>
+                              {cotacao.ramo?.descricao || '—'}
                             </div>
-                          </td>
-                          <td className="py-2 px-2 text-xs text-muted-foreground font-mono">{group.cpfCnpj}</td>
-                          <td className="py-2 px-2">
-                            <Badge variant="outline" className="text-xs">{group.ramoGroup}</Badge>
-                          </td>
-                          <td className="py-2 px-2 text-center">
-                            <Badge variant="secondary" className="text-xs">{group.cotacoes.length}</Badge>
-                          </td>
-                          <td className="py-2 px-2 text-right">
-                            <span className={`font-semibold ${config.color}`}>{formatCurrency(group.premioTotal)}</span>
-                          </td>
-                        </tr>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent asChild>
-                        <>
-                          {group.cotacoes.map((cotacao) => (
-                            <tr key={cotacao.id} className="bg-muted/10 border-b border-border/30">
-                              <td className="py-1.5 px-3"></td>
-                              <td colSpan={5} className="py-1.5 px-2">
-                                <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-2 text-xs text-muted-foreground items-center">
-                                  <div>
-                                    <span className="text-[10px] text-muted-foreground/60 block">Ramo</span>
-                                    {cotacao.ramo?.descricao || '—'}
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-muted-foreground/60 block">Seguradora</span>
-                                    {cotacao.seguradora?.nome || '—'}
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-muted-foreground/60 block">Captação</span>
-                                    {cotacao.captacao?.descricao || '—'}
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-muted-foreground/60 block">Produtor Origem</span>
-                                    {cotacao.produtor_origem?.nome || '—'}
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-muted-foreground/60 block">
-                                      {type === 'fechado' ? 'Fechamento' : 'Data Cotação'}
-                                    </span>
-                                    {type === 'fechado'
-                                      ? (cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : '—')
-                                      : formatDate(cotacao.data_cotacao)}
-                                    {cotacao.inicio_vigencia && (
-                                      <span className="ml-2 text-muted-foreground/60">
-                                        Vig: {formatDate(cotacao.inicio_vigencia)}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="text-right font-medium text-foreground">
-                                    {formatCurrency(cotacao.valor_premio)}
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </>
-                      </CollapsibleContent>
-                    </>
-                  </Collapsible>
+                            <div>
+                              <span className="text-[10px] text-muted-foreground/60 block">Seguradora</span>
+                              {cotacao.seguradora?.nome || '—'}
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-muted-foreground/60 block">Captação</span>
+                              {cotacao.captacao?.descricao || '—'}
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-muted-foreground/60 block">Produtor Origem</span>
+                              {cotacao.produtor_origem?.nome || '—'}
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-muted-foreground/60 block">
+                                {type === 'fechado' ? 'Fechamento' : 'Data Cotação'}
+                              </span>
+                              {type === 'fechado'
+                                ? (cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : '—')
+                                : formatDate(cotacao.data_cotacao)}
+                              {cotacao.inicio_vigencia && (
+                                <span className="ml-2 text-muted-foreground/60">
+                                  Vig: {formatDate(cotacao.inicio_vigencia)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-right font-medium text-foreground">
+                              {formatCurrency(cotacao.valor_premio)}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </>
                 );
               })}
             </tbody>
