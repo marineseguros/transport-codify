@@ -44,7 +44,7 @@ interface SegmentoGroup {
   cotacoes: Cotacao[];
 }
 
-export function KpiDetailModal({ open, onClose, type, cotacoes, formatCurrency, formatDate }: KpiDetailModalProps) {
+export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate }: KpiDetailModalProps) {
   const config = typeConfig[type];
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
