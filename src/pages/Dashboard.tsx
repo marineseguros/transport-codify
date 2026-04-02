@@ -30,6 +30,7 @@ import { CotacoesEmAbertoChart } from "@/components/dashboard/CotacoesEmAbertoCh
 import { MetasPremioComparison } from "@/components/dashboard/MetasPremioComparison";
 import { DashboardIndicadores } from "@/components/dashboard/DashboardIndicadores";
 import { FunnelAnalysisCard } from "@/components/dashboard/FunnelAnalysisCard";
+import { KpiDetailModal } from "@/components/dashboard/KpiDetailModal";
 import { useNavigate } from "react-router-dom";
 
 // Helper function to determine branch group using ramo_agrupado from DB
