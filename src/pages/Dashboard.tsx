@@ -700,16 +700,13 @@ const Dashboard = () => {
     declinados: monthlyStats.declinados,
   }), [globalEmAbertoDistinct, monthlyStats.fechados, monthlyStats.declinados]);
 
-  // Cotações filtradas sem filtro de período (para Análise de Funil - sempre período total)
+  // Cotações filtradas sem filtro de período - apenas Em Cotação (para Análise de Funil)
   const funnelBaseCotacoes = useMemo(() => {
     return allQuotes.filter((cotacao) => {
+      if (cotacao.status !== "Em cotação") return false;
       let produtorMatch = true;
       if (filters.produtorFilter.length > 0) {
-        if (cotacao.status === "Em cotação") {
-          produtorMatch = cotacao.produtor_cotador?.nome ? filters.produtorFilter.includes(cotacao.produtor_cotador.nome) : false;
-        } else {
-          produtorMatch = cotacao.produtor_origem?.nome ? filters.produtorFilter.includes(cotacao.produtor_origem.nome) : false;
-        }
+        produtorMatch = cotacao.produtor_cotador?.nome ? filters.produtorFilter.includes(cotacao.produtor_cotador.nome) : false;
       }
       const seguradoraMatch = filters.seguradoraFilter.length === 0 || cotacao.seguradora?.nome && filters.seguradoraFilter.includes(cotacao.seguradora.nome);
       const ramoMatch = filters.ramoFilter.length === 0 || cotacao.ramo?.descricao && filters.ramoFilter.includes(cotacao.ramo.descricao);
