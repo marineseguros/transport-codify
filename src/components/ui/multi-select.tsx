@@ -161,7 +161,7 @@ export function MultiSelect({
                   role="option"
                   aria-selected={allSelected}
                   onClick={handleSelectAll}
-                  className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground font-medium border-b border-border/40 mb-1"
+                  className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground font-medium border-b border-border/40 mb-1 whitespace-nowrap"
                 >
                   <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
                     {allSelected && <Check className="h-4 w-4" />}
@@ -182,12 +182,12 @@ export function MultiSelect({
                     role="option"
                     aria-selected={isSelected}
                     onClick={() => handleSelect(option.value)}
-                    className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                    className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground whitespace-nowrap"
                   >
                     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
                       {isSelected && <Check className="h-4 w-4" />}
                     </span>
-                    {option.label}
+                    <span className="truncate">{option.label}</span>
                   </div>
                 );
               })}
