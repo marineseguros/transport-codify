@@ -85,20 +85,41 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-3 gap-3 p-3 bg-muted/30 rounded-lg">
-          <div className="text-center">
-            <p className={`text-xl font-bold ${config.color}`}>{cardDistinctCount}</p>
-            <p className="text-xs text-muted-foreground">Segmentos</p>
+        {type === 'fechado' ? (() => {
+          const distinctClients = new Set(cotacoes.map(c => c.cpf_cnpj)).size;
+          const indice = distinctClients > 0 ? (cardDistinctCount / distinctClients) : 0;
+          return (
+            <div className="grid grid-cols-3 gap-3 p-3 bg-muted/30 rounded-lg">
+              <div className="text-center">
+                <p className={`text-xl font-bold ${config.color}`}>{cardDistinctCount}</p>
+                <p className="text-xs text-muted-foreground">Total de Fechamentos</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-primary">{distinctClients}</p>
+                <p className="text-xs text-muted-foreground">Clientes Distintos</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold">{indice.toFixed(2).replace('.', ',')}</p>
+                <p className="text-xs text-muted-foreground">Índice ({cardDistinctCount} / {distinctClients})</p>
+              </div>
+            </div>
+          );
+        })() : (
+          <div className="grid grid-cols-3 gap-3 p-3 bg-muted/30 rounded-lg">
+            <div className="text-center">
+              <p className={`text-xl font-bold ${config.color}`}>{cardDistinctCount}</p>
+              <p className="text-xs text-muted-foreground">Segmentos</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xl font-bold text-primary">{formatCurrency(totalPremio)}</p>
+              <p className="text-xs text-muted-foreground">Prêmio Total</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xl font-bold">{cotacoes.length}</p>
+              <p className="text-xs text-muted-foreground">Total Cotações</p>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-xl font-bold text-primary">{formatCurrency(totalPremio)}</p>
-            <p className="text-xs text-muted-foreground">Prêmio Total</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xl font-bold">{cotacoes.length}</p>
-            <p className="text-xs text-muted-foreground">Total Cotações</p>
-          </div>
-        </div>
+        )}
 
         <div className="overflow-y-auto flex-1">
           <table className="min-w-full text-sm">
