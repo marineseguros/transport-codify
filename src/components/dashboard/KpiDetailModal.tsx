@@ -80,8 +80,8 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
           <DialogTitle className="flex items-center gap-2 text-base">
             <FileText className="h-5 w-5" />
             <span>{config.title}</span>
-            <Badge variant={config.badgeVariant} className="ml-2">{cardDistinctCount} segmentos</Badge>
-            <Badge variant="secondary" className="ml-1">{cotacoes.length} cotações</Badge>
+            <Badge variant={config.badgeVariant} className="ml-2">{cardDistinctCount} {type === 'fechado' ? 'fechamentos' : 'segmentos'}</Badge>
+            {type !== 'fechado' && <Badge variant="secondary" className="ml-1">{cotacoes.length} cotações</Badge>}
           </DialogTitle>
         </DialogHeader>
 
