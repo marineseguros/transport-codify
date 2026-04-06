@@ -126,10 +126,10 @@ export function MultiSelect({
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
 
           {/* Dropdown */}
-          <div className="absolute z-50 mt-1 min-w-[8rem] w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+          <div className="absolute z-50 mt-1 min-w-[12rem] w-max overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
             {/* Multi toggle header */}
-            <div className="flex items-center justify-between px-2 py-1.5 border-b border-border/40">
-              <span className="text-[11px] text-muted-foreground">
+            <div className="flex items-center justify-between gap-4 px-2 py-1.5 border-b border-border/40">
+              <span className="text-[11px] text-muted-foreground whitespace-nowrap">
                 {multiMode ? "Multiseleção" : "Seleção única"}
               </span>
               <Tooltip>
