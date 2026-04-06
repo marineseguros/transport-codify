@@ -3,18 +3,6 @@ import { Check, ChevronDown, X, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -47,7 +35,6 @@ export function MultiSelect({
   const [open, setOpen] = React.useState(false);
   const [multiMode, setMultiMode] = React.useState(false);
 
-  // Auto-enable multi mode if multiple items are already selected
   React.useEffect(() => {
     if (selected.length > 1) {
       setMultiMode(true);
@@ -56,18 +43,18 @@ export function MultiSelect({
 
   const handleSelect = (value: string) => {
     if (multiMode) {
-      // Multi-select behavior
       if (selected.includes(value)) {
         onChange(selected.filter((item) => item !== value));
       } else {
         onChange([...selected, value]);
       }
     } else {
-      // Single-select behavior: toggle or replace
       if (selected.includes(value) && selected.length === 1) {
         onChange([]);
+        setOpen(false);
       } else {
         onChange([value]);
+        setOpen(false);
       }
     }
   };
@@ -86,12 +73,9 @@ export function MultiSelect({
     setMultiMode(false);
   };
 
-  const toggleMultiMode = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+  const toggleMultiMode = () => {
     const newMode = !multiMode;
     setMultiMode(newMode);
-    // When switching from multi to single and multiple are selected, keep only the first
     if (!newMode && selected.length > 1) {
       onChange([selected[0]]);
     }
@@ -112,104 +96,105 @@ export function MultiSelect({
   const allSelected = selected.length === options.length && options.length > 0;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "h-8 w-full justify-between text-xs font-normal bg-background border-input",
-            selected.length === 0 && "text-muted-foreground",
-            className
+    <div className="relative">
+      <button
+        type="button"
+        role="combobox"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+          selected.length === 0 && "text-muted-foreground",
+          className
+        )}
+      >
+        <span className="truncate text-xs">{getDisplayText()}</span>
+        <div className="flex items-center gap-1 ml-2">
+          {selected.length > 0 && (
+            <X
+              className="h-3.5 w-3.5 opacity-50 hover:opacity-100 cursor-pointer"
+              onClick={handleClearAll}
+            />
           )}
-        >
-          <span className="truncate">{getDisplayText()}</span>
-          <div className="flex items-center gap-1 ml-2">
-            {selected.length > 0 && (
-              <X
-                className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
-                onClick={handleClearAll}
-              />
-            )}
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-          </div>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[220px] p-0 bg-popover border shadow-md z-50" align="start">
-        <Command>
-          {/* Multi-select toggle header */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-border/60">
-            <span className="text-[11px] text-muted-foreground font-medium">
-              {multiMode ? "Multiseleção ativa" : "Seleção única"}
-            </span>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={toggleMultiMode}
-                  className={cn(
-                    "flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium transition-colors",
-                    multiMode
-                      ? "bg-primary/15 text-primary"
-                      : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <List className="h-3 w-3" />
-                  Multi
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                {multiMode ? "Desativar multiseleção" : "Ativar multiseleção"}
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <CommandList className="max-h-[300px]">
-            <CommandEmpty className="py-3 text-center text-sm">{emptyMessage}</CommandEmpty>
-            <CommandGroup>
+          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+        </div>
+      </button>
+
+      {open && (
+        <>
+          {/* Backdrop */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+
+          {/* Dropdown */}
+          <div className="absolute z-50 mt-1 min-w-[8rem] w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+            {/* Multi toggle header */}
+            <div className="flex items-center justify-between px-2 py-1.5 border-b border-border/40">
+              <span className="text-[11px] text-muted-foreground">
+                {multiMode ? "Multiseleção" : "Seleção única"}
+              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={toggleMultiMode}
+                    className={cn(
+                      "flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium transition-colors",
+                      multiMode
+                        ? "bg-primary/15 text-primary"
+                        : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <List className="h-3 w-3" />
+                    Multi
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {multiMode ? "Desativar multiseleção" : "Ativar multiseleção"}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            <div className="max-h-[300px] overflow-y-auto p-1">
+              {/* Select all (multi mode only) */}
               {multiMode && showSelectAll && options.length > 0 && (
-                <CommandItem
-                  onSelect={handleSelectAll}
-                  className="cursor-pointer font-medium border-b mb-1"
+                <div
+                  role="option"
+                  aria-selected={allSelected}
+                  onClick={handleSelectAll}
+                  className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground font-medium border-b border-border/40 mb-1"
                 >
-                  <div className={cn(
-                    "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                    allSelected
-                      ? "bg-primary text-primary-foreground"
-                      : "opacity-50"
-                  )}>
-                    {allSelected && (
-                      <Check className="h-3 w-3" />
-                    )}
-                  </div>
-                  <span>Selecionar todos</span>
-                </CommandItem>
+                  <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                    {allSelected && <Check className="h-4 w-4" />}
+                  </span>
+                  Selecionar todos
+                </div>
               )}
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.label}
-                  onSelect={() => handleSelect(option.value)}
-                  className="cursor-pointer"
-                >
-                  <div className={cn(
-                    "mr-2 flex h-4 w-4 items-center justify-center border",
-                    multiMode ? "rounded-sm border-primary" : "rounded-full border-primary",
-                    selected.includes(option.value)
-                      ? "bg-primary text-primary-foreground"
-                      : "opacity-50"
-                  )}>
-                    {selected.includes(option.value) && (
-                      <Check className="h-3 w-3" />
-                    )}
+
+              {options.length === 0 && (
+                <div className="py-3 text-center text-sm text-muted-foreground">{emptyMessage}</div>
+              )}
+
+              {options.map((option) => {
+                const isSelected = selected.includes(option.value);
+                return (
+                  <div
+                    key={option.value}
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => handleSelect(option.value)}
+                    className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                      {isSelected && <Check className="h-4 w-4" />}
+                    </span>
+                    {option.label}
                   </div>
-                  <span>{option.label}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
