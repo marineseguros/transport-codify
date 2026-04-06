@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Check, ChevronDown, X, CheckSquare } from "lucide-react";
+import { Check, ChevronDown, X, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +14,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export interface MultiSelectOption {
   value: string;
@@ -40,12 +45,30 @@ export function MultiSelect({
   showSelectAll = true,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
+  const [multiMode, setMultiMode] = React.useState(false);
+
+  // Auto-enable multi mode if multiple items are already selected
+  React.useEffect(() => {
+    if (selected.length > 1) {
+      setMultiMode(true);
+    }
+  }, [selected.length]);
 
   const handleSelect = (value: string) => {
-    if (selected.includes(value)) {
-      onChange(selected.filter((item) => item !== value));
+    if (multiMode) {
+      // Multi-select behavior
+      if (selected.includes(value)) {
+        onChange(selected.filter((item) => item !== value));
+      } else {
+        onChange([...selected, value]);
+      }
     } else {
-      onChange([...selected, value]);
+      // Single-select behavior: toggle or replace
+      if (selected.includes(value) && selected.length === 1) {
+        onChange([]);
+      } else {
+        onChange([value]);
+      }
     }
   };
 
@@ -60,6 +83,18 @@ export function MultiSelect({
   const handleClearAll = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChange([]);
+    setMultiMode(false);
+  };
+
+  const toggleMultiMode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const newMode = !multiMode;
+    setMultiMode(newMode);
+    // When switching from multi to single and multiple are selected, keep only the first
+    if (!newMode && selected.length > 1) {
+      onChange([selected[0]]);
+    }
   };
 
   const getDisplayText = () => {
@@ -103,10 +138,36 @@ export function MultiSelect({
       </PopoverTrigger>
       <PopoverContent className="w-[220px] p-0 bg-popover border shadow-md z-50" align="start">
         <Command>
+          {/* Multi-select toggle header */}
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border/60">
+            <span className="text-[11px] text-muted-foreground font-medium">
+              {multiMode ? "Multiseleção ativa" : "Seleção única"}
+            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={toggleMultiMode}
+                  className={cn(
+                    "flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium transition-colors",
+                    multiMode
+                      ? "bg-primary/15 text-primary"
+                      : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <List className="h-3 w-3" />
+                  Multi
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                {multiMode ? "Desativar multiseleção" : "Ativar multiseleção"}
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <CommandList className="max-h-[300px]">
             <CommandEmpty className="py-3 text-center text-sm">{emptyMessage}</CommandEmpty>
             <CommandGroup>
-              {showSelectAll && options.length > 0 && (
+              {multiMode && showSelectAll && options.length > 0 && (
                 <CommandItem
                   onSelect={handleSelectAll}
                   className="cursor-pointer font-medium border-b mb-1"
@@ -132,7 +193,8 @@ export function MultiSelect({
                   className="cursor-pointer"
                 >
                   <div className={cn(
-                    "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                    "mr-2 flex h-4 w-4 items-center justify-center border",
+                    multiMode ? "rounded-sm border-primary" : "rounded-full border-primary",
                     selected.includes(option.value)
                       ? "bg-primary text-primary-foreground"
                       : "opacity-50"
