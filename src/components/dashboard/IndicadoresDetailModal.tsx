@@ -460,7 +460,7 @@ export const IndicadoresDetailModal = ({
             {localDateFilter === 'personalizado' && (
               <div className="shrink-0 w-[250px]">
                 <DatePickerWithRange
-                  date={localDateRange}
+                  date={localDateRange as any}
                   onDateChange={(range) => setLocalDateRange(range)}
                 />
               </div>
