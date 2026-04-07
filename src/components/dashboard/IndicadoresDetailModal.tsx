@@ -792,6 +792,7 @@ export const IndicadoresDetailModal = ({
             </div>
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
 
