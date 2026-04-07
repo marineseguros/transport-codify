@@ -417,12 +417,12 @@ export const IndicadoresDetailModal = ({
 
   const filteredProdutores = useMemo(() => {
     let data = [...computedProdutorData];
-    if (filterProdutor !== 'todos') data = data.filter((d) => d.nome === filterProdutor);
+    if (localProdutorFilter.length > 0) data = data.filter((d) => localProdutorFilter.includes(d.nome));
     if (filterStatus === 'atingido') data = data.filter((d) => d.pct >= 100);
     else if (filterStatus === 'parcial') data = data.filter((d) => d.pct >= 70 && d.pct < 100);
     else if (filterStatus === 'critico') data = data.filter((d) => d.pct < 70);
     return data.sort((a, b) => b.pct - a.pct);
-  }, [computedProdutorData, filterStatus, filterProdutor]);
+  }, [computedProdutorData, filterStatus, localProdutorFilter]);
 
   return (
     <>
