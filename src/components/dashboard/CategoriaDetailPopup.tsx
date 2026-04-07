@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
@@ -197,7 +197,7 @@ export const CategoriaDetailPopup = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!w-[calc(100vw-2rem)] max-w-3xl max-h-[80vh] flex flex-col">
+      <DialogContent className="!w-[calc(100vw-2rem)] max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             Detalhamento — {categoria}
@@ -205,7 +205,7 @@ export const CategoriaDetailPopup = ({
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
+        <div className="flex-1 overflow-y-auto -mx-6 px-6">
           {isProdutoCategory ? (
             <div className="rounded-lg border overflow-hidden">
               <table className="w-full text-sm">
@@ -279,7 +279,7 @@ export const CategoriaDetailPopup = ({
               </table>
             </div>
           )}
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
