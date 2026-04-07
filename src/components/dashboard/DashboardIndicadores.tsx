@@ -522,7 +522,17 @@ export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCota
         currentProdutorFilter={produtorFilter}
         dateFilter={dateFilter}
         anoEspecifico={anoEspecifico}
-        dateRangeProp={dateRange} />
+        dateRangeProp={dateRange}
+        produtores={produtores || []}
+        seguradoras={seguradoras || []}
+        ramos={ramos || []}
+        unidades={unidades || []}
+        currentSeguradoraFilter={seguradoraFilter}
+        currentRamoFilter={ramoFilter}
+        currentSegmentoFilter={segmentoFilter}
+        currentRegraFilter={regraFilter}
+        currentUnidadeFilter={unidadeFilter}
+      />
 
       {/* Video Detail Popup */}
       <Dialog open={showVideoPopup} onOpenChange={setShowVideoPopup}>
