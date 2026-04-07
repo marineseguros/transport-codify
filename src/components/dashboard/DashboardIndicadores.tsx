@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger';
 import { IndicadoresDetailModal } from './IndicadoresDetailModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
+import type { Cotacao as DashboardCotacao, Produtor, Seguradora, Ramo, Unidade } from '@/hooks/useSupabaseData';
 
 interface Produto {
   id: string;
@@ -39,6 +39,15 @@ interface DashboardIndicadoresProps {
   dateFilter?: string;
   anoEspecifico?: string;
   dateRange?: {from?: Date;to?: Date;};
+  produtores?: Produtor[];
+  seguradoras?: Seguradora[];
+  ramos?: Ramo[];
+  unidades?: Unidade[];
+  seguradoraFilter?: string[];
+  ramoFilter?: string[];
+  segmentoFilter?: string[];
+  regraFilter?: string[];
+  unidadeFilter?: string[];
 }
 
 const normalizeLabel = (value?: string | null) =>
@@ -77,7 +86,7 @@ const StatusIcon = ({ pct }: {pct: number;}) => {
   return <XCircle className="h-3.5 w-3.5 text-destructive" />;
 };
 
-export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCotacoes, dateFilter, anoEspecifico, dateRange }: DashboardIndicadoresProps) => {
+export const DashboardIndicadores = ({ produtorFilter, filteredCotacoes, allCotacoes, dateFilter, anoEspecifico, dateRange, produtores, seguradoras, ramos, unidades, seguradoraFilter, ramoFilter, segmentoFilter, regraFilter, unidadeFilter }: DashboardIndicadoresProps) => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
   const [loading, setLoading] = useState(true);
