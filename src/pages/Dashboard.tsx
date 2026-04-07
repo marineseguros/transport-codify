@@ -1575,13 +1575,6 @@ const Dashboard = () => {
                         {tempoMedioComp > 0 ? '+' : ''}{Math.round(tempoMedioComp)}d
                       </div>}
                   </div>
-                  <div className="text-center flex-1">
-                    <div className="text-sm font-bold text-success-alt">{stats.taxaConversao.toFixed(1)}%</div>
-                    <div className="text-[9px] text-muted-foreground">Conv.</div>
-                    {taxaComp !== 0 && <div className={`text-[9px] flex items-center justify-center gap-0.5 ${taxaComp > 0 ? 'text-success' : 'text-destructive'}`}>
-                        {taxaComp > 0 ? '+' : ''}{taxaComp.toFixed(1)}pp
-                      </div>}
-                  </div>
                 </div>
                 
                 {/* Linha 2: Prêmio Total */}

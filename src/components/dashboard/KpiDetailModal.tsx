@@ -80,19 +80,19 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
           <DialogTitle className="flex items-center gap-2 text-base">
             <FileText className="h-5 w-5" />
             <span>{config.title}</span>
-            <Badge variant={config.badgeVariant} className="ml-2">{cardDistinctCount} {type === 'fechado' ? 'fechamentos' : 'segmentos'}</Badge>
-            {type !== 'fechado' && <Badge variant="secondary" className="ml-1">{cotacoes.length} cotações</Badge>}
+            <Badge variant={config.badgeVariant} className="ml-2">{cardDistinctCount} {type === 'fechado' ? 'fechamentos' : type === 'emCotacao' ? 'em cotação' : 'declinados'}</Badge>
           </DialogTitle>
         </DialogHeader>
 
-        {type === 'fechado' ? (() => {
+        {(() => {
           const distinctClients = new Set(cotacoes.map(c => c.cpf_cnpj)).size;
           const indice = distinctClients > 0 ? (cardDistinctCount / distinctClients) : 0;
+          const typeLabel = type === 'fechado' ? 'Total de Fechamentos' : type === 'emCotacao' ? 'Total em Cotação' : 'Total Declinados';
           return (
             <div className="grid grid-cols-3 gap-3 p-3 bg-muted/30 rounded-lg">
               <div className="text-center">
                 <p className={`text-xl font-bold ${config.color}`}>{cardDistinctCount}</p>
-                <p className="text-xs text-muted-foreground">Total de Fechamentos</p>
+                <p className="text-xs text-muted-foreground">{typeLabel}</p>
               </div>
               <div className="text-center">
                 <p className="text-xl font-bold text-primary">{distinctClients}</p>
@@ -104,22 +104,7 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
               </div>
             </div>
           );
-        })() : (
-          <div className="grid grid-cols-3 gap-3 p-3 bg-muted/30 rounded-lg">
-            <div className="text-center">
-              <p className={`text-xl font-bold ${config.color}`}>{cardDistinctCount}</p>
-              <p className="text-xs text-muted-foreground">Segmentos</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xl font-bold text-primary">{formatCurrency(totalPremio)}</p>
-              <p className="text-xs text-muted-foreground">Prêmio Total</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xl font-bold">{cotacoes.length}</p>
-              <p className="text-xs text-muted-foreground">Total Cotações</p>
-            </div>
-          </div>
-        )}
+        })()}
 
         <div className="overflow-y-auto flex-1">
           <table className="min-w-full text-sm">
