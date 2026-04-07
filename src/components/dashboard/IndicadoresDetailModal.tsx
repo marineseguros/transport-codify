@@ -236,9 +236,9 @@ export const IndicadoresDetailModal = ({
 
   // Effective produtor filter
   const effectiveProdutorFilter = useMemo(() => {
-    if (filterProdutor !== 'todos') return [filterProdutor];
-    return currentProdutorFilter;
-  }, [filterProdutor, currentProdutorFilter]);
+    if (localProdutorFilter.length > 0) return localProdutorFilter;
+    return undefined;
+  }, [localProdutorFilter]);
 
   // Compute the dashboard's active date range from filter props
   const dashboardDateRange = useMemo(() => {
