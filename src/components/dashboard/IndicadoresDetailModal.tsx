@@ -67,6 +67,15 @@ interface IndicadoresDetailModalProps {
   dateFilter?: string;
   anoEspecifico?: string;
   dateRangeProp?: { from?: Date; to?: Date };
+  produtores: Produtor[];
+  seguradoras: Seguradora[];
+  ramos: Ramo[];
+  unidades: Unidade[];
+  currentSeguradoraFilter?: string[];
+  currentRamoFilter?: string[];
+  currentSegmentoFilter?: string[];
+  currentRegraFilter?: string[];
+  currentUnidadeFilter?: string[];
 }
 
 const normalizeLabel = (value?: string | null) =>
