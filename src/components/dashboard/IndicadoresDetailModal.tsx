@@ -180,6 +180,15 @@ export const IndicadoresDetailModal = ({
   dateFilter,
   anoEspecifico,
   dateRangeProp,
+  produtores,
+  seguradoras,
+  ramos,
+  unidades,
+  currentSeguradoraFilter,
+  currentRamoFilter,
+  currentSegmentoFilter,
+  currentRegraFilter,
+  currentUnidadeFilter,
 }: IndicadoresDetailModalProps) => {
   const [filterCategoria, setFilterCategoria] = useState<string>('todas');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
@@ -190,6 +199,18 @@ export const IndicadoresDetailModal = ({
   const [localPeriodo, setLocalPeriodo] = useState<string>('dashboard');
   const [localDateFrom, setLocalDateFrom] = useState<string>('');
   const [localDateTo, setLocalDateTo] = useState<string>('');
+
+  // Dashboard-mirrored filters (local state, initialized from dashboard)
+  const [localProdutorFilter, setLocalProdutorFilter] = useState<string[]>(currentProdutorFilter || []);
+  const [localSeguradoraFilter, setLocalSeguradoraFilter] = useState<string[]>(currentSeguradoraFilter || []);
+  const [localRamoFilter, setLocalRamoFilter] = useState<string[]>(currentRamoFilter || []);
+  const [localSegmentoFilter, setLocalSegmentoFilter] = useState<string[]>(currentSegmentoFilter || []);
+  const [localRegraFilter, setLocalRegraFilter] = useState<string[]>(currentRegraFilter || []);
+  const [localUnidadeFilter, setLocalUnidadeFilter] = useState<string[]>(currentUnidadeFilter || []);
+  const [localDateFilter, setLocalDateFilter] = useState<string>(dateFilter || 'mes_atual');
+  const [localAnoEspecifico, setLocalAnoEspecifico] = useState<string>(anoEspecifico || '');
+  const [localDateRange, setLocalDateRange] = useState(dateRangeProp);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
 
   const parseBrDate = (v: string): Date | null => {
     if (!v || v.length !== 10) return null;
