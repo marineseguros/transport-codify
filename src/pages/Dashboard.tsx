@@ -1714,7 +1714,7 @@ const Dashboard = () => {
       </div>
 
       {/* Indicadores (Produtos) */}
-      <DashboardIndicadores produtorFilter={filters.produtorFilter} filteredCotacoes={filteredCotacoes} allCotacoes={allQuotes} dateFilter={filters.dateFilter} anoEspecifico={filters.anoEspecifico} dateRange={filters.dateRange} />
+      <DashboardIndicadores produtorFilter={filters.produtorFilter} filteredCotacoes={filteredCotacoes} allCotacoes={allQuotes} dateFilter={filters.dateFilter} anoEspecifico={filters.anoEspecifico} dateRange={filters.dateRange} produtores={produtores} seguradoras={seguradoras} ramos={ramos} unidades={unidades} seguradoraFilter={filters.seguradoraFilter} ramoFilter={filters.ramoFilter} segmentoFilter={filters.segmentoFilter} regraFilter={filters.regraFilter} unidadeFilter={filters.unidadeFilter} />
 
       {/* Gráficos e Análises Avançadas */}
 
