@@ -240,21 +240,15 @@ export const IndicadoresDetailModal = ({
     return undefined;
   }, [localProdutorFilter]);
 
-  // Compute the dashboard's active date range from filter props
+  // Compute the active date range from local filter state
   const dashboardDateRange = useMemo(() => {
-    // If local custom period is set, use it
-    if (localPeriodo === 'personalizado') {
-      const from = parseBrDate(localDateFrom);
-      const to = parseBrDate(localDateTo);
-      if (from && to) {
-        return { start: from, end: to };
-      }
-    }
-
     const now = new Date();
     let start: Date;
     let end: Date = now;
-    switch (dateFilter) {
+    const activeDateFilter = localDateFilter;
+    const activeAno = localAnoEspecifico;
+
+    switch (activeDateFilter) {
       case '30dias':
         start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
@@ -275,14 +269,14 @@ export const IndicadoresDetailModal = ({
         end = new Date(now.getFullYear() - 1, 11, 31);
         break;
       case 'ano_especifico': {
-        const year = parseInt(anoEspecifico || '') || now.getFullYear();
+        const year = parseInt(activeAno || '') || now.getFullYear();
         start = new Date(year, 0, 1);
         end = new Date(year, 11, 31);
         break;
       }
       case 'personalizado':
-        start = dateRangeProp?.from || now;
-        end = dateRangeProp?.to || start;
+        start = localDateRange?.from || now;
+        end = localDateRange?.to || start;
         break;
       default:
         start = new Date(2000, 0, 1);
@@ -290,7 +284,7 @@ export const IndicadoresDetailModal = ({
         break;
     }
     return { start, end };
-  }, [dateFilter, anoEspecifico, dateRangeProp, localPeriodo, localDateFrom, localDateTo]);
+  }, [localDateFilter, localAnoEspecifico, localDateRange]);
 
   const filterStartMonth = format(dashboardDateRange.start, 'yyyy-MM');
   const filterEndMonth = format(dashboardDateRange.end, 'yyyy-MM');
