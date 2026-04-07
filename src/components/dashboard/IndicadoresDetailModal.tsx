@@ -2,14 +2,17 @@ import { useState, useMemo, Fragment } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Target, TrendingUp, TrendingDown, Minus, Filter, ChevronRight, ChevronDown, Eye } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, Minus, Filter, ChevronRight, ChevronDown, Eye, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { format, startOfMonth, endOfMonth, parseISO, parse, isValid } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { ptBR } from 'date-fns/locale';
-import type { Cotacao as DashboardCotacao } from '@/hooks/useSupabaseData';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DatePickerWithRange } from '@/components/ui/date-picker';
+import type { Cotacao as DashboardCotacao, Produtor, Seguradora, Ramo, Unidade } from '@/hooks/useSupabaseData';
 import { CategoriaDetailPopup } from './CategoriaDetailPopup';
 
 interface Produto {
@@ -64,6 +67,15 @@ interface IndicadoresDetailModalProps {
   dateFilter?: string;
   anoEspecifico?: string;
   dateRangeProp?: { from?: Date; to?: Date };
+  produtores: Produtor[];
+  seguradoras: Seguradora[];
+  ramos: Ramo[];
+  unidades: Unidade[];
+  currentSeguradoraFilter?: string[];
+  currentRamoFilter?: string[];
+  currentSegmentoFilter?: string[];
+  currentRegraFilter?: string[];
+  currentUnidadeFilter?: string[];
 }
 
 const normalizeLabel = (value?: string | null) =>
@@ -168,6 +180,15 @@ export const IndicadoresDetailModal = ({
   dateFilter,
   anoEspecifico,
   dateRangeProp,
+  produtores,
+  seguradoras,
+  ramos,
+  unidades,
+  currentSeguradoraFilter,
+  currentRamoFilter,
+  currentSegmentoFilter,
+  currentRegraFilter,
+  currentUnidadeFilter,
 }: IndicadoresDetailModalProps) => {
   const [filterCategoria, setFilterCategoria] = useState<string>('todas');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
@@ -178,6 +199,18 @@ export const IndicadoresDetailModal = ({
   const [localPeriodo, setLocalPeriodo] = useState<string>('dashboard');
   const [localDateFrom, setLocalDateFrom] = useState<string>('');
   const [localDateTo, setLocalDateTo] = useState<string>('');
+
+  // Dashboard-mirrored filters (local state, initialized from dashboard)
+  const [localProdutorFilter, setLocalProdutorFilter] = useState<string[]>(currentProdutorFilter || []);
+  const [localSeguradoraFilter, setLocalSeguradoraFilter] = useState<string[]>(currentSeguradoraFilter || []);
+  const [localRamoFilter, setLocalRamoFilter] = useState<string[]>(currentRamoFilter || []);
+  const [localSegmentoFilter, setLocalSegmentoFilter] = useState<string[]>(currentSegmentoFilter || []);
+  const [localRegraFilter, setLocalRegraFilter] = useState<string[]>(currentRegraFilter || []);
+  const [localUnidadeFilter, setLocalUnidadeFilter] = useState<string[]>(currentUnidadeFilter || []);
+  const [localDateFilter, setLocalDateFilter] = useState<string>(dateFilter || 'mes_atual');
+  const [localAnoEspecifico, setLocalAnoEspecifico] = useState<string>(anoEspecifico || '');
+  const [localDateRange, setLocalDateRange] = useState(dateRangeProp);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
 
   const parseBrDate = (v: string): Date | null => {
     if (!v || v.length !== 10) return null;
@@ -203,25 +236,19 @@ export const IndicadoresDetailModal = ({
 
   // Effective produtor filter
   const effectiveProdutorFilter = useMemo(() => {
-    if (filterProdutor !== 'todos') return [filterProdutor];
-    return currentProdutorFilter;
-  }, [filterProdutor, currentProdutorFilter]);
+    if (localProdutorFilter.length > 0) return localProdutorFilter;
+    return undefined;
+  }, [localProdutorFilter]);
 
-  // Compute the dashboard's active date range from filter props
+  // Compute the active date range from local filter state
   const dashboardDateRange = useMemo(() => {
-    // If local custom period is set, use it
-    if (localPeriodo === 'personalizado') {
-      const from = parseBrDate(localDateFrom);
-      const to = parseBrDate(localDateTo);
-      if (from && to) {
-        return { start: from, end: to };
-      }
-    }
-
     const now = new Date();
     let start: Date;
     let end: Date = now;
-    switch (dateFilter) {
+    const activeDateFilter = localDateFilter;
+    const activeAno = localAnoEspecifico;
+
+    switch (activeDateFilter) {
       case '30dias':
         start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
@@ -242,14 +269,14 @@ export const IndicadoresDetailModal = ({
         end = new Date(now.getFullYear() - 1, 11, 31);
         break;
       case 'ano_especifico': {
-        const year = parseInt(anoEspecifico || '') || now.getFullYear();
+        const year = parseInt(activeAno || '') || now.getFullYear();
         start = new Date(year, 0, 1);
         end = new Date(year, 11, 31);
         break;
       }
       case 'personalizado':
-        start = dateRangeProp?.from || now;
-        end = dateRangeProp?.to || start;
+        start = localDateRange?.from || now;
+        end = localDateRange?.to || start;
         break;
       default:
         start = new Date(2000, 0, 1);
@@ -257,7 +284,7 @@ export const IndicadoresDetailModal = ({
         break;
     }
     return { start, end };
-  }, [dateFilter, anoEspecifico, dateRangeProp, localPeriodo, localDateFrom, localDateTo]);
+  }, [localDateFilter, localAnoEspecifico, localDateRange]);
 
   const filterStartMonth = format(dashboardDateRange.start, 'yyyy-MM');
   const filterEndMonth = format(dashboardDateRange.end, 'yyyy-MM');
@@ -390,17 +417,17 @@ export const IndicadoresDetailModal = ({
 
   const filteredProdutores = useMemo(() => {
     let data = [...computedProdutorData];
-    if (filterProdutor !== 'todos') data = data.filter((d) => d.nome === filterProdutor);
+    if (localProdutorFilter.length > 0) data = data.filter((d) => localProdutorFilter.includes(d.nome));
     if (filterStatus === 'atingido') data = data.filter((d) => d.pct >= 100);
     else if (filterStatus === 'parcial') data = data.filter((d) => d.pct >= 70 && d.pct < 100);
     else if (filterStatus === 'critico') data = data.filter((d) => d.pct < 70);
     return data.sort((a, b) => b.pct - a.pct);
-  }, [computedProdutorData, filterStatus, filterProdutor]);
+  }, [computedProdutorData, filterStatus, localProdutorFilter]);
 
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!w-[calc(100vw-2rem)] max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="!w-[calc(100vw-2rem)] max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Target className="h-5 w-5 text-foreground" />
@@ -408,77 +435,183 @@ export const IndicadoresDetailModal = ({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted/30 border">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={filterProdutor} onValueChange={setFilterProdutor}>
-            <SelectTrigger className="w-[160px] h-8 text-xs">
-              <SelectValue placeholder="Produtor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos produtores</SelectItem>
-              {produtorNames.map((name) => (
-                <SelectItem key={name} value={name}>{name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterCategoria} onValueChange={setFilterCategoria}>
-            <SelectTrigger className="w-[160px] h-8 text-xs">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas categorias</SelectItem>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-[160px] h-8 text-xs">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos status</SelectItem>
-              <SelectItem value="atingido">✅ Atingido (≥100%)</SelectItem>
-              <SelectItem value="parcial">⚠️ Parcial (70-99%)</SelectItem>
-              <SelectItem value="critico">🔴 Crítico (&lt;70%)</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Dashboard-style Filters */}
+        <div className="bg-muted/30 border border-border/50 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Período */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Período:</span>
+              <Select value={localDateFilter} onValueChange={setLocalDateFilter}>
+                <SelectTrigger className="h-7 text-xs border-border/60 bg-background w-auto min-w-[120px] gap-1 px-2.5 rounded-md">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mes_atual">Este mês</SelectItem>
+                  <SelectItem value="mes_anterior">Mês passado</SelectItem>
+                  <SelectItem value="ano_atual">Ano atual</SelectItem>
+                  <SelectItem value="ano_anterior">Ano anterior</SelectItem>
+                  <SelectItem value="30dias">Últimos 30 dias</SelectItem>
+                  <SelectItem value="personalizado">Personalizado</SelectItem>
+                  <SelectItem value="ano_especifico">Ano específico</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Custom period filter */}
-          <div className="flex items-center gap-2 ml-auto">
-            <Label className="text-xs text-muted-foreground whitespace-nowrap">Período:</Label>
-            <Select value={localPeriodo} onValueChange={setLocalPeriodo}>
-              <SelectTrigger className="w-[130px] h-8 text-xs">
-                <SelectValue />
+            {localDateFilter === 'personalizado' && (
+              <div className="shrink-0 w-[250px]">
+                <DatePickerWithRange
+                  date={localDateRange as any}
+                  onDateChange={(range) => setLocalDateRange(range)}
+                />
+              </div>
+            )}
+
+            {localDateFilter === 'ano_especifico' && (
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-xs font-medium text-muted-foreground">Ano:</span>
+                <Select value={localAnoEspecifico} onValueChange={setLocalAnoEspecifico}>
+                  <SelectTrigger className="h-7 text-xs border-border/60 bg-background w-[80px] gap-1 px-2.5 rounded-md">
+                    <SelectValue placeholder="Ano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="h-4 w-px bg-border/60 shrink-0 hidden sm:block" />
+
+            {/* Produtor */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Produtor:</span>
+              <div className="w-[140px]">
+                <MultiSelect
+                  options={produtores.filter(p => p.ativo).map(p => ({ value: p.nome, label: p.nome }))}
+                  selected={localProdutorFilter}
+                  onChange={setLocalProdutorFilter}
+                  placeholder="Todos"
+                  className="h-7 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Seguradora */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Seguradora:</span>
+              <div className="w-[140px]">
+                <MultiSelect
+                  options={seguradoras.filter(s => s.ativo).map(s => ({ value: s.nome, label: s.nome }))}
+                  selected={localSeguradoraFilter}
+                  onChange={setLocalSeguradoraFilter}
+                  placeholder="Todas"
+                  className="h-7 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Ramo */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Ramo:</span>
+              <div className="w-[100px]">
+                <MultiSelect
+                  options={ramos.filter(r => r.ativo).map(r => ({ value: r.descricao, label: r.descricao }))}
+                  selected={localRamoFilter}
+                  onChange={setLocalRamoFilter}
+                  placeholder="Todos"
+                  className="h-7 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Segmento */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Segmento:</span>
+              <div className="w-[120px]">
+                <MultiSelect
+                  options={(() => { const s = new Set<string>(); ramos.forEach(r => { if (r.segmento) s.add(r.segmento); }); return Array.from(s).sort().map(v => ({ value: v, label: v })); })()}
+                  selected={localSegmentoFilter}
+                  onChange={setLocalSegmentoFilter}
+                  placeholder="Todos"
+                  className="h-7 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* + Mais filtros */}
+            <Popover open={showMoreFilters} onOpenChange={setShowMoreFilters}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-7 px-2.5 text-xs gap-1.5 rounded-md text-muted-foreground hover:text-foreground ${(localRegraFilter.length > 0 || localUnidadeFilter.length > 0) ? 'text-primary font-medium' : ''}`}
+                >
+                  <SlidersHorizontal className="h-3 w-3" />
+                  Mais filtros
+                  {(() => { const c = (localRegraFilter.length > 0 ? 1 : 0) + (localUnidadeFilter.length > 0 ? 1 : 0); return c > 0 ? <span className="inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold">{c}</span> : null; })()}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-4" align="start">
+                <div className="space-y-4">
+                  <p className="text-sm font-medium">Filtros adicionais</p>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
+                      <MultiSelect
+                        options={(() => { const s = new Set<string>(); ramos.forEach(r => { if (r.regra) s.add(r.regra); }); return Array.from(s).sort().map(v => ({ value: v, label: v })); })()}
+                        selected={localRegraFilter}
+                        onChange={setLocalRegraFilter}
+                        placeholder="Todas"
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Unidade</Label>
+                      <MultiSelect
+                        options={unidades.filter(u => u.ativo).map(u => ({ value: u.descricao, label: u.descricao }))}
+                        selected={localUnidadeFilter}
+                        onChange={setLocalUnidadeFilter}
+                        placeholder="Todas"
+                        className="h-8"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <div className="flex-1 min-w-[4px]" />
+
+            {/* Categoria & Status filters */}
+            <div className="h-4 w-px bg-border/60 shrink-0 hidden sm:block" />
+            <Select value={filterCategoria} onValueChange={setFilterCategoria}>
+              <SelectTrigger className="h-7 text-xs border-border/60 bg-background w-auto min-w-[130px] gap-1 px-2.5 rounded-md">
+                <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="dashboard">Do Dashboard</SelectItem>
-                <SelectItem value="personalizado">Personalizado</SelectItem>
+                <SelectItem value="todas">Todas categorias</SelectItem>
+                {CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            {localPeriodo === 'personalizado' && (
-              <>
-                <input
-                  type="text"
-                  placeholder="dd/mm/aaaa"
-                  value={localDateFrom}
-                  onChange={(e) => setLocalDateFrom(formatDateInput(e.target.value, localDateFrom))}
-                  maxLength={10}
-                  className="w-[110px] h-8 text-xs px-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground"
-                />
-                <input
-                  type="text"
-                  placeholder="dd/mm/aaaa"
-                  value={localDateTo}
-                  onChange={(e) => setLocalDateTo(formatDateInput(e.target.value, localDateTo))}
-                  maxLength={10}
-                  className="w-[110px] h-8 text-xs px-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground"
-                />
-              </>
-            )}
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-7 text-xs border-border/60 bg-background w-auto min-w-[130px] gap-1 px-2.5 rounded-md">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos status</SelectItem>
+                <SelectItem value="atingido">✅ Atingido (≥100%)</SelectItem>
+                <SelectItem value="parcial">⚠️ Parcial (70-99%)</SelectItem>
+                <SelectItem value="critico">🔴 Crítico (&lt;70%)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
+
+        <div className="flex-1 overflow-y-auto space-y-4">
 
         {/* Summary */}
         <div className="grid grid-cols-3 gap-3">
@@ -659,6 +792,7 @@ export const IndicadoresDetailModal = ({
             </div>
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
 
