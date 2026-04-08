@@ -29,6 +29,9 @@ import {
   CalendarIcon,
   Eye,
   BarChart3,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 import { CotacaoModal } from "@/components/CotacaoModal";
 import { HistoricoGeralModal } from "@/components/HistoricoGeralModal";
