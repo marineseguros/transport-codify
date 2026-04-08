@@ -445,7 +445,7 @@ export function useCotacoes() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [produtorFilter, setProdutorFilter] = useState('');
-  const [sortBy, setSortBy] = useState('numero_cotacao');
+  const [sortBy, setSortBy] = useState('data_cotacao');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
