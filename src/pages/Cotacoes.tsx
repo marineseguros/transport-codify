@@ -29,6 +29,9 @@ import {
   CalendarIcon,
   Eye,
   BarChart3,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 import { CotacaoModal } from "@/components/CotacaoModal";
 import { HistoricoGeralModal } from "@/components/HistoricoGeralModal";
@@ -354,6 +357,20 @@ const Cotacoes = () => {
     );
   };
 
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder(field === "data_cotacao" || field === "valor_premio" || field === "numero_cotacao" ? "desc" : "asc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortBy !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    return sortOrder === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -389,7 +406,7 @@ const Cotacoes = () => {
       <Card>
         <CardContent className="pt-6">
           {/* Filtros responsivos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-10 gap-3">
             <div className="sm:col-span-2 lg:col-span-4 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -400,32 +417,7 @@ const Cotacoes = () => {
               />
             </div>
 
-            <div className="lg:col-span-2">
-              <Select
-                value={`${sortBy}-${sortOrder}`}
-                onValueChange={(value) => {
-                  const [field, order] = value.split("-");
-                  setSortBy(field);
-                  setSortOrder(order as "asc" | "desc");
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Classificar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="numero_cotacao-desc">Número Mais Recente</SelectItem>
-                  <SelectItem value="numero_cotacao-asc">Número Mais Antigo</SelectItem>
-                  <SelectItem value="segurado-asc">Nome A-Z</SelectItem>
-                  <SelectItem value="segurado-desc">Nome Z-A</SelectItem>
-                  <SelectItem value="valor_premio-desc">Maior Valor</SelectItem>
-                  <SelectItem value="valor_premio-asc">Menor Valor</SelectItem>
-                  <SelectItem value="data_cotacao-desc">Data Mais Recente</SelectItem>
-                  <SelectItem value="data_cotacao-asc">Data Mais Antiga</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-3">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Status" />
@@ -464,7 +456,7 @@ const Cotacoes = () => {
                   setSearchTerm("");
                   setStatusFilter("todos");
                   setProdutorFilter("todos");
-                  setSortBy("numero_cotacao");
+                  setSortBy("data_cotacao");
                   setSortOrder("desc");
                   setDateFilter("todos");
                   setDateRange(undefined);
@@ -500,15 +492,25 @@ const Cotacoes = () => {
                     />
                   </TableHead>
                 )}
-                <TableHead>Número</TableHead>
-                <TableHead>Segurado</TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("numero_cotacao")}>
+                  <div className="flex items-center">Número<SortIcon field="numero_cotacao" /></div>
+                </TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("segurado")}>
+                  <div className="flex items-center">Segurado<SortIcon field="segurado" /></div>
+                </TableHead>
                 <TableHead>Produtor Cotador</TableHead>
                 <TableHead>Seguradora</TableHead>
                 <TableHead>Ramo</TableHead>
                 <TableHead>Segmento</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Data</TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("valor_premio")}>
+                  <div className="flex items-center">Valor<SortIcon field="valor_premio" /></div>
+                </TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("status")}>
+                  <div className="flex items-center">Status<SortIcon field="status" /></div>
+                </TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("data_cotacao")}>
+                  <div className="flex items-center">Data<SortIcon field="data_cotacao" /></div>
+                </TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
