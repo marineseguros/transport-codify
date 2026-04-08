@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, Fragment } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,7 +6,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, FileText, Building } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronRight, FileText, Building, ArrowUpDown, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react";
 import { type Cotacao } from "@/hooks/useSupabaseData";
 
 type KpiType = 'emCotacao' | 'fechado' | 'declinado';
@@ -44,9 +45,14 @@ interface SegmentoGroup {
   cotacoes: Cotacao[];
 }
 
+type SortField = 'segurado' | 'ramoGroup' | null;
+type SortDirection = 'asc' | 'desc';
+
 export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate }: KpiDetailModalProps) {
   const config = typeConfig[type];
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const groups = useMemo(() => {
     const map = new Map<string, SegmentoGroup>();
@@ -60,10 +66,42 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
       g.premioTotal += c.valor_premio || 0;
       g.cotacoes.push(c);
     });
-    return Array.from(map.values()).sort((a, b) => b.premioTotal - a.premioTotal);
-  }, [cotacoes]);
+    const arr = Array.from(map.values());
+    if (sortField) {
+      arr.sort((a, b) => {
+        const valA = a[sortField].toUpperCase();
+        const valB = b[sortField].toUpperCase();
+        const cmp = valA.localeCompare(valB, 'pt-BR');
+        return sortDirection === 'asc' ? cmp : -cmp;
+      });
+    } else {
+      arr.sort((a, b) => b.premioTotal - a.premioTotal);
+    }
+    return arr;
+  }, [cotacoes, sortField, sortDirection]);
 
-  const totalPremio = useMemo(() => cotacoes.reduce((s, c) => s + (c.valor_premio || 0), 0), [cotacoes]);
+  const handleSort = useCallback((field: SortField) => {
+    if (sortField === field) {
+      if (sortDirection === 'desc') {
+        setSortField(null);
+      } else {
+        setSortDirection('desc');
+      }
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  }, [sortField, sortDirection]);
+
+  const allExpanded = groups.length > 0 && expandedGroups.size === groups.length;
+
+  const toggleAll = useCallback(() => {
+    if (allExpanded) {
+      setExpandedGroups(new Set());
+    } else {
+      setExpandedGroups(new Set(groups.map(g => g.key)));
+    }
+  }, [allExpanded, groups]);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => {
@@ -71,6 +109,13 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
       if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 text-muted-foreground/50" />;
+    return sortDirection === 'asc'
+      ? <ArrowUp className="h-3 w-3 ml-1 text-primary" />
+      : <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
   };
 
   return (
@@ -106,14 +151,39 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
           );
         })()}
 
+        {groups.length > 0 && (
+          <div className="flex justify-end">
+            <Button variant="ghost" size="sm" onClick={toggleAll} className="text-xs gap-1.5 h-7">
+              <ChevronsUpDown className="h-3.5 w-3.5" />
+              {allExpanded ? 'Recolher Tudo' : 'Expandir Tudo'}
+            </Button>
+          </div>
+        )}
+
         <div className="overflow-y-auto flex-1">
           <table className="min-w-full text-sm">
             <thead className="sticky top-0 bg-background z-10">
               <tr className="border-b text-xs text-muted-foreground">
                 <th className="text-left py-2 px-3 font-medium w-8"></th>
-                <th className="text-left py-2 px-2 font-medium">Segurado</th>
+                <th
+                  className="text-left py-2 px-2 font-medium cursor-pointer select-none hover:text-foreground transition-colors"
+                  onClick={() => handleSort('segurado')}
+                >
+                  <div className="flex items-center">
+                    Segurado
+                    <SortIcon field="segurado" />
+                  </div>
+                </th>
                 <th className="text-left py-2 px-2 font-medium">CPF/CNPJ</th>
-                <th className="text-left py-2 px-2 font-medium">Ramo Agrupado</th>
+                <th
+                  className="text-left py-2 px-2 font-medium cursor-pointer select-none hover:text-foreground transition-colors"
+                  onClick={() => handleSort('ramoGroup')}
+                >
+                  <div className="flex items-center">
+                    Ramo Agrupado
+                    <SortIcon field="ramoGroup" />
+                  </div>
+                </th>
                 <th className="text-center py-2 px-2 font-medium">Qtd</th>
                 <th className="text-right py-2 px-2 font-medium">Prêmio</th>
               </tr>
@@ -129,9 +199,8 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
               {groups.map((group) => {
                 const isExpanded = expandedGroups.has(group.key);
                 return (
-                  <>
+                  <Fragment key={group.key}>
                     <tr
-                      key={group.key}
                       className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
                       onClick={() => toggleGroup(group.key)}
                     >
@@ -198,7 +267,7 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
                         </td>
                       </tr>
                     ))}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
