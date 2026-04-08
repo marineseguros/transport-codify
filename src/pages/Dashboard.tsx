@@ -1543,35 +1543,35 @@ const Dashboard = () => {
           };
           return <Card key={segmento} className={`border ${segmentoColors[segmento]}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
-                <CardTitle className={`text-xs font-semibold ${segmentoTextColors[segmento]}`}>
+                <CardTitle className={`text-sm font-semibold ${segmentoTextColors[segmento]}`}>
                   {segmento}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-0 px-3 pb-2">
-                {/* Linha 1: Aberto - Fechado - Declinado | Tempo Médio - Conversão */}
+              <CardContent className="pt-1 px-3 pb-3">
+                {/* Linha 1: Aberto - Fechado - Declinado | Tempo Médio */}
                 <div className="flex items-center justify-around">
                   <div className="text-center flex-1">
-                    <div className="text-base font-bold text-brand-orange">{stats.emCotacao}</div>
-                    <div className="text-[9px] text-muted-foreground">Aberto</div>
+                    <div className="text-lg font-bold text-brand-orange">{stats.emCotacao}</div>
+                    <div className="text-[11px] text-muted-foreground">Aberto</div>
                   </div>
                   <div className="text-center flex-1">
-                    <div className="text-base font-bold text-success">{stats.fechados}</div>
-                    <div className="text-[9px] text-muted-foreground">Fechado</div>
-                    {fechadosComp !== 0 && <div className={`text-[9px] flex items-center justify-center gap-0.5 ${fechadosComp > 0 ? 'text-success' : 'text-destructive'}`}>
+                    <div className="text-lg font-bold text-success">{stats.fechados}</div>
+                    <div className="text-[11px] text-muted-foreground">Fechado</div>
+                    {fechadosComp !== 0 && <div className={`text-[10px] flex items-center justify-center gap-0.5 ${fechadosComp > 0 ? 'text-success' : 'text-destructive'}`}>
                         {fechadosComp > 0 ? '+' : ''}{fechadosComp}
                       </div>}
                   </div>
                   <div className="text-center flex-1">
-                    <div className="text-base font-bold text-destructive">{stats.declinados}</div>
-                    <div className="text-[9px] text-muted-foreground">Decl.</div>
+                    <div className="text-lg font-bold text-destructive">{stats.declinados}</div>
+                    <div className="text-[11px] text-muted-foreground">Decl.</div>
                   </div>
                   
                   <div className="text-muted-foreground/50 text-lg font-light mx-1">|</div>
                   
                   <div className="text-center flex-1">
-                    <div className="text-sm font-bold">{Math.round(stats.tempoMedio)}d</div>
-                    <div className="text-[9px] text-muted-foreground">T. Médio</div>
-                    {tempoMedioComp !== 0 && <div className={`text-[9px] flex items-center justify-center gap-0.5 ${tempoMedioComp < 0 ? 'text-success' : 'text-destructive'}`}>
+                    <div className="text-base font-bold">{Math.round(stats.tempoMedio)}d</div>
+                    <div className="text-[11px] text-muted-foreground">T. Médio</div>
+                    {tempoMedioComp !== 0 && <div className={`text-[10px] flex items-center justify-center gap-0.5 ${tempoMedioComp < 0 ? 'text-success' : 'text-destructive'}`}>
                         {tempoMedioComp > 0 ? '+' : ''}{Math.round(tempoMedioComp)}d
                       </div>}
                   </div>
@@ -1579,9 +1579,9 @@ const Dashboard = () => {
                 
                 {/* Linha 2: Prêmio Total */}
                 <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between">
-                  <div className="text-xs font-semibold">{formatCurrency(stats.premioTotal)}</div>
-                  {premioComp !== 0 && <div className={`text-[9px] flex items-center gap-0.5 ${premioComp > 0 ? 'text-success' : 'text-destructive'}`}>
-                      {premioComp > 0 ? <TrendingUp className="h-2 w-2" /> : <TrendingDown className="h-2 w-2" />}
+                  <div className="text-sm font-semibold">{formatCurrency(stats.premioTotal)}</div>
+                  {premioComp !== 0 && <div className={`text-[10px] flex items-center gap-0.5 ${premioComp > 0 ? 'text-success' : 'text-destructive'}`}>
+                      {premioComp > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                       {premioComp > 0 ? '+' : ''}{premioComp.toFixed(1)}%
                     </div>}
                 </div>
