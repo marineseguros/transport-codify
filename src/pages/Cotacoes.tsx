@@ -392,7 +392,7 @@ const Cotacoes = () => {
       <Card>
         <CardContent className="pt-6">
           {/* Filtros responsivos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-10 gap-3">
             <div className="sm:col-span-2 lg:col-span-4 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
