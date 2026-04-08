@@ -403,32 +403,7 @@ const Cotacoes = () => {
               />
             </div>
 
-            <div className="lg:col-span-2">
-              <Select
-                value={`${sortBy}-${sortOrder}`}
-                onValueChange={(value) => {
-                  const [field, order] = value.split("-");
-                  setSortBy(field);
-                  setSortOrder(order as "asc" | "desc");
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Classificar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="numero_cotacao-desc">Número Mais Recente</SelectItem>
-                  <SelectItem value="numero_cotacao-asc">Número Mais Antigo</SelectItem>
-                  <SelectItem value="segurado-asc">Nome A-Z</SelectItem>
-                  <SelectItem value="segurado-desc">Nome Z-A</SelectItem>
-                  <SelectItem value="valor_premio-desc">Maior Valor</SelectItem>
-                  <SelectItem value="valor_premio-asc">Menor Valor</SelectItem>
-                  <SelectItem value="data_cotacao-desc">Data Mais Recente</SelectItem>
-                  <SelectItem value="data_cotacao-asc">Data Mais Antiga</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-3">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Status" />
