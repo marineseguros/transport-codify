@@ -350,6 +350,13 @@ const Cotacoes = () => {
 
     // Verifica se o produtor é o criador da cotação
     const userEmail = user?.email;
+    return (
+      cotacao.produtor_origem?.email === userEmail ||
+      cotacao.produtor_negociador?.email === userEmail ||
+      cotacao.produtor_cotador?.email === userEmail
+    );
+  };
+
   const handleSort = (field: string) => {
     if (sortBy === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -362,6 +369,7 @@ const Cotacoes = () => {
   const SortIcon = ({ field }: { field: string }) => {
     if (sortBy !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
     return sortOrder === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
 
   return (
     <div className="space-y-6">
