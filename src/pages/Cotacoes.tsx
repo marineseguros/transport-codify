@@ -362,14 +362,6 @@ const Cotacoes = () => {
   const SortIcon = ({ field }: { field: string }) => {
     if (sortBy !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
     return sortOrder === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
-  };
-
-  return (
-      cotacao.produtor_origem?.email === userEmail ||
-      cotacao.produtor_negociador?.email === userEmail ||
-      cotacao.produtor_cotador?.email === userEmail
-    );
-  };
 
   return (
     <div className="space-y-6">
