@@ -442,7 +442,7 @@ const Cotacoes = () => {
                   setSearchTerm("");
                   setStatusFilter("todos");
                   setProdutorFilter("todos");
-                  setSortBy("numero_cotacao");
+                  setSortBy("data_cotacao");
                   setSortOrder("desc");
                   setDateFilter("todos");
                   setDateRange(undefined);
