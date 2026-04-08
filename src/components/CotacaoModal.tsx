@@ -146,8 +146,18 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       refetchProdutores();
     }
   }, [isOpen, produtores.length, refetchProdutores]);
+  // Extract YYYY-MM-DD from any date/timestamp string
+  const toDateOnly = (v: string | null | undefined): string => {
+    if (!v) return "";
+    return v.substring(0, 10);
+  };
+
   useEffect(() => {
     if (cotacao && (isEditing || mode === "view")) {
+      const todayStr = (() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      })();
       setFormData({
         cliente_id: cotacao.cliente_id || "",
         unidade_id: cotacao.unidade_id || "",
@@ -161,20 +171,14 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         captacao_id: cotacao.captacao_id || "",
         status_seguradora_id: cotacao.status_seguradora_id || "",
         tipo: cotacao.tipo || "Nova",
-        data_cotacao: cotacao.data_cotacao || (() => {
-          const now = new Date();
-          const year = now.getFullYear();
-          const month = String(now.getMonth() + 1).padStart(2, '0');
-          const day = String(now.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        })(),
-        inicio_vigencia: cotacao.inicio_vigencia || "",
-        fim_vigencia: cotacao.fim_vigencia || "",
+        data_cotacao: toDateOnly(cotacao.data_cotacao) || todayStr,
+        inicio_vigencia: toDateOnly(cotacao.inicio_vigencia),
+        fim_vigencia: toDateOnly(cotacao.fim_vigencia),
         valor_premio: cotacao.valor_premio || 0,
         status: cotacao.status || "Em análise",
         observacoes: cotacao.observacoes || "",
         segmento: cotacao.segmento || "",
-        data_fechamento: cotacao.data_fechamento || undefined,
+        data_fechamento: toDateOnly(cotacao.data_fechamento) || undefined,
         num_proposta: cotacao.num_proposta || undefined,
         motivo_recusa: cotacao.motivo_recusa?.includes("||") 
           ? cotacao.motivo_recusa.split("||")[0].trim() 
