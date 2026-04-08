@@ -492,15 +492,25 @@ const Cotacoes = () => {
                     />
                   </TableHead>
                 )}
-                <TableHead>Número</TableHead>
-                <TableHead>Segurado</TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("numero_cotacao")}>
+                  <div className="flex items-center">Número<SortIcon field="numero_cotacao" /></div>
+                </TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("segurado")}>
+                  <div className="flex items-center">Segurado<SortIcon field="segurado" /></div>
+                </TableHead>
                 <TableHead>Produtor Cotador</TableHead>
                 <TableHead>Seguradora</TableHead>
                 <TableHead>Ramo</TableHead>
                 <TableHead>Segmento</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Data</TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("valor_premio")}>
+                  <div className="flex items-center">Valor<SortIcon field="valor_premio" /></div>
+                </TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("status")}>
+                  <div className="flex items-center">Status<SortIcon field="status" /></div>
+                </TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => handleSort("data_cotacao")}>
+                  <div className="flex items-center">Data<SortIcon field="data_cotacao" /></div>
+                </TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
