@@ -352,14 +352,18 @@ export const IndicadoresDetailModal = ({
       return { ...item, pct, falta };
     }), [computedChartData]);
 
+  // When Ramo or Segmento filters are active, only show Cotação and Fechamento
+  const hasRamoSegmentoFilter = localRamoFilter.length > 0 || localSegmentoFilter.length > 0;
+
   const filtered = useMemo(() => {
     let data = enrichedData;
+    if (hasRamoSegmentoFilter) data = data.filter((d) => d.categoria === 'Cotação' || d.categoria === 'Fechamento');
     if (filterCategoria !== 'todas') data = data.filter((d) => d.categoria === filterCategoria);
     if (filterStatus === 'atingido') data = data.filter((d) => d.pct >= 100);
     else if (filterStatus === 'parcial') data = data.filter((d) => d.pct >= 70 && d.pct < 100);
     else if (filterStatus === 'critico') data = data.filter((d) => d.pct < 70);
     return data;
-  }, [enrichedData, filterCategoria, filterStatus]);
+  }, [enrichedData, filterCategoria, filterStatus, hasRamoSegmentoFilter]);
 
   const totals = useMemo(() => {
     const m = filtered.reduce((s, i) => s + i.Meta, 0);
