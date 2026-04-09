@@ -409,7 +409,7 @@ export const IndicadoresDetailModal = ({
         // Sum realized for this producer across all categories
         let monthRealizado = 0;
         CATEGORIES.forEach((cat) => {
-          monthRealizado += computeRealized(cat, allProdutos, allCotacoes || [], start, end, [nome]);
+          monthRealizado += computeRealized(cat, allProdutos, allCotacoes || [], start, end, [nome], localRamoFilter.length > 0 ? localRamoFilter : undefined, localSegmentoFilter.length > 0 ? localSegmentoFilter : undefined);
         });
 
         totalMeta += monthMeta;
