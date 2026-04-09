@@ -341,7 +341,7 @@ export const IndicadoresDetailModal = ({
       result[cat] = rows;
     });
     return result;
-  }, [availableMonths, allMetas, allProdutos, allCotacoes, effectiveProdutorFilter]);
+  }, [availableMonths, allMetas, allProdutos, allCotacoes, effectiveProdutorFilter, localRamoFilter, localSegmentoFilter]);
 
   // Main category totals derived from monthly data (ensures consistency)
   const computedChartData = useMemo(() => {
