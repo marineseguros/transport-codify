@@ -2,15 +2,13 @@ import { useState, useMemo, Fragment } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Target, TrendingUp, TrendingDown, Minus, Filter, ChevronRight, ChevronDown, Eye, SlidersHorizontal } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, Minus, ChevronRight, ChevronDown, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { format, startOfMonth, endOfMonth, parseISO, parse, isValid } from 'date-fns';
-import { Label } from '@/components/ui/label';
 import { ptBR } from 'date-fns/locale';
-import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { DatePickerWithRange } from '@/components/ui/date-picker';
 import type { Cotacao as DashboardCotacao, Produtor, Seguradora, Ramo, Unidade } from '@/hooks/useSupabaseData';
 import { CategoriaDetailPopup } from './CategoriaDetailPopup';
@@ -124,29 +122,37 @@ const computeRealized = (
   cotacoes: DashboardCotacao[],
   start: Date,
   end: Date,
-  prodFilter?: string[]
+  prodFilter?: string[],
+  ramoFilter?: string[],
+  segmentoFilter?: string[],
 ) => {
+  const matchesRamoSegmento = (c: DashboardCotacao) => {
+    if (ramoFilter?.length && !(ramoFilter.includes(c.ramo?.descricao || ''))) return false;
+    if (segmentoFilter?.length && !(segmentoFilter.includes(c.ramo?.segmento || ''))) return false;
+    return true;
+  };
+
   if (cat === 'Cotação') {
-    // Mixed attribution: Cotação uses produtor_cotador
     const monthCotacoes = cotacoes.filter((c) => {
       const d = new Date(c.data_cotacao);
       if (d < start || d > end) return false;
-      if (!prodFilter?.length) return true;
-      return prodFilter.includes(c.produtor_cotador?.nome || '');
+      if (!prodFilter?.length) { /* ok */ } else if (!prodFilter.includes(c.produtor_cotador?.nome || '')) return false;
+      if (!matchesRamoSegmento(c)) return false;
+      return true;
     });
     const keys = new Set<string>();
     monthCotacoes.forEach((c) => keys.add(`${c.cpf_cnpj}_${getBranchGroup(c.ramo)}`));
     return keys.size;
   }
   if (cat === 'Fechamento') {
-    // Mixed attribution: Fechamento uses produtor_origem
     const closed = cotacoes.filter((c) => {
       if (c.status !== 'Negócio fechado' && c.status !== 'Fechamento congênere') return false;
       if (!c.data_fechamento) return false;
       const d = new Date(c.data_fechamento);
       if (d < start || d > end) return false;
-      if (!prodFilter?.length) return true;
-      return prodFilter.includes(c.produtor_origem?.nome || '');
+      if (!prodFilter?.length) { /* ok */ } else if (!prodFilter.includes(c.produtor_origem?.nome || '')) return false;
+      if (!matchesRamoSegmento(c)) return false;
+      return true;
     });
     const keys = new Set<string>();
     let avulso = 0;
@@ -202,15 +208,11 @@ export const IndicadoresDetailModal = ({
 
   // Dashboard-mirrored filters (local state, initialized from dashboard)
   const [localProdutorFilter, setLocalProdutorFilter] = useState<string[]>(currentProdutorFilter || []);
-  const [localSeguradoraFilter, setLocalSeguradoraFilter] = useState<string[]>(currentSeguradoraFilter || []);
   const [localRamoFilter, setLocalRamoFilter] = useState<string[]>(currentRamoFilter || []);
   const [localSegmentoFilter, setLocalSegmentoFilter] = useState<string[]>(currentSegmentoFilter || []);
-  const [localRegraFilter, setLocalRegraFilter] = useState<string[]>(currentRegraFilter || []);
-  const [localUnidadeFilter, setLocalUnidadeFilter] = useState<string[]>(currentUnidadeFilter || []);
   const [localDateFilter, setLocalDateFilter] = useState<string>(dateFilter || 'mes_atual');
   const [localAnoEspecifico, setLocalAnoEspecifico] = useState<string>(anoEspecifico || '');
   const [localDateRange, setLocalDateRange] = useState(dateRangeProp);
-  const [showMoreFilters, setShowMoreFilters] = useState(false);
 
   const parseBrDate = (v: string): Date | null => {
     if (!v || v.length !== 10) return null;
@@ -329,7 +331,7 @@ export const IndicadoresDetailModal = ({
           )
           .reduce((s, m) => s + m.quantidade, 0);
 
-        const realizado = computeRealized(cat, allProdutos, allCotacoes || [], start, end, effectiveProdutorFilter);
+        const realizado = computeRealized(cat, allProdutos, allCotacoes || [], start, end, effectiveProdutorFilter, localRamoFilter.length > 0 ? localRamoFilter : undefined, localSegmentoFilter.length > 0 ? localSegmentoFilter : undefined);
 
         if (metaTotal > 0 || realizado > 0) {
           const pct = metaTotal > 0 ? (realizado / metaTotal) * 100 : 0;
@@ -339,7 +341,7 @@ export const IndicadoresDetailModal = ({
       result[cat] = rows;
     });
     return result;
-  }, [availableMonths, allMetas, allProdutos, allCotacoes, effectiveProdutorFilter]);
+  }, [availableMonths, allMetas, allProdutos, allCotacoes, effectiveProdutorFilter, localRamoFilter, localSegmentoFilter]);
 
   // Main category totals derived from monthly data (ensures consistency)
   const computedChartData = useMemo(() => {
@@ -358,14 +360,18 @@ export const IndicadoresDetailModal = ({
       return { ...item, pct, falta };
     }), [computedChartData]);
 
+  // When Ramo or Segmento filters are active, only show Cotação and Fechamento
+  const hasRamoSegmentoFilter = localRamoFilter.length > 0 || localSegmentoFilter.length > 0;
+
   const filtered = useMemo(() => {
     let data = enrichedData;
+    if (hasRamoSegmentoFilter) data = data.filter((d) => d.categoria === 'Cotação' || d.categoria === 'Fechamento');
     if (filterCategoria !== 'todas') data = data.filter((d) => d.categoria === filterCategoria);
     if (filterStatus === 'atingido') data = data.filter((d) => d.pct >= 100);
     else if (filterStatus === 'parcial') data = data.filter((d) => d.pct >= 70 && d.pct < 100);
     else if (filterStatus === 'critico') data = data.filter((d) => d.pct < 70);
     return data;
-  }, [enrichedData, filterCategoria, filterStatus]);
+  }, [enrichedData, filterCategoria, filterStatus, hasRamoSegmentoFilter]);
 
   const totals = useMemo(() => {
     const m = filtered.reduce((s, i) => s + i.Meta, 0);
@@ -403,7 +409,7 @@ export const IndicadoresDetailModal = ({
         // Sum realized for this producer across all categories
         let monthRealizado = 0;
         CATEGORIES.forEach((cat) => {
-          monthRealizado += computeRealized(cat, allProdutos, allCotacoes || [], start, end, [nome]);
+          monthRealizado += computeRealized(cat, allProdutos, allCotacoes || [], start, end, [nome], localRamoFilter.length > 0 ? localRamoFilter : undefined, localSegmentoFilter.length > 0 ? localSegmentoFilter : undefined);
         });
 
         totalMeta += monthMeta;
@@ -498,20 +504,6 @@ export const IndicadoresDetailModal = ({
               </div>
             </div>
 
-            {/* Seguradora */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Seguradora:</span>
-              <div className="w-[140px]">
-                <MultiSelect
-                  options={seguradoras.filter(s => s.ativo).map(s => ({ value: s.nome, label: s.nome }))}
-                  selected={localSeguradoraFilter}
-                  onChange={setLocalSeguradoraFilter}
-                  placeholder="Todas"
-                  className="h-7 text-xs"
-                />
-              </div>
-            </div>
-
             {/* Ramo */}
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Ramo:</span>
@@ -539,48 +531,6 @@ export const IndicadoresDetailModal = ({
                 />
               </div>
             </div>
-
-            {/* + Mais filtros */}
-            <Popover open={showMoreFilters} onOpenChange={setShowMoreFilters}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`h-7 px-2.5 text-xs gap-1.5 rounded-md text-muted-foreground hover:text-foreground ${(localRegraFilter.length > 0 || localUnidadeFilter.length > 0) ? 'text-primary font-medium' : ''}`}
-                >
-                  <SlidersHorizontal className="h-3 w-3" />
-                  Mais filtros
-                  {(() => { const c = (localRegraFilter.length > 0 ? 1 : 0) + (localUnidadeFilter.length > 0 ? 1 : 0); return c > 0 ? <span className="inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold">{c}</span> : null; })()}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-4" align="start">
-                <div className="space-y-4">
-                  <p className="text-sm font-medium">Filtros adicionais</p>
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
-                      <MultiSelect
-                        options={(() => { const s = new Set<string>(); ramos.forEach(r => { if (r.regra) s.add(r.regra); }); return Array.from(s).sort().map(v => ({ value: v, label: v })); })()}
-                        selected={localRegraFilter}
-                        onChange={setLocalRegraFilter}
-                        placeholder="Todas"
-                        className="h-8"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Unidade</Label>
-                      <MultiSelect
-                        options={unidades.filter(u => u.ativo).map(u => ({ value: u.descricao, label: u.descricao }))}
-                        selected={localUnidadeFilter}
-                        onChange={setLocalUnidadeFilter}
-                        placeholder="Todas"
-                        className="h-8"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
 
             <div className="flex-1 min-w-[4px]" />
 
@@ -805,6 +755,8 @@ export const IndicadoresDetailModal = ({
         allCotacoes={allCotacoes || []}
         produtorFilter={effectiveProdutorFilter}
         availableMonths={detailMonth ? [detailMonth] : availableMonths}
+        ramoFilter={localRamoFilter.length > 0 ? localRamoFilter : undefined}
+        segmentoFilter={localSegmentoFilter.length > 0 ? localSegmentoFilter : undefined}
       />
     )}
   </>
