@@ -755,6 +755,8 @@ export const IndicadoresDetailModal = ({
         allCotacoes={allCotacoes || []}
         produtorFilter={effectiveProdutorFilter}
         availableMonths={detailMonth ? [detailMonth] : availableMonths}
+        ramoFilter={localRamoFilter.length > 0 ? localRamoFilter : undefined}
+        segmentoFilter={localSegmentoFilter.length > 0 ? localSegmentoFilter : undefined}
       />
     )}
   </>
