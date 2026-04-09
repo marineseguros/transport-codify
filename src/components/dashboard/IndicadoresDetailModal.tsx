@@ -122,29 +122,37 @@ const computeRealized = (
   cotacoes: DashboardCotacao[],
   start: Date,
   end: Date,
-  prodFilter?: string[]
+  prodFilter?: string[],
+  ramoFilter?: string[],
+  segmentoFilter?: string[],
 ) => {
+  const matchesRamoSegmento = (c: DashboardCotacao) => {
+    if (ramoFilter?.length && !(ramoFilter.includes(c.ramo?.descricao || ''))) return false;
+    if (segmentoFilter?.length && !(segmentoFilter.includes(c.ramo?.segmento || ''))) return false;
+    return true;
+  };
+
   if (cat === 'Cotação') {
-    // Mixed attribution: Cotação uses produtor_cotador
     const monthCotacoes = cotacoes.filter((c) => {
       const d = new Date(c.data_cotacao);
       if (d < start || d > end) return false;
-      if (!prodFilter?.length) return true;
-      return prodFilter.includes(c.produtor_cotador?.nome || '');
+      if (!prodFilter?.length) { /* ok */ } else if (!prodFilter.includes(c.produtor_cotador?.nome || '')) return false;
+      if (!matchesRamoSegmento(c)) return false;
+      return true;
     });
     const keys = new Set<string>();
     monthCotacoes.forEach((c) => keys.add(`${c.cpf_cnpj}_${getBranchGroup(c.ramo)}`));
     return keys.size;
   }
   if (cat === 'Fechamento') {
-    // Mixed attribution: Fechamento uses produtor_origem
     const closed = cotacoes.filter((c) => {
       if (c.status !== 'Negócio fechado' && c.status !== 'Fechamento congênere') return false;
       if (!c.data_fechamento) return false;
       const d = new Date(c.data_fechamento);
       if (d < start || d > end) return false;
-      if (!prodFilter?.length) return true;
-      return prodFilter.includes(c.produtor_origem?.nome || '');
+      if (!prodFilter?.length) { /* ok */ } else if (!prodFilter.includes(c.produtor_origem?.nome || '')) return false;
+      if (!matchesRamoSegmento(c)) return false;
+      return true;
     });
     const keys = new Set<string>();
     let avulso = 0;
