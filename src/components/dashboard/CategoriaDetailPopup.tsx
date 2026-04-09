@@ -34,6 +34,8 @@ interface CategoriaDetailPopupProps {
   allCotacoes: DashboardCotacao[];
   produtorFilter?: string[];
   availableMonths: string[];
+  ramoFilter?: string[];
+  segmentoFilter?: string[];
 }
 
 interface ProdutoRow {
@@ -49,6 +51,7 @@ interface CotacaoRow {
   key: string;
   segurado: string;
   cpfCnpj: string;
+  segmento: string;
   ramo: string;
   seguradora: string;
   produtor: string;
@@ -65,9 +68,10 @@ export const CategoriaDetailPopup = ({
   allCotacoes,
   produtorFilter,
   availableMonths,
+  ramoFilter,
+  segmentoFilter,
 }: CategoriaDetailPopupProps) => {
 
-  // Build date ranges from availableMonths
   const monthRanges = useMemo(() =>
     availableMonths.map((mk) => {
       const [y, m] = mk.split('-').map(Number);
@@ -77,6 +81,12 @@ export const CategoriaDetailPopup = ({
     }), [availableMonths]);
 
   const isProdutoCategory = categoria !== 'Cotação' && categoria !== 'Fechamento';
+
+  const matchesRamoSegmento = (c: DashboardCotacao) => {
+    if (ramoFilter?.length && !ramoFilter.includes(c.ramo?.descricao || '')) return false;
+    if (segmentoFilter?.length && !segmentoFilter.includes(c.ramo?.segmento || '')) return false;
+    return true;
+  };
 
   // Produtos-based categories
   const produtoRows = useMemo<ProdutoRow[]>(() => {
@@ -114,10 +124,10 @@ export const CategoriaDetailPopup = ({
       const inMonth = monthRanges.some((r) => d >= r.start && d <= r.end);
       if (!inMonth) return false;
       if (produtorFilter?.length && !produtorFilter.includes(c.produtor_cotador?.nome || '')) return false;
+      if (!matchesRamoSegmento(c)) return false;
       return true;
     });
 
-    // Group by CPF/CNPJ + branch group (distinct counting)
     const groups = new Map<string, DashboardCotacao[]>();
     filtered.forEach((c) => {
       const key = `${c.cpf_cnpj}_${getBranchGroup(c.ramo)}`;
@@ -132,7 +142,8 @@ export const CategoriaDetailPopup = ({
         key,
         segurado: first.segurado,
         cpfCnpj: first.cpf_cnpj,
-        ramo: getBranchGroup(first.ramo),
+        segmento: getBranchGroup(first.ramo),
+        ramo: first.ramo?.descricao || '—',
         seguradora: seguradoras || '—',
         produtor: first.produtor_cotador?.nome || '—',
         data: first.data_cotacao,
@@ -140,7 +151,7 @@ export const CategoriaDetailPopup = ({
         premio: cotacoes.reduce((s, c) => s + (c.valor_premio || 0), 0),
       };
     }).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
-  }, [allCotacoes, monthRanges, produtorFilter, categoria]);
+  }, [allCotacoes, monthRanges, produtorFilter, categoria, ramoFilter, segmentoFilter]);
 
   // Fechamento-based category
   const fechamentoRows = useMemo<CotacaoRow[]>(() => {
@@ -153,10 +164,10 @@ export const CategoriaDetailPopup = ({
       const inMonth = monthRanges.some((r) => d >= r.start && d <= r.end);
       if (!inMonth) return false;
       if (produtorFilter?.length && !produtorFilter.includes(c.produtor_origem?.nome || '')) return false;
+      if (!matchesRamoSegmento(c)) return false;
       return true;
     });
 
-    // Group by CPF/CNPJ + branch group (non-Avulso), individual for Avulso
     const groups = new Map<string, DashboardCotacao[]>();
     let avulsoIdx = 0;
     closed.forEach((c) => {
@@ -174,7 +185,8 @@ export const CategoriaDetailPopup = ({
         key,
         segurado: first.segurado,
         cpfCnpj: first.cpf_cnpj,
-        ramo: getBranchGroup(first.ramo),
+        segmento: getBranchGroup(first.ramo),
+        ramo: first.ramo?.descricao || '—',
         seguradora: seguradoras || '—',
         produtor: first.produtor_origem?.nome || '—',
         data: first.data_fechamento || first.data_cotacao,
@@ -182,7 +194,7 @@ export const CategoriaDetailPopup = ({
         premio: cotacoes.reduce((s, c) => s + (c.valor_premio || 0), 0),
       };
     }).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
-  }, [allCotacoes, monthRanges, produtorFilter, categoria]);
+  }, [allCotacoes, monthRanges, produtorFilter, categoria, ramoFilter, segmentoFilter]);
 
   const isCotacaoType = categoria === 'Cotação' || categoria === 'Fechamento';
   const rows = isCotacaoType ? (categoria === 'Cotação' ? cotacaoRows : fechamentoRows) : [];
@@ -197,7 +209,7 @@ export const CategoriaDetailPopup = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!w-[calc(100vw-2rem)] max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="!w-[calc(100vw-2rem)] max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             Detalhamento — {categoria}
@@ -244,6 +256,7 @@ export const CategoriaDetailPopup = ({
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">#</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Segurado</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Ramo</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Segmento</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Seguradora</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Produtor</th>
                     <th className="text-center px-3 py-2 font-medium text-muted-foreground">Data</th>
@@ -258,6 +271,7 @@ export const CategoriaDetailPopup = ({
                       <td className="px-3 py-2 text-muted-foreground text-xs">{i + 1}</td>
                       <td className="px-3 py-2 font-medium truncate max-w-[180px]">{r.segurado}</td>
                       <td className="px-3 py-2 text-muted-foreground text-xs">{r.ramo}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs">{r.segmento}</td>
                       <td className="px-3 py-2 text-muted-foreground text-xs truncate max-w-[120px]">{r.seguradora}</td>
                       <td className="px-3 py-2 text-muted-foreground text-xs">{r.produtor}</td>
                       <td className="px-3 py-2 text-center text-muted-foreground text-xs">{formatDate(r.data)}</td>
@@ -270,7 +284,7 @@ export const CategoriaDetailPopup = ({
                   ))}
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={categoria === 'Fechamento' ? 7 : 6} className="px-3 py-6 text-center text-muted-foreground">
+                      <td colSpan={categoria === 'Fechamento' ? 8 : 7} className="px-3 py-6 text-center text-muted-foreground">
                         Nenhum registro encontrado
                       </td>
                     </tr>
