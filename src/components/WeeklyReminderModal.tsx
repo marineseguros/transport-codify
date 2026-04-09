@@ -32,7 +32,7 @@ export const WeeklyReminderModal = ({ open, onClose, userId }: WeeklyReminderMod
       toast.success("Obrigado por confirmar!");
       onClose();
     } catch (error) {
-      console.error("Error confirming reminder:", error);
+      logger.error("Error confirming reminder:", error);
       toast.error("Erro ao confirmar. Tente novamente.");
     } finally {
       setIsConfirming(false);
