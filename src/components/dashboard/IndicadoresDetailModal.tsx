@@ -492,20 +492,6 @@ export const IndicadoresDetailModal = ({
               </div>
             </div>
 
-            {/* Seguradora */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Seguradora:</span>
-              <div className="w-[140px]">
-                <MultiSelect
-                  options={seguradoras.filter(s => s.ativo).map(s => ({ value: s.nome, label: s.nome }))}
-                  selected={localSeguradoraFilter}
-                  onChange={setLocalSeguradoraFilter}
-                  placeholder="Todas"
-                  className="h-7 text-xs"
-                />
-              </div>
-            </div>
-
             {/* Ramo */}
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Ramo:</span>
@@ -533,48 +519,6 @@ export const IndicadoresDetailModal = ({
                 />
               </div>
             </div>
-
-            {/* + Mais filtros */}
-            <Popover open={showMoreFilters} onOpenChange={setShowMoreFilters}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`h-7 px-2.5 text-xs gap-1.5 rounded-md text-muted-foreground hover:text-foreground ${(localRegraFilter.length > 0 || localUnidadeFilter.length > 0) ? 'text-primary font-medium' : ''}`}
-                >
-                  <SlidersHorizontal className="h-3 w-3" />
-                  Mais filtros
-                  {(() => { const c = (localRegraFilter.length > 0 ? 1 : 0) + (localUnidadeFilter.length > 0 ? 1 : 0); return c > 0 ? <span className="inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold">{c}</span> : null; })()}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72 p-4" align="start">
-                <div className="space-y-4">
-                  <p className="text-sm font-medium">Filtros adicionais</p>
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Tipo Regra</Label>
-                      <MultiSelect
-                        options={(() => { const s = new Set<string>(); ramos.forEach(r => { if (r.regra) s.add(r.regra); }); return Array.from(s).sort().map(v => ({ value: v, label: v })); })()}
-                        selected={localRegraFilter}
-                        onChange={setLocalRegraFilter}
-                        placeholder="Todas"
-                        className="h-8"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Unidade</Label>
-                      <MultiSelect
-                        options={unidades.filter(u => u.ativo).map(u => ({ value: u.descricao, label: u.descricao }))}
-                        selected={localUnidadeFilter}
-                        onChange={setLocalUnidadeFilter}
-                        placeholder="Todas"
-                        className="h-8"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
 
             <div className="flex-1 min-w-[4px]" />
 
