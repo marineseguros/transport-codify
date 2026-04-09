@@ -66,7 +66,7 @@ const Metas = () => {
           setProdutoresComMeta(unique.size);
         }
       } catch (error) {
-        console.error('Error fetching totals:', error);
+        logger.error('Error fetching totals:', error);
       } finally {
         setLoading(false);
       }

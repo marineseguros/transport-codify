@@ -304,7 +304,7 @@ export function ExportProdutosModal({ open, onOpenChange }: ExportProdutosModalP
       toast.success(`${data.length} produtos exportados com sucesso!`);
       onOpenChange(false);
     } catch (error) {
-      console.error("Erro ao exportar:", error);
+      logger.error("Erro ao exportar:", error);
       toast.error("Erro ao exportar produtos");
     } finally {
       setLoading(false);

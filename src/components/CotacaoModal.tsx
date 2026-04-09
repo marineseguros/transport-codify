@@ -595,7 +595,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       onClose();
     } catch (error) {
       toast.error("Erro ao salvar cotação");
-      console.error("Error saving cotacao:", error);
+      logger.error("Error saving cotacao:", error);
     }
   };
   return (

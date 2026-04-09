@@ -98,7 +98,7 @@ export function DashboardFilters({
         }));
         setSavedFilters(migrated);
       } catch (e) {
-        console.error("Error loading saved filters:", e);
+        logger.error("Error loading saved filters:", e);
       }
     } else {
       setSavedFilters([]);
