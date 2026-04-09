@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { Target, Package, DollarSign, ArrowLeft, TrendingUp, Calendar, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -66,7 +67,7 @@ const Metas = () => {
           setProdutoresComMeta(unique.size);
         }
       } catch (error) {
-        console.error('Error fetching totals:', error);
+        logger.error('Error fetching totals:', error);
       } finally {
         setLoading(false);
       }

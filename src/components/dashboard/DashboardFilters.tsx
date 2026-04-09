@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -98,7 +99,7 @@ export function DashboardFilters({
         }));
         setSavedFilters(migrated);
       } catch (e) {
-        console.error("Error loading saved filters:", e);
+        logger.error("Error loading saved filters:", e);
       }
     } else {
       setSavedFilters([]);

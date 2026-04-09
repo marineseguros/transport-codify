@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { logger } from "@/lib/logger";
 import {
   Dialog,
   DialogContent,
@@ -420,7 +421,7 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
       toast.success(`${data.length} cotações exportadas com sucesso!`);
       onOpenChange(false);
     } catch (error) {
-      console.error("Erro ao exportar:", error);
+      logger.error("Erro ao exportar:", error);
       toast.error("Erro ao exportar cotações");
     } finally {
       setLoading(false);
