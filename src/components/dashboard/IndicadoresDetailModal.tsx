@@ -331,7 +331,7 @@ export const IndicadoresDetailModal = ({
           )
           .reduce((s, m) => s + m.quantidade, 0);
 
-        const realizado = computeRealized(cat, allProdutos, allCotacoes || [], start, end, effectiveProdutorFilter);
+        const realizado = computeRealized(cat, allProdutos, allCotacoes || [], start, end, effectiveProdutorFilter, localRamoFilter.length > 0 ? localRamoFilter : undefined, localSegmentoFilter.length > 0 ? localSegmentoFilter : undefined);
 
         if (metaTotal > 0 || realizado > 0) {
           const pct = metaTotal > 0 ? (realizado / metaTotal) * 100 : 0;
