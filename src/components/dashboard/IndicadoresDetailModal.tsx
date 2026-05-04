@@ -596,19 +596,32 @@ export const IndicadoresDetailModal = ({
 
         {/* Summary */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-lg border bg-card p-3 text-center">
-            <p className="text-2xl font-bold">{totals.meta}</p>
-            <p className="text-[11px] text-muted-foreground">Total Meta</p>
+          <div className="rounded-lg border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 p-3">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Total Meta</p>
+              <Target className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <p className="text-2xl font-bold text-primary">{totals.meta}</p>
           </div>
-          <div className="rounded-lg border bg-card p-3 text-center">
-            <p className="text-2xl font-bold text-primary">{totals.realizado}</p>
-            <p className="text-[11px] text-muted-foreground">Total Realizado</p>
+          <div className="rounded-lg border border-success/20 bg-gradient-to-br from-success/10 to-success/5 p-3">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Total Realizado</p>
+              <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+            </div>
+            <p className="text-2xl font-bold text-success">{totals.realizado}</p>
           </div>
-          <div className="rounded-lg border bg-card p-3 text-center">
+          <div className={`rounded-lg border p-3 ${
+            totals.pct >= 100 ? 'border-success/20 bg-gradient-to-br from-success/10 to-success/5' :
+            totals.pct >= 70 ? 'border-warning/20 bg-gradient-to-br from-warning/10 to-warning/5' :
+            'border-destructive/20 bg-gradient-to-br from-destructive/10 to-destructive/5'
+          }`}>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">% Atingido</p>
+              <Percent className={`h-3.5 w-3.5 ${getStatusColor(totals.pct)}`} />
+            </div>
             <p className={`text-2xl font-bold ${getStatusColor(totals.pct)}`}>
               {totals.pct.toFixed(1)}%
             </p>
-            <p className="text-[11px] text-muted-foreground">% Atingido</p>
           </div>
         </div>
 
