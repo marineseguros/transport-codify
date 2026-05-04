@@ -2,8 +2,9 @@ import { useState, useMemo, Fragment } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Target, TrendingUp, TrendingDown, Minus, ChevronRight, ChevronDown, Eye } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, Minus, ChevronRight, ChevronDown, Eye, SlidersHorizontal, Trophy, CheckCircle2, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { format, startOfMonth, endOfMonth, parseISO, parse, isValid } from 'date-fns';
@@ -534,30 +535,60 @@ export const IndicadoresDetailModal = ({
 
             <div className="flex-1 min-w-[4px]" />
 
-            {/* Categoria & Status filters */}
-            <div className="h-4 w-px bg-border/60 shrink-0 hidden sm:block" />
-            <Select value={filterCategoria} onValueChange={setFilterCategoria}>
-              <SelectTrigger className="h-7 text-xs border-border/60 bg-background w-auto min-w-[130px] gap-1 px-2.5 rounded-md">
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas categorias</SelectItem>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-7 text-xs border-border/60 bg-background w-auto min-w-[130px] gap-1 px-2.5 rounded-md">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos status</SelectItem>
-                <SelectItem value="atingido">✅ Atingido (≥100%)</SelectItem>
-                <SelectItem value="parcial">⚠️ Parcial (70-99%)</SelectItem>
-                <SelectItem value="critico">🔴 Crítico (&lt;70%)</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Mais filtros (Categoria + Status) */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs gap-1.5 border-border/60 bg-background shrink-0">
+                  <SlidersHorizontal className="h-3 w-3" />
+                  Mais filtros
+                  {((filterCategoria !== 'todas' ? 1 : 0) + (filterStatus !== 'todos' ? 1 : 0)) > 0 && (
+                    <Badge variant="secondary" className="h-4 px-1.5 text-[10px] ml-0.5">
+                      {(filterCategoria !== 'todas' ? 1 : 0) + (filterStatus !== 'todos' ? 1 : 0)}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64 p-3 space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Categoria</label>
+                  <Select value={filterCategoria} onValueChange={setFilterCategoria}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas categorias</SelectItem>
+                      {CATEGORIES.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Status</label>
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos status</SelectItem>
+                      <SelectItem value="atingido">✅ Atingido (≥100%)</SelectItem>
+                      <SelectItem value="parcial">⚠️ Parcial (70-99%)</SelectItem>
+                      <SelectItem value="critico">🔴 Crítico (&lt;70%)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(filterCategoria !== 'todas' || filterStatus !== 'todos') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-7 text-xs"
+                    onClick={() => { setFilterCategoria('todas'); setFilterStatus('todos'); }}
+                  >
+                    Limpar filtros
+                  </Button>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
@@ -565,37 +596,53 @@ export const IndicadoresDetailModal = ({
 
         {/* Summary */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-lg border bg-card p-3 text-center">
-            <p className="text-2xl font-bold">{totals.meta}</p>
-            <p className="text-[11px] text-muted-foreground">Total Meta</p>
+          <div className="rounded-lg border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 p-3">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Total Meta</p>
+              <Target className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <p className="text-2xl font-bold text-primary">{totals.meta}</p>
           </div>
-          <div className="rounded-lg border bg-card p-3 text-center">
-            <p className="text-2xl font-bold text-primary">{totals.realizado}</p>
-            <p className="text-[11px] text-muted-foreground">Total Realizado</p>
+          <div className="rounded-lg border border-success/20 bg-gradient-to-br from-success/10 to-success/5 p-3">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Total Realizado</p>
+              <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+            </div>
+            <p className="text-2xl font-bold text-success">{totals.realizado}</p>
           </div>
-          <div className="rounded-lg border bg-card p-3 text-center">
+          <div className={`rounded-lg border p-3 ${
+            totals.pct >= 100 ? 'border-success/20 bg-gradient-to-br from-success/10 to-success/5' :
+            totals.pct >= 70 ? 'border-warning/20 bg-gradient-to-br from-warning/10 to-warning/5' :
+            'border-destructive/20 bg-gradient-to-br from-destructive/10 to-destructive/5'
+          }`}>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">% Atingido</p>
+              <Percent className={`h-3.5 w-3.5 ${getStatusColor(totals.pct)}`} />
+            </div>
             <p className={`text-2xl font-bold ${getStatusColor(totals.pct)}`}>
               {totals.pct.toFixed(1)}%
             </p>
-            <p className="text-[11px] text-muted-foreground">% Atingido</p>
           </div>
         </div>
 
         {/* Detail table with expandable months */}
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold text-muted-foreground mb-2">Detalhamento por Categoria</h3>
-          <div className="rounded-lg border overflow-hidden">
+          <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
+            <Target className="h-4 w-4 text-primary" />
+            Detalhamento por Categoria
+          </h3>
+          <div className="rounded-lg border overflow-hidden bg-card">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-muted/50">
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground w-8"></th>
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Categoria</th>
-                  <th className="text-center px-3 py-2 font-medium text-muted-foreground">Meta</th>
-                  <th className="text-center px-3 py-2 font-medium text-muted-foreground">Realizado</th>
-                  <th className="text-center px-3 py-2 font-medium text-muted-foreground">Faltam</th>
-                  <th className="text-center px-3 py-2 font-medium text-muted-foreground">% Atingido</th>
-                  <th className="text-right px-3 py-2 font-medium text-muted-foreground w-[120px]">Progresso</th>
-                  <th className="text-center px-3 py-2 font-medium text-muted-foreground w-10"></th>
+                <tr className="bg-muted/60 border-b border-border">
+                  <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-8"></th>
+                  <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Categoria</th>
+                  <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Meta</th>
+                  <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Realizado</th>
+                  <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Faltam</th>
+                  <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">% Atingido</th>
+                  <th className="text-right px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-[120px]">Progresso</th>
+                  <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-10"></th>
                 </tr>
               </thead>
               <tbody>
@@ -617,18 +664,28 @@ export const IndicadoresDetailModal = ({
                               : <ChevronRight className="h-3.5 w-3.5" />
                           )}
                         </td>
-                        <td className="px-3 py-2.5 font-medium">{item.categoria}</td>
-                        <td className="px-3 py-2.5 text-center text-muted-foreground">{item.Meta}</td>
-                        <td className="px-3 py-2.5 text-center font-semibold text-primary">{item.Realizado}</td>
+                        <td className="px-3 py-2.5 font-semibold text-foreground">{item.categoria}</td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md bg-primary/10 text-primary font-semibold text-xs">
+                            {item.Meta}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md bg-success/10 text-success font-semibold text-xs">
+                            {item.Realizado}
+                          </span>
+                        </td>
                         <td className="px-3 py-2.5 text-center">
                           {item.falta > 0 ? (
-                            <span className="text-destructive font-medium">{item.falta}</span>
+                            <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md bg-destructive/10 text-destructive font-semibold text-xs">
+                              {item.falta}
+                            </span>
                           ) : (
                             <span className="text-success font-medium">—</span>
                           )}
                         </td>
                         <td className="px-3 py-2.5 text-center">
-                          <Badge variant="outline" className={`text-[11px] px-2 ${getStatusBg(item.pct)}`}>
+                          <Badge variant="outline" className={`text-[11px] px-2 font-semibold ${getStatusBg(item.pct)}`}>
                             {item.pct.toFixed(1)}%
                           </Badge>
                         </td>
@@ -701,42 +758,67 @@ export const IndicadoresDetailModal = ({
         {/* Produtor ranking */}
         {filteredProdutores.length > 0 && (
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-2">Ranking por Produtor</h3>
-            <div className="rounded-lg border overflow-hidden">
+            <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-warning" />
+              Ranking por Produtor
+            </h3>
+            <div className="rounded-lg border overflow-hidden bg-card">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-muted/50">
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">#</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Produtor</th>
-                    <th className="text-center px-3 py-2 font-medium text-muted-foreground">Meta</th>
-                    <th className="text-center px-3 py-2 font-medium text-muted-foreground">Realizado</th>
-                    <th className="text-center px-3 py-2 font-medium text-muted-foreground">%</th>
-                    <th className="text-right px-3 py-2 font-medium text-muted-foreground w-[140px]">Progresso</th>
+                  <tr className="bg-muted/60 border-b border-border">
+                    <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-12">#</th>
+                    <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Produtor</th>
+                    <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Meta</th>
+                    <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Realizado</th>
+                    <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">%</th>
+                    <th className="text-right px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-[160px]">Progresso</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProdutores.map((p, i) => (
-                    <tr key={p.nome} className="border-t hover:bg-muted/20 transition-colors">
-                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{i + 1}</td>
-                      <td className="px-3 py-2.5 font-medium flex items-center gap-1.5">
-                        <TrendIcon pct={p.pct} />
-                        {p.nome}
-                      </td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground">{p.meta}</td>
-                      <td className="px-3 py-2.5 text-center font-semibold text-primary">{p.realizado}</td>
-                      <td className="px-3 py-2.5 text-center">
-                        <span className={`font-semibold ${getStatusColor(p.pct)}`}>
-                          {p.pct.toFixed(0)}%
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <Progress
-                          value={Math.min(p.pct, 100)}
-                          className={`h-2 ${getProgressColor(p.pct)}`}
-                        />
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredProdutores.map((p, i) => {
+                    const podiumStyle =
+                      i === 0 ? 'bg-warning text-warning-foreground' :
+                      i === 1 ? 'bg-muted-foreground/20 text-foreground' :
+                      i === 2 ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' :
+                      'bg-muted text-muted-foreground';
+                    const rowHighlight = i < 3 ? 'bg-muted/10' : '';
+                    return (
+                      <tr key={p.nome} className={`border-t hover:bg-muted/30 transition-colors ${rowHighlight}`}>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className={`inline-flex items-center justify-center h-6 w-6 rounded-full text-[11px] font-bold ${podiumStyle}`}>
+                            {i + 1}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                            <TrendIcon pct={p.pct} />
+                            {p.nome}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md bg-primary/10 text-primary font-semibold text-xs">
+                            {p.meta}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md bg-success/10 text-success font-semibold text-xs">
+                            {p.realizado}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <Badge variant="outline" className={`text-[11px] px-2 font-semibold ${getStatusBg(p.pct)}`}>
+                            {p.pct.toFixed(0)}%
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <Progress
+                            value={Math.min(p.pct, 100)}
+                            className={`h-2 ${getProgressColor(p.pct)}`}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
