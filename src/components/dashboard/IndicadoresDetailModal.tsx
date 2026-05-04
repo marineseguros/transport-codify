@@ -535,30 +535,60 @@ export const IndicadoresDetailModal = ({
 
             <div className="flex-1 min-w-[4px]" />
 
-            {/* Categoria & Status filters */}
-            <div className="h-4 w-px bg-border/60 shrink-0 hidden sm:block" />
-            <Select value={filterCategoria} onValueChange={setFilterCategoria}>
-              <SelectTrigger className="h-7 text-xs border-border/60 bg-background w-auto min-w-[130px] gap-1 px-2.5 rounded-md">
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas categorias</SelectItem>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-7 text-xs border-border/60 bg-background w-auto min-w-[130px] gap-1 px-2.5 rounded-md">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos status</SelectItem>
-                <SelectItem value="atingido">✅ Atingido (≥100%)</SelectItem>
-                <SelectItem value="parcial">⚠️ Parcial (70-99%)</SelectItem>
-                <SelectItem value="critico">🔴 Crítico (&lt;70%)</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Mais filtros (Categoria + Status) */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs gap-1.5 border-border/60 bg-background shrink-0">
+                  <SlidersHorizontal className="h-3 w-3" />
+                  Mais filtros
+                  {((filterCategoria !== 'todas' ? 1 : 0) + (filterStatus !== 'todos' ? 1 : 0)) > 0 && (
+                    <Badge variant="secondary" className="h-4 px-1.5 text-[10px] ml-0.5">
+                      {(filterCategoria !== 'todas' ? 1 : 0) + (filterStatus !== 'todos' ? 1 : 0)}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64 p-3 space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Categoria</label>
+                  <Select value={filterCategoria} onValueChange={setFilterCategoria}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas categorias</SelectItem>
+                      {CATEGORIES.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Status</label>
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos status</SelectItem>
+                      <SelectItem value="atingido">✅ Atingido (≥100%)</SelectItem>
+                      <SelectItem value="parcial">⚠️ Parcial (70-99%)</SelectItem>
+                      <SelectItem value="critico">🔴 Crítico (&lt;70%)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(filterCategoria !== 'todas' || filterStatus !== 'todos') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-7 text-xs"
+                    onClick={() => { setFilterCategoria('todas'); setFilterStatus('todos'); }}
+                  >
+                    Limpar filtros
+                  </Button>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
