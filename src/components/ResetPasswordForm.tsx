@@ -144,7 +144,9 @@ export const ResetPasswordForm = () => {
                 <div className="relative">
                   <Input
                     id="password"
+                    name="new-password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Digite sua nova senha"
@@ -168,7 +170,9 @@ export const ResetPasswordForm = () => {
                 <div className="relative">
                   <Input
                     id="confirmPassword"
+                    name="confirm-password"
                     type={showConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirme sua nova senha"
