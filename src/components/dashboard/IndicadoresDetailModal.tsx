@@ -627,19 +627,22 @@ export const IndicadoresDetailModal = ({
 
         {/* Detail table with expandable months */}
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold text-muted-foreground mb-2">Detalhamento por Categoria</h3>
-          <div className="rounded-lg border overflow-hidden">
+          <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
+            <Target className="h-4 w-4 text-primary" />
+            Detalhamento por Categoria
+          </h3>
+          <div className="rounded-lg border overflow-hidden bg-card">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-muted/50">
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground w-8"></th>
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Categoria</th>
-                  <th className="text-center px-3 py-2 font-medium text-muted-foreground">Meta</th>
-                  <th className="text-center px-3 py-2 font-medium text-muted-foreground">Realizado</th>
-                  <th className="text-center px-3 py-2 font-medium text-muted-foreground">Faltam</th>
-                  <th className="text-center px-3 py-2 font-medium text-muted-foreground">% Atingido</th>
-                  <th className="text-right px-3 py-2 font-medium text-muted-foreground w-[120px]">Progresso</th>
-                  <th className="text-center px-3 py-2 font-medium text-muted-foreground w-10"></th>
+                <tr className="bg-muted/60 border-b border-border">
+                  <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-8"></th>
+                  <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Categoria</th>
+                  <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Meta</th>
+                  <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Realizado</th>
+                  <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Faltam</th>
+                  <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">% Atingido</th>
+                  <th className="text-right px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-[120px]">Progresso</th>
+                  <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-10"></th>
                 </tr>
               </thead>
               <tbody>
