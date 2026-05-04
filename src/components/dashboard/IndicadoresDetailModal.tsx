@@ -661,18 +661,28 @@ export const IndicadoresDetailModal = ({
                               : <ChevronRight className="h-3.5 w-3.5" />
                           )}
                         </td>
-                        <td className="px-3 py-2.5 font-medium">{item.categoria}</td>
-                        <td className="px-3 py-2.5 text-center text-muted-foreground">{item.Meta}</td>
-                        <td className="px-3 py-2.5 text-center font-semibold text-primary">{item.Realizado}</td>
+                        <td className="px-3 py-2.5 font-semibold text-foreground">{item.categoria}</td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md bg-primary/10 text-primary font-semibold text-xs">
+                            {item.Meta}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md bg-success/10 text-success font-semibold text-xs">
+                            {item.Realizado}
+                          </span>
+                        </td>
                         <td className="px-3 py-2.5 text-center">
                           {item.falta > 0 ? (
-                            <span className="text-destructive font-medium">{item.falta}</span>
+                            <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md bg-destructive/10 text-destructive font-semibold text-xs">
+                              {item.falta}
+                            </span>
                           ) : (
                             <span className="text-success font-medium">—</span>
                           )}
                         </td>
                         <td className="px-3 py-2.5 text-center">
-                          <Badge variant="outline" className={`text-[11px] px-2 ${getStatusBg(item.pct)}`}>
+                          <Badge variant="outline" className={`text-[11px] px-2 font-semibold ${getStatusBg(item.pct)}`}>
                             {item.pct.toFixed(1)}%
                           </Badge>
                         </td>
