@@ -758,42 +758,67 @@ export const IndicadoresDetailModal = ({
         {/* Produtor ranking */}
         {filteredProdutores.length > 0 && (
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-2">Ranking por Produtor</h3>
-            <div className="rounded-lg border overflow-hidden">
+            <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-warning" />
+              Ranking por Produtor
+            </h3>
+            <div className="rounded-lg border overflow-hidden bg-card">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-muted/50">
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">#</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Produtor</th>
-                    <th className="text-center px-3 py-2 font-medium text-muted-foreground">Meta</th>
-                    <th className="text-center px-3 py-2 font-medium text-muted-foreground">Realizado</th>
-                    <th className="text-center px-3 py-2 font-medium text-muted-foreground">%</th>
-                    <th className="text-right px-3 py-2 font-medium text-muted-foreground w-[140px]">Progresso</th>
+                  <tr className="bg-muted/60 border-b border-border">
+                    <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-12">#</th>
+                    <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Produtor</th>
+                    <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Meta</th>
+                    <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Realizado</th>
+                    <th className="text-center px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">%</th>
+                    <th className="text-right px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide w-[160px]">Progresso</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProdutores.map((p, i) => (
-                    <tr key={p.nome} className="border-t hover:bg-muted/20 transition-colors">
-                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{i + 1}</td>
-                      <td className="px-3 py-2.5 font-medium flex items-center gap-1.5">
-                        <TrendIcon pct={p.pct} />
-                        {p.nome}
-                      </td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground">{p.meta}</td>
-                      <td className="px-3 py-2.5 text-center font-semibold text-primary">{p.realizado}</td>
-                      <td className="px-3 py-2.5 text-center">
-                        <span className={`font-semibold ${getStatusColor(p.pct)}`}>
-                          {p.pct.toFixed(0)}%
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <Progress
-                          value={Math.min(p.pct, 100)}
-                          className={`h-2 ${getProgressColor(p.pct)}`}
-                        />
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredProdutores.map((p, i) => {
+                    const podiumStyle =
+                      i === 0 ? 'bg-warning text-warning-foreground' :
+                      i === 1 ? 'bg-muted-foreground/20 text-foreground' :
+                      i === 2 ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' :
+                      'bg-muted text-muted-foreground';
+                    const rowHighlight = i < 3 ? 'bg-muted/10' : '';
+                    return (
+                      <tr key={p.nome} className={`border-t hover:bg-muted/30 transition-colors ${rowHighlight}`}>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className={`inline-flex items-center justify-center h-6 w-6 rounded-full text-[11px] font-bold ${podiumStyle}`}>
+                            {i + 1}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                            <TrendIcon pct={p.pct} />
+                            {p.nome}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md bg-primary/10 text-primary font-semibold text-xs">
+                            {p.meta}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md bg-success/10 text-success font-semibold text-xs">
+                            {p.realizado}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <Badge variant="outline" className={`text-[11px] px-2 font-semibold ${getStatusBg(p.pct)}`}>
+                            {p.pct.toFixed(0)}%
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <Progress
+                            value={Math.min(p.pct, 100)}
+                            className={`h-2 ${getProgressColor(p.pct)}`}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
