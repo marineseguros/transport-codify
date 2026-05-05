@@ -214,7 +214,7 @@ export const CategoriaDetailPopup = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!w-[calc(100vw-2rem)] max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="!w-[calc(100vw-2rem)] max-w-6xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             Detalhamento — {categoria}
