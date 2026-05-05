@@ -260,9 +260,7 @@ export const CategoriaDetailPopup = ({
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Seguradora</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Produtor</th>
                     <th className="text-center px-3 py-2 font-medium text-muted-foreground">Data</th>
-                    {categoria === 'Fechamento' && (
-                      <th className="text-right px-3 py-2 font-medium text-muted-foreground">Prêmio</th>
-                    )}
+                    <th className="text-right px-3 py-2 font-medium text-muted-foreground">Prêmio</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -275,16 +273,14 @@ export const CategoriaDetailPopup = ({
                       <td className="px-3 py-2 text-muted-foreground text-xs truncate max-w-[120px]">{r.seguradora}</td>
                       <td className="px-3 py-2 text-muted-foreground text-xs">{r.produtor}</td>
                       <td className="px-3 py-2 text-center text-muted-foreground text-xs">{formatDate(r.data)}</td>
-                      {categoria === 'Fechamento' && (
-                        <td className="px-3 py-2 text-right text-xs font-medium text-success">
-                          {formatCurrency(r.premio)}
-                        </td>
-                      )}
+                      <td className="px-3 py-2 text-right text-xs font-medium text-success">
+                        {formatCurrency(r.premio)}
+                      </td>
                     </tr>
                   ))}
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={categoria === 'Fechamento' ? 8 : 7} className="px-3 py-6 text-center text-muted-foreground">
+                      <td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">
                         Nenhum registro encontrado
                       </td>
                     </tr>
