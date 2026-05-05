@@ -265,12 +265,16 @@ export const CategoriaDetailPopup = ({
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Seguradora</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Produtor</th>
                     <th className="text-center px-3 py-2 font-medium text-muted-foreground">Data</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Status</th>
                     <th className="text-right px-3 py-2 font-medium text-muted-foreground">Prêmio</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((r, i) => (
-                    <tr key={r.key} className="border-t hover:bg-muted/20 transition-colors">
+                    <tr
+                      key={r.key}
+                      className={`border-t hover:bg-muted/20 transition-colors ${r.declined ? 'bg-destructive/5' : ''}`}
+                    >
                       <td className="px-3 py-2 text-muted-foreground text-xs">{i + 1}</td>
                       <td className="px-3 py-2 font-medium truncate max-w-[180px]">{r.segurado}</td>
                       <td className="px-3 py-2 text-muted-foreground text-xs">{r.ramo}</td>
@@ -278,6 +282,13 @@ export const CategoriaDetailPopup = ({
                       <td className="px-3 py-2 text-muted-foreground text-xs truncate max-w-[120px]">{r.seguradora}</td>
                       <td className="px-3 py-2 text-muted-foreground text-xs">{r.produtor}</td>
                       <td className="px-3 py-2 text-center text-muted-foreground text-xs">{formatDate(r.data)}</td>
+                      <td className="px-3 py-2 text-xs">
+                        {r.declined ? (
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Declinado</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">{r.status}</span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-right text-xs font-medium text-success">
                         {formatCurrency(r.premio)}
                       </td>
