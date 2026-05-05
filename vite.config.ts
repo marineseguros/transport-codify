@@ -43,6 +43,16 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         cleanupOutdatedCaches: true,
         skipWaiting: true,
+        clientsClaim: true,
+        // Never cache index.html — always fetch fresh so new builds load immediately
+        navigateFallback: null,
+        navigateFallbackDenylist: [/.*/],
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkOnly"
+          }
+        ],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024 // 3 MB
       }
     })
