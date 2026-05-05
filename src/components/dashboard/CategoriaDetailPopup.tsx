@@ -58,6 +58,7 @@ interface CotacaoRow {
   data: string;
   status: string;
   premio: number;
+  declined?: boolean;
 }
 
 export const CategoriaDetailPopup = ({
@@ -138,17 +139,21 @@ export const CategoriaDetailPopup = ({
     return Array.from(groups.entries()).map(([key, cotacoes]) => {
       const first = cotacoes[0];
       const seguradoras = [...new Set(cotacoes.map((c) => c.seguradora?.nome).filter(Boolean))].join(' | ');
+      const ramos = [...new Set(cotacoes.map((c) => c.ramo?.descricao).filter(Boolean))].join(' | ');
+      const statuses = [...new Set(cotacoes.map((c) => c.status).filter(Boolean))];
+      const allDeclined = statuses.length > 0 && statuses.every((s) => s === 'Declinado');
       return {
         key,
         segurado: first.segurado,
         cpfCnpj: first.cpf_cnpj,
         segmento: getBranchGroup(first.ramo),
-        ramo: first.ramo?.descricao || '—',
+        ramo: ramos || '—',
         seguradora: seguradoras || '—',
         produtor: first.produtor_cotador?.nome || '—',
         data: first.data_cotacao,
-        status: first.status,
+        status: statuses.join(' | '),
         premio: cotacoes.reduce((s, c) => s + (c.valor_premio || 0), 0),
+        declined: allDeclined,
       };
     }).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
   }, [allCotacoes, monthRanges, produtorFilter, categoria, ramoFilter, segmentoFilter]);
@@ -260,12 +265,16 @@ export const CategoriaDetailPopup = ({
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Seguradora</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Produtor</th>
                     <th className="text-center px-3 py-2 font-medium text-muted-foreground">Data</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Status</th>
                     <th className="text-right px-3 py-2 font-medium text-muted-foreground">Prêmio</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((r, i) => (
-                    <tr key={r.key} className="border-t hover:bg-muted/20 transition-colors">
+                    <tr
+                      key={r.key}
+                      className={`border-t hover:bg-muted/20 transition-colors ${r.declined ? 'bg-destructive/5' : ''}`}
+                    >
                       <td className="px-3 py-2 text-muted-foreground text-xs">{i + 1}</td>
                       <td className="px-3 py-2 font-medium truncate max-w-[180px]">{r.segurado}</td>
                       <td className="px-3 py-2 text-muted-foreground text-xs">{r.ramo}</td>
@@ -273,6 +282,13 @@ export const CategoriaDetailPopup = ({
                       <td className="px-3 py-2 text-muted-foreground text-xs truncate max-w-[120px]">{r.seguradora}</td>
                       <td className="px-3 py-2 text-muted-foreground text-xs">{r.produtor}</td>
                       <td className="px-3 py-2 text-center text-muted-foreground text-xs">{formatDate(r.data)}</td>
+                      <td className="px-3 py-2 text-xs">
+                        {r.declined ? (
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Declinado</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">{r.status}</span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-right text-xs font-medium text-success">
                         {formatCurrency(r.premio)}
                       </td>
@@ -280,7 +296,7 @@ export const CategoriaDetailPopup = ({
                   ))}
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">
+                      <td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">
                         Nenhum registro encontrado
                       </td>
                     </tr>
