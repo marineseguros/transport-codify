@@ -138,17 +138,21 @@ export const CategoriaDetailPopup = ({
     return Array.from(groups.entries()).map(([key, cotacoes]) => {
       const first = cotacoes[0];
       const seguradoras = [...new Set(cotacoes.map((c) => c.seguradora?.nome).filter(Boolean))].join(' | ');
+      const ramos = [...new Set(cotacoes.map((c) => c.ramo?.descricao).filter(Boolean))].join(' | ');
+      const statuses = [...new Set(cotacoes.map((c) => c.status).filter(Boolean))];
+      const allDeclined = statuses.length > 0 && statuses.every((s) => s === 'Declinado');
       return {
         key,
         segurado: first.segurado,
         cpfCnpj: first.cpf_cnpj,
         segmento: getBranchGroup(first.ramo),
-        ramo: first.ramo?.descricao || '—',
+        ramo: ramos || '—',
         seguradora: seguradoras || '—',
         produtor: first.produtor_cotador?.nome || '—',
         data: first.data_cotacao,
-        status: first.status,
+        status: statuses.join(' | '),
         premio: cotacoes.reduce((s, c) => s + (c.valor_premio || 0), 0),
+        declined: allDeclined,
       };
     }).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
   }, [allCotacoes, monthRanges, produtorFilter, categoria, ramoFilter, segmentoFilter]);
