@@ -275,21 +275,21 @@ export const CategoriaDetailPopup = ({
                       key={r.key}
                       className={`border-t hover:bg-muted/20 transition-colors ${r.declined ? 'bg-destructive/5' : ''}`}
                     >
-                      <td className="px-3 py-2 text-muted-foreground text-xs">{i + 1}</td>
-                      <td className="px-3 py-2 font-medium truncate max-w-[180px]">{r.segurado}</td>
-                      <td className="px-3 py-2 text-muted-foreground text-xs">{r.ramo}</td>
-                      <td className="px-3 py-2 text-muted-foreground text-xs">{r.segmento}</td>
-                      <td className="px-3 py-2 text-muted-foreground text-xs truncate max-w-[120px]">{r.seguradora}</td>
-                      <td className="px-3 py-2 text-muted-foreground text-xs">{r.produtor}</td>
-                      <td className="px-3 py-2 text-center text-muted-foreground text-xs">{formatDate(r.data)}</td>
-                      <td className="px-3 py-2 text-xs">
+                      <td className="px-3 py-2 text-muted-foreground text-xs whitespace-nowrap">{i + 1}</td>
+                      <td className="px-3 py-2 font-medium truncate max-w-[180px] whitespace-nowrap">{r.segurado}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs whitespace-nowrap">{r.ramo}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs whitespace-nowrap">{r.segmento}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs truncate max-w-[140px] whitespace-nowrap">{r.seguradora}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs whitespace-nowrap">{r.produtor}</td>
+                      <td className="px-3 py-2 text-center text-muted-foreground text-xs whitespace-nowrap">{formatDate(r.data)}</td>
+                      <td className="px-3 py-2 text-xs whitespace-nowrap">
                         {r.declined ? (
                           <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Declinado</Badge>
                         ) : (
                           <span className="text-muted-foreground">{r.status}</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-right text-xs font-medium text-success">
+                      <td className="px-3 py-2 text-right text-xs font-medium text-warning whitespace-nowrap">
                         {formatCurrency(r.premio)}
                       </td>
                     </tr>
