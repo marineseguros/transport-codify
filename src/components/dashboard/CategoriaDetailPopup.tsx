@@ -58,6 +58,7 @@ interface CotacaoRow {
   data: string;
   status: string;
   premio: number;
+  declined?: boolean;
 }
 
 export const CategoriaDetailPopup = ({
