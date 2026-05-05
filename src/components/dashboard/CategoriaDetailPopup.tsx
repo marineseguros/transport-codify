@@ -214,7 +214,7 @@ export const CategoriaDetailPopup = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!w-[calc(100vw-2rem)] max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="!w-[calc(100vw-2rem)] max-w-6xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             Detalhamento — {categoria}
@@ -254,8 +254,8 @@ export const CategoriaDetailPopup = ({
               </table>
             </div>
           ) : (
-            <div className="rounded-lg border overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="rounded-lg border overflow-x-auto">
+              <table className="w-full text-sm min-w-[900px]">
                 <thead>
                   <tr className="bg-muted/50">
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">#</th>
@@ -283,11 +283,22 @@ export const CategoriaDetailPopup = ({
                       <td className="px-3 py-2 text-muted-foreground text-xs whitespace-nowrap">{r.produtor}</td>
                       <td className="px-3 py-2 text-center text-muted-foreground text-xs whitespace-nowrap">{formatDate(r.data)}</td>
                       <td className="px-3 py-2 text-xs whitespace-nowrap">
-                        {r.declined ? (
-                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Declinado</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">{r.status}</span>
-                        )}
+                        {(() => {
+                          const s = r.status || '';
+                          if (r.declined || s === 'Declinado') {
+                            return <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Declinado</Badge>;
+                          }
+                          if (s === 'Negócio fechado') {
+                            return <Badge className="text-[10px] px-1.5 py-0 bg-success text-success-foreground hover:bg-success/90">Negócio fechado</Badge>;
+                          }
+                          if (s === 'Fechamento congênere') {
+                            return <Badge className="text-[10px] px-1.5 py-0 bg-success/80 text-success-foreground hover:bg-success/70">Fechamento congênere</Badge>;
+                          }
+                          if (s === 'Em cotação') {
+                            return <Badge className="text-[10px] px-1.5 py-0 bg-warning text-warning-foreground hover:bg-warning/90">Em cotação</Badge>;
+                          }
+                          return <span className="text-muted-foreground">{s}</span>;
+                        })()}
                       </td>
                       <td className="px-3 py-2 text-right text-xs font-medium text-warning whitespace-nowrap">
                         {formatCurrency(r.premio)}
