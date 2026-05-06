@@ -40,19 +40,15 @@
   <body>
     <div id="root"></div>
     <script>
-      // Force existing service worker to check for updates immediately and
-      // reload once a new version takes control — ensures freshly published
-      // builds reach users without requiring them to close all tabs.
+      // Garante que qualquer Service Worker antigo registrado nos dispositivos
+      // dos usuários seja substituído pelo kill-switch em /sw.js, que limpa
+      // todos os caches e se desregistra. Sem isso, builds publicados antigos
+      // continuam sendo servidos do cache do SW.
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function (regs) {
           regs.forEach(function (reg) { reg.update(); });
         });
-        var __reloaded = false;
-        navigator.serviceWorker.addEventListener('controllerchange', function () {
-          if (__reloaded) return;
-          __reloaded = true;
-          window.location.reload();
-        });
+        navigator.serviceWorker.register('/sw.js').catch(function () {});
       }
     </script>
     <script type="module" src="/src/main.tsx"></script>
