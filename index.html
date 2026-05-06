@@ -40,15 +40,19 @@
   <body>
     <div id="root"></div>
     <script>
-      // Garante que qualquer Service Worker antigo registrado nos dispositivos
-      // dos usuários seja substituído pelo kill-switch em /sw.js, que limpa
-      // todos os caches e se desregistra. Sem isso, builds publicados antigos
-      // continuam sendo servidos do cache do SW.
+      // Não registramos Service Worker. Apenas removemos qualquer SW antigo
+      // ainda instalado em dispositivos de usuários e limpamos caches dele,
+      // para que o HTML passe a vir sempre da rede (o proxy do Lovable já
+      // serve o index.html com no-cache).
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function (regs) {
-          regs.forEach(function (reg) { reg.update(); });
-        });
-        navigator.serviceWorker.register('/sw.js').catch(function () {});
+          regs.forEach(function (reg) { reg.unregister(); });
+        }).catch(function () {});
+        if (window.caches && caches.keys) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (k) { caches.delete(k); });
+          }).catch(function () {});
+        }
       }
     </script>
     <script type="module" src="/src/main.tsx"></script>

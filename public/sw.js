@@ -1,24 +1,13 @@
-// Kill-switch service worker: limpa caches do SW antigo, força reload das
-// páginas controladas e desregistra a si mesmo. Mantém-se neste caminho
-// por pelo menos 1 ciclo de release antes de remover.
+// Kill-switch: caso algum HTML antigo ainda registre este caminho, apenas
+// limpa caches e se desregistra. NÃO navega clientes (evita loop de reload).
 self.addEventListener("install", (e) => e.waitUntil(self.skipWaiting()));
 self.addEventListener("activate", (e) =>
   e.waitUntil(
     (async () => {
-      await self.clients.claim();
-      const names = await caches.keys();
-      await Promise.all(names.map((n) => caches.delete(n)));
-      const clients = await self.clients.matchAll({
-        type: "window",
-        includeUncontrolled: true,
-      });
-      await Promise.all(
-        clients.map((c) => {
-          const url = new URL(c.url);
-          url.searchParams.set("sw-cleanup", Date.now().toString());
-          return c.navigate(url.toString());
-        })
-      );
+      try {
+        const names = await caches.keys();
+        await Promise.all(names.map((n) => caches.delete(n)));
+      } catch {}
       await self.registration.unregister();
     })()
   )
