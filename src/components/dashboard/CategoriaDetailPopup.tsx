@@ -219,6 +219,7 @@ export const CategoriaDetailPopup = ({
           <DialogTitle className="flex items-center gap-2 text-base">
             Detalhamento — {categoria}
             <Badge variant="secondary" className="text-xs">{totalCount} registros</Badge>
+            <Badge variant="outline" className="text-[10px] font-mono opacity-60">v2 · 9col</Badge>
           </DialogTitle>
         </DialogHeader>
 
