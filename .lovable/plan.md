@@ -1,31 +1,31 @@
 ## Diagnóstico
 
-A URL publicada já está correta em aba anônima, então o deploy atual está funcionando. O problema está restrito ao perfil comum do navegador, que ainda mantém algum estado antigo: Service Worker, Cache Storage, cache HTTP do bundle, ou uma aba controlada por um Service Worker antigo.
+A versão publicada atual está correta na rede: o HTML publicado aponta para `/assets/index-G0jfiziz.js`, e esse bundle contém `Prêmio`, `Status`, `Detalhamento` e `v2 · 9col`. A URL anônima funcionar confirma isso.
 
-O ponto frágil atual é que `index.html` apenas desregistra Service Workers e apaga caches, mas não força uma navegação limpa quando detecta esse estado. Isso pode deixar a aba comum exibindo o bundle antigo até uma navegação realmente nova.
+A causa mais provável do navegador comum continuar antigo é uma aba controlada por um Service Worker legado que está servindo o app antigo antes do novo `index.html` conseguir executar a limpeza. O ajuste anterior ajuda quando o HTML novo é carregado, mas não resolve 100% quando o SW antigo intercepta a navegação e entrega HTML/bundle antigos.
 
 ## Plano de correção
 
-1. **Reforçar a limpeza no `index.html`**
-   - Antes do React iniciar, detectar se existe `navigator.serviceWorker.controller`, registros ativos ou caches antigos.
-   - Desregistrar todos os Service Workers.
-   - Apagar todas as entradas de `Cache Storage`.
-   - Forçar uma única recarga com parâmetro de controle, por exemplo `?sw-cleanup=<timestamp>`.
-   - Usar uma trava em `sessionStorage` para impedir loop infinito.
+1. **Reforçar os kill-switches de Service Worker**
+   - Atualizar `/sw.js`, `/service-worker.js` e `/registerSW.js` para executar limpeza de forma mais agressiva.
+   - Além de limpar caches e desregistrar SWs, enviar mensagem para todas as abas controladas e navegar cada cliente para a URL atual com `?sw-cleanup=<timestamp>`.
+   - Usar guarda anti-loop por query param e `sessionStorage`/`localStorage` quando disponível.
 
-2. **Manter os kill-switches em `/sw.js`, `/service-worker.js` e `/registerSW.js`**
-   - Eles continuam necessários para navegadores que ainda estão presos no Service Worker antigo.
-   - Ajustar apenas se necessário para garantir que a navegação aconteça antes do `unregister` finalizar.
+2. **Adicionar limpeza pós-carregamento no React**
+   - Criar um pequeno utilitário no app que roda assim que o bundle novo monta.
+   - Ele revalida se ainda há registrations/caches e limpa novamente.
+   - Isso cobre o caso em que o HTML novo carregou, mas ainda restou registro/cache do SW antigo.
 
-3. **Adicionar marcador temporário de versão visível somente no modal afetado**
-   - Manter/remover o badge `v2 · 9col` conforme sua preferência.
-   - Ele ajuda a confirmar se o navegador comum saiu do bundle antigo.
+3. **Remover o ponto PWA que pode reacender o problema**
+   - Remover o link de `manifest.json` do `index.html` por enquanto, já que ele retorna 404 na publicação e não é necessário para o sistema.
+   - Manter os arquivos kill-switch publicados nos caminhos antigos para neutralizar navegadores já afetados.
 
-4. **Validação esperada após publicar**
-   - Aba anônima: continua correta.
-   - Aba comum: ao abrir a URL, deve recarregar uma vez com `sw-cleanup` e depois exibir a versão atualizada.
-   - Depois da limpeza, acessos futuros não devem depender de cache antigo.
+4. **Manter marcador temporário de versão**
+   - Manter `v2 · 9col` no popup até confirmarmos no navegador comum.
+   - Depois da confirmação, removeremos esse badge em uma limpeza final.
 
-## Resultado esperado
+## Validação esperada após publicar
 
-A correção não altera os dados nem o layout funcional do dashboard. Ela atua somente na camada de carregamento da aplicação para tirar definitivamente os usuários do bundle antigo que ficou preso no navegador comum.
+- Na aba comum, a primeira visita pode recarregar uma vez com `sw-cleanup` na URL.
+- Depois disso, o modal deve mostrar 9 colunas, incluindo `Status` e `Prêmio`, e o badge `v2 · 9col`.
+- Se ainda aparecer a tabela antiga, a causa deixa de ser código publicado e passa a ser armazenamento local do navegador; aí o próximo passo é instrução manual de limpar Site Data apenas para `marineseguros.lovable.app`.
