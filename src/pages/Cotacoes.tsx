@@ -405,68 +405,61 @@ const Cotacoes = () => {
       {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
-          {/* Filtros responsivos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-10 gap-3">
-            <div className="sm:col-span-2 lg:col-span-4 relative">
+          {/* Filtros em linha única */}
+          <div className="flex flex-nowrap items-center gap-3 overflow-x-auto">
+            <div className="relative flex-1 min-w-[240px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Pesquisar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-10"
               />
             </div>
 
-            <div className="lg:col-span-3">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Status</SelectItem>
-                  {validStatuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[200px] h-10 shrink-0">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os Status</SelectItem>
+                {validStatuses.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <div className="lg:col-span-2">
-              <Select value={produtorFilter} onValueChange={setProdutorFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Produtor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os produtores</SelectItem>
-                  {produtores.map((produtor) => (
-                    <SelectItem key={produtor} value={produtor}>
-                      {produtor}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={produtorFilter} onValueChange={setProdutorFilter}>
+              <SelectTrigger className="w-[200px] h-10 shrink-0">
+                <SelectValue placeholder="Produtor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os produtores</SelectItem>
+                {produtores.map((produtor) => (
+                  <SelectItem key={produtor} value={produtor}>
+                    {produtor}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <div className="sm:col-span-2 lg:col-span-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm("");
-                  setStatusFilter("todos");
-                  setProdutorFilter("todos");
-                  setSortBy("data_cotacao");
-                  setSortOrder("desc");
-                  setDateFilter("todos");
-                  setDateRange(undefined);
-                }}
-                className="w-full"
-                size="sm"
-              >
-                Limpar filtros
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchTerm("");
+                setStatusFilter("todos");
+                setProdutorFilter("todos");
+                setSortBy("data_cotacao");
+                setSortOrder("desc");
+                setDateFilter("todos");
+                setDateRange(undefined);
+              }}
+              className="h-10 shrink-0"
+            >
+              Limpar filtros
+            </Button>
           </div>
         </CardContent>
       </Card>
