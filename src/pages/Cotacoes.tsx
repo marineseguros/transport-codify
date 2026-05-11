@@ -106,7 +106,13 @@ const Cotacoes = () => {
 
   // Filter cotacoes by date
   const dateFilteredCotacoes = useMemo(() => {
-    if (dateFilter === "todos") return cotacoes;
+    let base = cotacoes;
+
+    if (ramoFilter !== "todos") {
+      base = base.filter((c) => c.ramo?.descricao === ramoFilter);
+    }
+
+    if (dateFilter === "todos") return base;
 
     const now = new Date();
     let startDate: Date;
@@ -138,19 +144,19 @@ const Cotacoes = () => {
         endDate = new Date(now.getFullYear(), 11, 31);
         break;
       case "personalizado":
-        if (!dateRange?.from) return cotacoes;
+        if (!dateRange?.from) return base;
         startDate = dateRange.from;
         endDate = dateRange.to || dateRange.from;
         break;
       default:
-        return cotacoes;
+        return base;
     }
 
-    return cotacoes.filter((cotacao) => {
+    return base.filter((cotacao) => {
       const cotacaoDate = new Date(cotacao.data_cotacao);
       return cotacaoDate >= startDate && cotacaoDate <= endDate;
     });
-  }, [cotacoes, dateFilter, dateRange]);
+  }, [cotacoes, dateFilter, dateRange, ramoFilter]);
 
   // Valid status options
   const validStatuses = ["Em cotação", "Negócio fechado", "Declinado", "Fechamento congênere"];
