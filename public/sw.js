@@ -1,5 +1,6 @@
-// Kill-switch oficial (Lovable docs pattern). Limpa caches, força reload das
-// abas controladas e se desregistra. A guarda `sw-cleanup` impede loop.
+// Kill-switch oficial. Limpa caches, força reload das abas controladas e se
+// desregistra. A guarda anti-loop fica na página (/registerSW.js/index.html),
+// não aqui, para não manter abas presas no SW antigo.
 self.addEventListener("install", (e) => e.waitUntil(self.skipWaiting()));
 self.addEventListener("activate", (e) =>
   e.waitUntil(
@@ -20,7 +21,6 @@ self.addEventListener("activate", (e) =>
           clients.map((c) => {
             try {
               const url = new URL(c.url);
-              if (url.searchParams.has("sw-cleanup")) return;
               url.searchParams.set("sw-cleanup", Date.now().toString());
               return c.navigate(url.toString());
             } catch {
