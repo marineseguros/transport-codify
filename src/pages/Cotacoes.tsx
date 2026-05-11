@@ -97,6 +97,13 @@ const Cotacoes = () => {
     return [...new Set(cotacoes.map((c) => c.produtor_cotador?.nome).filter(Boolean))] as string[];
   }, [cotacoes]);
 
+  // Get unique ramos for filter from loaded cotacoes
+  const ramos = useMemo(() => {
+    return [...new Set(cotacoes.map((c) => c.ramo?.descricao).filter(Boolean))].sort() as string[];
+  }, [cotacoes]);
+
+  const [ramoFilter, setRamoFilter] = useState<string>("todos");
+
   // Filter cotacoes by date
   const dateFilteredCotacoes = useMemo(() => {
     if (dateFilter === "todos") return cotacoes;
