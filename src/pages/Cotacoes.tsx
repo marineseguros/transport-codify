@@ -97,9 +97,22 @@ const Cotacoes = () => {
     return [...new Set(cotacoes.map((c) => c.produtor_cotador?.nome).filter(Boolean))] as string[];
   }, [cotacoes]);
 
+  // Get unique ramos for filter from loaded cotacoes
+  const ramos = useMemo(() => {
+    return [...new Set(cotacoes.map((c) => c.ramo?.descricao).filter(Boolean))].sort() as string[];
+  }, [cotacoes]);
+
+  const [ramoFilter, setRamoFilter] = useState<string>("todos");
+
   // Filter cotacoes by date
   const dateFilteredCotacoes = useMemo(() => {
-    if (dateFilter === "todos") return cotacoes;
+    let base = cotacoes;
+
+    if (ramoFilter !== "todos") {
+      base = base.filter((c) => c.ramo?.descricao === ramoFilter);
+    }
+
+    if (dateFilter === "todos") return base;
 
     const now = new Date();
     let startDate: Date;
@@ -131,19 +144,19 @@ const Cotacoes = () => {
         endDate = new Date(now.getFullYear(), 11, 31);
         break;
       case "personalizado":
-        if (!dateRange?.from) return cotacoes;
+        if (!dateRange?.from) return base;
         startDate = dateRange.from;
         endDate = dateRange.to || dateRange.from;
         break;
       default:
-        return cotacoes;
+        return base;
     }
 
-    return cotacoes.filter((cotacao) => {
+    return base.filter((cotacao) => {
       const cotacaoDate = new Date(cotacao.data_cotacao);
       return cotacaoDate >= startDate && cotacaoDate <= endDate;
     });
-  }, [cotacoes, dateFilter, dateRange]);
+  }, [cotacoes, dateFilter, dateRange, ramoFilter]);
 
   // Valid status options
   const validStatuses = ["Em cotação", "Negócio fechado", "Declinado", "Fechamento congênere"];
@@ -406,19 +419,19 @@ const Cotacoes = () => {
       <Card>
         <CardContent className="pt-6">
           {/* Filtros em linha única */}
-          <div className="flex flex-nowrap items-center gap-3 overflow-x-auto">
+          <div className="flex flex-nowrap items-center gap-3">
             <div className="relative flex-1 min-w-[240px]">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
               <Input
                 placeholder="Pesquisar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-10"
+                className="pl-10 h-10 focus-visible:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[200px] h-10 shrink-0">
+              <SelectTrigger className="w-[180px] h-10 shrink-0 focus:ring-offset-0 focus:ring-2 focus:ring-ring">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -432,7 +445,7 @@ const Cotacoes = () => {
             </Select>
 
             <Select value={produtorFilter} onValueChange={setProdutorFilter}>
-              <SelectTrigger className="w-[200px] h-10 shrink-0">
+              <SelectTrigger className="w-[180px] h-10 shrink-0 focus:ring-offset-0 focus:ring-2 focus:ring-ring">
                 <SelectValue placeholder="Produtor" />
               </SelectTrigger>
               <SelectContent>
@@ -445,12 +458,27 @@ const Cotacoes = () => {
               </SelectContent>
             </Select>
 
+            <Select value={ramoFilter} onValueChange={setRamoFilter}>
+              <SelectTrigger className="w-[180px] h-10 shrink-0 focus:ring-offset-0 focus:ring-2 focus:ring-ring">
+                <SelectValue placeholder="Ramo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os ramos</SelectItem>
+                {ramos.map((ramo) => (
+                  <SelectItem key={ramo} value={ramo}>
+                    {ramo}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Button
               variant="outline"
               onClick={() => {
                 setSearchTerm("");
                 setStatusFilter("todos");
                 setProdutorFilter("todos");
+                setRamoFilter("todos");
                 setSortBy("data_cotacao");
                 setSortOrder("desc");
                 setDateFilter("todos");
