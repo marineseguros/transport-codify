@@ -419,19 +419,19 @@ const Cotacoes = () => {
       <Card>
         <CardContent className="pt-6">
           {/* Filtros em linha única */}
-          <div className="flex flex-nowrap items-center gap-3 overflow-x-auto">
+          <div className="flex flex-nowrap items-center gap-3">
             <div className="relative flex-1 min-w-[240px]">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
               <Input
                 placeholder="Pesquisar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-10"
+                className="pl-10 h-10 focus-visible:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[200px] h-10 shrink-0">
+              <SelectTrigger className="w-[180px] h-10 shrink-0 focus:ring-offset-0 focus:ring-2 focus:ring-ring">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -445,7 +445,7 @@ const Cotacoes = () => {
             </Select>
 
             <Select value={produtorFilter} onValueChange={setProdutorFilter}>
-              <SelectTrigger className="w-[200px] h-10 shrink-0">
+              <SelectTrigger className="w-[180px] h-10 shrink-0 focus:ring-offset-0 focus:ring-2 focus:ring-ring">
                 <SelectValue placeholder="Produtor" />
               </SelectTrigger>
               <SelectContent>
@@ -458,12 +458,27 @@ const Cotacoes = () => {
               </SelectContent>
             </Select>
 
+            <Select value={ramoFilter} onValueChange={setRamoFilter}>
+              <SelectTrigger className="w-[180px] h-10 shrink-0 focus:ring-offset-0 focus:ring-2 focus:ring-ring">
+                <SelectValue placeholder="Ramo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os ramos</SelectItem>
+                {ramos.map((ramo) => (
+                  <SelectItem key={ramo} value={ramo}>
+                    {ramo}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Button
               variant="outline"
               onClick={() => {
                 setSearchTerm("");
                 setStatusFilter("todos");
                 setProdutorFilter("todos");
+                setRamoFilter("todos");
                 setSortBy("data_cotacao");
                 setSortOrder("desc");
                 setDateFilter("todos");
