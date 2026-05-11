@@ -1,4 +1,5 @@
 // Kill-switch oficial (caminho alternativo). Mesmo comportamento de /sw.js.
+// Não bloqueia navegação por query param: isso evita deixar abas presas no SW antigo.
 self.addEventListener("install", (e) => e.waitUntil(self.skipWaiting()));
 self.addEventListener("activate", (e) =>
   e.waitUntil(
@@ -19,7 +20,6 @@ self.addEventListener("activate", (e) =>
           clients.map((c) => {
             try {
               const url = new URL(c.url);
-              if (url.searchParams.has("sw-cleanup")) return;
               url.searchParams.set("sw-cleanup", Date.now().toString());
               return c.navigate(url.toString());
             } catch {
