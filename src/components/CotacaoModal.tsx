@@ -190,7 +190,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       });
     } else if (isCreating) {
       const hoje = new Date();
-      const inicioVigencia = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const inicioVigencia = new Date(hoje);
       const fimVigencia = new Date(inicioVigencia.getTime() + 365 * 24 * 60 * 60 * 1000);
 
       // Find current user in produtores list to set as default cotador
