@@ -190,7 +190,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       });
     } else if (isCreating) {
       const hoje = new Date();
-      const inicioVigencia = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const inicioVigencia = new Date(hoje);
       const fimVigencia = new Date(inicioVigencia.getTime() + 365 * 24 * 60 * 60 * 1000);
 
       // Find current user in produtores list to set as default cotador
@@ -307,8 +307,8 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       const day = String(now.getDate()).padStart(2, '0');
       const hoje = `${year}-${month}-${day}`;
       
-      // Calculate default vigência dates (30 days from today to 1 year)
-      const inicioVigencia = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      // Calculate default vigência dates (today to 1 year)
+      const inicioVigencia = new Date(now);
       const fimVigencia = new Date(inicioVigencia.getTime() + 365 * 24 * 60 * 60 * 1000);
       
       const formatLocalDate = (date: Date) => {
