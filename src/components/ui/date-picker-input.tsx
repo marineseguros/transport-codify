@@ -43,7 +43,8 @@ export function DatePickerInput({
   const [inputValue, setInputValue] = useState("");
   const [displayMonth, setDisplayMonth] = useState<Date>(value || new Date());
 
-  // Sync input value with prop value
+  // Sync input value with prop value (use timestamp to avoid Date identity churn)
+  const valueTime = value && isValid(value) ? value.getTime() : null;
   useEffect(() => {
     if (value && isValid(value)) {
       setInputValue(format(value, "dd/MM/yyyy"));
@@ -51,7 +52,8 @@ export function DatePickerInput({
     } else {
       setInputValue("");
     }
-  }, [value]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valueTime]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/\D/g, "");
