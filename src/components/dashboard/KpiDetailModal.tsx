@@ -154,8 +154,12 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
             <FileText className="h-5 w-5" />
             <span>{config.title}</span>
             <Badge variant={config.badgeVariant} className="ml-2">{cardDistinctCount} {type === 'fechado' ? 'fechamentos' : type === 'emCotacao' ? 'em cotação' : 'declinados'}</Badge>
+            {periodStart && periodEnd && (
+              <Badge variant="warning" className="ml-1">Novos no mês: {novosNoMes}</Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
+
 
         {(() => {
           const distinctClients = new Set(cotacoes.map(c => c.cpf_cnpj)).size;
