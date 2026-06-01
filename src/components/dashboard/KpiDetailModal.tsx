@@ -57,8 +57,9 @@ type SortDirection = 'asc' | 'desc';
 export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate, periodStart, periodEnd }: KpiDetailModalProps) {
   const config = typeConfig[type];
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortField, setSortField] = useState<SortField>('segurado');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
 
   const isInPeriod = useCallback((dateStr?: string | null) => {
     if (!periodStart || !periodEnd || !dateStr) return false;
