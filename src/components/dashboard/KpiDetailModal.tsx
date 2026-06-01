@@ -20,7 +20,10 @@ interface KpiDetailModalProps {
   cardDistinctCount: number;
   formatCurrency: (value: number) => string;
   formatDate: (dateString: string) => string;
+  periodStart?: Date;
+  periodEnd?: Date;
 }
+
 
 const typeConfig: Record<KpiType, { title: string; color: string; badgeVariant: 'default' | 'success-alt' | 'warning' | 'destructive' }> = {
   emCotacao: { title: 'Clientes em Cotação no Período', color: 'text-brand-orange', badgeVariant: 'warning' },
