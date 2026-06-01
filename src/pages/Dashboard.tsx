@@ -2141,8 +2141,11 @@ const Dashboard = () => {
           cardDistinctCount={kpiModalOpen === 'emCotacao' ? globalEmAbertoDistinct : kpiModalOpen === 'fechado' ? monthlyStats.fechados : monthlyStats.declinados}
           formatCurrency={formatCurrency}
           formatDate={formatDate}
+          periodStart={monthlyStats.periodStart}
+          periodEnd={monthlyStats.periodEnd}
         />
       )}
+
       </div>
     </>;
 };
