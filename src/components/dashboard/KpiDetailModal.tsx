@@ -265,9 +265,14 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
                       </td>
                     </tr>
                     {isExpanded && group.cotacoes.map((cotacao) => (
-                      <tr key={cotacao.id} className="bg-muted/10 border-b border-border/30">
-                        <td className="py-1.5 px-3"></td>
+                      <tr key={cotacao.id} className={`border-b border-border/30 ${isCotacaoNew(cotacao) ? 'bg-warning/10' : 'bg-muted/10'}`}>
+                        <td className="py-1.5 px-3">
+                          {isCotacaoNew(cotacao) && (
+                            <Badge variant="warning" className="text-[9px] px-1 py-0">Novo</Badge>
+                          )}
+                        </td>
                         <td colSpan={5} className="py-1.5 px-2">
+
                           <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-2 text-xs text-muted-foreground items-center">
                             <div>
                               <span className="text-[10px] text-muted-foreground/60 block">Ramo</span>
