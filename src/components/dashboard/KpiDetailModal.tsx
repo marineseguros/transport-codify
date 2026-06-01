@@ -20,7 +20,10 @@ interface KpiDetailModalProps {
   cardDistinctCount: number;
   formatCurrency: (value: number) => string;
   formatDate: (dateString: string) => string;
+  periodStart?: Date;
+  periodEnd?: Date;
 }
+
 
 const typeConfig: Record<KpiType, { title: string; color: string; badgeVariant: 'default' | 'success-alt' | 'warning' | 'destructive' }> = {
   emCotacao: { title: 'Clientes em Cotação no Período', color: 'text-brand-orange', badgeVariant: 'warning' },
@@ -43,16 +46,33 @@ interface SegmentoGroup {
   ramoGroup: string;
   premioTotal: number;
   cotacoes: Cotacao[];
+  hasNew: boolean;
+  newCount: number;
 }
+
 
 type SortField = 'segurado' | 'ramoGroup' | null;
 type SortDirection = 'asc' | 'desc';
 
-export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate }: KpiDetailModalProps) {
+export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate, periodStart, periodEnd }: KpiDetailModalProps) {
   const config = typeConfig[type];
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  const isInPeriod = useCallback((dateStr?: string | null) => {
+    if (!periodStart || !periodEnd || !dateStr) return false;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
+    return d >= periodStart && d <= periodEnd;
+  }, [periodStart, periodEnd]);
+
+  const dateFieldForNew = type === 'fechado' ? 'data_fechamento' : 'data_cotacao';
+
+  const isCotacaoNew = useCallback((c: Cotacao) => {
+    const v = (c as any)[dateFieldForNew] as string | undefined;
+    return isInPeriod(v);
+  }, [isInPeriod, dateFieldForNew]);
 
   const groups = useMemo(() => {
     const map = new Map<string, SegmentoGroup>();
@@ -60,11 +80,15 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
       const ramoGroup = getBranchGroup(c.ramo);
       const key = `${c.cpf_cnpj}_${ramoGroup}`;
       if (!map.has(key)) {
-        map.set(key, { key, segurado: c.segurado, cpfCnpj: c.cpf_cnpj, ramoGroup, premioTotal: 0, cotacoes: [] });
+        map.set(key, { key, segurado: c.segurado, cpfCnpj: c.cpf_cnpj, ramoGroup, premioTotal: 0, cotacoes: [], hasNew: false, newCount: 0 });
       }
       const g = map.get(key)!;
       g.premioTotal += c.valor_premio || 0;
       g.cotacoes.push(c);
+      if (isCotacaoNew(c)) {
+        g.hasNew = true;
+        g.newCount += 1;
+      }
     });
     const arr = Array.from(map.values());
     if (sortField) {
@@ -78,7 +102,11 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
       arr.sort((a, b) => b.premioTotal - a.premioTotal);
     }
     return arr;
-  }, [cotacoes, sortField, sortDirection]);
+  }, [cotacoes, sortField, sortDirection, isCotacaoNew]);
+
+  const novosNoMes = useMemo(() => cotacoes.filter(isCotacaoNew).length, [cotacoes, isCotacaoNew]);
+  const novosClientesNoMes = useMemo(() => groups.filter(g => g.hasNew).length, [groups]);
+
 
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
@@ -126,8 +154,12 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
             <FileText className="h-5 w-5" />
             <span>{config.title}</span>
             <Badge variant={config.badgeVariant} className="ml-2">{cardDistinctCount} {type === 'fechado' ? 'fechamentos' : type === 'emCotacao' ? 'em cotação' : 'declinados'}</Badge>
+            {periodStart && periodEnd && (
+              <Badge variant="warning" className="ml-1">Novos no mês: {novosNoMes}</Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
+
 
         {(() => {
           const distinctClients = new Set(cotacoes.map(c => c.cpf_cnpj)).size;
@@ -210,11 +242,17 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
                           : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                       </td>
                       <td className="py-2 px-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Building className="h-3 w-3 text-muted-foreground shrink-0" />
                           <span className="font-medium">{group.segurado}</span>
+                          {group.hasNew && (
+                            <Badge variant="warning" className="text-[10px] px-1.5 py-0">
+                              Novo no mês{group.newCount > 1 ? ` (${group.newCount})` : ''}
+                            </Badge>
+                          )}
                         </div>
                       </td>
+
                       <td className="py-2 px-2 text-xs text-muted-foreground font-mono">{group.cpfCnpj}</td>
                       <td className="py-2 px-2">
                         <Badge variant="outline" className="text-xs">{group.ramoGroup}</Badge>
@@ -227,9 +265,14 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
                       </td>
                     </tr>
                     {isExpanded && group.cotacoes.map((cotacao) => (
-                      <tr key={cotacao.id} className="bg-muted/10 border-b border-border/30">
-                        <td className="py-1.5 px-3"></td>
+                      <tr key={cotacao.id} className={`border-b border-border/30 ${isCotacaoNew(cotacao) ? 'bg-warning/10' : 'bg-muted/10'}`}>
+                        <td className="py-1.5 px-3">
+                          {isCotacaoNew(cotacao) && (
+                            <Badge variant="warning" className="text-[9px] px-1 py-0">Novo</Badge>
+                          )}
+                        </td>
                         <td colSpan={5} className="py-1.5 px-2">
+
                           <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-2 text-xs text-muted-foreground items-center">
                             <div>
                               <span className="text-[10px] text-muted-foreground/60 block">Ramo</span>

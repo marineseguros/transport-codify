@@ -520,9 +520,12 @@ const Dashboard = () => {
       premioTotalComp,
       taxaConversao,
       taxaConversaoComp,
-      segmentoStats
+      segmentoStats,
+      periodStart: currentStartDate,
+      periodEnd: currentEndDate
     };
   }, [allQuotes, filters]);
+
 
   // Distribuição por status com dados detalhados para modal
   // IMPORTANTE: Usar os mesmos valores calculados em monthlyStats para garantir consistência
@@ -2138,8 +2141,11 @@ const Dashboard = () => {
           cardDistinctCount={kpiModalOpen === 'emCotacao' ? globalEmAbertoDistinct : kpiModalOpen === 'fechado' ? monthlyStats.fechados : monthlyStats.declinados}
           formatCurrency={formatCurrency}
           formatDate={formatDate}
+          periodStart={monthlyStats.periodStart}
+          periodEnd={monthlyStats.periodEnd}
         />
       )}
+
       </div>
     </>;
 };
