@@ -46,7 +46,10 @@ interface SegmentoGroup {
   ramoGroup: string;
   premioTotal: number;
   cotacoes: Cotacao[];
+  hasNew: boolean;
+  newCount: number;
 }
+
 
 type SortField = 'segurado' | 'ramoGroup' | null;
 type SortDirection = 'asc' | 'desc';
