@@ -242,11 +242,17 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
                           : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                       </td>
                       <td className="py-2 px-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Building className="h-3 w-3 text-muted-foreground shrink-0" />
                           <span className="font-medium">{group.segurado}</span>
+                          {group.hasNew && (
+                            <Badge variant="warning" className="text-[10px] px-1.5 py-0">
+                              Novo no mês{group.newCount > 1 ? ` (${group.newCount})` : ''}
+                            </Badge>
+                          )}
                         </div>
                       </td>
+
                       <td className="py-2 px-2 text-xs text-muted-foreground font-mono">{group.cpfCnpj}</td>
                       <td className="py-2 px-2">
                         <Badge variant="outline" className="text-xs">{group.ramoGroup}</Badge>
