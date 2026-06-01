@@ -57,8 +57,9 @@ type SortDirection = 'asc' | 'desc';
 export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate, periodStart, periodEnd }: KpiDetailModalProps) {
   const config = typeConfig[type];
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortField, setSortField] = useState<SortField>('segurado');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
 
   const isInPeriod = useCallback((dateStr?: string | null) => {
     if (!periodStart || !periodEnd || !dateStr) return false;
@@ -154,12 +155,18 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
             <FileText className="h-5 w-5" />
             <span>{config.title}</span>
             <Badge variant={config.badgeVariant} className="ml-2">{cardDistinctCount} {type === 'fechado' ? 'fechamentos' : type === 'emCotacao' ? 'em cotação' : 'declinados'}</Badge>
-            {periodStart && periodEnd && (
-              <Badge variant="warning" className="ml-1">Novos no mês: {novosNoMes}</Badge>
-            )}
           </DialogTitle>
         </DialogHeader>
 
+        {periodStart && periodEnd && (
+          <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-warning/40 bg-warning/10">
+            <div className="flex items-center gap-2">
+              <Badge variant="warning" className="text-[10px] px-1.5 py-0">Novo</Badge>
+              <span className="text-xs font-medium">Novos no mês selecionado</span>
+            </div>
+            <span className="text-base font-bold text-warning-foreground">{novosClientesNoMes}</span>
+          </div>
+        )}
 
         {(() => {
           const distinctClients = new Set(cotacoes.map(c => c.cpf_cnpj)).size;
@@ -182,6 +189,7 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
             </div>
           );
         })()}
+
 
         {groups.length > 0 && (
           <div className="flex justify-end">
