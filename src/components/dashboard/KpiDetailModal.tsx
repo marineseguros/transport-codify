@@ -54,11 +54,25 @@ interface SegmentoGroup {
 type SortField = 'segurado' | 'ramoGroup' | null;
 type SortDirection = 'asc' | 'desc';
 
-export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate }: KpiDetailModalProps) {
+export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate, periodStart, periodEnd }: KpiDetailModalProps) {
   const config = typeConfig[type];
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  const isInPeriod = useCallback((dateStr?: string | null) => {
+    if (!periodStart || !periodEnd || !dateStr) return false;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
+    return d >= periodStart && d <= periodEnd;
+  }, [periodStart, periodEnd]);
+
+  const dateFieldForNew = type === 'fechado' ? 'data_fechamento' : 'data_cotacao';
+
+  const isCotacaoNew = useCallback((c: Cotacao) => {
+    const v = (c as any)[dateFieldForNew] as string | undefined;
+    return isInPeriod(v);
+  }, [isInPeriod, dateFieldForNew]);
 
   const groups = useMemo(() => {
     const map = new Map<string, SegmentoGroup>();
@@ -66,11 +80,15 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
       const ramoGroup = getBranchGroup(c.ramo);
       const key = `${c.cpf_cnpj}_${ramoGroup}`;
       if (!map.has(key)) {
-        map.set(key, { key, segurado: c.segurado, cpfCnpj: c.cpf_cnpj, ramoGroup, premioTotal: 0, cotacoes: [] });
+        map.set(key, { key, segurado: c.segurado, cpfCnpj: c.cpf_cnpj, ramoGroup, premioTotal: 0, cotacoes: [], hasNew: false, newCount: 0 });
       }
       const g = map.get(key)!;
       g.premioTotal += c.valor_premio || 0;
       g.cotacoes.push(c);
+      if (isCotacaoNew(c)) {
+        g.hasNew = true;
+        g.newCount += 1;
+      }
     });
     const arr = Array.from(map.values());
     if (sortField) {
@@ -84,7 +102,11 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
       arr.sort((a, b) => b.premioTotal - a.premioTotal);
     }
     return arr;
-  }, [cotacoes, sortField, sortDirection]);
+  }, [cotacoes, sortField, sortDirection, isCotacaoNew]);
+
+  const novosNoMes = useMemo(() => cotacoes.filter(isCotacaoNew).length, [cotacoes, isCotacaoNew]);
+  const novosClientesNoMes = useMemo(() => groups.filter(g => g.hasNew).length, [groups]);
+
 
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
