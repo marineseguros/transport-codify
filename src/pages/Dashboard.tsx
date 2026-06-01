@@ -520,9 +520,12 @@ const Dashboard = () => {
       premioTotalComp,
       taxaConversao,
       taxaConversaoComp,
-      segmentoStats
+      segmentoStats,
+      periodStart: currentStartDate,
+      periodEnd: currentEndDate
     };
   }, [allQuotes, filters]);
+
 
   // Distribuição por status com dados detalhados para modal
   // IMPORTANTE: Usar os mesmos valores calculados em monthlyStats para garantir consistência
