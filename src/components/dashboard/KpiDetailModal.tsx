@@ -152,6 +152,92 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
       : <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
   };
 
+  const renderGroupRows = (items: SegmentoGroup[]) => items.map((group) => {
+    const isExpanded = expandedGroups.has(group.key);
+    return (
+      <Fragment key={group.key}>
+        <tr
+          className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
+          onClick={() => toggleGroup(group.key)}
+        >
+          <td className="py-2 px-3">
+            {isExpanded
+              ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+          </td>
+          <td className="py-2 px-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Building className="h-3 w-3 text-muted-foreground shrink-0" />
+              <span className="font-medium">{group.segurado}</span>
+              {group.hasNew && (
+                <Badge variant="warning" className="text-[10px] px-1.5 py-0">
+                  Novo no mês{group.newCount > 1 ? ` (${group.newCount})` : ''}
+                </Badge>
+              )}
+            </div>
+          </td>
+
+          <td className="py-2 px-2 text-xs text-muted-foreground font-mono">{group.cpfCnpj}</td>
+          <td className="py-2 px-2">
+            <Badge variant="outline" className="text-xs">{group.ramoGroup}</Badge>
+          </td>
+          <td className="py-2 px-2 text-center">
+            <Badge variant="secondary" className="text-xs">{group.cotacoes.length}</Badge>
+          </td>
+          <td className="py-2 px-2 text-right">
+            <span className={`font-semibold ${config.color}`}>{formatCurrency(group.premioTotal)}</span>
+          </td>
+        </tr>
+        {isExpanded && group.cotacoes.map((cotacao) => (
+          <tr key={cotacao.id} className={`border-b border-border/30 ${isCotacaoNew(cotacao) ? 'bg-warning/10' : 'bg-muted/10'}`}>
+            <td className="py-1.5 px-3">
+              {isCotacaoNew(cotacao) && (
+                <Badge variant="warning" className="text-[9px] px-1 py-0">Novo</Badge>
+              )}
+            </td>
+            <td colSpan={5} className="py-1.5 px-2">
+
+              <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-2 text-xs text-muted-foreground items-center">
+                <div>
+                  <span className="text-[10px] text-muted-foreground/60 block">Ramo</span>
+                  {cotacao.ramo?.descricao || '—'}
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground/60 block">Seguradora</span>
+                  {cotacao.seguradora?.nome || '—'}
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground/60 block">Captação</span>
+                  {cotacao.captacao?.descricao || '—'}
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground/60 block">Produtor Origem</span>
+                  {cotacao.produtor_origem?.nome || '—'}
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground/60 block">
+                    {type === 'fechado' ? 'Fechamento' : 'Data Cotação'}
+                  </span>
+                  {type === 'fechado'
+                    ? (cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : '—')
+                    : formatDate(cotacao.data_cotacao)}
+                  {cotacao.inicio_vigencia && (
+                    <span className="ml-2 text-muted-foreground/60">
+                      Vig: {formatDate(cotacao.inicio_vigencia)}
+                    </span>
+                  )}
+                </div>
+                <div className="text-right font-medium text-foreground">
+                  {formatCurrency(cotacao.valor_premio)}
+                </div>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </Fragment>
+    );
+  });
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
