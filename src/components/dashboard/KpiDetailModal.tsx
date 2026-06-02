@@ -22,6 +22,7 @@ interface KpiDetailModalProps {
   formatDate: (dateString: string) => string;
   periodStart?: Date;
   periodEnd?: Date;
+  periodDistinctCount?: number;
 }
 
 
@@ -54,19 +55,26 @@ interface SegmentoGroup {
 type SortField = 'segurado' | 'ramoGroup' | null;
 type SortDirection = 'asc' | 'desc';
 
-export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate, periodStart, periodEnd }: KpiDetailModalProps) {
+export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate, periodStart, periodEnd, periodDistinctCount }: KpiDetailModalProps) {
   const config = typeConfig[type];
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>('segurado');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
+  const toDateKey = useCallback((date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
 
   const isInPeriod = useCallback((dateStr?: string | null) => {
     if (!periodStart || !periodEnd || !dateStr) return false;
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return false;
-    return d >= periodStart && d <= periodEnd;
-  }, [periodStart, periodEnd]);
+    const dateKey = dateStr.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return false;
+    return dateKey >= toDateKey(periodStart) && dateKey <= toDateKey(periodEnd);
+  }, [periodStart, periodEnd, toDateKey]);
 
   const dateFieldForNew = type === 'fechado' ? 'data_fechamento' : 'data_cotacao';
 
@@ -105,17 +113,16 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
     return arr;
   }, [cotacoes, sortField, sortDirection, isCotacaoNew]);
 
-  const novosNoMes = useMemo(() => cotacoes.filter(isCotacaoNew).length, [cotacoes, isCotacaoNew]);
   const novosClientesNoMes = useMemo(() => groups.filter(g => g.hasNew).length, [groups]);
+  const shouldSeparateNew = type === 'emCotacao' && !!periodStart && !!periodEnd;
+  const novosNoMesCount = periodDistinctCount ?? novosClientesNoMes;
+  const newGroups = useMemo(() => shouldSeparateNew ? groups.filter(g => g.hasNew) : [], [groups, shouldSeparateNew]);
+  const otherGroups = useMemo(() => shouldSeparateNew ? groups.filter(g => !g.hasNew) : groups, [groups, shouldSeparateNew]);
 
 
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
-      if (sortDirection === 'desc') {
-        setSortField(null);
-      } else {
-        setSortDirection('desc');
-      }
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
       setSortDirection('asc');
@@ -147,6 +154,92 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
       : <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
   };
 
+  const renderGroupRows = (items: SegmentoGroup[]) => items.map((group) => {
+    const isExpanded = expandedGroups.has(group.key);
+    return (
+      <Fragment key={group.key}>
+        <tr
+          className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
+          onClick={() => toggleGroup(group.key)}
+        >
+          <td className="py-2 px-3">
+            {isExpanded
+              ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+          </td>
+          <td className="py-2 px-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Building className="h-3 w-3 text-muted-foreground shrink-0" />
+              <span className="font-medium">{group.segurado}</span>
+              {group.hasNew && (
+                <Badge variant="warning" className="text-[10px] px-1.5 py-0">
+                  Novo no mês{group.newCount > 1 ? ` (${group.newCount})` : ''}
+                </Badge>
+              )}
+            </div>
+          </td>
+
+          <td className="py-2 px-2 text-xs text-muted-foreground font-mono">{group.cpfCnpj}</td>
+          <td className="py-2 px-2">
+            <Badge variant="outline" className="text-xs">{group.ramoGroup}</Badge>
+          </td>
+          <td className="py-2 px-2 text-center">
+            <Badge variant="secondary" className="text-xs">{group.cotacoes.length}</Badge>
+          </td>
+          <td className="py-2 px-2 text-right">
+            <span className={`font-semibold ${config.color}`}>{formatCurrency(group.premioTotal)}</span>
+          </td>
+        </tr>
+        {isExpanded && group.cotacoes.map((cotacao) => (
+          <tr key={cotacao.id} className={`border-b border-border/30 ${isCotacaoNew(cotacao) ? 'bg-warning/10' : 'bg-muted/10'}`}>
+            <td className="py-1.5 px-3">
+              {isCotacaoNew(cotacao) && (
+                <Badge variant="warning" className="text-[9px] px-1 py-0">Novo</Badge>
+              )}
+            </td>
+            <td colSpan={5} className="py-1.5 px-2">
+
+              <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-2 text-xs text-muted-foreground items-center">
+                <div>
+                  <span className="text-[10px] text-muted-foreground/60 block">Ramo</span>
+                  {cotacao.ramo?.descricao || '—'}
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground/60 block">Seguradora</span>
+                  {cotacao.seguradora?.nome || '—'}
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground/60 block">Captação</span>
+                  {cotacao.captacao?.descricao || '—'}
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground/60 block">Produtor Origem</span>
+                  {cotacao.produtor_origem?.nome || '—'}
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground/60 block">
+                    {type === 'fechado' ? 'Fechamento' : 'Data Cotação'}
+                  </span>
+                  {type === 'fechado'
+                    ? (cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : '—')
+                    : formatDate(cotacao.data_cotacao)}
+                  {cotacao.inicio_vigencia && (
+                    <span className="ml-2 text-muted-foreground/60">
+                      Vig: {formatDate(cotacao.inicio_vigencia)}
+                    </span>
+                  )}
+                </div>
+                <div className="text-right font-medium text-foreground">
+                  {formatCurrency(cotacao.valor_premio)}
+                </div>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </Fragment>
+    );
+  });
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
@@ -158,13 +251,13 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
           </DialogTitle>
         </DialogHeader>
 
-        {periodStart && periodEnd && (
+        {shouldSeparateNew && (
           <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-warning/40 bg-warning/10">
             <div className="flex items-center gap-2">
               <Badge variant="warning" className="text-[10px] px-1.5 py-0">Novo</Badge>
               <span className="text-xs font-medium">Novos no mês selecionado</span>
             </div>
-            <span className="text-base font-bold text-warning-foreground">{novosClientesNoMes}</span>
+            <span className="text-base font-bold text-warning-foreground">{novosNoMesCount}</span>
           </div>
         )}
 
@@ -236,91 +329,25 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
                   </td>
                 </tr>
               )}
-              {groups.map((group) => {
-                const isExpanded = expandedGroups.has(group.key);
-                return (
-                  <Fragment key={group.key}>
-                    <tr
-                      className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
-                      onClick={() => toggleGroup(group.key)}
-                    >
-                      <td className="py-2 px-3">
-                        {isExpanded
-                          ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                          : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-                      </td>
-                      <td className="py-2 px-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Building className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <span className="font-medium">{group.segurado}</span>
-                          {group.hasNew && (
-                            <Badge variant="warning" className="text-[10px] px-1.5 py-0">
-                              Novo no mês{group.newCount > 1 ? ` (${group.newCount})` : ''}
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="py-2 px-2 text-xs text-muted-foreground font-mono">{group.cpfCnpj}</td>
-                      <td className="py-2 px-2">
-                        <Badge variant="outline" className="text-xs">{group.ramoGroup}</Badge>
-                      </td>
-                      <td className="py-2 px-2 text-center">
-                        <Badge variant="secondary" className="text-xs">{group.cotacoes.length}</Badge>
-                      </td>
-                      <td className="py-2 px-2 text-right">
-                        <span className={`font-semibold ${config.color}`}>{formatCurrency(group.premioTotal)}</span>
-                      </td>
-                    </tr>
-                    {isExpanded && group.cotacoes.map((cotacao) => (
-                      <tr key={cotacao.id} className={`border-b border-border/30 ${isCotacaoNew(cotacao) ? 'bg-warning/10' : 'bg-muted/10'}`}>
-                        <td className="py-1.5 px-3">
-                          {isCotacaoNew(cotacao) && (
-                            <Badge variant="warning" className="text-[9px] px-1 py-0">Novo</Badge>
-                          )}
-                        </td>
-                        <td colSpan={5} className="py-1.5 px-2">
-
-                          <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-2 text-xs text-muted-foreground items-center">
-                            <div>
-                              <span className="text-[10px] text-muted-foreground/60 block">Ramo</span>
-                              {cotacao.ramo?.descricao || '—'}
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-muted-foreground/60 block">Seguradora</span>
-                              {cotacao.seguradora?.nome || '—'}
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-muted-foreground/60 block">Captação</span>
-                              {cotacao.captacao?.descricao || '—'}
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-muted-foreground/60 block">Produtor Origem</span>
-                              {cotacao.produtor_origem?.nome || '—'}
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-muted-foreground/60 block">
-                                {type === 'fechado' ? 'Fechamento' : 'Data Cotação'}
-                              </span>
-                              {type === 'fechado'
-                                ? (cotacao.data_fechamento ? formatDate(cotacao.data_fechamento) : '—')
-                                : formatDate(cotacao.data_cotacao)}
-                              {cotacao.inicio_vigencia && (
-                                <span className="ml-2 text-muted-foreground/60">
-                                  Vig: {formatDate(cotacao.inicio_vigencia)}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-right font-medium text-foreground">
-                              {formatCurrency(cotacao.valor_premio)}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </Fragment>
-                );
-              })}
+              {shouldSeparateNew && newGroups.length > 0 && (
+                <tr className="border-b border-warning/30 bg-warning/10">
+                  <td colSpan={6} className="px-3 py-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-warning-foreground">
+                      <Badge variant="warning" className="text-[10px] px-1.5 py-0">Novos</Badge>
+                      <span>Novos no mês</span>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {renderGroupRows(newGroups)}
+              {shouldSeparateNew && newGroups.length > 0 && otherGroups.length > 0 && (
+                <tr className="border-b border-border/60 bg-muted/20">
+                  <td colSpan={6} className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                    Demais registros
+                  </td>
+                </tr>
+              )}
+              {renderGroupRows(otherGroups)}
             </tbody>
           </table>
         </div>
