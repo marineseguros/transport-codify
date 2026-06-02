@@ -2143,6 +2143,7 @@ const Dashboard = () => {
           formatDate={formatDate}
           periodStart={monthlyStats.periodStart}
           periodEnd={monthlyStats.periodEnd}
+          periodDistinctCount={kpiModalOpen === 'emCotacao' ? monthlyStats.emCotacao : undefined}
         />
       )}
 
