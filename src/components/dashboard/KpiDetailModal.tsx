@@ -22,6 +22,7 @@ interface KpiDetailModalProps {
   formatDate: (dateString: string) => string;
   periodStart?: Date;
   periodEnd?: Date;
+  periodDistinctCount?: number;
 }
 
 
@@ -54,7 +55,7 @@ interface SegmentoGroup {
 type SortField = 'segurado' | 'ramoGroup' | null;
 type SortDirection = 'asc' | 'desc';
 
-export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate, periodStart, periodEnd }: KpiDetailModalProps) {
+export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCount, formatCurrency, formatDate, periodStart, periodEnd, periodDistinctCount }: KpiDetailModalProps) {
   const config = typeConfig[type];
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>('segurado');
@@ -114,6 +115,7 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
 
   const novosClientesNoMes = useMemo(() => groups.filter(g => g.hasNew).length, [groups]);
   const shouldSeparateNew = type === 'emCotacao' && !!periodStart && !!periodEnd;
+  const novosNoMesCount = periodDistinctCount ?? novosClientesNoMes;
   const newGroups = useMemo(() => shouldSeparateNew ? groups.filter(g => g.hasNew) : [], [groups, shouldSeparateNew]);
   const otherGroups = useMemo(() => shouldSeparateNew ? groups.filter(g => !g.hasNew) : groups, [groups, shouldSeparateNew]);
 
