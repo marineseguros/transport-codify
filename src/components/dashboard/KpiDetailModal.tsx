@@ -244,22 +244,15 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
+          <DialogTitle className="flex items-center gap-2 text-base flex-wrap">
             <FileText className="h-5 w-5" />
             <span>{config.title}</span>
             <Badge variant={config.badgeVariant} className="ml-2">{cardDistinctCount} {type === 'fechado' ? 'fechamentos' : type === 'emCotacao' ? 'em cotação' : 'declinados'}</Badge>
+            {shouldSeparateNew && (
+              <Badge variant="warning">Novos no mês: {novosNoMesCount}</Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
-
-        {shouldSeparateNew && (
-          <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-warning/40 bg-warning/10">
-            <div className="flex items-center gap-2">
-              <Badge variant="warning" className="text-[10px] px-1.5 py-0">Novo</Badge>
-              <span className="text-xs font-medium">Novos no mês selecionado</span>
-            </div>
-            <span className="text-base font-bold text-warning-foreground">{novosNoMesCount}</span>
-          </div>
-        )}
 
         {(() => {
           const distinctClients = new Set(cotacoes.map(c => c.cpf_cnpj)).size;
