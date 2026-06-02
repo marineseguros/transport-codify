@@ -251,7 +251,7 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
           </DialogTitle>
         </DialogHeader>
 
-        {periodStart && periodEnd && (
+        {shouldSeparateNew && (
           <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-warning/40 bg-warning/10">
             <div className="flex items-center gap-2">
               <Badge variant="warning" className="text-[10px] px-1.5 py-0">Novo</Badge>
