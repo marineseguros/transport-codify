@@ -257,7 +257,7 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
               <Badge variant="warning" className="text-[10px] px-1.5 py-0">Novo</Badge>
               <span className="text-xs font-medium">Novos no mês selecionado</span>
             </div>
-            <span className="text-base font-bold text-warning-foreground">{novosClientesNoMes}</span>
+            <span className="text-base font-bold text-warning-foreground">{novosNoMesCount}</span>
           </div>
         )}
 
