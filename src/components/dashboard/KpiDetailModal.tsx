@@ -60,13 +60,20 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
   const [sortField, setSortField] = useState<SortField>('segurado');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
+  const toDateKey = useCallback((date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
 
   const isInPeriod = useCallback((dateStr?: string | null) => {
     if (!periodStart || !periodEnd || !dateStr) return false;
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return false;
-    return d >= periodStart && d <= periodEnd;
-  }, [periodStart, periodEnd]);
+    const dateKey = dateStr.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return false;
+    return dateKey >= toDateKey(periodStart) && dateKey <= toDateKey(periodEnd);
+  }, [periodStart, periodEnd, toDateKey]);
 
   const dateFieldForNew = type === 'fechado' ? 'data_fechamento' : 'data_cotacao';
 
@@ -105,17 +112,15 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
     return arr;
   }, [cotacoes, sortField, sortDirection, isCotacaoNew]);
 
-  const novosNoMes = useMemo(() => cotacoes.filter(isCotacaoNew).length, [cotacoes, isCotacaoNew]);
   const novosClientesNoMes = useMemo(() => groups.filter(g => g.hasNew).length, [groups]);
+  const shouldSeparateNew = type === 'emCotacao' && !!periodStart && !!periodEnd;
+  const newGroups = useMemo(() => shouldSeparateNew ? groups.filter(g => g.hasNew) : [], [groups, shouldSeparateNew]);
+  const otherGroups = useMemo(() => shouldSeparateNew ? groups.filter(g => !g.hasNew) : groups, [groups, shouldSeparateNew]);
 
 
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
-      if (sortDirection === 'desc') {
-        setSortField(null);
-      } else {
-        setSortDirection('desc');
-      }
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
       setSortDirection('asc');
