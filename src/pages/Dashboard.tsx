@@ -72,6 +72,21 @@ const countDistinctByStatus = (cotacoes: Cotacao[], targetStatuses: string[]): n
 const countDistinctClosings = (cotacoes: Cotacao[]): number => {
   return countDistinctByStatus(cotacoes, ["Negócio fechado", "Fechamento congênere"]);
 };
+
+const toDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const isDateInPeriod = (dateString: string | null | undefined, startDate: Date, endDate: Date): boolean => {
+  if (!dateString) return false;
+  const dateKey = dateString.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return false;
+  return dateKey >= toDateKey(startDate) && dateKey <= toDateKey(endDate);
+};
+
 const Dashboard = () => {
   const {
     user
@@ -248,18 +263,14 @@ const Dashboard = () => {
     return filtered.filter((cotacao) => {
       // Use data_cotacao for "Em cotação" and "Declinado"
       if (cotacao.status === "Em cotação" || cotacao.status === "Declinado") {
-        const cotacaoDate = new Date(cotacao.data_cotacao);
-        return cotacaoDate >= startDate && cotacaoDate <= endDate;
+        return isDateInPeriod(cotacao.data_cotacao, startDate, endDate);
       }
       // Use data_fechamento for "Negócio fechado" and "Fechamento congênere"
       if (cotacao.status === "Negócio fechado" || cotacao.status === "Fechamento congênere") {
-        if (!cotacao.data_fechamento) return false;
-        const fechamentoDate = new Date(cotacao.data_fechamento);
-        return fechamentoDate >= startDate && fechamentoDate <= endDate;
+        return isDateInPeriod(cotacao.data_fechamento, startDate, endDate);
       }
       // Default fallback
-      const cotacaoDate = new Date(cotacao.data_cotacao);
-      return cotacaoDate >= startDate && cotacaoDate <= endDate;
+      return isDateInPeriod(cotacao.data_cotacao, startDate, endDate);
     });
   }, [allQuotes, filters]);
 
@@ -352,15 +363,13 @@ const Dashboard = () => {
     // Filter quotations (Em cotação, Declinado) by data_cotacao
     const currentPeriodCotacoes = baseFilteredQuotes.filter((c) => {
       if (c.status === "Em cotação" || c.status === "Declinado") {
-        const date = new Date(c.data_cotacao);
-        return date >= currentStartDate && date <= currentEndDate;
+        return isDateInPeriod(c.data_cotacao, currentStartDate, currentEndDate);
       }
       return false;
     });
     const previousPeriodCotacoes = baseFilteredQuotes.filter((c) => {
       if (c.status === "Em cotação" || c.status === "Declinado") {
-        const date = new Date(c.data_cotacao);
-        return date >= previousStartDate && date <= previousEndDate;
+        return isDateInPeriod(c.data_cotacao, previousStartDate, previousEndDate);
       }
       return false;
     });
@@ -368,17 +377,13 @@ const Dashboard = () => {
     // Filter closings (Negócio fechado, Fechamento congênere) by data_fechamento
     const currentPeriodFechamentos = baseFilteredQuotes.filter((c) => {
       if (c.status === "Negócio fechado" || c.status === "Fechamento congênere") {
-        if (!c.data_fechamento) return false;
-        const date = new Date(c.data_fechamento);
-        return date >= currentStartDate && date <= currentEndDate;
+        return isDateInPeriod(c.data_fechamento, currentStartDate, currentEndDate);
       }
       return false;
     });
     const previousPeriodFechamentos = baseFilteredQuotes.filter((c) => {
       if (c.status === "Negócio fechado" || c.status === "Fechamento congênere") {
-        if (!c.data_fechamento) return false;
-        const date = new Date(c.data_fechamento);
-        return date >= previousStartDate && date <= previousEndDate;
+        return isDateInPeriod(c.data_fechamento, previousStartDate, previousEndDate);
       }
       return false;
     });
