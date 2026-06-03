@@ -321,12 +321,9 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
                 </tr>
               )}
               {shouldSeparateNew && newGroups.length > 0 && (
-                <tr className="border-b border-warning/30 bg-warning/10">
-                  <td colSpan={6} className="px-3 py-2">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-warning-foreground">
-                      <Badge variant="warning" className="text-[10px] px-1.5 py-0">Novos</Badge>
-                      <span>Novos no mês</span>
-                    </div>
+                <tr className="border-b border-border/60 bg-muted/20">
+                  <td colSpan={6} className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                    Novos no mês
                   </td>
                 </tr>
               )}
