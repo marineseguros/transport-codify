@@ -76,12 +76,10 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
     return dateKey >= toDateKey(periodStart) && dateKey <= toDateKey(periodEnd);
   }, [periodStart, periodEnd, toDateKey]);
 
-  const dateFieldForNew = type === 'fechado' ? 'data_fechamento' : 'data_cotacao';
-
   const isCotacaoNew = useCallback((c: Cotacao) => {
-    const v = (c as any)[dateFieldForNew] as string | undefined;
-    return isInPeriod(v);
-  }, [isInPeriod, dateFieldForNew]);
+    if (type !== 'emCotacao') return false;
+    return isInPeriod(c.data_cotacao);
+  }, [isInPeriod, type]);
 
   const groups = useMemo(() => {
     const map = new Map<string, SegmentoGroup>();
@@ -323,12 +321,9 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
                 </tr>
               )}
               {shouldSeparateNew && newGroups.length > 0 && (
-                <tr className="border-b border-warning/30 bg-warning/10">
-                  <td colSpan={6} className="px-3 py-2">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-warning-foreground">
-                      <Badge variant="warning" className="text-[10px] px-1.5 py-0">Novos</Badge>
-                      <span>Novos no mês</span>
-                    </div>
+                <tr className="border-b border-border/60 bg-muted/20">
+                  <td colSpan={6} className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                    Novos no mês
                   </td>
                 </tr>
               )}
