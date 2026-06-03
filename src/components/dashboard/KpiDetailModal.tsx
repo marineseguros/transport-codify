@@ -113,7 +113,7 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
 
   const novosClientesNoMes = useMemo(() => groups.filter(g => g.hasNew).length, [groups]);
   const shouldSeparateNew = type === 'emCotacao' && !!periodStart && !!periodEnd;
-  const novosNoMesCount = periodDistinctCount ?? novosClientesNoMes;
+  const novosNoMesCount = novosClientesNoMes;
   const newGroups = useMemo(() => shouldSeparateNew ? groups.filter(g => g.hasNew) : [], [groups, shouldSeparateNew]);
   const otherGroups = useMemo(() => shouldSeparateNew ? groups.filter(g => !g.hasNew) : groups, [groups, shouldSeparateNew]);
 
