@@ -247,9 +247,9 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
           <DialogTitle className="flex items-center gap-2 text-base flex-wrap">
             <FileText className="h-5 w-5" />
             <span>{config.title}</span>
-            <Badge variant={config.badgeVariant} className="ml-2">{cardDistinctCount} {type === 'fechado' ? 'fechamentos' : type === 'emCotacao' ? 'em cotação' : 'declinados'}</Badge>
+            <Badge variant={config.badgeVariant} className="ml-2 text-white">{cardDistinctCount} {type === 'fechado' ? 'fechamentos' : type === 'emCotacao' ? 'em cotação' : 'declinados'}</Badge>
             {shouldSeparateNew && (
-              <Badge variant="warning">Novos no mês: {novosNoMesCount}</Badge>
+              <Badge variant="warning" className="text-white">Novos no mês: {novosNoMesCount}</Badge>
             )}
           </DialogTitle>
         </DialogHeader>
