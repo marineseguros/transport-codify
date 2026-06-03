@@ -76,12 +76,10 @@ export function KpiDetailModal({ open, onClose, type, cotacoes, cardDistinctCoun
     return dateKey >= toDateKey(periodStart) && dateKey <= toDateKey(periodEnd);
   }, [periodStart, periodEnd, toDateKey]);
 
-  const dateFieldForNew = type === 'fechado' ? 'data_fechamento' : 'data_cotacao';
-
   const isCotacaoNew = useCallback((c: Cotacao) => {
-    const v = (c as any)[dateFieldForNew] as string | undefined;
-    return isInPeriod(v);
-  }, [isInPeriod, dateFieldForNew]);
+    if (type !== 'emCotacao') return false;
+    return isInPeriod(c.data_cotacao);
+  }, [isInPeriod, type]);
 
   const groups = useMemo(() => {
     const map = new Map<string, SegmentoGroup>();
