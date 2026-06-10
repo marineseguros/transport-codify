@@ -88,6 +88,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
+        <TooltipProvider delayDuration={0}>
         {/* Main Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel>Principal</SidebarGroupLabel>
@@ -95,13 +96,19 @@ export function AppSidebar() {
             <SidebarMenu>
               {menuItems.map(item => {
               const isActive = currentPath === item.url;
-              return <SidebarMenuItem key={item.title}>
-                    <NavLink to={item.url} end className={cn("flex w-full items-center rounded-lg p-2 text-sm font-medium", collapsed ? "justify-center gap-0" : "gap-2", isActive ? "bg-primary text-white font-semibold" : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white")} aria-current={isActive ? "page" : undefined}>
-                      <item.icon className="h-4 w-4 flex-shrink-0" />
+              const link = <NavLink to={item.url} end className={cn("flex w-full items-center rounded-lg p-2 text-sm font-medium", collapsed ? "justify-center gap-0" : "gap-2", isActive ? "bg-primary text-white font-semibold" : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white")} aria-current={isActive ? "page" : undefined}>
+                      <item.icon className={cn("flex-shrink-0", collapsed ? "h-5 w-5" : "h-4 w-4")} />
                       <span className={cn("whitespace-nowrap", collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto")}>
                         {item.title}
                       </span>
-                    </NavLink>
+                    </NavLink>;
+              return <SidebarMenuItem key={item.title}>
+                    {collapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>{link}</TooltipTrigger>
+                        <TooltipContent side="right">{item.title}</TooltipContent>
+                      </Tooltip>
+                    ) : link}
                   </SidebarMenuItem>;
             })}
             </SidebarMenu>
@@ -118,19 +125,27 @@ export function AppSidebar() {
               <SidebarMenu>
                 {adminItems.map(item => {
               const isActive = currentPath === item.url;
-              return <SidebarMenuItem key={item.title}>
-                      <NavLink to={item.url} className={cn("flex w-full items-center rounded-lg p-2 text-sm font-medium", collapsed ? "justify-center gap-0" : "gap-2", isActive ? "bg-primary text-white font-semibold" : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white")} aria-current={isActive ? "page" : undefined}>
-                        <item.icon className="h-4 w-4 flex-shrink-0" />
+              const link = <NavLink to={item.url} className={cn("flex w-full items-center rounded-lg p-2 text-sm font-medium", collapsed ? "justify-center gap-0" : "gap-2", isActive ? "bg-primary text-white font-semibold" : "text-foreground/70 bg-transparent hover:bg-primary/30 hover:text-primary dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white")} aria-current={isActive ? "page" : undefined}>
+                        <item.icon className={cn("flex-shrink-0", collapsed ? "h-5 w-5" : "h-4 w-4")} />
                         <span className={cn("whitespace-nowrap", collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto")}>
                           {item.title}
                         </span>
-                      </NavLink>
+                      </NavLink>;
+              return <SidebarMenuItem key={item.title}>
+                      {collapsed ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>{link}</TooltipTrigger>
+                          <TooltipContent side="right">{item.title}</TooltipContent>
+                        </Tooltip>
+                      ) : link}
                     </SidebarMenuItem>;
             })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>}
+        </TooltipProvider>
       </SidebarContent>
+
 
       {/* User controls at bottom */}
       <SidebarFooter className="border-t px-2 py-3">
