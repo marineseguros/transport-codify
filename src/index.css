@@ -49,32 +49,32 @@ All colors MUST be HSL.
     --quote-value-foreground: 220 13% 13%;
 
     /* Secondary - Light elegant slate */
-    --secondary: 210 17% 95%;
-    --secondary-foreground: 220 13% 13%;
+    --secondary: 215 20% 88%;
+    --secondary-foreground: 220 18% 12%;
 
-    --muted: 210 17% 95%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 215 20% 88%;
+    --muted-foreground: 220 12% 38%;
 
-    --accent: 205 50% 95%;
-    --accent-foreground: 205 87% 35%;
+    --accent: 205 55% 88%;
+    --accent-foreground: 205 87% 30%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
+    --border: 215 18% 80%;
+    --input: 215 18% 80%;
     --ring: 205 87% 48%;
 
     --radius: 0.75rem;
 
     /* Sidebar - Clean modern */
-    --sidebar-background: 210 20% 98%;
-    --sidebar-foreground: 220 13% 13%;
+    --sidebar-background: 215 25% 92%;
+    --sidebar-foreground: 220 18% 12%;
     --sidebar-primary: 205 87% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 17% 95%;
-    --sidebar-accent-foreground: 220 13% 13%;
-    --sidebar-border: 214 20% 90%;
+    --sidebar-accent: 215 20% 88%;
+    --sidebar-accent-foreground: 220 18% 12%;
+    --sidebar-border: 215 18% 80%;
     --sidebar-ring: 205 87% 48%;
 
     /* Gradients and effects - Refined */
