@@ -10,14 +10,14 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Light theme - Modern elegant corporate */
-    --background: 210 20% 98%;
-    --foreground: 220 13% 13%;
+    --background: 215 25% 92%;
+    --foreground: 220 18% 12%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 13% 13%;
+    --card: 210 22% 97%;
+    --card-foreground: 220 18% 12%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 13%;
+    --popover: 210 22% 97%;
+    --popover-foreground: 220 18% 12%;
 
     /* Marine Seguros - Refined corporate blue */
     --primary: 205 87% 48%; /* Deep professional blue */
