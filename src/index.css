@@ -10,14 +10,14 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Light theme - Modern elegant corporate */
-    --background: 210 20% 98%;
-    --foreground: 220 13% 13%;
+    --background: 215 25% 92%;
+    --foreground: 220 18% 12%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 13% 13%;
+    --card: 210 22% 97%;
+    --card-foreground: 220 18% 12%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 13%;
+    --popover: 210 22% 97%;
+    --popover-foreground: 220 18% 12%;
 
     /* Marine Seguros - Refined corporate blue */
     --primary: 205 87% 48%; /* Deep professional blue */
@@ -49,32 +49,32 @@ All colors MUST be HSL.
     --quote-value-foreground: 220 13% 13%;
 
     /* Secondary - Light elegant slate */
-    --secondary: 210 17% 95%;
-    --secondary-foreground: 220 13% 13%;
+    --secondary: 215 20% 88%;
+    --secondary-foreground: 220 18% 12%;
 
-    --muted: 210 17% 95%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 215 20% 88%;
+    --muted-foreground: 220 12% 38%;
 
-    --accent: 205 50% 95%;
-    --accent-foreground: 205 87% 35%;
+    --accent: 205 55% 88%;
+    --accent-foreground: 205 87% 30%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
+    --border: 215 18% 80%;
+    --input: 215 18% 80%;
     --ring: 205 87% 48%;
 
     --radius: 0.75rem;
 
     /* Sidebar - Clean modern */
-    --sidebar-background: 210 20% 98%;
-    --sidebar-foreground: 220 13% 13%;
+    --sidebar-background: 215 25% 92%;
+    --sidebar-foreground: 220 18% 12%;
     --sidebar-primary: 205 87% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 17% 95%;
-    --sidebar-accent-foreground: 220 13% 13%;
-    --sidebar-border: 214 20% 90%;
+    --sidebar-accent: 215 20% 88%;
+    --sidebar-accent-foreground: 220 18% 12%;
+    --sidebar-border: 215 18% 80%;
     --sidebar-ring: 205 87% 48%;
 
     /* Gradients and effects - Refined */
@@ -85,13 +85,13 @@ All colors MUST be HSL.
 
   .dark {
     /* Dark theme - Soft elegant corporate */
-    --background: 220 20% 12%;
+    --background: 220 18% 18%;
     --foreground: 210 20% 98%;
 
-    --card: 220 18% 16%;
+    --card: 220 16% 22%;
     --card-foreground: 210 20% 98%;
 
-    --popover: 220 18% 16%;
+    --popover: 220 16% 22%;
     --popover-foreground: 210 20% 98%;
 
     /* Dark mode - Luminous professional blue */
@@ -124,28 +124,28 @@ All colors MUST be HSL.
     --quote-value-foreground: 210 20% 98%;
 
     /* Dark mode - Elevated slate */
-    --secondary: 220 18% 20%;
+    --secondary: 220 16% 26%;
     --secondary-foreground: 210 20% 98%;
 
-    --muted: 220 18% 20%;
+    --muted: 220 16% 26%;
     --muted-foreground: 215 20% 70%;
 
-    --accent: 220 18% 20%;
+    --accent: 220 16% 26%;
     --accent-foreground: 205 95% 62%;
 
     --destructive: 0 72% 60%;
     --destructive-foreground: 210 20% 98%;
 
-    --border: 220 18% 24%;
-    --input: 220 18% 24%;
+    --border: 220 16% 32%;
+    --input: 220 16% 32%;
     --ring: 205 95% 62%;
 
     /* Sidebar - Soft premium dark */
-    --sidebar-background: 220 20% 14%;
+    --sidebar-background: 220 18% 20%;
     --sidebar-foreground: 210 20% 98%;
     --sidebar-primary: 205 95% 62%;
     --sidebar-primary-foreground: 220 20% 12%;
-    --sidebar-accent: 220 18% 18%;
+    --sidebar-accent: 220 16% 24%;
     --sidebar-accent-foreground: 210 20% 98%;
     --sidebar-border: 220 18% 24%;
     --sidebar-ring: 205 95% 62%;
