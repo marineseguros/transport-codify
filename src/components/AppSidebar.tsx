@@ -133,7 +133,7 @@ export function AppSidebar() {
 
       {/* User controls at bottom */}
       <SidebarFooter className="border-t px-2 py-3">
-        <div className={cn("flex items-center", collapsed ? "justify-center" : "gap-2")}>
+        <div className={cn("flex", collapsed ? "flex-col items-center gap-2" : "items-center gap-2")}>
           <ThemeToggle />
           
           {!collapsed && (
