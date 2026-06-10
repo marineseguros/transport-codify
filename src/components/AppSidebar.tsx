@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { BarChart3, FileText, Users, Settings, Kanban, Building2, Tags, Home, ClipboardList, ChevronLeft, ChevronRight, Target, LogOut, KeyRound, User, Clock, BarChartBig, LayoutDashboard } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
