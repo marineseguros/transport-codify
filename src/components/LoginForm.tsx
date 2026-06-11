@@ -35,9 +35,11 @@ export const LoginForm = () => {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="rounded-2xl px-6 py-3 dark:bg-white/95 dark:shadow-lg transition-colors">
-              <img src="/marine-login-logo.png" alt="Marine Seguros Logo" className="h-32 w-auto" />
-            </div>
+            <img
+              src="/marine-login-logo.png"
+              alt="Marine Seguros Logo"
+              className="h-32 w-auto dark:brightness-150 dark:contrast-125 dark:[filter:brightness(1.6)_contrast(1.15)_drop-shadow(0_0_8px_rgba(125,211,252,0.35))]"
+            />
           </div>
           <p className="text-muted-foreground">Sistema de Gerenciamento</p>
         </div>
