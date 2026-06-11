@@ -35,7 +35,9 @@ export const LoginForm = () => {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <img src="/marine-login-logo.png" alt="Marine Seguros Logo" className="h-32 w-auto" />
+            <div className="rounded-2xl px-6 py-3 dark:bg-white/95 dark:shadow-lg transition-colors">
+              <img src="/marine-login-logo.png" alt="Marine Seguros Logo" className="h-32 w-auto" />
+            </div>
           </div>
           <p className="text-muted-foreground">Sistema de Gerenciamento</p>
         </div>
