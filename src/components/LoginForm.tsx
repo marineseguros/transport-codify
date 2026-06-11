@@ -35,9 +35,8 @@ export const LoginForm = () => {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <img src="/marine-logo.png" alt="Marine Seguros Logo" className="h-16 w-auto" />
+            <img src="/marine-login-logo.png" alt="Marine Seguros Logo" className="h-32 w-auto" />
           </div>
-          <h1 className="text-2xl font-bold">Marine Seguros</h1>
           <p className="text-muted-foreground">Sistema de Gerenciamento</p>
         </div>
 
