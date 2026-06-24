@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, TrendingUp, Calendar, Award, LayoutGrid, Table2, Lightbulb, User, Users } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { Target, TrendingUp, Calendar, Award, LayoutGrid, Table2, Lightbulb, User, Users, Upload } from "lucide-react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
 import { logger } from "@/lib/logger";
 import { getDaysInMonth, getDate } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { getRegraRamo } from '@/lib/ramoClassification';
+import { ImportRealizadoModal } from "./ImportRealizadoModal";
 import {
   Table,
   TableBody,
