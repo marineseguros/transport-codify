@@ -262,8 +262,11 @@ export const MetasPremioComparison = ({
   const [metasPremio, setMetasPremio] = useState<MetaPremio[]>([]);
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
   const [ramos, setRamos] = useState<Record<string, Ramo>>({});
+  const [realizadoRows, setRealizadoRows] = useState<{ mes: number; valor_premio: number; produtor_id: string | null; produtor_nome: string }[]>([]);
+  const [ultimaImportacao, setUltimaImportacao] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEscadinha, setShowEscadinha] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   // Calculate target month/year based on date filter
   const { targetMonth, targetYear, startDate, endDate } = useMemo(() => {
