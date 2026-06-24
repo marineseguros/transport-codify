@@ -1,29 +1,62 @@
-## Causa raiz identificada
+## Objetivo
+Adicionar as colunas **Realizado** e **Realizado Acumulado** na tabela "Análise Mensal de Prêmio - {ano}", alimentadas por uma planilha Excel importada pelo usuário e persistida no Supabase.
 
-A página publicada atual está correta: o HTML publicado aponta para o bundle novo e contém a limpeza de Service Worker. O problema persiste só no navegador comum porque ele ainda está sendo controlado por um Service Worker antigo já instalado no perfil do usuário.
+> Observação: hoje já existem as colunas "Expectativa" e "Expec. Acum." (calculadas a partir das cotações fechadas). Elas continuam existindo. As novas colunas Realizado/Realizado Acum. virão **exclusivamente** dos dados importados da planilha.
 
-O ajuste anterior limpa registros/caches quando o HTML novo ou o bundle novo executam, mas isso não resolve o caso mais crítico: se a aba comum ainda recebe o HTML/bundle antigo pelo Service Worker antigo, o código novo nunca roda. Além disso, o `registerSW.js` atual só executa limpeza quando o HTML antigo o carrega, mas não força explicitamente o navegador a buscar/instalar o kill-switch de `/sw.js`.
+## Mapeamento planilha → aplicação
+| Planilha | Aplicação | Uso |
+|---|---|---|
+| Seg. | Seguradora | guardado (referência) |
+| Ramo | Ramo | chave de agregação (match por descrição/ramo agrupado) |
+| CPF/CNPJ | CNPJ | guardado (referência) |
+| Início de Vig. | — | define o **mês** do realizado |
+| Pr. Líquido | Valor | valor somado no mês |
+| Produtor / Prod. Indireto 1/2/3 | Produtor Cotador | chave de agregação (match por nome) |
 
-## Plano de correção definitiva
+Demais colunas da planilha são ignoradas.
 
-1. **Transformar `/registerSW.js` em um desinstalador ativo**
-   - Em vez de apenas desregistrar os SWs existentes, ele vai primeiro registrar/atualizar explicitamente `/sw.js` com `updateViaCache: 'none'`.
-   - Isso força o navegador comum, mesmo preso no HTML antigo, a baixar o kill-switch atual no mesmo escopo (`/`).
-   - Depois disso, ele limpa caches, desregistra registros restantes e recarrega a aba uma única vez com guarda anti-loop.
+## Regras de negócio
+1. **Mês** = mês de `Início de Vig.` (ano = ano selecionado no dashboard).
+2. **Agregação** = soma de `Pr. Líquido` por (mês + Produtor Cotador + Ramo).
+3. Cada linha da planilha que tiver **mais de um produtor** (Produtor + Prod. Indireto 1/2/3) gera uma linha de realizado para **cada** produtor preenchido, com o **valor cheio** (sem rateio) — assim a soma filtrada por qualquer produtor envolvido reflete o realizado dele. *Confirmar se preferem rateio igualitário em vez de valor cheio.*
+4. **Realizado Acumulado** do mês N = soma do Realizado de Jan até N (do ano e dos filtros vigentes).
+5. Filtros existentes do dashboard (Produtor) também filtram o Realizado.
 
-2. **Reforçar `/sw.js` e `/service-worker.js`**
-   - Remover a condição que evita navegar quando já existe `sw-cleanup`, porque ela pode impedir a saída de abas presas.
-   - Usar uma flag simples em `sessionStorage/localStorage` no lado da página para evitar loop, não no Service Worker.
-   - Manter a ordem correta: `skipWaiting` → `clients.claim()` → limpar caches → navegar clientes → `unregister()`.
+## Estrutura de dados (Supabase)
 
-3. **Adicionar um fallback de versão visível no app novo**
-   - Manter temporariamente o badge `v2 · 9col` no modal para confirmar que o bundle correto foi carregado.
-   - Assim diferenciamos claramente: se o badge aparecer, é ajuste de layout; se não aparecer, é SW/cache ainda segurando bundle antigo.
+Nova tabela `realizado_premio_importacoes` (cabeçalho do upload, para histórico/auditoria):
+- ano, arquivo_nome, linhas_processadas, total_valor, importado_por, importado_em.
 
-4. **Validar o publicado por HTTP**
-   - Conferir que `/registerSW.js`, `/sw.js`, `/service-worker.js` e o HTML publicado contêm a nova versão.
-   - Isso confirma que o problema restante, se houver, não é código publicado incorreto, mas estado preso no perfil do navegador.
+Nova tabela `realizado_premio` (linha a linha já normalizado):
+- importacao_id (FK), ano, mes (1-12), seguradora_nome, ramo_nome, ramo_agrupado, cnpj, valor_premio, produtor_nome, produtor_id (resolvido por nome quando possível), tipo_produtor ('Cotador' | 'Indireto 1' | 'Indireto 2' | 'Indireto 3'), inicio_vigencia.
 
-## Resultado esperado
+RLS: leitura para `authenticated`; inserção apenas via importação (papéis admin/gerente/CEO).
 
-Na página comum, ao abrir o fluxo `Performance dos Indicadores (Meta x Realizado)` → `Ver mais` → detalhes mensais de `Cotação`, a aba deve recarregar uma vez e passar a exibir o mesmo layout da aba anônima: 9 colunas com `Status` e `Prêmio`.
+**Reimportação:** ao importar um arquivo para o mesmo ano, o usuário escolhe **Substituir** (apaga linhas existentes daquele ano e reinsere) ou **Adicionar**. *Confirmar preferência — default: Substituir.*
+
+## UI
+
+1. **Botão "Importar Realizado (.xlsx)"** no card "Análise Mensal de Prêmio", ao lado do botão "Ver Escadinha".
+2. Modal de importação:
+   - Drop/seleção do arquivo .xlsx (parser `xlsx`/SheetJS).
+   - Detecta automaticamente as colunas pelos cabeçalhos exatos: `Seg.`, `Ramo`, `CPF/CNPJ`, `Início de Vig.`, `Pr. Líquido`, `Produtor`, `Prod. Indireto`, `Prod. Indireto 2`, `Prod. Indireto 3`.
+   - Pré-visualização: nº de linhas, total por mês, produtores/ramos não encontrados (warnings, ainda assim importa).
+   - Botão "Importar" → grava no Supabase via Edge Function (`import-realizado-premio`) com service role para validar e inserir em lote.
+3. **Tabela "Análise Mensal de Prêmio"** ganha 2 colunas novas:
+   - `Realizado` (após `%`)
+   - `Realizado Acum.` (após `% Acum.`)
+   - Linha de totais inclui soma do Realizado anual.
+   - Indicador discreto da data da última importação no header do card.
+
+## Arquivos a alterar/criar
+
+- `supabase/migrations/...` — criar `realizado_premio_importacoes`, `realizado_premio`, GRANTs, RLS, índices `(ano, mes)`, `(ano, produtor_id)`.
+- `supabase/functions/import-realizado-premio/index.ts` — recebe JSON com linhas parseadas, valida, insere em lote.
+- `src/components/dashboard/ImportRealizadoModal.tsx` — novo modal de upload + preview.
+- `src/components/dashboard/MetasPremioComparison.tsx` — buscar `realizado_premio` filtrado por ano/produtor, calcular `realizadoMensal`/`realizadoAcumulado`, renderizar 2 novas colunas, botão de import.
+- `package.json` — adicionar `xlsx`.
+
+## Pontos a confirmar antes de implementar
+1. **Múltiplos produtores na mesma linha** — valor cheio para cada um (default proposto) ou rateio?
+2. **Reimportação no mesmo ano** — Substituir tudo do ano (default proposto) ou Adicionar?
+3. **Permissão de import** — apenas Administrador/Gerente/CEO (default proposto) ou todos os usuários?
