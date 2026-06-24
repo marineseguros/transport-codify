@@ -823,6 +823,108 @@ export type Database = {
         }
         Relationships: []
       }
+      realizado_premio: {
+        Row: {
+          ano: number
+          cnpj: string | null
+          created_at: string
+          id: string
+          importacao_id: string
+          inicio_vigencia: string | null
+          mes: number
+          produtor_id: string | null
+          produtor_nome: string
+          ramo_agrupado: string | null
+          ramo_nome: string | null
+          seguradora_nome: string | null
+          tipo_produtor: string
+          valor_premio: number
+        }
+        Insert: {
+          ano: number
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          importacao_id: string
+          inicio_vigencia?: string | null
+          mes: number
+          produtor_id?: string | null
+          produtor_nome: string
+          ramo_agrupado?: string | null
+          ramo_nome?: string | null
+          seguradora_nome?: string | null
+          tipo_produtor?: string
+          valor_premio?: number
+        }
+        Update: {
+          ano?: number
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          importacao_id?: string
+          inicio_vigencia?: string | null
+          mes?: number
+          produtor_id?: string | null
+          produtor_nome?: string
+          ramo_agrupado?: string | null
+          ramo_nome?: string | null
+          seguradora_nome?: string | null
+          tipo_produtor?: string
+          valor_premio?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "realizado_premio_importacao_id_fkey"
+            columns: ["importacao_id"]
+            isOneToOne: false
+            referencedRelation: "realizado_premio_importacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "realizado_premio_produtor_id_fkey"
+            columns: ["produtor_id"]
+            isOneToOne: false
+            referencedRelation: "produtores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      realizado_premio_importacoes: {
+        Row: {
+          ano: number
+          arquivo_nome: string | null
+          id: string
+          importado_em: string
+          importado_por: string | null
+          linhas_processadas: number
+          modo: string
+          observacoes: string | null
+          total_valor: number
+        }
+        Insert: {
+          ano: number
+          arquivo_nome?: string | null
+          id?: string
+          importado_em?: string
+          importado_por?: string | null
+          linhas_processadas?: number
+          modo?: string
+          observacoes?: string | null
+          total_valor?: number
+        }
+        Update: {
+          ano?: number
+          arquivo_nome?: string | null
+          id?: string
+          importado_em?: string
+          importado_por?: string | null
+          linhas_processadas?: number
+          modo?: string
+          observacoes?: string | null
+          total_valor?: number
+        }
+        Relationships: []
+      }
       seguradoras: {
         Row: {
           ativo: boolean

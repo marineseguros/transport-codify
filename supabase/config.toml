@@ -2,3 +2,6 @@ project_id = "hvfgmcmqfjxaaabkxyla"
 
 [functions.ai-analysis]
 verify_jwt = true
+
+[functions.import-realizado-premio]
+verify_jwt = true

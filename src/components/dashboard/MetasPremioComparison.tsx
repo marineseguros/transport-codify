@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, TrendingUp, Calendar, Award, LayoutGrid, Table2, Lightbulb, User, Users } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { Target, TrendingUp, Calendar, Award, LayoutGrid, Table2, Lightbulb, User, Users, Upload } from "lucide-react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
 import { logger } from "@/lib/logger";
 import { getDaysInMonth, getDate } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { getRegraRamo } from '@/lib/ramoClassification';
+import { ImportRealizadoModal } from "./ImportRealizadoModal";
 import {
   Table,
   TableBody,
@@ -261,8 +262,11 @@ export const MetasPremioComparison = ({
   const [metasPremio, setMetasPremio] = useState<MetaPremio[]>([]);
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
   const [ramos, setRamos] = useState<Record<string, Ramo>>({});
+  const [realizadoRows, setRealizadoRows] = useState<{ mes: number; valor_premio: number; produtor_id: string | null; produtor_nome: string }[]>([]);
+  const [ultimaImportacao, setUltimaImportacao] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEscadinha, setShowEscadinha] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   // Calculate target month/year based on date filter
   const { targetMonth, targetYear, startDate, endDate } = useMemo(() => {
@@ -328,60 +332,78 @@ export const MetasPremioComparison = ({
   }, [produtorFilter, produtores]);
 
   // Fetch data
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch ramos first
-        const { data: ramosData, error: ramosError } = await supabase.
-        from('ramos').
-        select('id, descricao, ramo_agrupado, segmento, regra');
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch ramos first
+      const { data: ramosData, error: ramosError } = await supabase.
+      from('ramos').
+      select('id, descricao, ramo_agrupado, segmento, regra');
 
-        if (ramosError) throw ramosError;
+      if (ramosError) throw ramosError;
 
-        const ramosMap: Record<string, Ramo> = {};
-        (ramosData || []).forEach((r) => {
-          ramosMap[r.id] = r;
-        });
-        setRamos(ramosMap);
+      const ramosMap: Record<string, Ramo> = {};
+      (ramosData || []).forEach((r) => {
+        ramosMap[r.id] = r;
+      });
+      setRamos(ramosMap);
 
-        // Fetch metas premio
-        let metasQuery = supabase.
-        from('metas_premio').
-        select(`*, produtor:produtores(id, nome, email)`).
-        eq('ano', targetYear);
+      // Fetch metas premio
+      let metasQuery = supabase.
+      from('metas_premio').
+      select(`*, produtor:produtores(id, nome, email)`).
+      eq('ano', targetYear);
 
-        if (selectedProdutorIds.length > 0) {
-          metasQuery = metasQuery.in('produtor_id', selectedProdutorIds);
-        }
-
-        const { data: metasData, error: metasError } = await metasQuery;
-        if (metasError) throw metasError;
-
-        // Fetch closed cotacoes for the target year (need full year for recurrent calculation)
-        const yearStart = `${targetYear}-01-01`;
-        const yearEnd = `${targetYear}-12-31T23:59:59`;
-
-        const { data: cotacoesData, error: cotacoesError } = await supabase.
-        from('cotacoes').
-        select(`id, valor_premio, status, data_fechamento, inicio_vigencia, ramo_id, produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(nome, email)`).
-        in('status', ['Negócio fechado', 'Fechamento congênere']).
-        gte('data_fechamento', yearStart).
-        lte('data_fechamento', yearEnd);
-
-        if (cotacoesError) throw cotacoesError;
-
-        setMetasPremio(metasData as MetaPremio[] || []);
-        setCotacoes(cotacoesData as Cotacao[] || []);
-      } catch (error) {
-        logger.error('Erro ao carregar dados de comparação de metas:', error);
-      } finally {
-        setLoading(false);
+      if (selectedProdutorIds.length > 0) {
+        metasQuery = metasQuery.in('produtor_id', selectedProdutorIds);
       }
-    };
 
-    fetchData();
+      const { data: metasData, error: metasError } = await metasQuery;
+      if (metasError) throw metasError;
+
+      // Fetch closed cotacoes for the target year (need full year for recurrent calculation)
+      const yearStart = `${targetYear}-01-01`;
+      const yearEnd = `${targetYear}-12-31T23:59:59`;
+
+      const { data: cotacoesData, error: cotacoesError } = await supabase.
+      from('cotacoes').
+      select(`id, valor_premio, status, data_fechamento, inicio_vigencia, ramo_id, produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(nome, email)`).
+      in('status', ['Negócio fechado', 'Fechamento congênere']).
+      gte('data_fechamento', yearStart).
+      lte('data_fechamento', yearEnd);
+
+      if (cotacoesError) throw cotacoesError;
+
+      // Fetch realizado importado da planilha
+      const { data: realizadoData, error: realErr } = await supabase.
+      from('realizado_premio').
+      select('mes, valor_premio, produtor_id, produtor_nome').
+      eq('ano', targetYear);
+      if (realErr) throw realErr;
+
+      // Última importação
+      const { data: ultImport } = await supabase.
+      from('realizado_premio_importacoes').
+      select('importado_em').
+      eq('ano', targetYear).
+      order('importado_em', { ascending: false }).
+      limit(1).
+      maybeSingle();
+
+      setMetasPremio(metasData as MetaPremio[] || []);
+      setCotacoes(cotacoesData as Cotacao[] || []);
+      setRealizadoRows((realizadoData || []) as any[]);
+      setUltimaImportacao(ultImport?.importado_em ?? null);
+    } catch (error) {
+      logger.error('Erro ao carregar dados de comparação de metas:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [targetYear, selectedProdutorIds]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Calculate monthly prizes using recurrent logic
   const monthlyPrizes = useMemo(() => {
@@ -484,6 +506,30 @@ export const MetasPremioComparison = ({
     };
   }, [monthlyPrizes, metasPremio, targetMonth, selectedProdutorIds]);
 
+  // Realizado importado (planilha) — agregado por mês, respeitando filtro de produtor
+  const realizadoImportado = useMemo(() => {
+    const monthly = new Array(12).fill(0);
+    const selectedNomesNorm = new Set(
+      produtores
+        .filter((p) => selectedProdutorIds.includes(p.id))
+        .map((p) => p.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase())
+    );
+    realizadoRows.forEach((r) => {
+      if (selectedProdutorIds.length > 0) {
+        const matchId = r.produtor_id && selectedProdutorIds.includes(r.produtor_id);
+        const matchNome = selectedNomesNorm.has(
+          (r.produtor_nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
+        );
+        if (!matchId && !matchNome) return;
+      }
+      const idx = (r.mes || 1) - 1;
+      if (idx >= 0 && idx < 12) monthly[idx] += Number(r.valor_premio) || 0;
+    });
+    const accumulated: number[] = [];
+    monthly.forEach((v, i) => accumulated.push(i === 0 ? v : accumulated[i - 1] + v));
+    return { monthly, accumulated };
+  }, [realizadoRows, selectedProdutorIds, produtores]);
+
   // Calculate full year month-by-month comparison for table
   const monthlyTableData = useMemo(() => {
     return MONTHS.map((month, index) => {
@@ -509,6 +555,8 @@ export const MetasPremioComparison = ({
 
       const realizadoMensal = monthlyPrizes.monthly[index];
       const realizadoAcumulado = monthlyPrizes.accumulated[index];
+      const realizadoImpMensal = realizadoImportado.monthly[index];
+      const realizadoImpAcum = realizadoImportado.accumulated[index];
 
       const percentualMensal = metaMensal > 0 ? realizadoMensal / metaMensal * 100 : 0;
       const percentualAcumulado = metaAcumulada > 0 ? realizadoAcumulado / metaAcumulada * 100 : 0;
@@ -522,10 +570,12 @@ export const MetasPremioComparison = ({
         metaAcumulada,
         realizadoAcumulado,
         percentualAcumulado,
+        realizadoImpMensal,
+        realizadoImpAcum,
         isCurrent: index === targetMonth
       };
     });
-  }, [metasPremio, monthlyPrizes, selectedProdutorIds, targetMonth]);
+  }, [metasPremio, monthlyPrizes, realizadoImportado, selectedProdutorIds, targetMonth]);
 
   // Get selected meta for escadinha (only when a single produtor is selected)
   const selectedMeta = useMemo(() => {
@@ -794,31 +844,48 @@ export const MetasPremioComparison = ({
       {/* Month-by-Month Comparison Table with Escadinha Toggle */}
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <CardTitle className="text-lg flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
               {showEscadinha ? 'Visualização Escadinha' : 'Análise Mensal de Prêmio'} - {targetYear}
             </CardTitle>
-            {selectedProdutorIds.length === 1 && escadinhaData &&
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowEscadinha(!showEscadinha)}
-              className="gap-2">
-              
-                {showEscadinha ?
-              <>
-                    <Table2 className="h-4 w-4" />
-                    Ver Tabela
-                  </> :
+            <div className="flex items-center gap-2">
+              {ultimaImportacao && !showEscadinha && (
+                <span className="text-xs text-muted-foreground">
+                  Realizado importado em {new Date(ultimaImportacao).toLocaleString('pt-BR')}
+                </span>
+              )}
+              {!showEscadinha && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setImportOpen(true)}
+                  className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  Importar Realizado
+                </Button>
+              )}
+              {selectedProdutorIds.length === 1 && escadinhaData &&
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEscadinha(!showEscadinha)}
+                className="gap-2">
+                
+                  {showEscadinha ?
+                <>
+                      <Table2 className="h-4 w-4" />
+                      Ver Tabela
+                    </> :
 
-              <>
-                    <LayoutGrid className="h-4 w-4" />
-                    Ver Escadinha
-                  </>
+                <>
+                      <LayoutGrid className="h-4 w-4" />
+                      Ver Escadinha
+                    </>
+                }
+                </Button>
               }
-              </Button>
-            }
+            </div>
           </div>
           {showEscadinha && selectedMeta &&
           <p className="text-sm text-muted-foreground mt-1">
@@ -938,9 +1005,11 @@ export const MetasPremioComparison = ({
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">Meta Mensal</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">​Expectativa</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">%</th>
+                    <th className="py-2 px-3 text-right font-medium text-success-alt">Realizado</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">Meta Acum.</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">Expec. Acum.</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">% Acum.</th>
+                    <th className="py-2 px-3 text-right font-medium text-success-alt">Realizado Acum.</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -960,10 +1029,16 @@ export const MetasPremioComparison = ({
                       <td className={`py-2 px-3 text-right font-medium ${getPercentageColor(row.percentualMensal)}`}>
                         {row.percentualMensal.toFixed(0)}%
                       </td>
+                      <td className="py-2 px-3 text-right font-semibold text-success-alt">
+                        {formatCurrency(row.realizadoImpMensal)}
+                      </td>
                       <td className="py-2 px-3 text-right text-muted-foreground">{formatCurrency(row.metaAcumulada)}</td>
                       <td className="py-2 px-3 text-right text-muted-foreground">{formatCurrency(row.realizadoAcumulado)}</td>
                       <td className={`py-2 px-3 text-right font-medium ${getPercentageColor(row.percentualAcumulado)}`}>
                         {row.percentualAcumulado.toFixed(0)}%
+                      </td>
+                      <td className="py-2 px-3 text-right font-semibold text-success-alt">
+                        {formatCurrency(row.realizadoImpAcum)}
                       </td>
                     </tr>
                 )}
@@ -978,9 +1053,13 @@ export const MetasPremioComparison = ({
                       {formatCurrency(monthlyTableData.reduce((sum, r) => sum + r.realizadoMensal, 0))}
                     </td>
                     <td className="py-2 px-3 text-right">-</td>
+                    <td className="py-2 px-3 text-right text-success-alt">
+                      {formatCurrency(monthlyTableData.reduce((sum, r) => sum + r.realizadoImpMensal, 0))}
+                    </td>
                     <td className="py-2 px-3 text-right text-muted-foreground">-</td>
                     <td className="py-2 px-3 text-right text-muted-foreground">-</td>
                     <td className="py-2 px-3 text-right">-</td>
+                    <td className="py-2 px-3 text-right text-success-alt">-</td>
                   </tr>
                 </tfoot>
               </table>
@@ -988,6 +1067,13 @@ export const MetasPremioComparison = ({
           }
         </CardContent>
       </Card>
+
+      <ImportRealizadoModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        ano={targetYear}
+        onImported={fetchData}
+      />
     </div>);
 
 };
