@@ -886,7 +886,6 @@ export const MetasPremioComparison = ({
                 </Button>
               }
             </div>
-            }
           </div>
           {showEscadinha && selectedMeta &&
           <p className="text-sm text-muted-foreground mt-1">
