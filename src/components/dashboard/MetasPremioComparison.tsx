@@ -1005,9 +1005,11 @@ export const MetasPremioComparison = ({
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">Meta Mensal</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">​Expectativa</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">%</th>
+                    <th className="py-2 px-3 text-right font-medium text-success-alt">Realizado</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">Meta Acum.</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">Expec. Acum.</th>
                     <th className="py-2 px-3 text-right font-medium text-muted-foreground">% Acum.</th>
+                    <th className="py-2 px-3 text-right font-medium text-success-alt">Realizado Acum.</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1027,10 +1029,16 @@ export const MetasPremioComparison = ({
                       <td className={`py-2 px-3 text-right font-medium ${getPercentageColor(row.percentualMensal)}`}>
                         {row.percentualMensal.toFixed(0)}%
                       </td>
+                      <td className="py-2 px-3 text-right font-semibold text-success-alt">
+                        {formatCurrency(row.realizadoImpMensal)}
+                      </td>
                       <td className="py-2 px-3 text-right text-muted-foreground">{formatCurrency(row.metaAcumulada)}</td>
                       <td className="py-2 px-3 text-right text-muted-foreground">{formatCurrency(row.realizadoAcumulado)}</td>
                       <td className={`py-2 px-3 text-right font-medium ${getPercentageColor(row.percentualAcumulado)}`}>
                         {row.percentualAcumulado.toFixed(0)}%
+                      </td>
+                      <td className="py-2 px-3 text-right font-semibold text-success-alt">
+                        {formatCurrency(row.realizadoImpAcum)}
                       </td>
                     </tr>
                 )}
@@ -1045,9 +1053,13 @@ export const MetasPremioComparison = ({
                       {formatCurrency(monthlyTableData.reduce((sum, r) => sum + r.realizadoMensal, 0))}
                     </td>
                     <td className="py-2 px-3 text-right">-</td>
+                    <td className="py-2 px-3 text-right text-success-alt">
+                      {formatCurrency(monthlyTableData.reduce((sum, r) => sum + r.realizadoImpMensal, 0))}
+                    </td>
                     <td className="py-2 px-3 text-right text-muted-foreground">-</td>
                     <td className="py-2 px-3 text-right text-muted-foreground">-</td>
                     <td className="py-2 px-3 text-right">-</td>
+                    <td className="py-2 px-3 text-right text-success-alt">-</td>
                   </tr>
                 </tfoot>
               </table>
@@ -1055,6 +1067,13 @@ export const MetasPremioComparison = ({
           }
         </CardContent>
       </Card>
+
+      <ImportRealizadoModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        ano={targetYear}
+        onImported={fetchData}
+      />
     </div>);
 
 };
