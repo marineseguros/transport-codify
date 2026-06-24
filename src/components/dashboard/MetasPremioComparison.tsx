@@ -506,6 +506,30 @@ export const MetasPremioComparison = ({
     };
   }, [monthlyPrizes, metasPremio, targetMonth, selectedProdutorIds]);
 
+  // Realizado importado (planilha) — agregado por mês, respeitando filtro de produtor
+  const realizadoImportado = useMemo(() => {
+    const monthly = new Array(12).fill(0);
+    const selectedNomesNorm = new Set(
+      produtores
+        .filter((p) => selectedProdutorIds.includes(p.id))
+        .map((p) => p.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase())
+    );
+    realizadoRows.forEach((r) => {
+      if (selectedProdutorIds.length > 0) {
+        const matchId = r.produtor_id && selectedProdutorIds.includes(r.produtor_id);
+        const matchNome = selectedNomesNorm.has(
+          (r.produtor_nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
+        );
+        if (!matchId && !matchNome) return;
+      }
+      const idx = (r.mes || 1) - 1;
+      if (idx >= 0 && idx < 12) monthly[idx] += Number(r.valor_premio) || 0;
+    });
+    const accumulated: number[] = [];
+    monthly.forEach((v, i) => accumulated.push(i === 0 ? v : accumulated[i - 1] + v));
+    return { monthly, accumulated };
+  }, [realizadoRows, selectedProdutorIds, produtores]);
+
   // Calculate full year month-by-month comparison for table
   const monthlyTableData = useMemo(() => {
     return MONTHS.map((month, index) => {
@@ -531,6 +555,8 @@ export const MetasPremioComparison = ({
 
       const realizadoMensal = monthlyPrizes.monthly[index];
       const realizadoAcumulado = monthlyPrizes.accumulated[index];
+      const realizadoImpMensal = realizadoImportado.monthly[index];
+      const realizadoImpAcum = realizadoImportado.accumulated[index];
 
       const percentualMensal = metaMensal > 0 ? realizadoMensal / metaMensal * 100 : 0;
       const percentualAcumulado = metaAcumulada > 0 ? realizadoAcumulado / metaAcumulada * 100 : 0;
@@ -544,10 +570,12 @@ export const MetasPremioComparison = ({
         metaAcumulada,
         realizadoAcumulado,
         percentualAcumulado,
+        realizadoImpMensal,
+        realizadoImpAcum,
         isCurrent: index === targetMonth
       };
     });
-  }, [metasPremio, monthlyPrizes, selectedProdutorIds, targetMonth]);
+  }, [metasPremio, monthlyPrizes, realizadoImportado, selectedProdutorIds, targetMonth]);
 
   // Get selected meta for escadinha (only when a single produtor is selected)
   const selectedMeta = useMemo(() => {
