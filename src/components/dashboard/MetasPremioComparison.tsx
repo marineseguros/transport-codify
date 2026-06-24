@@ -844,30 +844,48 @@ export const MetasPremioComparison = ({
       {/* Month-by-Month Comparison Table with Escadinha Toggle */}
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <CardTitle className="text-lg flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
               {showEscadinha ? 'Visualização Escadinha' : 'Análise Mensal de Prêmio'} - {targetYear}
             </CardTitle>
-            {selectedProdutorIds.length === 1 && escadinhaData &&
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowEscadinha(!showEscadinha)}
-              className="gap-2">
-              
-                {showEscadinha ?
-              <>
-                    <Table2 className="h-4 w-4" />
-                    Ver Tabela
-                  </> :
+            <div className="flex items-center gap-2">
+              {ultimaImportacao && !showEscadinha && (
+                <span className="text-xs text-muted-foreground">
+                  Realizado importado em {new Date(ultimaImportacao).toLocaleString('pt-BR')}
+                </span>
+              )}
+              {!showEscadinha && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setImportOpen(true)}
+                  className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  Importar Realizado
+                </Button>
+              )}
+              {selectedProdutorIds.length === 1 && escadinhaData &&
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEscadinha(!showEscadinha)}
+                className="gap-2">
+                
+                  {showEscadinha ?
+                <>
+                      <Table2 className="h-4 w-4" />
+                      Ver Tabela
+                    </> :
 
-              <>
-                    <LayoutGrid className="h-4 w-4" />
-                    Ver Escadinha
-                  </>
+                <>
+                      <LayoutGrid className="h-4 w-4" />
+                      Ver Escadinha
+                    </>
+                }
+                </Button>
               }
-              </Button>
+            </div>
             }
           </div>
           {showEscadinha && selectedMeta &&
