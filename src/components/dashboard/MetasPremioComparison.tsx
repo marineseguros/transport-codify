@@ -332,60 +332,78 @@ export const MetasPremioComparison = ({
   }, [produtorFilter, produtores]);
 
   // Fetch data
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch ramos first
-        const { data: ramosData, error: ramosError } = await supabase.
-        from('ramos').
-        select('id, descricao, ramo_agrupado, segmento, regra');
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch ramos first
+      const { data: ramosData, error: ramosError } = await supabase.
+      from('ramos').
+      select('id, descricao, ramo_agrupado, segmento, regra');
 
-        if (ramosError) throw ramosError;
+      if (ramosError) throw ramosError;
 
-        const ramosMap: Record<string, Ramo> = {};
-        (ramosData || []).forEach((r) => {
-          ramosMap[r.id] = r;
-        });
-        setRamos(ramosMap);
+      const ramosMap: Record<string, Ramo> = {};
+      (ramosData || []).forEach((r) => {
+        ramosMap[r.id] = r;
+      });
+      setRamos(ramosMap);
 
-        // Fetch metas premio
-        let metasQuery = supabase.
-        from('metas_premio').
-        select(`*, produtor:produtores(id, nome, email)`).
-        eq('ano', targetYear);
+      // Fetch metas premio
+      let metasQuery = supabase.
+      from('metas_premio').
+      select(`*, produtor:produtores(id, nome, email)`).
+      eq('ano', targetYear);
 
-        if (selectedProdutorIds.length > 0) {
-          metasQuery = metasQuery.in('produtor_id', selectedProdutorIds);
-        }
-
-        const { data: metasData, error: metasError } = await metasQuery;
-        if (metasError) throw metasError;
-
-        // Fetch closed cotacoes for the target year (need full year for recurrent calculation)
-        const yearStart = `${targetYear}-01-01`;
-        const yearEnd = `${targetYear}-12-31T23:59:59`;
-
-        const { data: cotacoesData, error: cotacoesError } = await supabase.
-        from('cotacoes').
-        select(`id, valor_premio, status, data_fechamento, inicio_vigencia, ramo_id, produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(nome, email)`).
-        in('status', ['Negócio fechado', 'Fechamento congênere']).
-        gte('data_fechamento', yearStart).
-        lte('data_fechamento', yearEnd);
-
-        if (cotacoesError) throw cotacoesError;
-
-        setMetasPremio(metasData as MetaPremio[] || []);
-        setCotacoes(cotacoesData as Cotacao[] || []);
-      } catch (error) {
-        logger.error('Erro ao carregar dados de comparação de metas:', error);
-      } finally {
-        setLoading(false);
+      if (selectedProdutorIds.length > 0) {
+        metasQuery = metasQuery.in('produtor_id', selectedProdutorIds);
       }
-    };
 
-    fetchData();
+      const { data: metasData, error: metasError } = await metasQuery;
+      if (metasError) throw metasError;
+
+      // Fetch closed cotacoes for the target year (need full year for recurrent calculation)
+      const yearStart = `${targetYear}-01-01`;
+      const yearEnd = `${targetYear}-12-31T23:59:59`;
+
+      const { data: cotacoesData, error: cotacoesError } = await supabase.
+      from('cotacoes').
+      select(`id, valor_premio, status, data_fechamento, inicio_vigencia, ramo_id, produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(nome, email)`).
+      in('status', ['Negócio fechado', 'Fechamento congênere']).
+      gte('data_fechamento', yearStart).
+      lte('data_fechamento', yearEnd);
+
+      if (cotacoesError) throw cotacoesError;
+
+      // Fetch realizado importado da planilha
+      const { data: realizadoData, error: realErr } = await supabase.
+      from('realizado_premio').
+      select('mes, valor_premio, produtor_id, produtor_nome').
+      eq('ano', targetYear);
+      if (realErr) throw realErr;
+
+      // Última importação
+      const { data: ultImport } = await supabase.
+      from('realizado_premio_importacoes').
+      select('importado_em').
+      eq('ano', targetYear).
+      order('importado_em', { ascending: false }).
+      limit(1).
+      maybeSingle();
+
+      setMetasPremio(metasData as MetaPremio[] || []);
+      setCotacoes(cotacoesData as Cotacao[] || []);
+      setRealizadoRows((realizadoData || []) as any[]);
+      setUltimaImportacao(ultImport?.importado_em ?? null);
+    } catch (error) {
+      logger.error('Erro ao carregar dados de comparação de metas:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [targetYear, selectedProdutorIds]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Calculate monthly prizes using recurrent logic
   const monthlyPrizes = useMemo(() => {
