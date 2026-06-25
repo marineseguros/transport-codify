@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
         arquivo_nome: payload.arquivo_nome ?? null,
         linhas_processadas: payload.linhas.length,
         total_valor: totalValor,
-        modo: payload.modo,
+        modo: MODO_FIXO,
         importado_por: userId,
       })
       .select("id")
@@ -148,19 +148,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Substituir: apaga linhas + importações antigas do mesmo ano
-    if (payload.modo === "substituir") {
-      await admin
-        .from("realizado_premio")
-        .delete()
-        .eq("ano", payload.ano)
-        .neq("importacao_id", importHeader.id);
-      await admin
-        .from("realizado_premio_importacoes")
-        .delete()
-        .eq("ano", payload.ano)
-        .neq("id", importHeader.id);
-    }
+    // Substituir SEMPRE: apaga linhas + importações antigas do mesmo ano.
+    // Afeta apenas as tabelas de realizado — cotações, metas e demais
+    // dados da plataforma permanecem intactos.
+    await admin
+      .from("realizado_premio")
+      .delete()
+      .eq("ano", payload.ano)
+      .neq("importacao_id", importHeader.id);
+    await admin
+      .from("realizado_premio_importacoes")
+      .delete()
+      .eq("ano", payload.ano)
+      .neq("id", importHeader.id);
 
     // Expande linhas (uma por produtor preenchido)
     const inserts: any[] = [];
