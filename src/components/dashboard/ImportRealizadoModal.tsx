@@ -244,7 +244,6 @@ export const ImportRealizadoModal = ({
           body: {
             ano,
             arquivo_nome: file?.name ?? null,
-            modo,
             linhas: parsed,
           },
         },
