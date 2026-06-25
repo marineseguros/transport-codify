@@ -21,9 +21,13 @@ interface IncomingRow {
 interface Payload {
   ano: number;
   arquivo_nome?: string;
-  modo: "substituir" | "adicionar";
   linhas: IncomingRow[];
 }
+
+// Modo fixo no servidor: sempre substitui o realizado do ano para evitar
+// duplicidade. A primeira importação não tem nada para substituir, então
+// o efeito prático é apenas inserir os dados "crus".
+const MODO_FIXO = "substituir" as const;
 
 const norm = (s: string) =>
   s
