@@ -109,9 +109,29 @@ export const ImportRealizadoModal = ({
   const [file, setFile] = useState<File | null>(null);
   const [parsed, setParsed] = useState<ParsedRow[] | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
-  const [modo, setModo] = useState<"substituir" | "adicionar">("substituir");
   const [loading, setLoading] = useState(false);
   const [yearMismatch, setYearMismatch] = useState<number>(0);
+  const [existingCount, setExistingCount] = useState<number | null>(null);
+  const [lastImportAt, setLastImportAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { count } = await supabase
+        .from("realizado_premio")
+        .select("id", { count: "exact", head: true })
+        .eq("ano", ano);
+      setExistingCount(count ?? 0);
+      const { data: lastImp } = await supabase
+        .from("realizado_premio_importacoes")
+        .select("importado_em")
+        .eq("ano", ano)
+        .order("importado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setLastImportAt(lastImp?.importado_em ?? null);
+    })();
+  }, [open, ano]);
 
   const resetState = () => {
     setFile(null);
