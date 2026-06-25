@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import {
   Dialog,
@@ -10,8 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Info, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
@@ -110,9 +109,29 @@ export const ImportRealizadoModal = ({
   const [file, setFile] = useState<File | null>(null);
   const [parsed, setParsed] = useState<ParsedRow[] | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
-  const [modo, setModo] = useState<"substituir" | "adicionar">("substituir");
   const [loading, setLoading] = useState(false);
   const [yearMismatch, setYearMismatch] = useState<number>(0);
+  const [existingCount, setExistingCount] = useState<number | null>(null);
+  const [lastImportAt, setLastImportAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { count } = await supabase
+        .from("realizado_premio")
+        .select("id", { count: "exact", head: true })
+        .eq("ano", ano);
+      setExistingCount(count ?? 0);
+      const { data: lastImp } = await supabase
+        .from("realizado_premio_importacoes")
+        .select("importado_em")
+        .eq("ano", ano)
+        .order("importado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setLastImportAt(lastImp?.importado_em ?? null);
+    })();
+  }, [open, ano]);
 
   const resetState = () => {
     setFile(null);
@@ -225,7 +244,6 @@ export const ImportRealizadoModal = ({
           body: {
             ano,
             arquivo_nome: file?.name ?? null,
-            modo,
             linhas: parsed,
           },
         },
@@ -273,6 +291,35 @@ export const ImportRealizadoModal = ({
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="flex items-start gap-2 p-3 rounded border border-primary/20 bg-primary/5 text-sm">
+            <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+            <div className="text-muted-foreground">
+              Esta importação afeta apenas os dados de <strong>Realizado (planilha)</strong>.
+              Nenhum valor de cotações, metas ou outras áreas da plataforma é alterado.
+            </div>
+          </div>
+
+          {existingCount !== null && (
+            <div className="flex items-start gap-2 p-3 rounded border bg-muted/40 text-sm">
+              <Info className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+              <div className="flex-1">
+                {existingCount === 0 ? (
+                  <span>
+                    <strong>Primeira importação do ano {ano}</strong> — não há dados anteriores; nada será substituído.
+                  </span>
+                ) : (
+                  <span>
+                    Já existem <strong>{existingCount}</strong> linha(s) de realizado para {ano}
+                    {lastImportAt && (
+                      <> (última importação em {new Date(lastImportAt).toLocaleString("pt-BR")})</>
+                    )}
+                    . Ao importar, essas linhas serão <strong>substituídas</strong> pelas novas.
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
           <div>
             <Label htmlFor="file" className="text-sm">
               Arquivo
@@ -299,44 +346,20 @@ export const ImportRealizadoModal = ({
           )}
 
           {parsed && (
-            <div className="space-y-3">
-              <div className="flex items-start gap-2 p-3 rounded bg-success-alt/10 text-sm">
-                <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-success-alt" />
-                <div className="flex-1">
-                  <div className="font-medium">
-                    {parsed.length} linha(s) prontas para importar
-                  </div>
-                  <div className="text-muted-foreground">
-                    Soma de Pr. Líquido: {formatCurrency(totalValor)}
-                  </div>
-                  {yearMismatch > 0 && (
-                    <div className="text-amber-600 dark:text-amber-400 mt-1">
-                      {yearMismatch} linha(s) ignorada(s) por estarem fora do ano {ano}.
-                    </div>
-                  )}
+            <div className="flex items-start gap-2 p-3 rounded bg-success-alt/10 text-sm">
+              <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-success-alt" />
+              <div className="flex-1">
+                <div className="font-medium">
+                  {parsed.length} linha(s) prontas para importar
                 </div>
-              </div>
-
-              <div>
-                <Label className="text-sm">Modo de importação</Label>
-                <RadioGroup
-                  value={modo}
-                  onValueChange={(v) => setModo(v as any)}
-                  className="mt-2 space-y-1"
-                >
-                  <div className="flex items-start gap-2">
-                    <RadioGroupItem value="substituir" id="m-sub" className="mt-1" />
-                    <Label htmlFor="m-sub" className="font-normal cursor-pointer">
-                      <span className="font-medium">Substituir</span> — apaga todos os dados de realizado de {ano} antes de inserir.
-                    </Label>
+                <div className="text-muted-foreground">
+                  Soma de Pr. Líquido: {formatCurrency(totalValor)}
+                </div>
+                {yearMismatch > 0 && (
+                  <div className="text-amber-600 dark:text-amber-400 mt-1">
+                    {yearMismatch} linha(s) ignorada(s) por estarem fora do ano {ano}.
                   </div>
-                  <div className="flex items-start gap-2">
-                    <RadioGroupItem value="adicionar" id="m-add" className="mt-1" />
-                    <Label htmlFor="m-add" className="font-normal cursor-pointer">
-                      <span className="font-medium">Adicionar</span> — soma estas linhas ao realizado já existente de {ano}.
-                    </Label>
-                  </div>
-                </RadioGroup>
+                )}
               </div>
             </div>
           )}
