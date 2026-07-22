@@ -46,10 +46,10 @@ const formSchema = z.object({
   segurado: z.string().min(1, "Campo obrigatório"),
   consultor: z.string().min(1, "Campo obrigatório"),
   data_registro: z.date({
-    required_error: "Campo obrigatório",
+    error: "Campo obrigatório",
   }),
-  tipo: z.enum(["Coleta", "Indicação", "Novos CRM", "Visita/Video"], {
-    required_error: "Campo obrigatório",
+  tipo: z.enum(["Coleta", "Indicação", "Novos CRM", "Visita/Video"] as const, {
+    error: "Campo obrigatório",
   }),
   observacao: z.string().optional(),
   // Campos condicionais - Indicação

@@ -503,7 +503,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
     });
 
     if (!validationResult.success) {
-      const errors = validationResult.error.errors;
+      const errors = validationResult.error.issues;
       toast.error(errors[0]?.message || "Dados inválidos");
       return;
     }

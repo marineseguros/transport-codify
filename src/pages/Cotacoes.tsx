@@ -260,7 +260,7 @@ const Cotacoes = () => {
 
           if (!validation.success) {
             errorCount++;
-            const errorMessages = validation.error.errors.map((e) => e.message).join(", ");
+            const errorMessages = validation.error.issues.map((e) => e.message).join(", ");
             errors.push(`Linha ${i + 2}: ${errorMessages}`);
             continue;
           }
