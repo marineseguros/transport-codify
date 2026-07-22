@@ -1126,6 +1126,7 @@ export type Database = {
     Functions: {
       generate_cotacao_number: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
+      get_produtor_email: { Args: { _produtor_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
