@@ -129,7 +129,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
     const validationResult = clienteSchema.safeParse(formData);
     
     if (!validationResult.success) {
-      const firstError = validationResult.error.errors[0];
+      const firstError = validationResult.error.issues[0];
       toast({
         title: "Erro de validação",
         description: firstError.message,
