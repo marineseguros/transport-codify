@@ -1127,14 +1127,6 @@ export type Database = {
       generate_cotacao_number: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
       get_produtor_email: { Args: { _produtor_id: string }; Returns: string }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_admin_user: { Args: never; Returns: boolean }
       util_parse_br_timestamptz: {
         Args: { tz?: string; v: string }
         Returns: string
