@@ -235,8 +235,9 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({
               <Input
                 id="segurado"
                 value={formData.segurado}
-                onChange={(e) => handleInputChange('segurado', e.target.value)}
-                placeholder="Nome da empresa ou pessoa física"
+                onChange={(e) => handleInputChange('segurado', e.target.value.toUpperCase())}
+                placeholder="NOME DA EMPRESA OU PESSOA FÍSICA"
+                style={{ textTransform: 'uppercase' }}
                 required
               />
             </div>
