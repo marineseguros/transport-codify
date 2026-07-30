@@ -295,6 +295,18 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       return; // Return early since we set all needed fields
     }
 
+    // Reset captação detail fields when the captação type changes
+    if (field === "captacao_id") {
+      setFormData((prev) => ({
+        ...prev,
+        captacao_id: value,
+        ...EMPTY_CAPTACAO_DETALHES,
+      }));
+      return;
+    }
+
+
+
     // Auto-fill segment based on ramo
     if (field === "ramo_id") {
       logger.log("Processing ramo_id change, value:", value);
