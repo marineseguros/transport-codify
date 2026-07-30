@@ -1247,9 +1247,12 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     )}
 
                     {isProspeccao && (
-                      {campoTexto({ field: "captacao_canal_prospeccao", label: "Qual canal foi utilizado para a prospecção?", placeholder: "Ex.: Ligação, WhatsApp, E-mail...", options: Array.from(
-                          new Set([...CANAIS_PROSPECCAO, ...sugestoes("captacao_canal_prospeccao")]),
-                        ) })}
+                      campoTexto({
+                        field: "captacao_canal_prospeccao",
+                        label: "Qual canal foi utilizado para a prospecção?",
+                        placeholder: "Ex.: Ligação, WhatsApp, E-mail...",
+                        options: Array.from(new Set([...CANAIS_PROSPECCAO, ...sugestoes("captacao_canal_prospeccao")])),
+                      })
                     )}
                   </div>
                 );
