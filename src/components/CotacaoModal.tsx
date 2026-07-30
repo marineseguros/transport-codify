@@ -1133,7 +1133,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     ),
                   ).sort();
 
-                const CampoTexto = ({
+                const campoTexto = ({
                   field,
                   label,
                   placeholder,
@@ -1189,44 +1189,28 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     <p className="text-xs font-semibold text-muted-foreground uppercase">Detalhamento da Captação</p>
 
                     {isCliente && (
-                      <CampoTexto
-                        field="captacao_cliente_origem"
-                        label="Qual cliente da carteira Marine originou este novo fechamento?"
-                        placeholder="Nome do cliente"
-                      />
+                      {campoTexto({ field: "captacao_cliente_origem", label: "Qual cliente da carteira Marine originou este novo fechamento?", placeholder: "Nome do cliente" })}
                     )}
 
                     {isFeiras && (
                       <div className="grid gap-4 md:grid-cols-2">
-                        <CampoTexto field="captacao_feira" label="Qual feira?" placeholder="Nome da feira" />
-                        <CampoTexto field="captacao_evento" label="Qual evento?" placeholder="Nome do evento" />
+                        {campoTexto({ field: "captacao_feira", label: "Qual feira?", placeholder: "Nome da feira" })}
+                        {campoTexto({ field: "captacao_evento", label: "Qual evento?", placeholder: "Nome do evento" })}
                       </div>
                     )}
 
                     {isIndicacaoCliente && (
-                      <CampoTexto
-                        field="captacao_cliente_indicador"
-                        label="Qual cliente da carteira Marine indicou este novo segurado?"
-                        placeholder="Nome do cliente"
-                      />
+                      {campoTexto({ field: "captacao_cliente_indicador", label: "Qual cliente da carteira Marine indicou este novo segurado?", placeholder: "Nome do cliente" })}
                     )}
 
                     {isIndicacaoInterna && (
-                      <CampoTexto
-                        field="captacao_colaborador"
-                        label="Qual colaborador da Marine realizou a indicação?"
-                        placeholder="Nome do colaborador"
-                      />
+                      {campoTexto({ field: "captacao_colaborador", label: "Qual colaborador da Marine realizou a indicação?", placeholder: "Nome do colaborador" })}
                     )}
 
                     {isIndicacaoExterna && (
                       <div className="space-y-3">
                         <div className="grid gap-4 md:grid-cols-2">
-                          <CampoTexto
-                            field="captacao_indicador_nome"
-                            label="Qual o nome da pessoa que realizou a indicação?"
-                            placeholder="Nome da pessoa"
-                          />
+                          {campoTexto({ field: "captacao_indicador_nome", label: "Qual o nome da pessoa que realizou a indicação?", placeholder: "Nome da pessoa" })}
                           <div>
                             <Label htmlFor="captacao_indicador_empresa_flag">
                               Essa pessoa faz parte de alguma empresa?
@@ -1251,38 +1235,21 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                         </div>
                         <div className="grid gap-4 md:grid-cols-2">
                           {formData.captacao_indicador_empresa_flag === "Sim" && (
-                            <CampoTexto
-                              field="captacao_indicador_empresa"
-                              label="Qual empresa?"
-                              placeholder="Nome da empresa"
-                            />
+                            {campoTexto({ field: "captacao_indicador_empresa", label: "Qual empresa?", placeholder: "Nome da empresa" })}
                           )}
-                          <CampoTexto
-                            field="captacao_caminho_indicacao"
-                            label="Como essa indicação chegou até o Comercial?"
-                            placeholder="Ex.: João → Maria → Comercial"
-                          />
+                          {campoTexto({ field: "captacao_caminho_indicacao", label: "Como essa indicação chegou até o Comercial?", placeholder: "Ex.: João → Maria → Comercial" })}
                         </div>
                       </div>
                     )}
 
                     {isParceria && (
-                      <CampoTexto
-                        field="captacao_parceira"
-                        label="Qual a parceira ou corretora envolvida?"
-                        placeholder="Nome da parceira/corretora"
-                      />
+                      {campoTexto({ field: "captacao_parceira", label: "Qual a parceira ou corretora envolvida?", placeholder: "Nome da parceira/corretora" })}
                     )}
 
                     {isProspeccao && (
-                      <CampoTexto
-                        field="captacao_canal_prospeccao"
-                        label="Qual canal foi utilizado para a prospecção?"
-                        placeholder="Ex.: Ligação, WhatsApp, E-mail..."
-                        options={Array.from(
+                      {campoTexto({ field: "captacao_canal_prospeccao", label: "Qual canal foi utilizado para a prospecção?", placeholder: "Ex.: Ligação, WhatsApp, E-mail...", options: Array.from(
                           new Set([...CANAIS_PROSPECCAO, ...sugestoes("captacao_canal_prospeccao")]),
-                        )}
-                      />
+                        ) })}
                     )}
                   </div>
                 );
