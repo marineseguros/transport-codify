@@ -14,6 +14,33 @@ import { format, isValid, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 
+// Campos de detalhamento da captação (limpos ao trocar o tipo de captação)
+const EMPTY_CAPTACAO_DETALHES = {
+  captacao_cliente_origem: "",
+  captacao_feira: "",
+  captacao_evento: "",
+  captacao_cliente_indicador: "",
+  captacao_colaborador: "",
+  captacao_indicador_nome: "",
+  captacao_indicador_empresa_flag: "",
+  captacao_indicador_empresa: "",
+  captacao_caminho_indicacao: "",
+  captacao_parceira: "",
+  captacao_canal_prospeccao: "",
+};
+
+const CANAIS_PROSPECCAO = [
+  "Ligação",
+  "WhatsApp",
+  "E-mail",
+  "LinkedIn",
+  "Instagram",
+  "Google",
+  "Visita presencial",
+  "Indicação",
+  "Outro",
+];
+
 // Helper function to safely format dates
 const safeFormatDate = (dateString: string | undefined | null, formatStr: string = "dd/MM/yyyy"): string | null => {
   if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
