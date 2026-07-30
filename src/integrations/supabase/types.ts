@@ -216,7 +216,18 @@ export type Database = {
       }
       cotacoes: {
         Row: {
+          captacao_caminho_indicacao: string | null
+          captacao_canal_prospeccao: string | null
+          captacao_cliente_indicador: string | null
+          captacao_cliente_origem: string | null
+          captacao_colaborador: string | null
+          captacao_evento: string | null
+          captacao_feira: string | null
           captacao_id: string | null
+          captacao_indicador_empresa: string | null
+          captacao_indicador_empresa_flag: string | null
+          captacao_indicador_nome: string | null
+          captacao_parceira: string | null
           cliente_id: string | null
           comentarios: string | null
           cpf_cnpj: string
@@ -247,7 +258,18 @@ export type Database = {
           valor_premio: number | null
         }
         Insert: {
+          captacao_caminho_indicacao?: string | null
+          captacao_canal_prospeccao?: string | null
+          captacao_cliente_indicador?: string | null
+          captacao_cliente_origem?: string | null
+          captacao_colaborador?: string | null
+          captacao_evento?: string | null
+          captacao_feira?: string | null
           captacao_id?: string | null
+          captacao_indicador_empresa?: string | null
+          captacao_indicador_empresa_flag?: string | null
+          captacao_indicador_nome?: string | null
+          captacao_parceira?: string | null
           cliente_id?: string | null
           comentarios?: string | null
           cpf_cnpj: string
@@ -278,7 +300,18 @@ export type Database = {
           valor_premio?: number | null
         }
         Update: {
+          captacao_caminho_indicacao?: string | null
+          captacao_canal_prospeccao?: string | null
+          captacao_cliente_indicador?: string | null
+          captacao_cliente_origem?: string | null
+          captacao_colaborador?: string | null
+          captacao_evento?: string | null
+          captacao_feira?: string | null
           captacao_id?: string | null
+          captacao_indicador_empresa?: string | null
+          captacao_indicador_empresa_flag?: string | null
+          captacao_indicador_nome?: string | null
+          captacao_parceira?: string | null
           cliente_id?: string | null
           comentarios?: string | null
           cpf_cnpj?: string
