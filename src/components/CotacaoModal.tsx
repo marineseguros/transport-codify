@@ -14,6 +14,33 @@ import { format, isValid, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 
+// Campos de detalhamento da captação (limpos ao trocar o tipo de captação)
+const EMPTY_CAPTACAO_DETALHES = {
+  captacao_cliente_origem: "",
+  captacao_feira: "",
+  captacao_evento: "",
+  captacao_cliente_indicador: "",
+  captacao_colaborador: "",
+  captacao_indicador_nome: "",
+  captacao_indicador_empresa_flag: "",
+  captacao_indicador_empresa: "",
+  captacao_caminho_indicacao: "",
+  captacao_parceira: "",
+  captacao_canal_prospeccao: "",
+};
+
+const CANAIS_PROSPECCAO = [
+  "Ligação",
+  "WhatsApp",
+  "E-mail",
+  "LinkedIn",
+  "Instagram",
+  "Google",
+  "Visita presencial",
+  "Indicação",
+  "Outro",
+];
+
 // Helper function to safely format dates
 const safeFormatDate = (dateString: string | undefined | null, formatStr: string = "dd/MM/yyyy"): string | null => {
   if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
@@ -99,6 +126,17 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
     seguradora_id: "",
     ramo_id: "",
     captacao_id: "",
+    captacao_cliente_origem: "",
+    captacao_feira: "",
+    captacao_evento: "",
+    captacao_cliente_indicador: "",
+    captacao_colaborador: "",
+    captacao_indicador_nome: "",
+    captacao_indicador_empresa_flag: "",
+    captacao_indicador_empresa: "",
+    captacao_caminho_indicacao: "",
+    captacao_parceira: "",
+    captacao_canal_prospeccao: "",
     status_seguradora_id: "",
     tipo: "Nova",
         data_cotacao: (() => {
@@ -169,6 +207,17 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         seguradora_id: cotacao.seguradora_id || "",
         ramo_id: cotacao.ramo_id || "",
         captacao_id: cotacao.captacao_id || "",
+        captacao_cliente_origem: (cotacao as any).captacao_cliente_origem || "",
+        captacao_feira: (cotacao as any).captacao_feira || "",
+        captacao_evento: (cotacao as any).captacao_evento || "",
+        captacao_cliente_indicador: (cotacao as any).captacao_cliente_indicador || "",
+        captacao_colaborador: (cotacao as any).captacao_colaborador || "",
+        captacao_indicador_nome: (cotacao as any).captacao_indicador_nome || "",
+        captacao_indicador_empresa_flag: (cotacao as any).captacao_indicador_empresa_flag || "",
+        captacao_indicador_empresa: (cotacao as any).captacao_indicador_empresa || "",
+        captacao_caminho_indicacao: (cotacao as any).captacao_caminho_indicacao || "",
+        captacao_parceira: (cotacao as any).captacao_parceira || "",
+        captacao_canal_prospeccao: (cotacao as any).captacao_canal_prospeccao || "",
         status_seguradora_id: cotacao.status_seguradora_id || "",
         tipo: cotacao.tipo || "Nova",
         data_cotacao: toDateOnly(cotacao.data_cotacao) || todayStr,
@@ -221,6 +270,17 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         seguradora_id: "",
         ramo_id: "",
         captacao_id: "",
+        captacao_cliente_origem: "",
+        captacao_feira: "",
+        captacao_evento: "",
+        captacao_cliente_indicador: "",
+        captacao_colaborador: "",
+        captacao_indicador_nome: "",
+        captacao_indicador_empresa_flag: "",
+        captacao_indicador_empresa: "",
+        captacao_caminho_indicacao: "",
+        captacao_parceira: "",
+        captacao_canal_prospeccao: "",
         status_seguradora_id: "",
         tipo: "Nova",
         data_cotacao: formatLocalDate(hoje),
@@ -261,6 +321,18 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       }
       return; // Return early since we set all needed fields
     }
+
+    // Reset captação detail fields when the captação type changes
+    if (field === "captacao_id") {
+      setFormData((prev) => ({
+        ...prev,
+        captacao_id: value,
+        ...EMPTY_CAPTACAO_DETALHES,
+      }));
+      return;
+    }
+
+
 
     // Auto-fill segment based on ramo
     if (field === "ramo_id") {
@@ -522,6 +594,17 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         produtor_cotador_id: formData.produtor_cotador_id || undefined,
         seguradora_id: formData.seguradora_id || undefined,
         captacao_id: formData.captacao_id || undefined,
+        captacao_cliente_origem: formData.captacao_cliente_origem || null,
+        captacao_feira: formData.captacao_feira || null,
+        captacao_evento: formData.captacao_evento || null,
+        captacao_cliente_indicador: formData.captacao_cliente_indicador || null,
+        captacao_colaborador: formData.captacao_colaborador || null,
+        captacao_indicador_nome: formData.captacao_indicador_nome || null,
+        captacao_indicador_empresa_flag: formData.captacao_indicador_empresa_flag || null,
+        captacao_indicador_empresa: formData.captacao_indicador_empresa || null,
+        captacao_caminho_indicacao: formData.captacao_caminho_indicacao || null,
+        captacao_parceira: formData.captacao_parceira || null,
+        captacao_canal_prospeccao: formData.captacao_canal_prospeccao || null,
         status_seguradora_id: formData.status_seguradora_id || undefined,
         segmento: formData.segmento || undefined,
         valor_premio: validatedData.valor_premio,
@@ -1033,6 +1116,149 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                   </Select>
                 </div>
               </div>
+
+              {/* Detalhamento da Captação - condicional por tipo */}
+              {(() => {
+                const captacaoDesc = (captacao.find((c) => c.id === formData.captacao_id)?.descricao || "")
+                  .toLowerCase()
+                  .trim();
+                if (!captacaoDesc) return null;
+
+                const sugestoes = (field: string) =>
+                  Array.from(
+                    new Set(
+                      (cotacoes || [])
+                        .map((c: any) => c?.[field])
+                        .filter((v: any) => typeof v === "string" && v.trim().length > 0),
+                    ),
+                  ).sort();
+
+                const campoTexto = ({
+                  field,
+                  label,
+                  placeholder,
+                  listId,
+                  options,
+                }: {
+                  field: string;
+                  label: string;
+                  placeholder?: string;
+                  listId?: string;
+                  options?: string[];
+                }) => (
+                  <div>
+                    <Label htmlFor={field}>{label}</Label>
+                    <Input
+                      id={field}
+                      list={listId || `${field}_list`}
+                      value={(formData as any)[field] || ""}
+                      onChange={(e) => handleInputChange(field, e.target.value)}
+                      placeholder={placeholder}
+                      disabled={isReadOnly}
+                      autoComplete="off"
+                    />
+                    <datalist id={listId || `${field}_list`}>
+                      {(options ?? sugestoes(field)).map((op) => (
+                        <option key={op} value={op} />
+                      ))}
+                    </datalist>
+                  </div>
+                );
+
+                const isIndicacaoCliente = captacaoDesc.includes("indicação cliente");
+                const isIndicacaoInterna = captacaoDesc.includes("indicação interna");
+                const isIndicacaoExterna = captacaoDesc.includes("indicação externa");
+                const isCliente = captacaoDesc === "cliente";
+                const isFeiras = captacaoDesc.includes("feira");
+                const isParceria = captacaoDesc.includes("parceria") || captacaoDesc.includes("corretagem");
+                const isProspeccao = captacaoDesc.includes("prospec");
+
+                if (
+                  !isCliente &&
+                  !isFeiras &&
+                  !isIndicacaoCliente &&
+                  !isIndicacaoInterna &&
+                  !isIndicacaoExterna &&
+                  !isParceria &&
+                  !isProspeccao
+                )
+                  return null;
+
+                return (
+                  <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase">Detalhamento da Captação</p>
+
+                    {isCliente && (
+                      campoTexto({ field: "captacao_cliente_origem", label: "Qual cliente da carteira Marine originou este novo fechamento?", placeholder: "Nome do cliente" })
+                    )}
+
+                    {isFeiras && (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {campoTexto({ field: "captacao_feira", label: "Qual feira?", placeholder: "Nome da feira" })}
+                        {campoTexto({ field: "captacao_evento", label: "Qual evento?", placeholder: "Nome do evento" })}
+                      </div>
+                    )}
+
+                    {isIndicacaoCliente && (
+                      campoTexto({ field: "captacao_cliente_indicador", label: "Qual cliente da carteira Marine indicou este novo segurado?", placeholder: "Nome do cliente" })
+                    )}
+
+                    {isIndicacaoInterna && (
+                      campoTexto({ field: "captacao_colaborador", label: "Qual colaborador da Marine realizou a indicação?", placeholder: "Nome do colaborador" })
+                    )}
+
+                    {isIndicacaoExterna && (
+                      <div className="space-y-3">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {campoTexto({ field: "captacao_indicador_nome", label: "Qual o nome da pessoa que realizou a indicação?", placeholder: "Nome da pessoa" })}
+                          <div>
+                            <Label htmlFor="captacao_indicador_empresa_flag">
+                              Essa pessoa faz parte de alguma empresa?
+                            </Label>
+                            <Select
+                              value={formData.captacao_indicador_empresa_flag}
+                              onValueChange={(value) => {
+                                handleInputChange("captacao_indicador_empresa_flag", value);
+                                if (value !== "Sim") handleInputChange("captacao_indicador_empresa", "");
+                              }}
+                              disabled={isReadOnly}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Sim">Sim</SelectItem>
+                                <SelectItem value="Não">Não</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {formData.captacao_indicador_empresa_flag === "Sim" && (
+                            campoTexto({ field: "captacao_indicador_empresa", label: "Qual empresa?", placeholder: "Nome da empresa" })
+                          )}
+                          {campoTexto({ field: "captacao_caminho_indicacao", label: "Como essa indicação chegou até o Comercial?", placeholder: "Ex.: João → Maria → Comercial" })}
+                        </div>
+                      </div>
+                    )}
+
+                    {isParceria && (
+                      campoTexto({ field: "captacao_parceira", label: "Qual a parceira ou corretora envolvida?", placeholder: "Nome da parceira/corretora" })
+                    )}
+
+                    {isProspeccao && (
+                      campoTexto({
+                        field: "captacao_canal_prospeccao",
+                        label: "Qual canal foi utilizado para a prospecção?",
+                        placeholder: "Ex.: Ligação, WhatsApp, E-mail...",
+                        options: Array.from(new Set([...CANAIS_PROSPECCAO, ...sugestoes("captacao_canal_prospeccao")])),
+                      })
+                    )}
+                  </div>
+                );
+              })()}
+
+
 
               {/* Motivo Recusa - Condicional para Status Seguradora */}
               {(() => {
