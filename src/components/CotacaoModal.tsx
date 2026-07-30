@@ -1189,7 +1189,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     <p className="text-xs font-semibold text-muted-foreground uppercase">Detalhamento da Captação</p>
 
                     {isCliente && (
-                      {campoTexto({ field: "captacao_cliente_origem", label: "Qual cliente da carteira Marine originou este novo fechamento?", placeholder: "Nome do cliente" })}
+                      campoTexto({ field: "captacao_cliente_origem", label: "Qual cliente da carteira Marine originou este novo fechamento?", placeholder: "Nome do cliente" })
                     )}
 
                     {isFeiras && (
@@ -1200,11 +1200,11 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     )}
 
                     {isIndicacaoCliente && (
-                      {campoTexto({ field: "captacao_cliente_indicador", label: "Qual cliente da carteira Marine indicou este novo segurado?", placeholder: "Nome do cliente" })}
+                      campoTexto({ field: "captacao_cliente_indicador", label: "Qual cliente da carteira Marine indicou este novo segurado?", placeholder: "Nome do cliente" })
                     )}
 
                     {isIndicacaoInterna && (
-                      {campoTexto({ field: "captacao_colaborador", label: "Qual colaborador da Marine realizou a indicação?", placeholder: "Nome do colaborador" })}
+                      campoTexto({ field: "captacao_colaborador", label: "Qual colaborador da Marine realizou a indicação?", placeholder: "Nome do colaborador" })
                     )}
 
                     {isIndicacaoExterna && (
@@ -1235,7 +1235,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                         </div>
                         <div className="grid gap-4 md:grid-cols-2">
                           {formData.captacao_indicador_empresa_flag === "Sim" && (
-                            {campoTexto({ field: "captacao_indicador_empresa", label: "Qual empresa?", placeholder: "Nome da empresa" })}
+                            campoTexto({ field: "captacao_indicador_empresa", label: "Qual empresa?", placeholder: "Nome da empresa" })
                           )}
                           {campoTexto({ field: "captacao_caminho_indicacao", label: "Como essa indicação chegou até o Comercial?", placeholder: "Ex.: João → Maria → Comercial" })}
                         </div>
@@ -1243,7 +1243,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     )}
 
                     {isParceria && (
-                      {campoTexto({ field: "captacao_parceira", label: "Qual a parceira ou corretora envolvida?", placeholder: "Nome da parceira/corretora" })}
+                      campoTexto({ field: "captacao_parceira", label: "Qual a parceira ou corretora envolvida?", placeholder: "Nome da parceira/corretora" })
                     )}
 
                     {isProspeccao && (
