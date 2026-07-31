@@ -1284,16 +1284,66 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     )}
 
                     {isParceria && (
-                      campoTexto({ field: "captacao_parceira", label: "Qual a parceira ou corretora envolvida?", placeholder: "Nome da parceira/corretora" })
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <Label htmlFor="captacao_parceria_tipo">Tipo</Label>
+                          <Select
+                            value={formData.captacao_parceria_tipo}
+                            onValueChange={(value) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                captacao_parceria_tipo: value,
+                                captacao_parceira: "",
+                              }));
+                            }}
+                            disabled={isReadOnly}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Parceria">Parceria</SelectItem>
+                              <SelectItem value="Co Corretagem">Co Corretagem</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {formData.captacao_parceria_tipo === "Parceria" &&
+                          campoTexto({ field: "captacao_parceira", label: "Qual o nome da parceira?", placeholder: "Nome da parceira" })}
+                        {formData.captacao_parceria_tipo === "Co Corretagem" &&
+                          campoTexto({ field: "captacao_parceira", label: "Qual o nome da corretora?", placeholder: "Nome da corretora" })}
+                      </div>
                     )}
 
                     {isProspeccao && (
-                      campoTexto({
-                        field: "captacao_canal_prospeccao",
-                        label: "Qual canal foi utilizado para a prospecção?",
-                        placeholder: "Ex.: Ligação, WhatsApp, E-mail...",
-                        options: Array.from(new Set([...CANAIS_PROSPECCAO, ...sugestoes("captacao_canal_prospeccao")])),
-                      })
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <Label htmlFor="captacao_canal_prospeccao">Qual canal foi utilizado para a prospecção?</Label>
+                          <Select
+                            value={formData.captacao_canal_prospeccao}
+                            onValueChange={(value) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                captacao_canal_prospeccao: value,
+                                captacao_canal_outro: value === "Outro" ? prev.captacao_canal_outro : "",
+                              }));
+                            }}
+                            disabled={isReadOnly}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o canal" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CANAIS_PROSPECCAO.map((canal) => (
+                                <SelectItem key={canal} value={canal}>
+                                  {canal}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {formData.captacao_canal_prospeccao === "Outro" &&
+                          campoTexto({ field: "captacao_canal_outro", label: "Informe o canal utilizado", placeholder: "Canal utilizado" })}
+                      </div>
                     )}
                   </div>
                 );
