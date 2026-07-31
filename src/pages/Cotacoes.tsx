@@ -410,7 +410,7 @@ const Cotacoes = () => {
           </Button>
           <Button onClick={handleNewCotacao} size="sm" className="gap-2 flex-1 sm:flex-none">
             <Plus className="h-4 w-4" />
-            Nova
+            Nova Cotação
           </Button>
         </div>
       </div>
