@@ -38,9 +38,8 @@ const CANAIS_PROSPECCAO = [
   "E-mail",
   "LinkedIn",
   "Instagram",
-  "Google",
   "Visita presencial",
-  "Indicação",
+  "Site",
   "Outro",
 ];
 
