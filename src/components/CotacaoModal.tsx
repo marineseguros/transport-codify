@@ -1167,9 +1167,10 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                       id={field}
                       list={listId || `${field}_list`}
                       value={(formData as any)[field] || ""}
-                      onChange={(e) => handleInputChange(field, e.target.value)}
+                      onChange={(e) => handleInputChange(field, e.target.value.toUpperCase())}
                       placeholder={placeholder}
                       disabled={isReadOnly}
+                      style={{ textTransform: "uppercase" }}
                       autoComplete="off"
                     />
                     <datalist id={listId || `${field}_list`}>
