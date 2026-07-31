@@ -27,6 +27,9 @@ const EMPTY_CAPTACAO_DETALHES = {
   captacao_caminho_indicacao: "",
   captacao_parceira: "",
   captacao_canal_prospeccao: "",
+  captacao_feira_tipo: "",
+  captacao_parceria_tipo: "",
+  captacao_canal_outro: "",
 };
 
 const CANAIS_PROSPECCAO = [
@@ -35,9 +38,8 @@ const CANAIS_PROSPECCAO = [
   "E-mail",
   "LinkedIn",
   "Instagram",
-  "Google",
   "Visita presencial",
-  "Indicação",
+  "Site",
   "Outro",
 ];
 
@@ -137,6 +139,9 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
     captacao_caminho_indicacao: "",
     captacao_parceira: "",
     captacao_canal_prospeccao: "",
+    captacao_feira_tipo: "",
+    captacao_parceria_tipo: "",
+    captacao_canal_outro: "",
     status_seguradora_id: "",
     tipo: "Nova",
         data_cotacao: (() => {
@@ -218,6 +223,9 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         captacao_caminho_indicacao: (cotacao as any).captacao_caminho_indicacao || "",
         captacao_parceira: (cotacao as any).captacao_parceira || "",
         captacao_canal_prospeccao: (cotacao as any).captacao_canal_prospeccao || "",
+        captacao_feira_tipo: (cotacao as any).captacao_feira_tipo || "",
+        captacao_parceria_tipo: (cotacao as any).captacao_parceria_tipo || "",
+        captacao_canal_outro: (cotacao as any).captacao_canal_outro || "",
         status_seguradora_id: cotacao.status_seguradora_id || "",
         tipo: cotacao.tipo || "Nova",
         data_cotacao: toDateOnly(cotacao.data_cotacao) || todayStr,
@@ -281,6 +289,9 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         captacao_caminho_indicacao: "",
         captacao_parceira: "",
         captacao_canal_prospeccao: "",
+    captacao_feira_tipo: "",
+    captacao_parceria_tipo: "",
+    captacao_canal_outro: "",
         status_seguradora_id: "",
         tipo: "Nova",
         data_cotacao: formatLocalDate(hoje),
@@ -605,6 +616,9 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         captacao_caminho_indicacao: formData.captacao_caminho_indicacao || null,
         captacao_parceira: formData.captacao_parceira || null,
         captacao_canal_prospeccao: formData.captacao_canal_prospeccao || null,
+        captacao_feira_tipo: formData.captacao_feira_tipo || null,
+        captacao_parceria_tipo: formData.captacao_parceria_tipo || null,
+        captacao_canal_outro: formData.captacao_canal_outro || null,
         status_seguradora_id: formData.status_seguradora_id || undefined,
         segmento: formData.segmento || undefined,
         valor_premio: validatedData.valor_premio,
@@ -1152,9 +1166,10 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                       id={field}
                       list={listId || `${field}_list`}
                       value={(formData as any)[field] || ""}
-                      onChange={(e) => handleInputChange(field, e.target.value)}
+                      onChange={(e) => handleInputChange(field, e.target.value.toUpperCase())}
                       placeholder={placeholder}
                       disabled={isReadOnly}
+                      style={{ textTransform: "uppercase" }}
                       autoComplete="off"
                     />
                     <datalist id={listId || `${field}_list`}>
@@ -1194,8 +1209,33 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
 
                     {isFeiras && (
                       <div className="grid gap-4 md:grid-cols-2">
-                        {campoTexto({ field: "captacao_feira", label: "Qual feira?", placeholder: "Nome da feira" })}
-                        {campoTexto({ field: "captacao_evento", label: "Qual evento?", placeholder: "Nome do evento" })}
+                        <div>
+                          <Label htmlFor="captacao_feira_tipo">Tipo</Label>
+                          <Select
+                            value={formData.captacao_feira_tipo}
+                            onValueChange={(value) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                captacao_feira_tipo: value,
+                                captacao_feira: value === "Feira" ? prev.captacao_feira : "",
+                                captacao_evento: value === "Evento" ? prev.captacao_evento : "",
+                              }));
+                            }}
+                            disabled={isReadOnly}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Feira">Feira</SelectItem>
+                              <SelectItem value="Evento">Evento</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {formData.captacao_feira_tipo === "Feira" &&
+                          campoTexto({ field: "captacao_feira", label: "Qual o nome da feira?", placeholder: "Nome da feira" })}
+                        {formData.captacao_feira_tipo === "Evento" &&
+                          campoTexto({ field: "captacao_evento", label: "Qual o nome do evento?", placeholder: "Nome do evento" })}
                       </div>
                     )}
 
@@ -1243,16 +1283,66 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     )}
 
                     {isParceria && (
-                      campoTexto({ field: "captacao_parceira", label: "Qual a parceira ou corretora envolvida?", placeholder: "Nome da parceira/corretora" })
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <Label htmlFor="captacao_parceria_tipo">Tipo</Label>
+                          <Select
+                            value={formData.captacao_parceria_tipo}
+                            onValueChange={(value) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                captacao_parceria_tipo: value,
+                                captacao_parceira: "",
+                              }));
+                            }}
+                            disabled={isReadOnly}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Parceria">Parceria</SelectItem>
+                              <SelectItem value="Co Corretagem">Co Corretagem</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {formData.captacao_parceria_tipo === "Parceria" &&
+                          campoTexto({ field: "captacao_parceira", label: "Qual o nome da parceira?", placeholder: "Nome da parceira" })}
+                        {formData.captacao_parceria_tipo === "Co Corretagem" &&
+                          campoTexto({ field: "captacao_parceira", label: "Qual o nome da corretora?", placeholder: "Nome da corretora" })}
+                      </div>
                     )}
 
                     {isProspeccao && (
-                      campoTexto({
-                        field: "captacao_canal_prospeccao",
-                        label: "Qual canal foi utilizado para a prospecção?",
-                        placeholder: "Ex.: Ligação, WhatsApp, E-mail...",
-                        options: Array.from(new Set([...CANAIS_PROSPECCAO, ...sugestoes("captacao_canal_prospeccao")])),
-                      })
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <Label htmlFor="captacao_canal_prospeccao">Qual canal foi utilizado para a prospecção?</Label>
+                          <Select
+                            value={formData.captacao_canal_prospeccao}
+                            onValueChange={(value) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                captacao_canal_prospeccao: value,
+                                captacao_canal_outro: value === "Outro" ? prev.captacao_canal_outro : "",
+                              }));
+                            }}
+                            disabled={isReadOnly}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o canal" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CANAIS_PROSPECCAO.map((canal) => (
+                                <SelectItem key={canal} value={canal}>
+                                  {canal}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {formData.captacao_canal_prospeccao === "Outro" &&
+                          campoTexto({ field: "captacao_canal_outro", label: "Informe o canal utilizado", placeholder: "Canal utilizado" })}
+                      </div>
                     )}
                   </div>
                 );
