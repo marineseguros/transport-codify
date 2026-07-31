@@ -27,6 +27,9 @@ const EMPTY_CAPTACAO_DETALHES = {
   captacao_caminho_indicacao: "",
   captacao_parceira: "",
   captacao_canal_prospeccao: "",
+  captacao_feira_tipo: "",
+  captacao_parceria_tipo: "",
+  captacao_canal_outro: "",
 };
 
 const CANAIS_PROSPECCAO = [
