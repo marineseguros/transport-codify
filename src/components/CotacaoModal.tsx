@@ -1210,8 +1210,33 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
 
                     {isFeiras && (
                       <div className="grid gap-4 md:grid-cols-2">
-                        {campoTexto({ field: "captacao_feira", label: "Qual feira?", placeholder: "Nome da feira" })}
-                        {campoTexto({ field: "captacao_evento", label: "Qual evento?", placeholder: "Nome do evento" })}
+                        <div>
+                          <Label htmlFor="captacao_feira_tipo">Tipo</Label>
+                          <Select
+                            value={formData.captacao_feira_tipo}
+                            onValueChange={(value) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                captacao_feira_tipo: value,
+                                captacao_feira: value === "Feira" ? prev.captacao_feira : "",
+                                captacao_evento: value === "Evento" ? prev.captacao_evento : "",
+                              }));
+                            }}
+                            disabled={isReadOnly}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Feira">Feira</SelectItem>
+                              <SelectItem value="Evento">Evento</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {formData.captacao_feira_tipo === "Feira" &&
+                          campoTexto({ field: "captacao_feira", label: "Qual o nome da feira?", placeholder: "Nome da feira" })}
+                        {formData.captacao_feira_tipo === "Evento" &&
+                          campoTexto({ field: "captacao_evento", label: "Qual o nome do evento?", placeholder: "Nome do evento" })}
                       </div>
                     )}
 
