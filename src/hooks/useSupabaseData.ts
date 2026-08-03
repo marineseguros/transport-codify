@@ -713,10 +713,27 @@ export function useCotacoes() {
         status: cotacaoData.status || 'Em cotação',
         data_cotacao: cotacaoData.data_cotacao,
         data_fechamento: cotacaoData.data_fechamento,
+        inicio_vigencia: cotacaoData.inicio_vigencia ?? null,
+        fim_vigencia: cotacaoData.fim_vigencia ?? null,
         num_proposta: cotacaoData.num_proposta,
         motivo_recusa: cotacaoData.motivo_recusa,
         comentarios: cotacaoData.comentarios,
-        observacoes: cotacaoData.observacoes
+        observacoes: cotacaoData.observacoes,
+        // Detalhamento da captação
+        captacao_cliente_origem: cotacaoData.captacao_cliente_origem ?? null,
+        captacao_feira: cotacaoData.captacao_feira ?? null,
+        captacao_evento: cotacaoData.captacao_evento ?? null,
+        captacao_cliente_indicador: cotacaoData.captacao_cliente_indicador ?? null,
+        captacao_colaborador: cotacaoData.captacao_colaborador ?? null,
+        captacao_indicador_nome: cotacaoData.captacao_indicador_nome ?? null,
+        captacao_indicador_empresa_flag: cotacaoData.captacao_indicador_empresa_flag ?? null,
+        captacao_indicador_empresa: cotacaoData.captacao_indicador_empresa ?? null,
+        captacao_caminho_indicacao: cotacaoData.captacao_caminho_indicacao ?? null,
+        captacao_parceira: cotacaoData.captacao_parceira ?? null,
+        captacao_canal_prospeccao: cotacaoData.captacao_canal_prospeccao ?? null,
+        captacao_feira_tipo: cotacaoData.captacao_feira_tipo ?? null,
+        captacao_parceria_tipo: cotacaoData.captacao_parceria_tipo ?? null,
+        captacao_canal_outro: cotacaoData.captacao_canal_outro ?? null,
       };
 
       const { data, error } = await supabase
@@ -762,7 +779,22 @@ export function useCotacoes() {
         num_proposta: updates.num_proposta,
         motivo_recusa: updates.motivo_recusa,
         comentarios: updates.comentarios,
-        observacoes: updates.observacoes
+        observacoes: updates.observacoes,
+        // Detalhamento da captação
+        captacao_cliente_origem: updates.captacao_cliente_origem ?? null,
+        captacao_feira: updates.captacao_feira ?? null,
+        captacao_evento: updates.captacao_evento ?? null,
+        captacao_cliente_indicador: updates.captacao_cliente_indicador ?? null,
+        captacao_colaborador: updates.captacao_colaborador ?? null,
+        captacao_indicador_nome: updates.captacao_indicador_nome ?? null,
+        captacao_indicador_empresa_flag: updates.captacao_indicador_empresa_flag ?? null,
+        captacao_indicador_empresa: updates.captacao_indicador_empresa ?? null,
+        captacao_caminho_indicacao: updates.captacao_caminho_indicacao ?? null,
+        captacao_parceira: updates.captacao_parceira ?? null,
+        captacao_canal_prospeccao: updates.captacao_canal_prospeccao ?? null,
+        captacao_feira_tipo: updates.captacao_feira_tipo ?? null,
+        captacao_parceria_tipo: updates.captacao_parceria_tipo ?? null,
+        captacao_canal_outro: updates.captacao_canal_outro ?? null,
       };
 
       const { data, error } = await supabase
