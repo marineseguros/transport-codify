@@ -547,13 +547,10 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         return;
       }
       if (!formData.inicio_vigencia) {
-        toast.error("Data de início da vigência é obrigatória para negócios fechados.");
+        toast.error("A Data de Início da Vigência é obrigatória para Negócios Fechados.");
         return;
       }
-      if (!formData.fim_vigencia) {
-        toast.error("Data de fim da vigência é obrigatória para negócios fechados.");
-        return;
-      }
+
     }
 
     // Validate motivo_declinado for "Declinado" status
@@ -1489,7 +1486,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     </div>
 
                     <div>
-                      <Label htmlFor="inicio_vigencia">Início da Vigência</Label>
+                      <Label htmlFor="inicio_vigencia">Início da Vigência *</Label>
                       <DatePickerInputString
                         value={formData.inicio_vigencia}
                         onChange={(date) => handleInputChange("inicio_vigencia", date || "")}
