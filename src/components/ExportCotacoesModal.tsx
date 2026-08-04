@@ -31,77 +31,29 @@ interface ExportCotacoesModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Define all available columns grouped by category
+// Colunas permitidas na exportação (ordem fixa)
 const COLUMN_GROUPS = {
-  "Dados Principais": [
+  "Colunas": [
     { key: "numero_cotacao", label: "Número Cotação" },
-    { key: "data_cotacao", label: "Data Cotação" },
     { key: "data_fechamento", label: "Data Fechamento" },
     { key: "inicio_vigencia", label: "Início Vigência" },
-    { key: "fim_vigencia", label: "Fim Vigência" },
     { key: "segurado", label: "Segurado" },
     { key: "cpf_cnpj", label: "CPF/CNPJ" },
     { key: "status", label: "Status" },
     { key: "valor_premio", label: "Valor Prêmio" },
     { key: "segmento", label: "Segmento" },
-    { key: "tipo", label: "Tipo" },
-    { key: "num_proposta", label: "Nº Proposta" },
-    { key: "motivo_recusa", label: "Motivo Recusa" },
-    { key: "motivo_declinado", label: "Motivo Declinado" },
-    { key: "observacoes", label: "Observações" },
-    { key: "comentarios", label: "Comentários" },
-  ],
-  "Unidade": [
-    { key: "unidade_codigo", label: "Unidade Código" },
-    { key: "unidade_descricao", label: "Unidade Descrição" },
-  ],
-  "Produtor Origem": [
     { key: "produtor_origem_nome", label: "Produtor Origem" },
-    { key: "produtor_origem_email", label: "Produtor Origem Email" },
-    { key: "produtor_origem_codigo", label: "Produtor Origem Código" },
-  ],
-  "Produtor Negociador": [
     { key: "produtor_negociador_nome", label: "Produtor Negociador" },
-    { key: "produtor_negociador_email", label: "Produtor Negociador Email" },
-    { key: "produtor_negociador_codigo", label: "Produtor Negociador Código" },
-  ],
-  "Produtor Cotador": [
     { key: "produtor_cotador_nome", label: "Produtor Cotador" },
-    { key: "produtor_cotador_email", label: "Produtor Cotador Email" },
-    { key: "produtor_cotador_codigo", label: "Produtor Cotador Código" },
-  ],
-  "Seguradora": [
     { key: "seguradora_nome", label: "Seguradora" },
-    { key: "seguradora_codigo", label: "Seguradora Código" },
-  ],
-  "Ramo": [
-    { key: "ramo_codigo", label: "Ramo Código" },
-    { key: "ramo_descricao", label: "Ramo Descrição" },
-    { key: "ramo_agrupado", label: "Ramo Agrupado" },
-    { key: "ramo_segmento", label: "Ramo Segmento" },
-  ],
-  "Captação e Status": [
+    { key: "ramo_descricao", label: "Ramo" },
     { key: "captacao", label: "Captação" },
-    { key: "status_seguradora_descricao", label: "Status Seguradora" },
-    { key: "status_seguradora_codigo", label: "Status Seguradora Código" },
-  ],
-  "Cliente": [
-    { key: "cliente_email", label: "Cliente Email" },
-    { key: "cliente_telefone", label: "Cliente Telefone" },
-    { key: "cliente_endereco", label: "Cliente Endereço" },
-    { key: "cliente_cidade", label: "Cliente Cidade" },
-    { key: "cliente_uf", label: "Cliente UF" },
-    { key: "cliente_cep", label: "Cliente CEP" },
-  ],
-  "Metadados": [
-    { key: "created_at", label: "Criado em" },
-    { key: "updated_at", label: "Atualizado em" },
-    { key: "modulo", label: "Módulo" },
   ],
 };
 
 // Get all column keys
 const ALL_COLUMN_KEYS = Object.values(COLUMN_GROUPS).flatMap(cols => cols.map(c => c.key));
+
 
 type TipoRelatorio = "todos" | "negocio_fechado" | "em_cotacao" | "declinados";
 
