@@ -247,8 +247,6 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       });
     } else if (isCreating) {
       const hoje = new Date();
-      const inicioVigencia = new Date(hoje);
-      const fimVigencia = new Date(inicioVigencia.getTime() + 365 * 24 * 60 * 60 * 1000);
 
       // Find current user in produtores list to set as default cotador
       // Try to match by email first, then by name if available
@@ -258,6 +256,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
             (p.email && user?.email && p.email.toLowerCase() === user.email.toLowerCase()) ||
             (p.nome && user?.nome && p.nome.toLowerCase().includes(user.nome.toLowerCase())),
         ) || activeProdutores[0]; // Fallback to first produtor if no match
+
 
       // Format dates in local timezone
       const formatLocalDate = (date: Date) => {
@@ -295,9 +294,10 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         status_seguradora_id: "",
         tipo: "Nova",
         data_cotacao: formatLocalDate(hoje),
-        inicio_vigencia: formatLocalDate(inicioVigencia),
-        fim_vigencia: formatLocalDate(fimVigencia),
+        inicio_vigencia: "",
+        fim_vigencia: "",
         valor_premio: 0,
+
         status: "Em cotação",
         observacoes: "",
         segmento: "",
@@ -384,32 +384,12 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
 
     // Validations
     if (field === "status" && value === "Negócio fechado") {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hoje = `${year}-${month}-${day}`;
-      
-      // Calculate default vigência dates (today to 1 year)
-      const inicioVigencia = new Date(now);
-      const fimVigencia = new Date(inicioVigencia.getTime() + 365 * 24 * 60 * 60 * 1000);
-      
-      const formatLocalDate = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-      
       setFormData((prev) => ({
         ...prev,
-        data_fechamento: prev.data_fechamento || hoje,
-        data_cotacao: prev.data_cotacao || hoje,
-        inicio_vigencia: prev.inicio_vigencia || formatLocalDate(inicioVigencia),
-        fim_vigencia: prev.fim_vigencia || formatLocalDate(fimVigencia),
         num_proposta: undefined,
       }));
     } else if (field === "status" && value !== "Negócio fechado") {
+
       // Clear dates when status is not "Negócio fechado"
       setFormData((prev) => ({
         ...prev,
