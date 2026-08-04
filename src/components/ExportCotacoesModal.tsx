@@ -196,89 +196,93 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
 
     setLoading(true);
     try {
-      // Build query
-      let query = supabase
-        .from("cotacoes")
-        .select(`
-          *,
-          produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(id, nome, email, codigo_prod),
-          produtor_negociador:produtores!cotacoes_produtor_negociador_id_fkey(id, nome, email, codigo_prod),
-          produtor_cotador:produtores!cotacoes_produtor_cotador_id_fkey(id, nome, email, codigo_prod),
-          seguradora:seguradoras(id, nome, codigo),
-          cliente:clientes(id, segurado, cpf_cnpj, email, telefone, endereco, cidade, uf, cep),
-          ramo:ramos(id, codigo, descricao, ramo_agrupado, segmento),
-          captacao:captacao(id, descricao),
-          status_seguradora:status_seguradora(id, descricao, codigo),
-          unidade:unidades(id, codigo, descricao)
-        `);
+      const SELECT = `
+          id, numero_cotacao, data_cotacao, data_fechamento, inicio_vigencia,
+          segurado, cpf_cnpj, status, valor_premio, segmento,
+          produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(id, nome),
+          produtor_negociador:produtores!cotacoes_produtor_negociador_id_fkey(id, nome),
+          produtor_cotador:produtores!cotacoes_produtor_cotador_id_fkey(id, nome),
+          seguradora:seguradoras(id, nome),
+          cliente:clientes(id, segurado, cpf_cnpj),
+          ramo:ramos(id, descricao, segmento),
+          captacao:captacao(id, descricao)
+        `;
 
-      // Apply status filter based on report type
-      if (tipoRelatorio === "negocio_fechado") {
-        query = query.in("status", ["Negócio fechado", "Fechamento congênere"]);
-      } else if (tipoRelatorio === "em_cotacao") {
-        query = query.eq("status", "Em cotação");
-      } else if (tipoRelatorio === "declinados") {
-        query = query.eq("status", "Declinado");
-      }
-      // "todos" → no status filter
+      const mesSel = mes && mes !== "todos" ? mes : "";
+      const anoSel = ano && ano !== "todos" ? ano : "";
 
-      // Apply date filter based on period type
+      const dateColumn =
+        criterio === "data_fechamento"
+          ? "data_fechamento"
+          : criterio === "inicio_vigencia"
+            ? "inicio_vigencia"
+            : "data_cotacao";
+
+      let range: { start: string; end: string } | null = null;
       if (tipoPeriodo === "personalizado" && dataInicio && dataFim) {
-        if (criterio === "data_fechamento") {
-          query = query.gte("data_fechamento", dataInicio).lte("data_fechamento", dataFim);
-        } else if (criterio === "inicio_vigencia") {
-          query = query.gte("inicio_vigencia", dataInicio).lte("inicio_vigencia", dataFim);
-        } else if (criterio === "data_cotacao") {
-          query = query.gte("data_cotacao", dataInicio).lte("data_cotacao", dataFim);
-        }
-      } else if (tipoPeriodo === "mes_ano") {
-        if (ano && mes) {
-          const startDate = `${ano}-${mes}-01`;
-          const lastDay = new Date(parseInt(ano), parseInt(mes), 0).getDate();
-          const endDate = `${ano}-${mes}-${String(lastDay).padStart(2, "0")}`;
-
-          if (criterio === "data_fechamento") {
-            query = query.gte("data_fechamento", startDate).lte("data_fechamento", endDate);
-          } else if (criterio === "inicio_vigencia") {
-            query = query.gte("inicio_vigencia", startDate).lte("inicio_vigencia", endDate);
-          } else if (criterio === "data_cotacao") {
-            query = query.gte("data_cotacao", startDate).lte("data_cotacao", endDate);
-          }
-        } else if (ano && ano !== "todos") {
-          const startDate = `${ano}-01-01`;
-          const endDate = `${ano}-12-31`;
-
-          if (criterio === "data_fechamento") {
-            query = query.gte("data_fechamento", startDate).lte("data_fechamento", endDate);
-          } else if (criterio === "inicio_vigencia") {
-            query = query.gte("inicio_vigencia", startDate).lte("inicio_vigencia", endDate);
-          } else if (criterio === "data_cotacao") {
-            query = query.gte("data_cotacao", startDate).lte("data_cotacao", endDate);
-          }
+        range = { start: dataInicio, end: dataFim };
+      } else if (tipoPeriodo === "mes_ano" && anoSel) {
+        if (mesSel) {
+          const lastDay = new Date(parseInt(anoSel), parseInt(mesSel), 0).getDate();
+          range = {
+            start: `${anoSel}-${mesSel}-01`,
+            end: `${anoSel}-${mesSel}-${String(lastDay).padStart(2, "0")}`,
+          };
+        } else {
+          range = { start: `${anoSel}-01-01`, end: `${anoSel}-12-31` };
         }
       }
 
-      // Apply produtor filter (check all three produtor fields)
-      if (produtorId && produtorId !== "todos") {
-        query = query.or(
-          `produtor_origem_id.eq.${produtorId},produtor_negociador_id.eq.${produtorId},produtor_cotador_id.eq.${produtorId}`
-        );
+      const buildQuery = () => {
+        let query = supabase.from("cotacoes").select(SELECT);
+
+        if (tipoRelatorio === "negocio_fechado") {
+          query = query.in("status", ["Negócio fechado", "Fechamento congênere"]);
+        } else if (tipoRelatorio === "em_cotacao") {
+          query = query.eq("status", "Em cotação");
+        } else if (tipoRelatorio === "declinados") {
+          query = query.eq("status", "Declinado");
+        }
+
+        if (range) {
+          query = query.gte(dateColumn, range.start).lte(dateColumn, range.end);
+        }
+
+        if (produtorId && produtorId !== "todos") {
+          query = query.or(
+            `produtor_origem_id.eq.${produtorId},produtor_negociador_id.eq.${produtorId},produtor_cotador_id.eq.${produtorId}`
+          );
+        }
+
+        if (unidadeId && unidadeId !== "todos") {
+          query = query.eq("unidade_id", unidadeId);
+        }
+
+        return query;
+      };
+
+      // Paginate to bypass the 1000-row default limit
+      const PAGE = 1000;
+      const rows: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data: page, error } = await buildQuery()
+          .order("numero_cotacao", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!page || page.length === 0) break;
+        rows.push(...page);
+        if (page.length < PAGE) break;
       }
 
-      // Apply unidade filter
-      if (unidadeId && unidadeId !== "todos") {
-        query = query.eq("unidade_id", unidadeId);
-      }
+      // Guard against any duplicate rows
+      const data = Array.from(new Map(rows.map((r: any) => [r.id, r])).values());
 
-      const { data, error } = await query.order("numero_cotacao", { ascending: false });
-
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
+      if (data.length === 0) {
         toast.warning("Nenhuma cotação encontrada com os filtros selecionados");
         setLoading(false);
         return;
       }
+
 
       // Format data for Excel - only include selected columns
       const orderedKeys = ALL_COLUMN_KEYS.filter(key => selectedColumns.has(key));
