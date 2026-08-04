@@ -158,62 +158,27 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
 
   const getColumnValue = (cotacao: any, key: string): string => {
     const map: Record<string, () => string> = {
-      numero_cotacao: () => cotacao.numero_cotacao,
-      data_cotacao: () => formatDate(cotacao.data_cotacao),
+      numero_cotacao: () => cotacao.numero_cotacao || "",
       data_fechamento: () => formatDate(cotacao.data_fechamento),
       inicio_vigencia: () => formatDate(cotacao.inicio_vigencia),
-      fim_vigencia: () => formatDate(cotacao.fim_vigencia),
-      segurado: () => cotacao.segurado,
-      cpf_cnpj: () => cotacao.cpf_cnpj,
-      status: () => cotacao.status,
-      valor_premio: () => cotacao.valor_premio?.toString() || "",
-      segmento: () => cotacao.segmento || "",
-      tipo: () => cotacao.tipo || "",
-      num_proposta: () => cotacao.num_proposta || "",
-      motivo_recusa: () => {
-        const val = cotacao.motivo_recusa || "";
-        if (val.includes("||")) return val.split("||")[0].trim();
-        return val;
-      },
-      motivo_declinado: () => {
-        const val = cotacao.motivo_recusa || "";
-        if (val.includes("||")) return val.split("||")[1].trim();
-        return "";
-      },
-      observacoes: () => cotacao.observacoes || "",
-      comentarios: () => cotacao.comentarios || "",
-      unidade_codigo: () => cotacao.unidade?.codigo || "",
-      unidade_descricao: () => cotacao.unidade?.descricao || "",
+      segurado: () => cotacao.segurado || cotacao.cliente?.segurado || "",
+      cpf_cnpj: () => cotacao.cpf_cnpj || cotacao.cliente?.cpf_cnpj || "",
+      status: () => cotacao.status || "",
+      valor_premio: () =>
+        cotacao.valor_premio !== null && cotacao.valor_premio !== undefined
+          ? String(cotacao.valor_premio)
+          : "",
+      segmento: () => cotacao.segmento || cotacao.ramo?.segmento || "",
       produtor_origem_nome: () => cotacao.produtor_origem?.nome || "",
-      produtor_origem_email: () => cotacao.produtor_origem?.email || "",
-      produtor_origem_codigo: () => cotacao.produtor_origem?.codigo_prod || "",
       produtor_negociador_nome: () => cotacao.produtor_negociador?.nome || "",
-      produtor_negociador_email: () => cotacao.produtor_negociador?.email || "",
-      produtor_negociador_codigo: () => cotacao.produtor_negociador?.codigo_prod || "",
       produtor_cotador_nome: () => cotacao.produtor_cotador?.nome || "",
-      produtor_cotador_email: () => cotacao.produtor_cotador?.email || "",
-      produtor_cotador_codigo: () => cotacao.produtor_cotador?.codigo_prod || "",
       seguradora_nome: () => cotacao.seguradora?.nome || "",
-      seguradora_codigo: () => cotacao.seguradora?.codigo || "",
-      ramo_codigo: () => cotacao.ramo?.codigo || "",
       ramo_descricao: () => cotacao.ramo?.descricao || "",
-      ramo_agrupado: () => cotacao.ramo?.ramo_agrupado || "",
-      ramo_segmento: () => cotacao.ramo?.segmento || "",
       captacao: () => cotacao.captacao?.descricao || "",
-      status_seguradora_descricao: () => cotacao.status_seguradora?.descricao || "",
-      status_seguradora_codigo: () => cotacao.status_seguradora?.codigo || "",
-      cliente_email: () => cotacao.cliente?.email || "",
-      cliente_telefone: () => cotacao.cliente?.telefone || "",
-      cliente_endereco: () => cotacao.cliente?.endereco || "",
-      cliente_cidade: () => cotacao.cliente?.cidade || "",
-      cliente_uf: () => cotacao.cliente?.uf || "",
-      cliente_cep: () => cotacao.cliente?.cep || "",
-      created_at: () => formatDateTime(cotacao.created_at),
-      updated_at: () => formatDateTime(cotacao.updated_at),
-      modulo: () => cotacao.modulo || "",
     };
     return map[key]?.() || "";
   };
+
 
   const getColumnLabel = (key: string): string => {
     for (const group of Object.values(COLUMN_GROUPS)) {
