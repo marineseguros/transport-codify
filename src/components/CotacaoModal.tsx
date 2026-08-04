@@ -1486,7 +1486,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
                     </div>
 
                     <div>
-                      <Label htmlFor="inicio_vigencia">Início da Vigência</Label>
+                      <Label htmlFor="inicio_vigencia">Início da Vigência *</Label>
                       <DatePickerInputString
                         value={formData.inicio_vigencia}
                         onChange={(date) => handleInputChange("inicio_vigencia", date || "")}
