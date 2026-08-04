@@ -294,9 +294,10 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
         status_seguradora_id: "",
         tipo: "Nova",
         data_cotacao: formatLocalDate(hoje),
-        inicio_vigencia: formatLocalDate(inicioVigencia),
-        fim_vigencia: formatLocalDate(fimVigencia),
+        inicio_vigencia: "",
+        fim_vigencia: "",
         valor_premio: 0,
+
         status: "Em cotação",
         observacoes: "",
         segmento: "",
