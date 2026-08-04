@@ -32,30 +32,16 @@ export const LoginForm = () => {
     }
   };
   return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-8">
-          <div className="flex justify-center">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
             <img
-              src="/marine-shield.png"
-              alt="Marine Seguros"
-              className="h-28 w-auto dark:drop-shadow-[0_0_4px_rgba(56,189,248,0.15)]"
+              src="/marine-login-logo.png"
+              alt="Marine Seguros Logo"
+              className="h-32 w-auto dark:brightness-150 dark:contrast-125 dark:[filter:brightness(1.6)_contrast(1.15)_drop-shadow(0_0_8px_rgba(125,211,252,0.35))]"
             />
           </div>
-
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <h1 className="text-[3.5rem] leading-none font-serif font-bold tracking-wide text-slate-800 dark:text-slate-100">
-                MARINE
-              </h1>
-              <p className="text-base leading-none font-sans tracking-[0.4em] text-slate-500 dark:text-slate-300 uppercase">
-                SEGUROS
-              </p>
-            </div>
-
-            <p className="text-sm text-muted-foreground dark:text-slate-400">
-              Sistema de Gerenciamento
-            </p>
-          </div>
+          <p className="text-muted-foreground">Sistema de Gerenciamento</p>
         </div>
 
         <Card>
