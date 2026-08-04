@@ -31,77 +31,29 @@ interface ExportCotacoesModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Define all available columns grouped by category
+// Colunas permitidas na exportação (ordem fixa)
 const COLUMN_GROUPS = {
-  "Dados Principais": [
+  "Colunas": [
     { key: "numero_cotacao", label: "Número Cotação" },
-    { key: "data_cotacao", label: "Data Cotação" },
     { key: "data_fechamento", label: "Data Fechamento" },
     { key: "inicio_vigencia", label: "Início Vigência" },
-    { key: "fim_vigencia", label: "Fim Vigência" },
     { key: "segurado", label: "Segurado" },
     { key: "cpf_cnpj", label: "CPF/CNPJ" },
     { key: "status", label: "Status" },
     { key: "valor_premio", label: "Valor Prêmio" },
     { key: "segmento", label: "Segmento" },
-    { key: "tipo", label: "Tipo" },
-    { key: "num_proposta", label: "Nº Proposta" },
-    { key: "motivo_recusa", label: "Motivo Recusa" },
-    { key: "motivo_declinado", label: "Motivo Declinado" },
-    { key: "observacoes", label: "Observações" },
-    { key: "comentarios", label: "Comentários" },
-  ],
-  "Unidade": [
-    { key: "unidade_codigo", label: "Unidade Código" },
-    { key: "unidade_descricao", label: "Unidade Descrição" },
-  ],
-  "Produtor Origem": [
     { key: "produtor_origem_nome", label: "Produtor Origem" },
-    { key: "produtor_origem_email", label: "Produtor Origem Email" },
-    { key: "produtor_origem_codigo", label: "Produtor Origem Código" },
-  ],
-  "Produtor Negociador": [
     { key: "produtor_negociador_nome", label: "Produtor Negociador" },
-    { key: "produtor_negociador_email", label: "Produtor Negociador Email" },
-    { key: "produtor_negociador_codigo", label: "Produtor Negociador Código" },
-  ],
-  "Produtor Cotador": [
     { key: "produtor_cotador_nome", label: "Produtor Cotador" },
-    { key: "produtor_cotador_email", label: "Produtor Cotador Email" },
-    { key: "produtor_cotador_codigo", label: "Produtor Cotador Código" },
-  ],
-  "Seguradora": [
     { key: "seguradora_nome", label: "Seguradora" },
-    { key: "seguradora_codigo", label: "Seguradora Código" },
-  ],
-  "Ramo": [
-    { key: "ramo_codigo", label: "Ramo Código" },
-    { key: "ramo_descricao", label: "Ramo Descrição" },
-    { key: "ramo_agrupado", label: "Ramo Agrupado" },
-    { key: "ramo_segmento", label: "Ramo Segmento" },
-  ],
-  "Captação e Status": [
+    { key: "ramo_descricao", label: "Ramo" },
     { key: "captacao", label: "Captação" },
-    { key: "status_seguradora_descricao", label: "Status Seguradora" },
-    { key: "status_seguradora_codigo", label: "Status Seguradora Código" },
-  ],
-  "Cliente": [
-    { key: "cliente_email", label: "Cliente Email" },
-    { key: "cliente_telefone", label: "Cliente Telefone" },
-    { key: "cliente_endereco", label: "Cliente Endereço" },
-    { key: "cliente_cidade", label: "Cliente Cidade" },
-    { key: "cliente_uf", label: "Cliente UF" },
-    { key: "cliente_cep", label: "Cliente CEP" },
-  ],
-  "Metadados": [
-    { key: "created_at", label: "Criado em" },
-    { key: "updated_at", label: "Atualizado em" },
-    { key: "modulo", label: "Módulo" },
   ],
 };
 
 // Get all column keys
 const ALL_COLUMN_KEYS = Object.values(COLUMN_GROUPS).flatMap(cols => cols.map(c => c.key));
+
 
 type TipoRelatorio = "todos" | "negocio_fechado" | "em_cotacao" | "declinados";
 
@@ -206,62 +158,27 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
 
   const getColumnValue = (cotacao: any, key: string): string => {
     const map: Record<string, () => string> = {
-      numero_cotacao: () => cotacao.numero_cotacao,
-      data_cotacao: () => formatDate(cotacao.data_cotacao),
+      numero_cotacao: () => cotacao.numero_cotacao || "",
       data_fechamento: () => formatDate(cotacao.data_fechamento),
       inicio_vigencia: () => formatDate(cotacao.inicio_vigencia),
-      fim_vigencia: () => formatDate(cotacao.fim_vigencia),
-      segurado: () => cotacao.segurado,
-      cpf_cnpj: () => cotacao.cpf_cnpj,
-      status: () => cotacao.status,
-      valor_premio: () => cotacao.valor_premio?.toString() || "",
-      segmento: () => cotacao.segmento || "",
-      tipo: () => cotacao.tipo || "",
-      num_proposta: () => cotacao.num_proposta || "",
-      motivo_recusa: () => {
-        const val = cotacao.motivo_recusa || "";
-        if (val.includes("||")) return val.split("||")[0].trim();
-        return val;
-      },
-      motivo_declinado: () => {
-        const val = cotacao.motivo_recusa || "";
-        if (val.includes("||")) return val.split("||")[1].trim();
-        return "";
-      },
-      observacoes: () => cotacao.observacoes || "",
-      comentarios: () => cotacao.comentarios || "",
-      unidade_codigo: () => cotacao.unidade?.codigo || "",
-      unidade_descricao: () => cotacao.unidade?.descricao || "",
+      segurado: () => cotacao.segurado || cotacao.cliente?.segurado || "",
+      cpf_cnpj: () => cotacao.cpf_cnpj || cotacao.cliente?.cpf_cnpj || "",
+      status: () => cotacao.status || "",
+      valor_premio: () =>
+        cotacao.valor_premio !== null && cotacao.valor_premio !== undefined
+          ? String(cotacao.valor_premio)
+          : "",
+      segmento: () => cotacao.segmento || cotacao.ramo?.segmento || "",
       produtor_origem_nome: () => cotacao.produtor_origem?.nome || "",
-      produtor_origem_email: () => cotacao.produtor_origem?.email || "",
-      produtor_origem_codigo: () => cotacao.produtor_origem?.codigo_prod || "",
       produtor_negociador_nome: () => cotacao.produtor_negociador?.nome || "",
-      produtor_negociador_email: () => cotacao.produtor_negociador?.email || "",
-      produtor_negociador_codigo: () => cotacao.produtor_negociador?.codigo_prod || "",
       produtor_cotador_nome: () => cotacao.produtor_cotador?.nome || "",
-      produtor_cotador_email: () => cotacao.produtor_cotador?.email || "",
-      produtor_cotador_codigo: () => cotacao.produtor_cotador?.codigo_prod || "",
       seguradora_nome: () => cotacao.seguradora?.nome || "",
-      seguradora_codigo: () => cotacao.seguradora?.codigo || "",
-      ramo_codigo: () => cotacao.ramo?.codigo || "",
       ramo_descricao: () => cotacao.ramo?.descricao || "",
-      ramo_agrupado: () => cotacao.ramo?.ramo_agrupado || "",
-      ramo_segmento: () => cotacao.ramo?.segmento || "",
       captacao: () => cotacao.captacao?.descricao || "",
-      status_seguradora_descricao: () => cotacao.status_seguradora?.descricao || "",
-      status_seguradora_codigo: () => cotacao.status_seguradora?.codigo || "",
-      cliente_email: () => cotacao.cliente?.email || "",
-      cliente_telefone: () => cotacao.cliente?.telefone || "",
-      cliente_endereco: () => cotacao.cliente?.endereco || "",
-      cliente_cidade: () => cotacao.cliente?.cidade || "",
-      cliente_uf: () => cotacao.cliente?.uf || "",
-      cliente_cep: () => cotacao.cliente?.cep || "",
-      created_at: () => formatDateTime(cotacao.created_at),
-      updated_at: () => formatDateTime(cotacao.updated_at),
-      modulo: () => cotacao.modulo || "",
     };
     return map[key]?.() || "";
   };
+
 
   const getColumnLabel = (key: string): string => {
     for (const group of Object.values(COLUMN_GROUPS)) {
@@ -279,89 +196,93 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
 
     setLoading(true);
     try {
-      // Build query
-      let query = supabase
-        .from("cotacoes")
-        .select(`
-          *,
-          produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(id, nome, email, codigo_prod),
-          produtor_negociador:produtores!cotacoes_produtor_negociador_id_fkey(id, nome, email, codigo_prod),
-          produtor_cotador:produtores!cotacoes_produtor_cotador_id_fkey(id, nome, email, codigo_prod),
-          seguradora:seguradoras(id, nome, codigo),
-          cliente:clientes(id, segurado, cpf_cnpj, email, telefone, endereco, cidade, uf, cep),
-          ramo:ramos(id, codigo, descricao, ramo_agrupado, segmento),
-          captacao:captacao(id, descricao),
-          status_seguradora:status_seguradora(id, descricao, codigo),
-          unidade:unidades(id, codigo, descricao)
-        `);
+      const SELECT = `
+          id, numero_cotacao, data_cotacao, data_fechamento, inicio_vigencia,
+          segurado, cpf_cnpj, status, valor_premio, segmento,
+          produtor_origem:produtores!cotacoes_produtor_origem_id_fkey(id, nome),
+          produtor_negociador:produtores!cotacoes_produtor_negociador_id_fkey(id, nome),
+          produtor_cotador:produtores!cotacoes_produtor_cotador_id_fkey(id, nome),
+          seguradora:seguradoras(id, nome),
+          cliente:clientes(id, segurado, cpf_cnpj),
+          ramo:ramos(id, descricao, segmento),
+          captacao:captacao(id, descricao)
+        `;
 
-      // Apply status filter based on report type
-      if (tipoRelatorio === "negocio_fechado") {
-        query = query.in("status", ["Negócio fechado", "Fechamento congênere"]);
-      } else if (tipoRelatorio === "em_cotacao") {
-        query = query.eq("status", "Em cotação");
-      } else if (tipoRelatorio === "declinados") {
-        query = query.eq("status", "Declinado");
-      }
-      // "todos" → no status filter
+      const mesSel = mes && mes !== "todos" ? mes : "";
+      const anoSel = ano && ano !== "todos" ? ano : "";
 
-      // Apply date filter based on period type
+      const dateColumn =
+        criterio === "data_fechamento"
+          ? "data_fechamento"
+          : criterio === "inicio_vigencia"
+            ? "inicio_vigencia"
+            : "data_cotacao";
+
+      let range: { start: string; end: string } | null = null;
       if (tipoPeriodo === "personalizado" && dataInicio && dataFim) {
-        if (criterio === "data_fechamento") {
-          query = query.gte("data_fechamento", dataInicio).lte("data_fechamento", dataFim);
-        } else if (criterio === "inicio_vigencia") {
-          query = query.gte("inicio_vigencia", dataInicio).lte("inicio_vigencia", dataFim);
-        } else if (criterio === "data_cotacao") {
-          query = query.gte("data_cotacao", dataInicio).lte("data_cotacao", dataFim);
-        }
-      } else if (tipoPeriodo === "mes_ano") {
-        if (ano && mes) {
-          const startDate = `${ano}-${mes}-01`;
-          const lastDay = new Date(parseInt(ano), parseInt(mes), 0).getDate();
-          const endDate = `${ano}-${mes}-${String(lastDay).padStart(2, "0")}`;
-
-          if (criterio === "data_fechamento") {
-            query = query.gte("data_fechamento", startDate).lte("data_fechamento", endDate);
-          } else if (criterio === "inicio_vigencia") {
-            query = query.gte("inicio_vigencia", startDate).lte("inicio_vigencia", endDate);
-          } else if (criterio === "data_cotacao") {
-            query = query.gte("data_cotacao", startDate).lte("data_cotacao", endDate);
-          }
-        } else if (ano && ano !== "todos") {
-          const startDate = `${ano}-01-01`;
-          const endDate = `${ano}-12-31`;
-
-          if (criterio === "data_fechamento") {
-            query = query.gte("data_fechamento", startDate).lte("data_fechamento", endDate);
-          } else if (criterio === "inicio_vigencia") {
-            query = query.gte("inicio_vigencia", startDate).lte("inicio_vigencia", endDate);
-          } else if (criterio === "data_cotacao") {
-            query = query.gte("data_cotacao", startDate).lte("data_cotacao", endDate);
-          }
+        range = { start: dataInicio, end: dataFim };
+      } else if (tipoPeriodo === "mes_ano" && anoSel) {
+        if (mesSel) {
+          const lastDay = new Date(parseInt(anoSel), parseInt(mesSel), 0).getDate();
+          range = {
+            start: `${anoSel}-${mesSel}-01`,
+            end: `${anoSel}-${mesSel}-${String(lastDay).padStart(2, "0")}`,
+          };
+        } else {
+          range = { start: `${anoSel}-01-01`, end: `${anoSel}-12-31` };
         }
       }
 
-      // Apply produtor filter (check all three produtor fields)
-      if (produtorId && produtorId !== "todos") {
-        query = query.or(
-          `produtor_origem_id.eq.${produtorId},produtor_negociador_id.eq.${produtorId},produtor_cotador_id.eq.${produtorId}`
-        );
+      const buildQuery = () => {
+        let query = supabase.from("cotacoes").select(SELECT);
+
+        if (tipoRelatorio === "negocio_fechado") {
+          query = query.in("status", ["Negócio fechado", "Fechamento congênere"]);
+        } else if (tipoRelatorio === "em_cotacao") {
+          query = query.eq("status", "Em cotação");
+        } else if (tipoRelatorio === "declinados") {
+          query = query.eq("status", "Declinado");
+        }
+
+        if (range) {
+          query = query.gte(dateColumn, range.start).lte(dateColumn, range.end);
+        }
+
+        if (produtorId && produtorId !== "todos") {
+          query = query.or(
+            `produtor_origem_id.eq.${produtorId},produtor_negociador_id.eq.${produtorId},produtor_cotador_id.eq.${produtorId}`
+          );
+        }
+
+        if (unidadeId && unidadeId !== "todos") {
+          query = query.eq("unidade_id", unidadeId);
+        }
+
+        return query;
+      };
+
+      // Paginate to bypass the 1000-row default limit
+      const PAGE = 1000;
+      const rows: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data: page, error } = await buildQuery()
+          .order("numero_cotacao", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!page || page.length === 0) break;
+        rows.push(...page);
+        if (page.length < PAGE) break;
       }
 
-      // Apply unidade filter
-      if (unidadeId && unidadeId !== "todos") {
-        query = query.eq("unidade_id", unidadeId);
-      }
+      // Guard against any duplicate rows
+      const data = Array.from(new Map(rows.map((r: any) => [r.id, r])).values());
 
-      const { data, error } = await query.order("numero_cotacao", { ascending: false });
-
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
+      if (data.length === 0) {
         toast.warning("Nenhuma cotação encontrada com os filtros selecionados");
         setLoading(false);
         return;
       }
+
 
       // Format data for Excel - only include selected columns
       const orderedKeys = ALL_COLUMN_KEYS.filter(key => selectedColumns.has(key));
@@ -411,8 +332,9 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
       const periodoLabel = tipoPeriodo === "personalizado" 
         ? `${dataInicio}_${dataFim}` 
         : ano && ano !== "todos" 
-          ? (mes ? `${ano}-${mes}` : ano) 
+          ? (mes && mes !== "todos" ? `${ano}-${mes}` : ano) 
           : "Todos";
+
       const filename = `Cotacoes_${tipoLabel}_${criterioLabel}_${periodoLabel}_${new Date().toISOString().split("T")[0]}.xlsx`;
 
       // Download
