@@ -332,8 +332,9 @@ export function ExportCotacoesModal({ open, onOpenChange }: ExportCotacoesModalP
       const periodoLabel = tipoPeriodo === "personalizado" 
         ? `${dataInicio}_${dataFim}` 
         : ano && ano !== "todos" 
-          ? (mes ? `${ano}-${mes}` : ano) 
+          ? (mes && mes !== "todos" ? `${ano}-${mes}` : ano) 
           : "Todos";
+
       const filename = `Cotacoes_${tipoLabel}_${criterioLabel}_${periodoLabel}_${new Date().toISOString().split("T")[0]}.xlsx`;
 
       // Download
