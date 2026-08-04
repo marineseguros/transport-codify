@@ -247,8 +247,6 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
       });
     } else if (isCreating) {
       const hoje = new Date();
-      const inicioVigencia = new Date(hoje);
-      const fimVigencia = new Date(inicioVigencia.getTime() + 365 * 24 * 60 * 60 * 1000);
 
       // Find current user in produtores list to set as default cotador
       // Try to match by email first, then by name if available
@@ -258,6 +256,7 @@ export const CotacaoModal = ({ isOpen, onClose, cotacao, mode = "create", onSave
             (p.email && user?.email && p.email.toLowerCase() === user.email.toLowerCase()) ||
             (p.nome && user?.nome && p.nome.toLowerCase().includes(user.nome.toLowerCase())),
         ) || activeProdutores[0]; // Fallback to first produtor if no match
+
 
       // Format dates in local timezone
       const formatLocalDate = (date: Date) => {
