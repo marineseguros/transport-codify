@@ -516,8 +516,31 @@ const Fechamentos = () => {
         </CardContent>
       </Card>
 
+      {/* Análise estratégica + Registros */}
+      <Tabs defaultValue="analise" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="analise" className="text-xs gap-1.5">
+            <BarChart3 className="h-3.5 w-3.5" /> Análise Estratégica
+          </TabsTrigger>
+          <TabsTrigger value="registros" className="text-xs gap-1.5">
+            <FileText className="h-3.5 w-3.5" /> Registros
+            <Badge variant="secondary" className="text-[10px]">{filteredRecords.length}</Badge>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="analise" className="space-y-4 mt-0">
+          <FechamentosAnalytics
+            current={filteredRecords}
+            previous={previousRecords}
+            periodLabel={periodRanges.label}
+            previousLabel={periodRanges.prevLabel}
+          />
+        </TabsContent>
+
+        <TabsContent value="registros" className="mt-0">
       {/* Data Table – compact, essential columns only + expandable detail */}
       <Card>
+
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">
