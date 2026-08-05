@@ -630,6 +630,10 @@ const Fechamentos = () => {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
+
+
 
       {/* Business Rules Footer */}
       <div className="flex items-start gap-2 text-[11px] text-muted-foreground px-1">
