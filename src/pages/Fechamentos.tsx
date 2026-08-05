@@ -215,67 +215,116 @@ const Fechamentos = () => {
 
   const consolidated = useMemo(() => consolidateRecords(allCotacoes), [allCotacoes]);
 
-  const periodRange = useMemo(() => {
+  const periodRanges = useMemo(() => {
     const now = new Date();
     switch (periodoFilter) {
-      case "mes_atual": return { start: startOfMonth(now), end: endOfMonth(now) };
-      case "mes_passado": { const prev = subMonths(now, 1); return { start: startOfMonth(prev), end: endOfMonth(prev) }; }
-      case "ultimos_3": return { start: startOfMonth(subMonths(now, 2)), end: endOfMonth(now) };
-      case "ultimos_6": return { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(now) };
-      case "ano_atual": return { start: startOfYear(now), end: endOfYear(now) };
-      case "ano_anterior": { const prev = subYears(now, 1); return { start: startOfYear(prev), end: endOfYear(prev) }; }
-      default: return null;
+      case "mes_atual": {
+        const prev = subMonths(now, 1);
+        return {
+          current: { start: startOfMonth(now), end: endOfMonth(now) },
+          previous: { start: startOfMonth(prev), end: endOfMonth(prev) },
+          label: "Este Mês", prevLabel: "Mês Anterior",
+        };
+      }
+      case "mes_passado": {
+        const prev = subMonths(now, 1);
+        const prev2 = subMonths(now, 2);
+        return {
+          current: { start: startOfMonth(prev), end: endOfMonth(prev) },
+          previous: { start: startOfMonth(prev2), end: endOfMonth(prev2) },
+          label: "Mês Passado", prevLabel: "Mês Retrasado",
+        };
+      }
+      case "ultimos_3":
+        return {
+          current: { start: startOfMonth(subMonths(now, 2)), end: endOfMonth(now) },
+          previous: { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(subMonths(now, 3)) },
+          label: "Últimos 3 Meses", prevLabel: "3 Meses Anteriores",
+        };
+      case "ultimos_6":
+        return {
+          current: { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(now) },
+          previous: { start: startOfMonth(subMonths(now, 11)), end: endOfMonth(subMonths(now, 6)) },
+          label: "Últimos 6 Meses", prevLabel: "6 Meses Anteriores",
+        };
+      case "ano_atual": {
+        const prev = subYears(now, 1);
+        return {
+          current: { start: startOfYear(now), end: endOfYear(now) },
+          previous: { start: startOfYear(prev), end: endOfYear(prev) },
+          label: "Ano Atual", prevLabel: "Ano Anterior",
+        };
+      }
+      case "ano_anterior": {
+        const prev = subYears(now, 1);
+        const prev2 = subYears(now, 2);
+        return {
+          current: { start: startOfYear(prev), end: endOfYear(prev) },
+          previous: { start: startOfYear(prev2), end: endOfYear(prev2) },
+          label: "Ano Anterior", prevLabel: "Dois Anos Atrás",
+        };
+      }
+      default:
+        return { current: null, previous: null, label: "Todos os Períodos", prevLabel: "—" };
     }
   }, [periodoFilter]);
 
-  const filteredRecords = useMemo(() => {
-    let records = consolidated;
+  const periodRange = periodRanges.current;
 
-    if (periodRange) {
-      records = records.filter(r => {
-        const ref = (r.status === "Negócio fechado" || r.status === "Fechamento congênere")
-          ? r.data_fechamento || r.data_cotacao
-          : r.data_cotacao;
-        try {
-          const d = parseISO(ref);
-          return isWithinInterval(d, { start: periodRange.start, end: periodRange.end });
-        } catch { return false; }
-      });
-    }
+  const applyFilters = useMemo(() => {
+    return (range: { start: Date; end: Date } | null) => {
+      let records = consolidated;
 
-    if (statusFilter !== "todos") {
-      if (statusFilter === "fechados") {
-        records = records.filter(r => r.status === "Negócio fechado" || r.status === "Fechamento congênere");
-      } else {
-        records = records.filter(r => r.status === statusFilter);
+      if (range) {
+        records = records.filter(r => {
+          const ref = (r.status === "Negócio fechado" || r.status === "Fechamento congênere")
+            ? r.data_fechamento || r.data_cotacao
+            : r.data_cotacao;
+          try {
+            const d = parseISO(ref);
+            return isWithinInterval(d, { start: range.start, end: range.end });
+          } catch { return false; }
+        });
       }
-    }
 
-    if (produtorFilter !== "todos") {
-      records = records.filter(r =>
-        r.produtor_origem === produtorFilter ||
-        r.produtor_negociador === produtorFilter ||
-        r.produtor_cotador === produtorFilter
-      );
-    }
+      if (statusFilter !== "todos") {
+        if (statusFilter === "fechados") {
+          records = records.filter(r => r.status === "Negócio fechado" || r.status === "Fechamento congênere");
+        } else {
+          records = records.filter(r => r.status === statusFilter);
+        }
+      }
 
-    if (ramoFilter !== "todos") records = records.filter(r => r.ramo_descricao === ramoFilter);
-    if (seguradoraFilter !== "todos") records = records.filter(r => r.seguradora.includes(seguradoraFilter));
-    if (unidadeFilter !== "todos") records = records.filter(r => r.unidade_descricao === unidadeFilter);
+      if (produtorFilter !== "todos") {
+        records = records.filter(r =>
+          r.produtor_origem === produtorFilter ||
+          r.produtor_negociador === produtorFilter ||
+          r.produtor_cotador === produtorFilter
+        );
+      }
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      records = records.filter(r =>
-        r.segurado.toLowerCase().includes(term) ||
-        r.cpf_cnpj.toLowerCase().includes(term) ||
-        r.seguradora.toLowerCase().includes(term) ||
-        r.produtor_origem.toLowerCase().includes(term) ||
-        r.ramo_descricao.toLowerCase().includes(term)
-      );
-    }
+      if (ramoFilter !== "todos") records = records.filter(r => r.ramo_descricao === ramoFilter);
+      if (seguradoraFilter !== "todos") records = records.filter(r => r.seguradora.includes(seguradoraFilter));
+      if (unidadeFilter !== "todos") records = records.filter(r => r.unidade_descricao === unidadeFilter);
 
-    return records;
-  }, [consolidated, periodRange, statusFilter, produtorFilter, ramoFilter, seguradoraFilter, unidadeFilter, searchTerm]);
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        records = records.filter(r =>
+          r.segurado.toLowerCase().includes(term) ||
+          r.cpf_cnpj.toLowerCase().includes(term) ||
+          r.seguradora.toLowerCase().includes(term) ||
+          r.produtor_origem.toLowerCase().includes(term) ||
+          r.ramo_descricao.toLowerCase().includes(term)
+        );
+      }
+
+      return records;
+    };
+  }, [consolidated, statusFilter, produtorFilter, ramoFilter, seguradoraFilter, unidadeFilter, searchTerm]);
+
+  const filteredRecords = useMemo(() => applyFilters(periodRange), [applyFilters, periodRange]);
+  const previousRecords = useMemo(() => applyFilters(periodRanges.previous), [applyFilters, periodRanges.previous]);
+
 
   // Reset page on filter change
   useMemo(() => setPage(1), [periodoFilter, statusFilter, produtorFilter, ramoFilter, seguradoraFilter, unidadeFilter, searchTerm]);
