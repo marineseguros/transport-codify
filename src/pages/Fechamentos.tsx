@@ -15,6 +15,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { FechamentosAnalytics } from "@/components/fechamentos/FechamentosAnalytics";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
