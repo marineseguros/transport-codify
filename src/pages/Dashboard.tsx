@@ -1698,7 +1698,7 @@ const Dashboard = () => {
                     color: "hsl(var(--popover-foreground))"
                   }}
                   formatter={(value: number, name: string) => {
-                    if (name === "Taxa de Conversão") return [`${value.toFixed(1)}%`, name];
+                    if (name === "Conversão da Safra") return [`${value.toFixed(1)}%`, name];
                     return [value, name];
                   }} />
                 
@@ -1707,7 +1707,7 @@ const Dashboard = () => {
                   yAxisId="left"
                   dataKey="clientesUnicos"
                   fill="hsl(var(--primary) / 0.7)"
-                  name="Clientes Únicos"
+                  name="Clientes Únicos (iniciados no mês)"
                   radius={[4, 4, 0, 0]} />
                 
                 <Line
@@ -1717,7 +1717,7 @@ const Dashboard = () => {
                   stroke="hsl(var(--success))"
                   strokeWidth={2}
                   dot={{ fill: "hsl(var(--success))", r: 4 }}
-                  name="Taxa de Conversão" />
+                  name="Conversão da Safra" />
                 
               </ComposedChart>
             </ResponsiveContainer>
