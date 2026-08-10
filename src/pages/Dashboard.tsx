@@ -32,6 +32,7 @@ import { DashboardIndicadores } from "@/components/dashboard/DashboardIndicadore
 import { FunnelAnalysisCard } from "@/components/dashboard/FunnelAnalysisCard";
 import { KpiDetailModal } from "@/components/dashboard/KpiDetailModal";
 import { useNavigate } from "react-router-dom";
+import { computeCohortMetrics, filterCohortByPeriod } from "@/lib/conversionRate";
 
 // Helper function to determine branch group using ramo_agrupado from DB
 const getBranchGroup = (ramo: {descricao?: string;ramo_agrupado?: string | null;} | undefined | null): string => {
