@@ -265,7 +265,7 @@ export function TendenciaDetailModal({
             {/* Tabela Detalhada */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Dados Mensais Detalhados</CardTitle>
+                <CardTitle className="text-sm">Dados Mensais Detalhados (por safra de origem)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
