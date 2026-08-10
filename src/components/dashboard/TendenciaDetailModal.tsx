@@ -75,43 +75,43 @@ export function TendenciaDetailModal({
         return d >= monthStart && d <= monthEnd;
       });
 
-      const emCotacaoList = allInMonth.filter((c) => c.status === "Em cotação");
+      // ===== Coorte / safra: cotações INICIADAS neste mês =====
+      const cohort = computeCohortMetrics(allInMonth);
 
-      const fechadasList = filtered.filter((c) => {
-        if (c.status !== "Negócio fechado" && c.status !== "Fechamento congênere") return false;
+      // Fechamentos ocorridos no mês (visão de produtividade, por data_fechamento)
+      const fechadasNoMesList = filtered.filter((c) => {
+        if (!isClosed(c)) return false;
         if (!c.data_fechamento) return false;
         const d = new Date(c.data_fechamento);
         return d >= monthStart && d <= monthEnd;
       });
-      const fechadas = countDistinctClosings(fechadasList);
+      const fechadasNoMes = countDistinctClosings(fechadasNoMesList);
 
-      const declinadasList = allInMonth.filter((c) => c.status === "Declinado");
       const total = allInMonth.length;
-      const premioFechado = fechadasList.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
-      const premioAberto = emCotacaoList.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+      const premioFechado = cohort.premioFechado;
+      const premioFechadoNoMes = fechadasNoMesList.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+      const premioAberto = allInMonth
+        .filter((c) => c.status === "Em cotação")
+        .reduce((sum, c) => sum + (c.valor_premio || 0), 0);
 
-      const clientesUnicosSet = new Set<string>();
-      allInMonth.forEach((c) => {
-        clientesUnicosSet.add(`${c.cpf_cnpj}_${getBranchGroup(c.ramo)}`);
-      });
-      const clientesUnicos = clientesUnicosSet.size;
-
+      const clientesUnicos = cohort.iniciadas;
       const transportador = allInMonth.filter((c) => c.segmento === "Transportador").length;
       const embarcador = allInMonth.filter((c) => c.segmento !== "Transportador").length;
-      const taxaConversao = clientesUnicos > 0 ? (fechadas / clientesUnicos) * 100 : 0;
 
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
         total,
         clientesUnicos,
-        emCotacao: emCotacaoList.length,
-        fechadas,
-        declinadas: declinadasList.length,
+        emCotacao: cohort.emCotacao,
+        fechadas: cohort.fechadas,
+        fechadasNoMes,
+        declinadas: cohort.declinadas,
         premioFechado,
+        premioFechadoNoMes,
         premioAberto,
         transportador,
         embarcador,
-        taxaConversao,
+        taxaConversao: cohort.taxa,
       });
     }
     return months;
