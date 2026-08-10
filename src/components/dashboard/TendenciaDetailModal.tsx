@@ -127,8 +127,10 @@ export function TendenciaDetailModal({
   const previousMonth = filteredData[filteredData.length - 2];
 
   const totalGeral = filteredData.reduce((sum, m) => sum + m.total, 0);
+  const totalIniciadas = filteredData.reduce((sum, m) => sum + m.clientesUnicos, 0);
   const totalFechadas = filteredData.reduce((sum, m) => sum + m.fechadas, 0);
   const totalPremio = filteredData.reduce((sum, m) => sum + m.premioFechado, 0);
+  const conversaoMedia = totalIniciadas > 0 ? Math.min(100, (totalFechadas / totalIniciadas) * 100) : 0;
 
   const mediaMensal = filteredData.length > 0 ? totalGeral / filteredData.length : 0;
   const mediaFechamentos = filteredData.length > 0 ? totalFechadas / filteredData.length : 0;
