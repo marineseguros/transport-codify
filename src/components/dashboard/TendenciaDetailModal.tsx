@@ -220,7 +220,7 @@ export function TendenciaDetailModal({
             {/* Gráfico Combo */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Evolução Mensal - Volume x Conversão</CardTitle>
+                <CardTitle className="text-sm">Evolução Mensal - Safra Iniciada x Conversão</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
@@ -236,7 +236,7 @@ export function TendenciaDetailModal({
                         color: "hsl(var(--popover-foreground))",
                       }}
                       formatter={(value: number, name: string) => {
-                        if (name === "Taxa de Conversão") return [`${value.toFixed(1)}%`, name];
+                        if (name === "Conversão da Safra") return [`${value.toFixed(1)}%`, name];
                         return [value, name];
                       }}
                     />
@@ -245,7 +245,7 @@ export function TendenciaDetailModal({
                       yAxisId="left"
                       dataKey="clientesUnicos"
                       fill="hsl(var(--primary) / 0.7)"
-                      name="Clientes Únicos"
+                      name="Clientes Únicos (iniciados no mês)"
                       radius={[4, 4, 0, 0]}
                     />
                     <Line
@@ -255,7 +255,7 @@ export function TendenciaDetailModal({
                       stroke="hsl(var(--success))"
                       strokeWidth={2}
                       dot={{ fill: "hsl(var(--success))", r: 4 }}
-                      name="Taxa de Conversão"
+                      name="Conversão da Safra"
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
