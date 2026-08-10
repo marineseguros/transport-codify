@@ -528,6 +528,8 @@ const Dashboard = () => {
       premioTotalComp,
       taxaConversao,
       taxaConversaoComp,
+      coorteIniciadas: cohortAtual.iniciadas,
+      coorteFechadas: cohortAtual.fechadas,
       segmentoStats,
       periodStart: currentStartDate,
       periodEnd: currentEndDate
