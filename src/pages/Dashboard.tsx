@@ -432,11 +432,14 @@ const Dashboard = () => {
       const emCotacaoSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Em cotação"]);
       const fechadosSegmento = countDistinctByStatus(currentFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
       const declinadosSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Declinado"]);
-      const totalDistinctSegmento = emCotacaoSegmento + fechadosSegmento + declinadosSegmento;
       const previousEmCotacaoSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Em cotação"]);
       const previousFechadosSegmento = countDistinctByStatus(previousFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
       const previousDeclinadosSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Declinado"]);
-      const previousTotalDistinctSegmento = previousEmCotacaoSegmento + previousFechadosSegmento + previousDeclinadosSegmento;
+
+      // Conversão por COORTE (safra de origem) do segmento
+      const segmentoQuotes = baseFilteredQuotes.filter((c) => c.ramo?.segmento === segmento);
+      const cohortSegAtual = computeCohortMetrics(filterCohortByPeriod(segmentoQuotes, currentStartDate, currentEndDate));
+      const cohortSegAnterior = computeCohortMetrics(filterCohortByPeriod(segmentoQuotes, previousStartDate, previousEndDate));
 
       // Tempo médio por segmento
       const temposFechamentoSegmento = currentFechamentosSegmento.filter((c) => c.data_fechamento && c.data_cotacao).map((c) => {
