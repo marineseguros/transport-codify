@@ -32,6 +32,7 @@ import { DashboardIndicadores } from "@/components/dashboard/DashboardIndicadore
 import { FunnelAnalysisCard } from "@/components/dashboard/FunnelAnalysisCard";
 import { KpiDetailModal } from "@/components/dashboard/KpiDetailModal";
 import { useNavigate } from "react-router-dom";
+import { computeCohortMetrics, filterCohortByPeriod } from "@/lib/conversionRate";
 
 // Helper function to determine branch group using ramo_agrupado from DB
 const getBranchGroup = (ramo: {descricao?: string;ramo_agrupado?: string | null;} | undefined | null): string => {
@@ -431,11 +432,14 @@ const Dashboard = () => {
       const emCotacaoSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Em cotação"]);
       const fechadosSegmento = countDistinctByStatus(currentFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
       const declinadosSegmento = countDistinctByStatus(currentCotacoesSegmento, ["Declinado"]);
-      const totalDistinctSegmento = emCotacaoSegmento + fechadosSegmento + declinadosSegmento;
       const previousEmCotacaoSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Em cotação"]);
       const previousFechadosSegmento = countDistinctByStatus(previousFechamentosSegmento, ["Negócio fechado", "Fechamento congênere"]);
       const previousDeclinadosSegmento = countDistinctByStatus(previousCotacoesSegmento, ["Declinado"]);
-      const previousTotalDistinctSegmento = previousEmCotacaoSegmento + previousFechadosSegmento + previousDeclinadosSegmento;
+
+      // Conversão por COORTE (safra de origem) do segmento
+      const segmentoQuotes = baseFilteredQuotes.filter((c) => c.ramo?.segmento === segmento);
+      const cohortSegAtual = computeCohortMetrics(filterCohortByPeriod(segmentoQuotes, currentStartDate, currentEndDate));
+      const cohortSegAnterior = computeCohortMetrics(filterCohortByPeriod(segmentoQuotes, previousStartDate, previousEndDate));
 
       // Tempo médio por segmento
       const temposFechamentoSegmento = currentFechamentosSegmento.filter((c) => c.data_fechamento && c.data_cotacao).map((c) => {
@@ -456,12 +460,12 @@ const Dashboard = () => {
         declinados: declinadosSegmento,
         premioTotal: currentFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
         tempoMedio: tempoMedioSegmento,
-        taxaConversao: totalDistinctSegmento > 0 ? fechadosSegmento / totalDistinctSegmento * 100 : 0,
+        taxaConversao: cohortSegAtual.taxa,
         previousEmCotacao: previousEmCotacaoSegmento,
         previousFechados: previousFechadosSegmento,
         previousPremio: previousFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
         previousTempoMedio: tempoMedioPreviousSegmento,
-        previousTaxaConversao: previousTotalDistinctSegmento > 0 ? previousFechadosSegmento / previousTotalDistinctSegmento * 100 : 0
+        previousTaxaConversao: cohortSegAnterior.taxa
       };
     });
 
@@ -499,11 +503,13 @@ const Dashboard = () => {
     });
     const tempoMedioFechamentoAnterior = temposFechamentoAnterior.length > 0 ? temposFechamentoAnterior.reduce((sum, tempo) => sum + tempo, 0) / temposFechamentoAnterior.length : 0;
 
-    // Taxa de conversão: fechamentos distintos / total distintos de todos os status
-    const totalDistinct = emCotacao + declinados + fechados;
-    const taxaConversao = totalDistinct > 0 ? fechados / totalDistinct * 100 : 0;
-    const totalDistinctAnterior = emCotacaoAnterior + declinadosAnterior + fechadosAnterior;
-    const taxaConversaoAnterior = totalDistinctAnterior > 0 ? fechadosAnterior / totalDistinctAnterior * 100 : 0;
+    // Taxa de conversão POR COORTE (safra de origem):
+    // denominador = cotações iniciadas no período (data_cotacao);
+    // numerador = dentre essas, quantas já foram fechadas (em qualquer data).
+    const cohortAtual = computeCohortMetrics(filterCohortByPeriod(baseFilteredQuotes, currentStartDate, currentEndDate));
+    const cohortAnterior = computeCohortMetrics(filterCohortByPeriod(baseFilteredQuotes, previousStartDate, previousEndDate));
+    const taxaConversao = cohortAtual.taxa;
+    const taxaConversaoAnterior = cohortAnterior.taxa;
 
     // Calculate comparisons
     const premioTotalComp = calculateComparison(premioTotal, premioTotalAnterior);
@@ -525,6 +531,8 @@ const Dashboard = () => {
       premioTotalComp,
       taxaConversao,
       taxaConversaoComp,
+      coorteIniciadas: cohortAtual.iniciadas,
+      coorteFechadas: cohortAtual.fechadas,
       segmentoStats,
       periodStart: currentStartDate,
       periodEnd: currentEndDate
@@ -1055,7 +1063,12 @@ const Dashboard = () => {
       // Transportador/Embarcador counts
       const transportador = allCotacoesInMonth.filter((c) => c.segmento === "Transportador").length;
       const embarcador = allCotacoesInMonth.filter((c) => c.segmento !== "Transportador").length;
-      const taxaConversao = clientesUnicos > 0 ? fechadas / clientesUnicos * 100 : 0;
+      // Taxa de conversão POR COORTE: dentre as cotações INICIADAS neste mês,
+      // quantas já foram fechadas (independente da data de fechamento).
+      const cohort = computeCohortMetrics(allCotacoesInMonth);
+      const taxaConversao = cohort.taxa;
+      const coorteFechadas = cohort.fechadas;
+      const coortePremioFechado = cohort.premioFechado;
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
         total,
@@ -1067,7 +1080,9 @@ const Dashboard = () => {
         premioAberto,
         transportador,
         embarcador,
-        taxaConversao
+        taxaConversao,
+        coorteFechadas,
+        coortePremioFechado
       });
     }
     return months;
@@ -1513,6 +1528,9 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="pb-3">
             <div className="text-2xl font-bold text-success-alt">{monthlyStats.taxaConversao.toFixed(1)}%</div>
+            <p className="text-[11px] text-muted-foreground">
+              {monthlyStats.coorteFechadas} de {monthlyStats.coorteIniciadas} cotações iniciadas no período
+            </p>
             {formatComparison(monthlyStats.taxaConversaoComp.diff, monthlyStats.taxaConversaoComp.percentage)}
           </CardContent>
         </Card>
@@ -1688,7 +1706,7 @@ const Dashboard = () => {
                     color: "hsl(var(--popover-foreground))"
                   }}
                   formatter={(value: number, name: string) => {
-                    if (name === "Taxa de Conversão") return [`${value.toFixed(1)}%`, name];
+                    if (name === "Conversão da Safra") return [`${value.toFixed(1)}%`, name];
                     return [value, name];
                   }} />
                 
@@ -1697,7 +1715,7 @@ const Dashboard = () => {
                   yAxisId="left"
                   dataKey="clientesUnicos"
                   fill="hsl(var(--primary) / 0.7)"
-                  name="Clientes Únicos"
+                  name="Clientes Únicos (iniciados no mês)"
                   radius={[4, 4, 0, 0]} />
                 
                 <Line
@@ -1707,7 +1725,7 @@ const Dashboard = () => {
                   stroke="hsl(var(--success))"
                   strokeWidth={2}
                   dot={{ fill: "hsl(var(--success))", r: 4 }}
-                  name="Taxa de Conversão" />
+                  name="Conversão da Safra" />
                 
               </ComposedChart>
             </ResponsiveContainer>

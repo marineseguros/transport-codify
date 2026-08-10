@@ -9,29 +9,10 @@ import { TrendingUp, TrendingDown, LineChart, Zap, Info } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend } from "recharts";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Cotacao } from "@/hooks/useSupabaseData";
+import { computeCohortMetrics, countDistinct, getBranchGroupKey as getBranchGroup, isClosed } from "@/lib/conversionRate";
 
-// Helpers duplicated from Dashboard to keep modal self-contained
-const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
-  if (!ramo) return "Outros";
-  if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
-  const ramoUpper = (ramo.descricao || "").toUpperCase();
-  if (ramoUpper.includes("RCTR-C") || ramoUpper.includes("RC-DC")) return "RCTR-C + RC-DC";
-  return ramo.descricao || "Outros";
-};
+const countDistinctClosings = (cotacoes: Cotacao[]): number => countDistinct(cotacoes.filter(isClosed));
 
-const countDistinctClosings = (cotacoes: Cotacao[]): number => {
-  const distinctKeys = new Set<string>();
-  let avulsoCount = 0;
-  cotacoes.forEach((c) => {
-    if (c.ramo?.segmento === "Avulso") {
-      avulsoCount++;
-    } else {
-      const branchGroup = getBranchGroup(c.ramo);
-      distinctKeys.add(`${c.cpf_cnpj}_${branchGroup}`);
-    }
-  });
-  return distinctKeys.size + avulsoCount;
-};
 
 interface TendenciaDetailModalProps {
   open: boolean;
@@ -94,43 +75,43 @@ export function TendenciaDetailModal({
         return d >= monthStart && d <= monthEnd;
       });
 
-      const emCotacaoList = allInMonth.filter((c) => c.status === "Em cotação");
+      // ===== Coorte / safra: cotações INICIADAS neste mês =====
+      const cohort = computeCohortMetrics(allInMonth);
 
-      const fechadasList = filtered.filter((c) => {
-        if (c.status !== "Negócio fechado" && c.status !== "Fechamento congênere") return false;
+      // Fechamentos ocorridos no mês (visão de produtividade, por data_fechamento)
+      const fechadasNoMesList = filtered.filter((c) => {
+        if (!isClosed(c)) return false;
         if (!c.data_fechamento) return false;
         const d = new Date(c.data_fechamento);
         return d >= monthStart && d <= monthEnd;
       });
-      const fechadas = countDistinctClosings(fechadasList);
+      const fechadasNoMes = countDistinctClosings(fechadasNoMesList);
 
-      const declinadasList = allInMonth.filter((c) => c.status === "Declinado");
       const total = allInMonth.length;
-      const premioFechado = fechadasList.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
-      const premioAberto = emCotacaoList.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+      const premioFechado = cohort.premioFechado;
+      const premioFechadoNoMes = fechadasNoMesList.reduce((sum, c) => sum + (c.valor_premio || 0), 0);
+      const premioAberto = allInMonth
+        .filter((c) => c.status === "Em cotação")
+        .reduce((sum, c) => sum + (c.valor_premio || 0), 0);
 
-      const clientesUnicosSet = new Set<string>();
-      allInMonth.forEach((c) => {
-        clientesUnicosSet.add(`${c.cpf_cnpj}_${getBranchGroup(c.ramo)}`);
-      });
-      const clientesUnicos = clientesUnicosSet.size;
-
+      const clientesUnicos = cohort.iniciadas;
       const transportador = allInMonth.filter((c) => c.segmento === "Transportador").length;
       const embarcador = allInMonth.filter((c) => c.segmento !== "Transportador").length;
-      const taxaConversao = clientesUnicos > 0 ? (fechadas / clientesUnicos) * 100 : 0;
 
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
         total,
         clientesUnicos,
-        emCotacao: emCotacaoList.length,
-        fechadas,
-        declinadas: declinadasList.length,
+        emCotacao: cohort.emCotacao,
+        fechadas: cohort.fechadas,
+        fechadasNoMes,
+        declinadas: cohort.declinadas,
         premioFechado,
+        premioFechadoNoMes,
         premioAberto,
         transportador,
         embarcador,
-        taxaConversao,
+        taxaConversao: cohort.taxa,
       });
     }
     return months;
@@ -146,8 +127,10 @@ export function TendenciaDetailModal({
   const previousMonth = filteredData[filteredData.length - 2];
 
   const totalGeral = filteredData.reduce((sum, m) => sum + m.total, 0);
+  const totalIniciadas = filteredData.reduce((sum, m) => sum + m.clientesUnicos, 0);
   const totalFechadas = filteredData.reduce((sum, m) => sum + m.fechadas, 0);
   const totalPremio = filteredData.reduce((sum, m) => sum + m.premioFechado, 0);
+  const conversaoMedia = totalIniciadas > 0 ? Math.min(100, (totalFechadas / totalIniciadas) * 100) : 0;
 
   const mediaMensal = filteredData.length > 0 ? totalGeral / filteredData.length : 0;
   const mediaFechamentos = filteredData.length > 0 ? totalFechadas / filteredData.length : 0;
@@ -212,22 +195,23 @@ export function TendenciaDetailModal({
               </Card>
               <Card className="bg-muted/30">
                 <CardContent className="pt-4">
-                  <div className="text-xs text-muted-foreground">Fechamentos</div>
+                  <div className="text-xs text-muted-foreground">Fechamentos da Safra</div>
                   <div className="text-2xl font-bold text-success">{totalFechadas}</div>
                   <div className="text-xs text-muted-foreground">Média: {mediaFechamentos.toFixed(0)}/mês</div>
                 </CardContent>
               </Card>
               <Card className="bg-muted/30">
                 <CardContent className="pt-4">
-                  <div className="text-xs text-muted-foreground">Prêmio Total</div>
+                  <div className="text-xs text-muted-foreground">Prêmio da Safra</div>
                   <div className="text-lg font-bold text-primary">{formatCurrency(totalPremio)}</div>
                 </CardContent>
               </Card>
               <Card className="bg-muted/30">
                 <CardContent className="pt-4">
-                  <div className="text-xs text-muted-foreground">Conversão Média</div>
-                  <div className="text-2xl font-bold text-success-alt">
-                    {(totalGeral > 0 ? (totalFechadas / totalGeral) * 100 : 0).toFixed(1)}%
+                  <div className="text-xs text-muted-foreground">Conversão Média (safra)</div>
+                  <div className="text-2xl font-bold text-success-alt">{conversaoMedia.toFixed(1)}%</div>
+                  <div className="text-xs text-muted-foreground">
+                    {totalFechadas} de {totalIniciadas} iniciadas
                   </div>
                 </CardContent>
               </Card>
@@ -236,7 +220,7 @@ export function TendenciaDetailModal({
             {/* Gráfico Combo */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Evolução Mensal - Volume x Conversão</CardTitle>
+                <CardTitle className="text-sm">Evolução Mensal - Safra Iniciada x Conversão</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
@@ -252,7 +236,7 @@ export function TendenciaDetailModal({
                         color: "hsl(var(--popover-foreground))",
                       }}
                       formatter={(value: number, name: string) => {
-                        if (name === "Taxa de Conversão") return [`${value.toFixed(1)}%`, name];
+                        if (name === "Conversão da Safra") return [`${value.toFixed(1)}%`, name];
                         return [value, name];
                       }}
                     />
@@ -261,7 +245,7 @@ export function TendenciaDetailModal({
                       yAxisId="left"
                       dataKey="clientesUnicos"
                       fill="hsl(var(--primary) / 0.7)"
-                      name="Clientes Únicos"
+                      name="Clientes Únicos (iniciados no mês)"
                       radius={[4, 4, 0, 0]}
                     />
                     <Line
@@ -271,7 +255,7 @@ export function TendenciaDetailModal({
                       stroke="hsl(var(--success))"
                       strokeWidth={2}
                       dot={{ fill: "hsl(var(--success))", r: 4 }}
-                      name="Taxa de Conversão"
+                      name="Conversão da Safra"
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -281,7 +265,7 @@ export function TendenciaDetailModal({
             {/* Tabela Detalhada */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Dados Mensais Detalhados</CardTitle>
+                <CardTitle className="text-sm">Dados Mensais Detalhados (por safra de origem)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -312,15 +296,42 @@ export function TendenciaDetailModal({
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent side="top" className="max-w-[250px] text-xs">
-                                Quantidade de combinações distintas de CPF/CNPJ + Grupo de Ramo no mês. Usado como base para calcular a taxa de conversão.
+                                Combinações distintas de CPF/CNPJ + Grupo de Ramo iniciadas no mês (safra). É o denominador da taxa de conversão.
                               </TooltipContent>
                             </UITooltip>
                           </TooltipProvider>
                         </th>
                         <th className="text-center py-2 px-2 text-brand-orange">Em Cotação</th>
-                        <th className="text-center py-2 px-2 text-success">Fechadas</th>
+                        <th className="text-center py-2 px-2 text-success">
+                          <TooltipProvider>
+                            <UITooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 cursor-help">
+                                  Fechadas (safra) <Info className="h-3 w-3 text-muted-foreground/60" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[250px] text-xs">
+                                Dentre as cotações iniciadas neste mês, quantas já foram fechadas — independente da data de fechamento.
+                              </TooltipContent>
+                            </UITooltip>
+                          </TooltipProvider>
+                        </th>
+                        <th className="text-center py-2 px-2">
+                          <TooltipProvider>
+                            <UITooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 cursor-help">
+                                  Fech. no Mês <Info className="h-3 w-3 text-muted-foreground/60" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[250px] text-xs">
+                                Negócios fechados com data de fechamento neste mês, independente de quando foram iniciados.
+                              </TooltipContent>
+                            </UITooltip>
+                          </TooltipProvider>
+                        </th>
                         <th className="text-center py-2 px-2 text-destructive">Declinadas</th>
-                        <th className="text-right py-2 px-2">Prêmio</th>
+                        <th className="text-right py-2 px-2">Prêmio (safra)</th>
                         <th className="text-center py-2 px-2">Conversão</th>
                         <th className="text-center py-2 px-2">Transp.</th>
                         <th className="text-center py-2 px-2">Embarc.</th>
@@ -347,6 +358,7 @@ export function TendenciaDetailModal({
                                 )}
                               </div>
                             </td>
+                            <td className="py-2 px-2 text-center text-muted-foreground">{month.fechadasNoMes}</td>
                             <td className="py-2 px-2 text-center text-destructive">{month.declinadas}</td>
                             <td className="py-2 px-2 text-right text-xs">{formatCurrency(month.premioFechado)}</td>
                             <td className="py-2 px-2 text-center">
