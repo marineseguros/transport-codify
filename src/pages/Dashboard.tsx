@@ -460,12 +460,12 @@ const Dashboard = () => {
         declinados: declinadosSegmento,
         premioTotal: currentFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
         tempoMedio: tempoMedioSegmento,
-        taxaConversao: totalDistinctSegmento > 0 ? fechadosSegmento / totalDistinctSegmento * 100 : 0,
+        taxaConversao: cohortSegAtual.taxa,
         previousEmCotacao: previousEmCotacaoSegmento,
         previousFechados: previousFechadosSegmento,
         previousPremio: previousFechamentosSegmento.reduce((sum, c) => sum + (c.valor_premio || 0), 0),
         previousTempoMedio: tempoMedioPreviousSegmento,
-        previousTaxaConversao: previousTotalDistinctSegmento > 0 ? previousFechadosSegmento / previousTotalDistinctSegmento * 100 : 0
+        previousTaxaConversao: cohortSegAnterior.taxa
       };
     });
 
