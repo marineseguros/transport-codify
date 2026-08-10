@@ -9,29 +9,10 @@ import { TrendingUp, TrendingDown, LineChart, Zap, Info } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend } from "recharts";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Cotacao } from "@/hooks/useSupabaseData";
+import { computeCohortMetrics, countDistinct, getBranchGroupKey as getBranchGroup, isClosed } from "@/lib/conversionRate";
 
-// Helpers duplicated from Dashboard to keep modal self-contained
-const getBranchGroup = (ramo: { descricao?: string; ramo_agrupado?: string | null } | undefined | null): string => {
-  if (!ramo) return "Outros";
-  if (ramo.ramo_agrupado) return ramo.ramo_agrupado;
-  const ramoUpper = (ramo.descricao || "").toUpperCase();
-  if (ramoUpper.includes("RCTR-C") || ramoUpper.includes("RC-DC")) return "RCTR-C + RC-DC";
-  return ramo.descricao || "Outros";
-};
+const countDistinctClosings = (cotacoes: Cotacao[]): number => countDistinct(cotacoes.filter(isClosed));
 
-const countDistinctClosings = (cotacoes: Cotacao[]): number => {
-  const distinctKeys = new Set<string>();
-  let avulsoCount = 0;
-  cotacoes.forEach((c) => {
-    if (c.ramo?.segmento === "Avulso") {
-      avulsoCount++;
-    } else {
-      const branchGroup = getBranchGroup(c.ramo);
-      distinctKeys.add(`${c.cpf_cnpj}_${branchGroup}`);
-    }
-  });
-  return distinctKeys.size + avulsoCount;
-};
 
 interface TendenciaDetailModalProps {
   open: boolean;
