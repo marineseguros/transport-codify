@@ -499,11 +499,13 @@ const Dashboard = () => {
     });
     const tempoMedioFechamentoAnterior = temposFechamentoAnterior.length > 0 ? temposFechamentoAnterior.reduce((sum, tempo) => sum + tempo, 0) / temposFechamentoAnterior.length : 0;
 
-    // Taxa de conversão: fechamentos distintos / total distintos de todos os status
-    const totalDistinct = emCotacao + declinados + fechados;
-    const taxaConversao = totalDistinct > 0 ? fechados / totalDistinct * 100 : 0;
-    const totalDistinctAnterior = emCotacaoAnterior + declinadosAnterior + fechadosAnterior;
-    const taxaConversaoAnterior = totalDistinctAnterior > 0 ? fechadosAnterior / totalDistinctAnterior * 100 : 0;
+    // Taxa de conversão POR COORTE (safra de origem):
+    // denominador = cotações iniciadas no período (data_cotacao);
+    // numerador = dentre essas, quantas já foram fechadas (em qualquer data).
+    const cohortAtual = computeCohortMetrics(filterCohortByPeriod(baseFilteredQuotes, currentStartDate, currentEndDate));
+    const cohortAnterior = computeCohortMetrics(filterCohortByPeriod(baseFilteredQuotes, previousStartDate, previousEndDate));
+    const taxaConversao = cohortAtual.taxa;
+    const taxaConversaoAnterior = cohortAnterior.taxa;
 
     // Calculate comparisons
     const premioTotalComp = calculateComparison(premioTotal, premioTotalAnterior);
