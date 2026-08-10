@@ -358,6 +358,7 @@ export function TendenciaDetailModal({
                                 )}
                               </div>
                             </td>
+                            <td className="py-2 px-2 text-center text-muted-foreground">{month.fechadasNoMes}</td>
                             <td className="py-2 px-2 text-center text-destructive">{month.declinadas}</td>
                             <td className="py-2 px-2 text-right text-xs">{formatCurrency(month.premioFechado)}</td>
                             <td className="py-2 px-2 text-center">
