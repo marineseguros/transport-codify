@@ -1075,7 +1075,9 @@ const Dashboard = () => {
         premioAberto,
         transportador,
         embarcador,
-        taxaConversao
+        taxaConversao,
+        coorteFechadas,
+        coortePremioFechado
       });
     }
     return months;
