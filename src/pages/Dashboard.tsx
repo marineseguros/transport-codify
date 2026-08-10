@@ -1058,7 +1058,12 @@ const Dashboard = () => {
       // Transportador/Embarcador counts
       const transportador = allCotacoesInMonth.filter((c) => c.segmento === "Transportador").length;
       const embarcador = allCotacoesInMonth.filter((c) => c.segmento !== "Transportador").length;
-      const taxaConversao = clientesUnicos > 0 ? fechadas / clientesUnicos * 100 : 0;
+      // Taxa de conversão POR COORTE: dentre as cotações INICIADAS neste mês,
+      // quantas já foram fechadas (independente da data de fechamento).
+      const cohort = computeCohortMetrics(allCotacoesInMonth);
+      const taxaConversao = cohort.taxa;
+      const coorteFechadas = cohort.fechadas;
+      const coortePremioFechado = cohort.premioFechado;
       months.push({
         mes: `${monthName}/${year.toString().slice(-2)}`,
         total,
