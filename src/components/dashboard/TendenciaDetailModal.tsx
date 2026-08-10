@@ -195,22 +195,23 @@ export function TendenciaDetailModal({
               </Card>
               <Card className="bg-muted/30">
                 <CardContent className="pt-4">
-                  <div className="text-xs text-muted-foreground">Fechamentos</div>
+                  <div className="text-xs text-muted-foreground">Fechamentos da Safra</div>
                   <div className="text-2xl font-bold text-success">{totalFechadas}</div>
                   <div className="text-xs text-muted-foreground">Média: {mediaFechamentos.toFixed(0)}/mês</div>
                 </CardContent>
               </Card>
               <Card className="bg-muted/30">
                 <CardContent className="pt-4">
-                  <div className="text-xs text-muted-foreground">Prêmio Total</div>
+                  <div className="text-xs text-muted-foreground">Prêmio da Safra</div>
                   <div className="text-lg font-bold text-primary">{formatCurrency(totalPremio)}</div>
                 </CardContent>
               </Card>
               <Card className="bg-muted/30">
                 <CardContent className="pt-4">
-                  <div className="text-xs text-muted-foreground">Conversão Média</div>
-                  <div className="text-2xl font-bold text-success-alt">
-                    {(totalGeral > 0 ? (totalFechadas / totalGeral) * 100 : 0).toFixed(1)}%
+                  <div className="text-xs text-muted-foreground">Conversão Média (safra)</div>
+                  <div className="text-2xl font-bold text-success-alt">{conversaoMedia.toFixed(1)}%</div>
+                  <div className="text-xs text-muted-foreground">
+                    {totalFechadas} de {totalIniciadas} iniciadas
                   </div>
                 </CardContent>
               </Card>
