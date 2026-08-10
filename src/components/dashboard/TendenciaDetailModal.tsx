@@ -296,15 +296,42 @@ export function TendenciaDetailModal({
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent side="top" className="max-w-[250px] text-xs">
-                                Quantidade de combinações distintas de CPF/CNPJ + Grupo de Ramo no mês. Usado como base para calcular a taxa de conversão.
+                                Combinações distintas de CPF/CNPJ + Grupo de Ramo iniciadas no mês (safra). É o denominador da taxa de conversão.
                               </TooltipContent>
                             </UITooltip>
                           </TooltipProvider>
                         </th>
                         <th className="text-center py-2 px-2 text-brand-orange">Em Cotação</th>
-                        <th className="text-center py-2 px-2 text-success">Fechadas</th>
+                        <th className="text-center py-2 px-2 text-success">
+                          <TooltipProvider>
+                            <UITooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 cursor-help">
+                                  Fechadas (safra) <Info className="h-3 w-3 text-muted-foreground/60" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[250px] text-xs">
+                                Dentre as cotações iniciadas neste mês, quantas já foram fechadas — independente da data de fechamento.
+                              </TooltipContent>
+                            </UITooltip>
+                          </TooltipProvider>
+                        </th>
+                        <th className="text-center py-2 px-2">
+                          <TooltipProvider>
+                            <UITooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 cursor-help">
+                                  Fech. no Mês <Info className="h-3 w-3 text-muted-foreground/60" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[250px] text-xs">
+                                Negócios fechados com data de fechamento neste mês, independente de quando foram iniciados.
+                              </TooltipContent>
+                            </UITooltip>
+                          </TooltipProvider>
+                        </th>
                         <th className="text-center py-2 px-2 text-destructive">Declinadas</th>
-                        <th className="text-right py-2 px-2">Prêmio</th>
+                        <th className="text-right py-2 px-2">Prêmio (safra)</th>
                         <th className="text-center py-2 px-2">Conversão</th>
                         <th className="text-center py-2 px-2">Transp.</th>
                         <th className="text-center py-2 px-2">Embarc.</th>
