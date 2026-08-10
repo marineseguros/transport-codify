@@ -1525,6 +1525,9 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent className="pb-3">
             <div className="text-2xl font-bold text-success-alt">{monthlyStats.taxaConversao.toFixed(1)}%</div>
+            <p className="text-[11px] text-muted-foreground">
+              {monthlyStats.coorteFechadas} de {monthlyStats.coorteIniciadas} cotações iniciadas no período
+            </p>
             {formatComparison(monthlyStats.taxaConversaoComp.diff, monthlyStats.taxaConversaoComp.percentage)}
           </CardContent>
         </Card>
