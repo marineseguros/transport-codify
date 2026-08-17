@@ -32,11 +32,13 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  Ban,
 } from "lucide-react";
 import { CotacaoModal } from "@/components/CotacaoModal";
 import { HistoricoGeralModal } from "@/components/HistoricoGeralModal";
 import { ExportCotacoesModal } from "@/components/ExportCotacoesModal";
 import { CotacoesAnalysisModal } from "@/components/CotacoesAnalysisModal";
+import { DeclinioMassaModal } from "@/components/DeclinioMassaModal";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCotacoes, useAllCotacoesAuditLog, type Cotacao } from "@/hooks/useSupabaseData";
@@ -88,6 +90,8 @@ const Cotacoes = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
+  const [declinioOpen, setDeclinioOpen] = useState(false);
+  const [declinioCpfCnpj, setDeclinioCpfCnpj] = useState<string | null>(null);
 
   // Hook para buscar todo o histórico de alterações
   const { auditLog, loading: auditLogLoading } = useAllCotacoesAuditLog();
@@ -404,6 +408,18 @@ const Cotacoes = () => {
               <span className="md:hidden">Excluir ({selectedIds.size})</span>
             </Button>
           )}
+          <Button
+            onClick={() => {
+              setDeclinioCpfCnpj(null);
+              setDeclinioOpen(true);
+            }}
+            variant="outline"
+            size="sm"
+            className="gap-2 flex-1 sm:flex-none"
+          >
+            <Ban className="h-4 w-4" />
+            <span className="hidden sm:inline">Declinar Cotações</span>
+          </Button>
           <Button onClick={() => setHistoricoGeralOpen(true)} variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
             <History className="h-4 w-4" />
             <span className="hidden sm:inline">Histórico</span>
@@ -583,6 +599,19 @@ const Cotacoes = () => {
                         <Button size="sm" variant="outline" onClick={() => handleEdit(cotacao)}>
                           <Edit className="h-4 w-4" />
                         </Button>
+                        {cotacao.status === "Em cotação" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            title="Declinar cotações deste segurado"
+                            onClick={() => {
+                              setDeclinioCpfCnpj(cotacao.cpf_cnpj);
+                              setDeclinioOpen(true);
+                            }}
+                          >
+                            <Ban className="h-4 w-4" />
+                          </Button>
+                        )}
                         {canDeleteThisCotacao && (
                           <Button
                             size="sm"
@@ -670,6 +699,13 @@ const Cotacoes = () => {
       <CotacoesAnalysisModal
         open={analysisModalOpen}
         onOpenChange={setAnalysisModalOpen}
+      />
+
+      <DeclinioMassaModal
+        open={declinioOpen}
+        onOpenChange={setDeclinioOpen}
+        initialCpfCnpj={declinioCpfCnpj}
+        onSaved={() => refetch()}
       />
 
       {/* Delete Confirmation Dialog */}
