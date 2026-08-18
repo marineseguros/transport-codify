@@ -28,7 +28,7 @@ import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 
-const STATUS_NEGOCIACAO = ["Em cotação", "Negócio fechado", "Declinado", "Fechamento congênere"];
+const MOTIVOS_DECLINIO = ["Relacionamento", "Condição", "Taxa", "Sem proposta"];
 
 interface CotacaoLinha {
   id: string;
@@ -40,6 +40,7 @@ interface CotacaoLinha {
   ramo: { descricao: string } | null;
   status_seguradora_id: string | null;
   status: string;
+  motivo_recusa: string | null;
 }
 
 interface SeguradoOption {
@@ -64,7 +65,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
   const [selectedKey, setSelectedKey] = useState<string>("");
   const [linhas, setLinhas] = useState<CotacaoLinha[]>([]);
   const [loadingLinhas, setLoadingLinhas] = useState(false);
-  const [edits, setEdits] = useState<Record<string, { status_seguradora_id: string; status: string }>>({});
+  const [edits, setEdits] = useState<Record<string, { status_seguradora_id: string; motivos: string[] }>>({});
   const [showErrors, setShowErrors] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -121,7 +122,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
         const { data, error } = await supabase
           .from("cotacoes")
           .select(
-            `id, numero_cotacao, segurado, cpf_cnpj, status, status_seguradora_id,
+            `id, numero_cotacao, segurado, cpf_cnpj, status, status_seguradora_id, motivo_recusa,
              produtor_negociador:produtor_negociador_id(nome),
              seguradora:seguradora_id(nome),
              ramo:ramo_id(descricao)`
@@ -132,9 +133,15 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
         if (error) throw error;
         const rows = (data || []) as unknown as CotacaoLinha[];
         setLinhas(rows);
-        const initial: Record<string, { status_seguradora_id: string; status: string }> = {};
+        const initial: Record<string, { status_seguradora_id: string; motivos: string[] }> = {};
         rows.forEach((r) => {
-          initial[r.id] = { status_seguradora_id: r.status_seguradora_id || "", status: "Declinado" };
+          const declinadoPart = r.motivo_recusa?.includes("||")
+            ? r.motivo_recusa.split("||")[1].trim()
+            : "";
+          initial[r.id] = {
+            status_seguradora_id: r.status_seguradora_id || "",
+            motivos: declinadoPart ? declinadoPart.split(",").map((m) => m.trim()).filter(Boolean) : [],
+          };
         });
         setEdits(initial);
         setShowErrors(false);
@@ -158,7 +165,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
   };
 
   const pendencias = useMemo(
-    () => linhas.filter((l) => !edits[l.id]?.status_seguradora_id || !edits[l.id]?.status).length,
+    () => linhas.filter((l) => !edits[l.id]?.status_seguradora_id || !(edits[l.id]?.motivos?.length)).length,
     [linhas, edits]
   );
 
@@ -166,7 +173,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
     if (linhas.length === 0) return;
     if (pendencias > 0) {
       setShowErrors(true);
-      toast.error("Preencha o Retorno da Seguradora e o Status da Negociação de todas as cotações.");
+      toast.error("Preencha o Status da Seguradora e ao menos um Motivo do Declínio de todas as cotações.");
       return;
     }
     setConfirmOpen(true);
@@ -177,9 +184,16 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
     try {
       for (const linha of linhas) {
         const e = edits[linha.id];
+        const recusaPart = linha.motivo_recusa?.includes("||")
+          ? linha.motivo_recusa.split("||")[0].trim()
+          : (linha.motivo_recusa || "");
         const { error } = await supabase
           .from("cotacoes")
-          .update({ status_seguradora_id: e.status_seguradora_id, status: e.status })
+          .update({
+            status_seguradora_id: e.status_seguradora_id,
+            status: "Declinado",
+            motivo_recusa: `${recusaPart}||${e.motivos.join(", ")}`,
+          })
           .eq("id", linha.id);
         if (error) throw error;
       }
@@ -247,18 +261,18 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                       <TableHead className="whitespace-nowrap">Produtor Negociador</TableHead>
                       <TableHead className="whitespace-nowrap">Seguradora</TableHead>
                       <TableHead className="whitespace-nowrap">Ramo</TableHead>
-                      <TableHead className="whitespace-nowrap">Retorno da Seguradora</TableHead>
-                      <TableHead className="whitespace-nowrap">Status da Negociação</TableHead>
+                      <TableHead className="whitespace-nowrap">Status da Seguradora</TableHead>
+                      <TableHead className="whitespace-nowrap">Motivo(s) do Declínio</TableHead>
                       <TableHead className="w-10" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {linhas.map((linha) => {
-                      const e = edits[linha.id] || { status_seguradora_id: "", status: "" };
+                      const e = edits[linha.id] || { status_seguradora_id: "", motivos: [] as string[] };
                       const erroRetorno = showErrors && !e.status_seguradora_id;
-                      const erroStatus = showErrors && !e.status;
+                      const erroMotivo = showErrors && e.motivos.length === 0;
                       return (
-                        <TableRow key={linha.id}>
+                        <TableRow key={linha.id} className={cn((erroRetorno || erroMotivo) && "bg-destructive/5")}>
                           <TableCell className="font-mono whitespace-nowrap">{linha.numero_cotacao}</TableCell>
                           <TableCell className="whitespace-nowrap">{linha.produtor_negociador?.nome || "-"}</TableCell>
                           <TableCell className="whitespace-nowrap">{linha.seguradora?.nome || "-"}</TableCell>
@@ -286,26 +300,40 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                             {erroRetorno && <p className="text-xs text-destructive mt-1">Obrigatório</p>}
                           </TableCell>
                           <TableCell>
-                            <Select
-                              value={e.status}
-                              onValueChange={(v) =>
-                                setEdits((prev) => ({ ...prev, [linha.id]: { ...prev[linha.id], status: v } }))
-                              }
+                            <div
+                              className={cn(
+                                "flex flex-wrap gap-x-4 gap-y-1 min-w-[260px] rounded-md p-1",
+                                erroMotivo && "border border-destructive ring-1 ring-destructive"
+                              )}
                             >
-                              <SelectTrigger
-                                className={cn("h-9 min-w-[170px]", erroStatus && "border-destructive ring-1 ring-destructive")}
-                              >
-                                <SelectValue placeholder="Selecione" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {STATUS_NEGOCIACAO.map((s) => (
-                                  <SelectItem key={s} value={s}>
-                                    {s}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {erroStatus && <p className="text-xs text-destructive mt-1">Obrigatório</p>}
+                              {MOTIVOS_DECLINIO.map((motivo) => {
+                                const checked = e.motivos.includes(motivo);
+                                return (
+                                  <div key={motivo} className="flex items-center space-x-2">
+                                    <input
+                                      type="checkbox"
+                                      id={`motivo_${linha.id}_${motivo}`}
+                                      checked={checked}
+                                      onChange={(ev) => {
+                                        const isChecked = ev.target.checked;
+                                        setEdits((prev) => {
+                                          const atual = prev[linha.id]?.motivos || [];
+                                          const novos = isChecked
+                                            ? [...atual, motivo]
+                                            : atual.filter((m) => m !== motivo);
+                                          return { ...prev, [linha.id]: { ...prev[linha.id], motivos: novos } };
+                                        });
+                                      }}
+                                      className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                    />
+                                    <label htmlFor={`motivo_${linha.id}_${motivo}`} className="text-sm cursor-pointer whitespace-nowrap">
+                                      {motivo}
+                                    </label>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {erroMotivo && <p className="text-xs text-destructive mt-1">Selecione ao menos um motivo</p>}
                           </TableCell>
                           <TableCell>
                             <Button
