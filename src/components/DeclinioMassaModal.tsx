@@ -262,17 +262,20 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                       <TableHead className="whitespace-nowrap">Seguradora</TableHead>
                       <TableHead className="whitespace-nowrap">Ramo</TableHead>
                       <TableHead className="whitespace-nowrap">Status da Seguradora</TableHead>
+                      {algumRecusa && <TableHead className="whitespace-nowrap">Motivo(s) da Recusa</TableHead>}
                       <TableHead className="whitespace-nowrap">Motivo(s) do Declínio</TableHead>
                       <TableHead className="w-10" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {linhas.map((linha) => {
-                      const e = edits[linha.id] || { status_seguradora_id: "", motivos: [] as string[] };
+                      const e = edits[linha.id] || { status_seguradora_id: "", motivos: [] as string[], recusas: [] as string[] };
+                      const isRecusa = statusEhRecusa(e.status_seguradora_id);
                       const erroRetorno = showErrors && !e.status_seguradora_id;
                       const erroMotivo = showErrors && e.motivos.length === 0;
+                      const erroRecusa = showErrors && isRecusa && (e.recusas?.length || 0) === 0;
                       return (
-                        <TableRow key={linha.id} className={cn((erroRetorno || erroMotivo) && "bg-destructive/5")}>
+                        <TableRow key={linha.id} className={cn((erroRetorno || erroMotivo || erroRecusa) && "bg-destructive/5")}>
                           <TableCell className="font-mono whitespace-nowrap">{linha.numero_cotacao}</TableCell>
                           <TableCell className="whitespace-nowrap">{linha.produtor_negociador?.nome || "-"}</TableCell>
                           <TableCell className="whitespace-nowrap">{linha.seguradora?.nome || "-"}</TableCell>
@@ -281,11 +284,18 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                             <Select
                               value={e.status_seguradora_id}
                               onValueChange={(v) =>
-                                setEdits((prev) => ({ ...prev, [linha.id]: { ...prev[linha.id], status_seguradora_id: v } }))
+                                setEdits((prev) => ({
+                                  ...prev,
+                                  [linha.id]: {
+                                    ...prev[linha.id],
+                                    status_seguradora_id: v,
+                                    recusas: statusEhRecusa(v) ? prev[linha.id]?.recusas || [] : [],
+                                  },
+                                }))
                               }
                             >
                               <SelectTrigger
-                                className={cn("h-9 min-w-[180px]", erroRetorno && "border-destructive ring-1 ring-destructive")}
+                                className={cn("h-9 min-w-[170px]", erroRetorno && "border-destructive ring-1 ring-destructive")}
                               >
                                 <SelectValue placeholder="Selecione" />
                               </SelectTrigger>
@@ -299,42 +309,43 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                             </Select>
                             {erroRetorno && <p className="text-xs text-destructive mt-1">Obrigatório</p>}
                           </TableCell>
-                          <TableCell>
-                            <div
-                              className={cn(
-                                "flex flex-wrap gap-x-4 gap-y-1 min-w-[260px] rounded-md p-1",
-                                erroMotivo && "border border-destructive ring-1 ring-destructive"
-                              )}
-                            >
-                              {MOTIVOS_DECLINIO.map((motivo) => {
-                                const checked = e.motivos.includes(motivo);
-                                return (
-                                  <div key={motivo} className="flex items-center space-x-2">
-                                    <input
-                                      type="checkbox"
-                                      id={`motivo_${linha.id}_${motivo}`}
-                                      checked={checked}
-                                      onChange={(ev) => {
-                                        const isChecked = ev.target.checked;
-                                        setEdits((prev) => {
-                                          const atual = prev[linha.id]?.motivos || [];
-                                          const novos = isChecked
-                                            ? [...atual, motivo]
-                                            : atual.filter((m) => m !== motivo);
-                                          return { ...prev, [linha.id]: { ...prev[linha.id], motivos: novos } };
-                                        });
-                                      }}
-                                      className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                          {algumRecusa && (
+                            <TableCell>
+                              {isRecusa ? (
+                                <>
+                                  <div className={cn("min-w-[200px] rounded-md", erroRecusa && "ring-1 ring-destructive")}>
+                                    <MultiSelect
+                                      options={MOTIVOS_RECUSA.map((m) => ({ value: m, label: m }))}
+                                      selected={e.recusas || []}
+                                      onChange={(vals) =>
+                                        setEdits((prev) => ({ ...prev, [linha.id]: { ...prev[linha.id], recusas: vals } }))
+                                      }
+                                      placeholder="Selecione"
+                                      showSelectAll={false}
                                     />
-                                    <label htmlFor={`motivo_${linha.id}_${motivo}`} className="text-sm cursor-pointer whitespace-nowrap">
-                                      {motivo}
-                                    </label>
                                   </div>
-                                );
-                              })}
+                                  {erroRecusa && <p className="text-xs text-destructive mt-1">Selecione ao menos um motivo</p>}
+                                </>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            <div className={cn("min-w-[200px] rounded-md", erroMotivo && "ring-1 ring-destructive")}>
+                              <MultiSelect
+                                options={MOTIVOS_DECLINIO.map((m) => ({ value: m, label: m }))}
+                                selected={e.motivos}
+                                onChange={(vals) =>
+                                  setEdits((prev) => ({ ...prev, [linha.id]: { ...prev[linha.id], motivos: vals } }))
+                                }
+                                placeholder="Selecione"
+                                showSelectAll={false}
+                              />
                             </div>
                             {erroMotivo && <p className="text-xs text-destructive mt-1">Selecione ao menos um motivo</p>}
                           </TableCell>
+
                           <TableCell>
                             <Button
                               size="icon"
