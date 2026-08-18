@@ -27,8 +27,11 @@ import { useStatusSeguradora } from "@/hooks/useSupabaseData";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 const MOTIVOS_DECLINIO = ["Relacionamento", "Condição", "Taxa", "Sem proposta"];
+const MOTIVOS_RECUSA = ["Sinistralidade", "Já em cotação", "Blacklist", "Fora de perfil", "Condição"];
+
 
 interface CotacaoLinha {
   id: string;
