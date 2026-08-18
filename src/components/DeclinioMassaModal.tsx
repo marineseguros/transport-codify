@@ -65,7 +65,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
   const [selectedKey, setSelectedKey] = useState<string>("");
   const [linhas, setLinhas] = useState<CotacaoLinha[]>([]);
   const [loadingLinhas, setLoadingLinhas] = useState(false);
-  const [edits, setEdits] = useState<Record<string, { status_seguradora_id: string; status: string }>>({});
+  const [edits, setEdits] = useState<Record<string, { status_seguradora_id: string; motivos: string[] }>>({});
   const [showErrors, setShowErrors] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
