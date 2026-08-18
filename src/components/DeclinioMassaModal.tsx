@@ -122,7 +122,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
         const { data, error } = await supabase
           .from("cotacoes")
           .select(
-            `id, numero_cotacao, segurado, cpf_cnpj, status, status_seguradora_id,
+            `id, numero_cotacao, segurado, cpf_cnpj, status, status_seguradora_id, motivo_recusa,
              produtor_negociador:produtor_negociador_id(nome),
              seguradora:seguradora_id(nome),
              ramo:ramo_id(descricao)`
@@ -133,9 +133,15 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
         if (error) throw error;
         const rows = (data || []) as unknown as CotacaoLinha[];
         setLinhas(rows);
-        const initial: Record<string, { status_seguradora_id: string; status: string }> = {};
+        const initial: Record<string, { status_seguradora_id: string; motivos: string[] }> = {};
         rows.forEach((r) => {
-          initial[r.id] = { status_seguradora_id: r.status_seguradora_id || "", status: "Declinado" };
+          const declinadoPart = r.motivo_recusa?.includes("||")
+            ? r.motivo_recusa.split("||")[1].trim()
+            : "";
+          initial[r.id] = {
+            status_seguradora_id: r.status_seguradora_id || "",
+            motivos: declinadoPart ? declinadoPart.split(",").map((m) => m.trim()).filter(Boolean) : [],
+          };
         });
         setEdits(initial);
         setShowErrors(false);
