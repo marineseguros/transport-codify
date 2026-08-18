@@ -165,7 +165,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
   };
 
   const pendencias = useMemo(
-    () => linhas.filter((l) => !edits[l.id]?.status_seguradora_id || !edits[l.id]?.status).length,
+    () => linhas.filter((l) => !edits[l.id]?.status_seguradora_id || !(edits[l.id]?.motivos?.length)).length,
     [linhas, edits]
   );
 
@@ -173,7 +173,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
     if (linhas.length === 0) return;
     if (pendencias > 0) {
       setShowErrors(true);
-      toast.error("Preencha o Retorno da Seguradora e o Status da Negociação de todas as cotações.");
+      toast.error("Preencha o Status da Seguradora e ao menos um Motivo do Declínio de todas as cotações.");
       return;
     }
     setConfirmOpen(true);
@@ -184,9 +184,16 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
     try {
       for (const linha of linhas) {
         const e = edits[linha.id];
+        const recusaPart = linha.motivo_recusa?.includes("||")
+          ? linha.motivo_recusa.split("||")[0].trim()
+          : (linha.motivo_recusa || "");
         const { error } = await supabase
           .from("cotacoes")
-          .update({ status_seguradora_id: e.status_seguradora_id, status: e.status })
+          .update({
+            status_seguradora_id: e.status_seguradora_id,
+            status: "Declinado",
+            motivo_recusa: `${recusaPart}||${e.motivos.join(", ")}`,
+          })
           .eq("id", linha.id);
         if (error) throw error;
       }
