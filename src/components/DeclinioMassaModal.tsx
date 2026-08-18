@@ -261,18 +261,18 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                       <TableHead className="whitespace-nowrap">Produtor Negociador</TableHead>
                       <TableHead className="whitespace-nowrap">Seguradora</TableHead>
                       <TableHead className="whitespace-nowrap">Ramo</TableHead>
-                      <TableHead className="whitespace-nowrap">Retorno da Seguradora</TableHead>
-                      <TableHead className="whitespace-nowrap">Status da Negociação</TableHead>
+                      <TableHead className="whitespace-nowrap">Status da Seguradora</TableHead>
+                      <TableHead className="whitespace-nowrap">Motivo(s) do Declínio</TableHead>
                       <TableHead className="w-10" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {linhas.map((linha) => {
-                      const e = edits[linha.id] || { status_seguradora_id: "", status: "" };
+                      const e = edits[linha.id] || { status_seguradora_id: "", motivos: [] as string[] };
                       const erroRetorno = showErrors && !e.status_seguradora_id;
-                      const erroStatus = showErrors && !e.status;
+                      const erroMotivo = showErrors && e.motivos.length === 0;
                       return (
-                        <TableRow key={linha.id}>
+                        <TableRow key={linha.id} className={cn((erroRetorno || erroMotivo) && "bg-destructive/5")}>
                           <TableCell className="font-mono whitespace-nowrap">{linha.numero_cotacao}</TableCell>
                           <TableCell className="whitespace-nowrap">{linha.produtor_negociador?.nome || "-"}</TableCell>
                           <TableCell className="whitespace-nowrap">{linha.seguradora?.nome || "-"}</TableCell>
@@ -300,26 +300,40 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                             {erroRetorno && <p className="text-xs text-destructive mt-1">Obrigatório</p>}
                           </TableCell>
                           <TableCell>
-                            <Select
-                              value={e.status}
-                              onValueChange={(v) =>
-                                setEdits((prev) => ({ ...prev, [linha.id]: { ...prev[linha.id], status: v } }))
-                              }
+                            <div
+                              className={cn(
+                                "flex flex-wrap gap-x-4 gap-y-1 min-w-[260px] rounded-md p-1",
+                                erroMotivo && "border border-destructive ring-1 ring-destructive"
+                              )}
                             >
-                              <SelectTrigger
-                                className={cn("h-9 min-w-[170px]", erroStatus && "border-destructive ring-1 ring-destructive")}
-                              >
-                                <SelectValue placeholder="Selecione" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {STATUS_NEGOCIACAO.map((s) => (
-                                  <SelectItem key={s} value={s}>
-                                    {s}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {erroStatus && <p className="text-xs text-destructive mt-1">Obrigatório</p>}
+                              {MOTIVOS_DECLINIO.map((motivo) => {
+                                const checked = e.motivos.includes(motivo);
+                                return (
+                                  <div key={motivo} className="flex items-center space-x-2">
+                                    <input
+                                      type="checkbox"
+                                      id={`motivo_${linha.id}_${motivo}`}
+                                      checked={checked}
+                                      onChange={(ev) => {
+                                        const isChecked = ev.target.checked;
+                                        setEdits((prev) => {
+                                          const atual = prev[linha.id]?.motivos || [];
+                                          const novos = isChecked
+                                            ? [...atual, motivo]
+                                            : atual.filter((m) => m !== motivo);
+                                          return { ...prev, [linha.id]: { ...prev[linha.id], motivos: novos } };
+                                        });
+                                      }}
+                                      className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                    />
+                                    <label htmlFor={`motivo_${linha.id}_${motivo}`} className="text-sm cursor-pointer whitespace-nowrap">
+                                      {motivo}
+                                    </label>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {erroMotivo && <p className="text-xs text-destructive mt-1">Selecione ao menos um motivo</p>}
                           </TableCell>
                           <TableCell>
                             <Button
