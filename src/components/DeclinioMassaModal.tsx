@@ -60,8 +60,14 @@ interface Props {
   initialCpfCnpj?: string | null;
   onSaved?: () => void;
 }
+interface EditState {
+  status_seguradora_id: string;
+  motivos: string[];
+  recusas: string[];
+}
 
 export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved }: Props) {
+
   const { statusSeguradora } = useStatusSeguradora();
   const [segurados, setSegurados] = useState<SeguradoOption[]>([]);
   const [loadingSegurados, setLoadingSegurados] = useState(false);
