@@ -28,7 +28,7 @@ import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 
-const STATUS_NEGOCIACAO = ["Em cotação", "Negócio fechado", "Declinado", "Fechamento congênere"];
+const MOTIVOS_DECLINIO = ["Relacionamento", "Condição", "Taxa", "Sem proposta"];
 
 interface CotacaoLinha {
   id: string;
@@ -40,6 +40,7 @@ interface CotacaoLinha {
   ramo: { descricao: string } | null;
   status_seguradora_id: string | null;
   status: string;
+  motivo_recusa: string | null;
 }
 
 interface SeguradoOption {
