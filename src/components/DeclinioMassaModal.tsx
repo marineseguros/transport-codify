@@ -231,7 +231,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-[1400px] max-h-[90vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Ban className="h-5 w-5" />
@@ -242,7 +242,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0">
             <div className="space-y-2">
               <Label>Segurado</Label>
               <Select value={selectedKey} onValueChange={setSelectedKey} disabled={loadingSegurados}>
@@ -272,17 +272,17 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
             )}
 
             {!loadingLinhas && linhas.length > 0 && (
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
+              <div className="rounded-md border overflow-x-auto min-w-0 w-full">
+                <Table className="w-full min-w-[960px] table-auto">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Número</TableHead>
                       <TableHead className="whitespace-nowrap">Produtor Negociador</TableHead>
                       <TableHead className="whitespace-nowrap">Seguradora</TableHead>
                       <TableHead className="whitespace-nowrap">Ramo</TableHead>
-                      <TableHead className="whitespace-nowrap">Status da Seguradora</TableHead>
-                      {algumRecusa && <TableHead className="whitespace-nowrap">Motivo(s) da Recusa</TableHead>}
-                      <TableHead className="whitespace-nowrap">Motivo(s) do Declínio</TableHead>
+                      <TableHead className="whitespace-nowrap w-[16%]">Status da Seguradora</TableHead>
+                      {algumRecusa && <TableHead className="whitespace-nowrap w-[22%]">Motivo(s) da Recusa</TableHead>}
+                      <TableHead className="whitespace-nowrap w-[22%]">Motivo(s) do Declínio</TableHead>
                       <TableHead className="w-10" />
                     </TableRow>
                   </TableHeader>
@@ -314,7 +314,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                               }
                             >
                               <SelectTrigger
-                                className={cn("h-9 min-w-[170px]", erroRetorno && "border-destructive ring-1 ring-destructive")}
+                                className={cn("h-9 w-full min-w-[150px]", erroRetorno && "border-destructive ring-1 ring-destructive")}
                               >
                                 <SelectValue placeholder="Selecione" />
                               </SelectTrigger>
@@ -332,7 +332,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                             <TableCell>
                               {isRecusa ? (
                                 <>
-                                  <div className={cn("min-w-[200px] rounded-md", erroRecusa && "ring-1 ring-destructive")}>
+                                  <div className={cn("w-full min-w-[180px] rounded-md", erroRecusa && "ring-1 ring-destructive")}>
                                     <MultiSelect
                                       options={MOTIVOS_RECUSA.map((m) => ({ value: m, label: m }))}
                                       selected={e.recusas || []}
@@ -354,7 +354,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                             </TableCell>
                           )}
                           <TableCell>
-                            <div className={cn("min-w-[200px] rounded-md", erroMotivo && "ring-1 ring-destructive")}>
+                            <div className={cn("w-full min-w-[180px] rounded-md", erroMotivo && "ring-1 ring-destructive")}>
                               <MultiSelect
                                 options={MOTIVOS_DECLINIO.map((m) => ({ value: m, label: m }))}
                                 selected={e.motivos}
@@ -391,7 +391,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
             )}
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 flex-wrap sm:justify-end">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
