@@ -1,4 +1,5 @@
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown, X, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,33 @@ export function MultiSelect({
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [multiMode, setMultiMode] = React.useState(defaultMultiMode);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(null);
+  const [pos, setPos] = React.useState<{ top: number; left: number; width: number } | null>(null);
+
+  React.useLayoutEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const btn = triggerRef.current;
+    const container = (btn.closest('[role="dialog"]') as HTMLElement | null) ?? document.body;
+    const update = () => {
+      const b = btn.getBoundingClientRect();
+      const c = container.getBoundingClientRect();
+      const isBody = container === document.body;
+      setPos({
+        top: b.bottom - (isBody ? 0 : c.top) + (isBody ? window.scrollY : container.scrollTop) + 4,
+        left: b.left - (isBody ? 0 : c.left) + (isBody ? window.scrollX : container.scrollLeft),
+        width: b.width,
+      });
+    };
+    setPortalTarget(container);
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open]);
 
   React.useEffect(() => {
     if (selected.length > 1) {
@@ -102,6 +130,7 @@ export function MultiSelect({
   return (
     <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
         role="combobox"
         aria-expanded={open}
@@ -136,13 +165,13 @@ export function MultiSelect({
         </div>
       </button>
 
-      {open && (
+      {open && pos && portalTarget && createPortal(
         <>
           {/* Backdrop */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
 
           {/* Dropdown */}
-          <div className="absolute z-50 mt-1 min-w-[12rem] w-max overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+          <div style={{ position: "absolute", top: pos.top, left: pos.left, minWidth: Math.max(pos.width, 192) }} className="z-50 w-max max-w-[90vw] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
             {/* Multi toggle header */}
             {!defaultMultiMode && <div className="flex items-center justify-between gap-4 px-2 py-1.5 border-b border-border/40">
               <span className="text-[11px] text-muted-foreground whitespace-nowrap">
