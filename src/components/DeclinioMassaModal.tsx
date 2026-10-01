@@ -343,6 +343,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                                       showSelectAll={false}
                                         defaultMultiMode
                                         showSelectedChips
+                                        className="h-auto min-h-8"
                                     />
                                   </div>
                                   {erroRecusa && <p className="text-xs text-destructive mt-1">Selecione ao menos um motivo</p>}
@@ -364,6 +365,7 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                                 showSelectAll={false}
                                 defaultMultiMode
                                 showSelectedChips
+                                className="h-auto min-h-8"
                               />
                             </div>
                             {erroMotivo && <p className="text-xs text-destructive mt-1">Selecione ao menos um motivo</p>}
