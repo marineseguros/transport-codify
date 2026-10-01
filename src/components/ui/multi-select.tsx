@@ -238,7 +238,8 @@ export function MultiSelect({
               })}
             </div>
           </div>
-        </>
+        </>,
+        portalTarget
       )}
     </div>
   );
