@@ -180,6 +180,11 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
   const statusEhRecusa = (id: string) =>
     statusSeguradora.find((status) => status.id === id)?.descricao?.toLowerCase().includes("recus") ?? false;
 
+  const selectedSegurado = useMemo(
+    () => segurados.find((s) => s.key === selectedKey) || null,
+    [segurados, selectedKey]
+  );
+
   const algumRecusa = linhas.some((linha) => statusEhRecusa(edits[linha.id]?.status_seguradora_id || ""));
 
   const pendencias = useMemo(
@@ -247,7 +252,13 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
               <Label>Segurado</Label>
               <Select value={selectedKey} onValueChange={setSelectedKey} disabled={loadingSegurados}>
                 <SelectTrigger className="h-10">
-                  <SelectValue placeholder={loadingSegurados ? "Carregando..." : "Selecione o segurado"} />
+                  {selectedSegurado ? (
+                    <span className="truncate">
+                      {selectedSegurado.segurado} ({selectedSegurado.total})
+                    </span>
+                  ) : (
+                    <SelectValue placeholder={loadingSegurados ? "Carregando..." : "Selecione o segurado"} />
+                  )}
                 </SelectTrigger>
                 <SelectContent>
                   {segurados.map((s) => (

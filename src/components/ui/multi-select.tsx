@@ -41,23 +41,25 @@ export function MultiSelect({
   const [multiMode, setMultiMode] = React.useState(defaultMultiMode);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(null);
-  const [pos, setPos] = React.useState<{ top: number; left: number; width: number } | null>(null);
+  const [pos, setPos] = React.useState<{ top: number; triggerTop: number; left: number; width: number; flip: boolean } | null>(null);
 
   React.useLayoutEffect(() => {
     if (!open || !triggerRef.current) return;
     const btn = triggerRef.current;
-    const container = (btn.closest('[role="dialog"]') as HTMLElement | null) ?? document.body;
+    // Portal para o body com position fixed: escapa de qualquer overflow do modal
     const update = () => {
       const b = btn.getBoundingClientRect();
-      const c = container.getBoundingClientRect();
-      const isBody = container === document.body;
+      const spaceBelow = window.innerHeight - b.bottom;
+      const spaceAbove = b.top;
       setPos({
-        top: b.bottom - (isBody ? 0 : c.top) + (isBody ? window.scrollY : container.scrollTop) + 4,
-        left: b.left - (isBody ? 0 : c.left) + (isBody ? window.scrollX : container.scrollLeft),
+        top: b.bottom + 4,
+        triggerTop: b.top,
+        left: b.left,
         width: b.width,
+        flip: spaceBelow < 220 && spaceAbove > spaceBelow,
       });
     };
-    setPortalTarget(container);
+    setPortalTarget(document.body);
     update();
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);
@@ -171,7 +173,15 @@ export function MultiSelect({
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
 
           {/* Dropdown */}
-          <div style={{ position: "absolute", top: pos.top, left: pos.left, minWidth: Math.max(pos.width, 192) }} className="z-50 w-max max-w-[90vw] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+          <div
+            style={{
+              position: "fixed",
+              ...(pos.flip ? { bottom: window.innerHeight - pos.triggerTop + 4 } : { top: pos.top }),
+              left: pos.left,
+              minWidth: Math.max(pos.width, 192),
+            }}
+            className="z-50 w-max max-w-[90vw] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
+          >
             {/* Multi toggle header */}
             {!defaultMultiMode && <div className="flex items-center justify-between gap-4 px-2 py-1.5 border-b border-border/40">
               <span className="text-[11px] text-muted-foreground whitespace-nowrap">
