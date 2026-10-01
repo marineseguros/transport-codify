@@ -142,14 +142,18 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
         if (error) throw error;
         const rows = (data || []) as unknown as CotacaoLinha[];
         setLinhas(rows);
-        const initial: Record<string, { status_seguradora_id: string; motivos: string[] }> = {};
+        const initial: Record<string, EditState> = {};
         rows.forEach((r) => {
+          const recusaPart = r.motivo_recusa?.includes("||")
+            ? r.motivo_recusa.split("||")[0].trim()
+            : (r.motivo_recusa || "");
           const declinadoPart = r.motivo_recusa?.includes("||")
             ? r.motivo_recusa.split("||")[1].trim()
             : "";
           initial[r.id] = {
             status_seguradora_id: r.status_seguradora_id || "",
             motivos: declinadoPart ? declinadoPart.split(",").map((m) => m.trim()).filter(Boolean) : [],
+            recusas: recusaPart ? recusaPart.split(",").map((m) => m.trim()).filter(Boolean) : [],
           };
         });
         setEdits(initial);
@@ -173,16 +177,25 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
     });
   };
 
+  const statusEhRecusa = (id: string) =>
+    statusSeguradora.find((status) => status.id === id)?.descricao?.toLowerCase().includes("recus") ?? false;
+
+  const algumRecusa = linhas.some((linha) => statusEhRecusa(edits[linha.id]?.status_seguradora_id || ""));
+
   const pendencias = useMemo(
-    () => linhas.filter((l) => !edits[l.id]?.status_seguradora_id || !(edits[l.id]?.motivos?.length)).length,
-    [linhas, edits]
+    () => linhas.filter((l) => {
+      const edit = edits[l.id];
+      return !edit?.status_seguradora_id || !edit.motivos.length ||
+        (statusEhRecusa(edit.status_seguradora_id) && !edit.recusas.length);
+    }).length,
+    [linhas, edits, statusSeguradora]
   );
 
   const handleDeclinar = () => {
     if (linhas.length === 0) return;
     if (pendencias > 0) {
       setShowErrors(true);
-      toast.error("Preencha o Status da Seguradora e ao menos um Motivo do Declínio de todas as cotações.");
+      toast.error("Preencha o Status da Seguradora, Motivo do Declínio e, quando houver Recusa, Motivo da Recusa.");
       return;
     }
     setConfirmOpen(true);
@@ -193,15 +206,12 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
     try {
       for (const linha of linhas) {
         const e = edits[linha.id];
-        const recusaPart = linha.motivo_recusa?.includes("||")
-          ? linha.motivo_recusa.split("||")[0].trim()
-          : (linha.motivo_recusa || "");
         const { error } = await supabase
           .from("cotacoes")
           .update({
             status_seguradora_id: e.status_seguradora_id,
             status: "Declinado",
-            motivo_recusa: `${recusaPart}||${e.motivos.join(", ")}`,
+            motivo_recusa: `${statusEhRecusa(e.status_seguradora_id) ? e.recusas.join(", ") : ""}||${e.motivos.join(", ")}`,
           })
           .eq("id", linha.id);
         if (error) throw error;
@@ -331,6 +341,8 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                                       }
                                       placeholder="Selecione"
                                       showSelectAll={false}
+                                        defaultMultiMode
+                                        showSelectedChips
                                     />
                                   </div>
                                   {erroRecusa && <p className="text-xs text-destructive mt-1">Selecione ao menos um motivo</p>}
@@ -350,6 +362,8 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
                                 }
                                 placeholder="Selecione"
                                 showSelectAll={false}
+                                defaultMultiMode
+                                showSelectedChips
                               />
                             </div>
                             {erroMotivo && <p className="text-xs text-destructive mt-1">Selecione ao menos um motivo</p>}

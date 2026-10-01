@@ -21,6 +21,8 @@ interface MultiSelectProps {
   emptyMessage?: string;
   className?: string;
   showSelectAll?: boolean;
+  defaultMultiMode?: boolean;
+  showSelectedChips?: boolean;
 }
 
 export function MultiSelect({
@@ -31,9 +33,11 @@ export function MultiSelect({
   emptyMessage = "Nenhum item encontrado.",
   className,
   showSelectAll = true,
+  defaultMultiMode = false,
+  showSelectedChips = false,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
-  const [multiMode, setMultiMode] = React.useState(false);
+  const [multiMode, setMultiMode] = React.useState(defaultMultiMode);
 
   React.useEffect(() => {
     if (selected.length > 1) {
@@ -108,9 +112,21 @@ export function MultiSelect({
           className
         )}
       >
-        <span className="truncate text-xs">{getDisplayText()}</span>
+        {showSelectedChips && selected.length > 0 ? (
+          <span className="flex flex-wrap gap-1 min-w-0 py-0.5">
+            {selected.map((value) => (
+              <span key={value} className="inline-flex items-center gap-1 rounded-sm bg-muted px-1 text-[11px] text-foreground whitespace-nowrap">
+                {options.find((option) => option.value === value)?.label || value}
+                <X className="h-3 w-3 opacity-60 hover:opacity-100" onClick={(event) => {
+                  event.stopPropagation();
+                  onChange(selected.filter((item) => item !== value));
+                }} />
+              </span>
+            ))}
+          </span>
+        ) : <span className="truncate text-xs">{getDisplayText()}</span>}
         <div className="flex items-center gap-1 ml-2">
-          {selected.length > 0 && (
+          {selected.length > 0 && !showSelectedChips && (
             <X
               className="h-3.5 w-3.5 opacity-50 hover:opacity-100 cursor-pointer"
               onClick={handleClearAll}
@@ -128,7 +144,7 @@ export function MultiSelect({
           {/* Dropdown */}
           <div className="absolute z-50 mt-1 min-w-[12rem] w-max overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
             {/* Multi toggle header */}
-            <div className="flex items-center justify-between gap-4 px-2 py-1.5 border-b border-border/40">
+            {!defaultMultiMode && <div className="flex items-center justify-between gap-4 px-2 py-1.5 border-b border-border/40">
               <span className="text-[11px] text-muted-foreground whitespace-nowrap">
                 {multiMode ? "Multiseleção" : "Seleção única"}
               </span>
@@ -152,7 +168,7 @@ export function MultiSelect({
                   {multiMode ? "Desativar multiseleção" : "Ativar multiseleção"}
                 </TooltipContent>
               </Tooltip>
-            </div>
+            </div>}
 
             <div className="max-h-[300px] overflow-y-auto p-1">
               {/* Select all (multi mode only) */}
