@@ -1,0 +1,1 @@
+Use the shared MultiSelect with opt-in multi-mode and selected chips for row-level multi-reason forms, so other filters retain their existing single-selection behavior.
