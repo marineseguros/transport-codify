@@ -236,7 +236,13 @@ export function DeclinioMassaModal({ open, onOpenChange, initialCpfCnpj, onSaved
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[95vw] max-w-[1400px] max-h-[90vh] overflow-y-auto overflow-x-hidden">
+        <DialogContent
+          className="w-[95vw] max-w-[1400px] max-h-[90vh] overflow-y-auto overflow-x-hidden"
+          onInteractOutside={(ev) => {
+            const t = ev.target as HTMLElement | null;
+            if (t?.closest?.("[data-multiselect-portal]")) ev.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Ban className="h-5 w-5" />

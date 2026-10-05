@@ -168,9 +168,9 @@ export function MultiSelect({
       </button>
 
       {open && pos && portalTarget && createPortal(
-        <>
+        <div data-multiselect-portal="" style={{ pointerEvents: "auto" }}>
           {/* Backdrop */}
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-[60]" style={{ pointerEvents: "auto" }} onClick={() => setOpen(false)} />
 
           {/* Dropdown */}
           <div
@@ -248,7 +248,7 @@ export function MultiSelect({
               })}
             </div>
           </div>
-        </>,
+        </div>,
         portalTarget
       )}
     </div>
