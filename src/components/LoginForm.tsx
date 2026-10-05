@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,39 +8,64 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 import { ForgotPasswordModal } from '@/components/ForgotPasswordModal';
+
+type PwCred = Credential & { id: string; password?: string };
+type PwCredCtor = new (d: { id: string; password: string; name?: string }) => Credential;
+
 export const LoginForm = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const {
-    login,
-    isLoading
-  } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const { login } = useAuth();
+
+  // Recupera e-mail + senha salvos no navegador (Chrome/Edge) e preenche os dois campos.
+  useEffect(() => {
+    let cancelled = false;
+    const PC = (window as unknown as { PasswordCredential?: PwCredCtor }).PasswordCredential;
+    if (!PC || !navigator.credentials?.get) return;
+    (navigator.credentials.get({ password: true, mediation: 'optional' } as CredentialRequestOptions) as Promise<PwCred | null>)
+      .then((cred) => {
+        if (cancelled || !cred || cred.type !== 'password') return;
+        if (cred.id) setEmail(cred.id);
+        if (cred.password) setPassword(cred.password);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password);
+    // Lê também direto dos campos: o preenchimento automático do navegador
+    // nem sempre dispara onChange, deixando o estado vazio.
+    const finalEmail = (emailRef.current?.value || email).trim();
+    const finalPassword = passwordRef.current?.value || password;
+    setSubmitting(true);
+    const success = await login(finalEmail, finalPassword);
     if (!success) {
+      setSubmitting(false);
       toast({
         title: "Erro de autenticação",
         description: "Email ou senha inválidos. Verifique suas credenciais.",
         variant: "destructive"
       });
-    } else {
-      // Pede explicitamente ao navegador para salvar a senha (Chrome/Edge).
-      // Em apps de página única o navegador nem sempre detecta o login sozinho.
-      try {
-        const PC = (window as unknown as { PasswordCredential?: new (d: { id: string; password: string; name?: string }) => Credential }).PasswordCredential;
-        if (PC && navigator.credentials?.store) {
-          await navigator.credentials.store(new PC({ id: email, password, name: email }));
-        }
-      } catch {
-        // ignora: navegador sem suporte ou usuário recusou
-      }
-      // Redirecionar para o Dashboard após login bem-sucedido
-      navigate('/');
+      return;
     }
+    // Pede explicitamente ao navegador para salvar e-mail + senha (Chrome/Edge).
+    try {
+      const PC = (window as unknown as { PasswordCredential?: PwCredCtor }).PasswordCredential;
+      if (PC && navigator.credentials?.store) {
+        await navigator.credentials.store(new PC({ id: finalEmail, password: finalPassword, name: finalEmail }));
+      }
+    } catch {
+      // navegador sem suporte ou usuário recusou
+    }
+    navigate('/');
   };
+  const isLoading = submitting;
   return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
@@ -65,13 +90,13 @@ export const LoginForm = () => {
             <form onSubmit={handleSubmit} className="space-y-4" method="post" action="#" name="login-form">
               <div>
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" required />
+                <Input ref={emailRef} id="email" name="email" type="email" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" required />
               </div>
               
               <div>
                 <Label htmlFor="password">Senha</Label>
                 <div className="relative">
-                  <Input id="password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Digite sua senha" required />
+                  <Input ref={passwordRef} id="password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Digite sua senha" required />
                   <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
