@@ -90,13 +90,13 @@ export const LoginForm = () => {
             <form onSubmit={handleSubmit} className="space-y-4" method="post" action="#" name="login-form">
               <div>
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" required />
+                <Input ref={emailRef} id="email" name="email" type="email" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" required />
               </div>
               
               <div>
                 <Label htmlFor="password">Senha</Label>
                 <div className="relative">
-                  <Input id="password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Digite sua senha" required />
+                  <Input ref={passwordRef} id="password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Digite sua senha" required />
                   <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>

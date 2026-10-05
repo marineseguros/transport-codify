@@ -126,36 +126,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, [updateActivity]);
 
+  // Não altera isLoading global: trocar a tela de login pelo spinner antes da
+  // resposta faz o navegador perder o formulário e não salvar a senha.
   const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    
     try {
-      // Validate input
       const validationResult = loginSchema.safeParse({ email, password });
-      if (!validationResult.success) {
-        setIsLoading(false);
-        return false;
-      }
+      if (!validationResult.success) return false;
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: validationResult.data.email,
         password: validationResult.data.password
       });
 
-      if (error) {
-        setIsLoading(false);
-        return false;
-      }
-
-      if (data.user) {
-        // Profile will be set by the auth state change listener
-        return true;
-      }
-      
-      setIsLoading(false);
-      return false;
+      if (error) return false;
+      // Profile will be set by the auth state change listener
+      return !!data.user;
     } catch (error) {
-      setIsLoading(false);
       return false;
     }
   };
