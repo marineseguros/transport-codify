@@ -27,6 +27,16 @@ export const LoginForm = () => {
         variant: "destructive"
       });
     } else {
+      // Pede explicitamente ao navegador para salvar a senha (Chrome/Edge).
+      // Em apps de página única o navegador nem sempre detecta o login sozinho.
+      try {
+        const PC = (window as unknown as { PasswordCredential?: new (d: { id: string; password: string; name?: string }) => Credential }).PasswordCredential;
+        if (PC && navigator.credentials?.store) {
+          await navigator.credentials.store(new PC({ id: email, password, name: email }));
+        }
+      } catch {
+        // ignora: navegador sem suporte ou usuário recusou
+      }
       // Redirecionar para o Dashboard após login bem-sucedido
       navigate('/');
     }
