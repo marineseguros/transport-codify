@@ -168,9 +168,9 @@ export function MultiSelect({
       </button>
 
       {open && pos && portalTarget && createPortal(
-        <>
+        <div data-multiselect-portal="" style={{ pointerEvents: "auto" }}>
           {/* Backdrop */}
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-[60]" style={{ pointerEvents: "auto" }} onClick={() => setOpen(false)} />
 
           {/* Dropdown */}
           <div
@@ -179,8 +179,9 @@ export function MultiSelect({
               ...(pos.flip ? { bottom: window.innerHeight - pos.triggerTop + 4 } : { top: pos.top }),
               left: pos.left,
               minWidth: Math.max(pos.width, 192),
+              pointerEvents: "auto",
             }}
-            className="z-50 w-max max-w-[90vw] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
+            className="z-[61] w-max max-w-[90vw] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
           >
             {/* Multi toggle header */}
             {!defaultMultiMode && <div className="flex items-center justify-between gap-4 px-2 py-1.5 border-b border-border/40">
@@ -248,7 +249,7 @@ export function MultiSelect({
               })}
             </div>
           </div>
-        </>,
+        </div>,
         portalTarget
       )}
     </div>
