@@ -1358,7 +1358,6 @@ const Dashboard = () => {
       </span>;
   };
   return <>
-      <WeeklyReminderModal open={showReminder} onClose={() => setShowReminder(false)} userId={user?.user_id || ""} />
       
       <div className="space-y-6">
       {/* Header */}
