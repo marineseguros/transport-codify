@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCotacoesTotais, useProdutores, useUnidades, useSeguradoras, useRamos, type Cotacao } from "@/hooks/useSupabaseData";
 import { useAuth } from "@/contexts/AuthContext";
-import { WeeklyReminderModal } from "@/components/WeeklyReminderModal";
 import { TrendingUp, TrendingDown, DollarSign, FileText, Clock, Target, Plus, Upload, Users, Building, List, Grid3X3, LayoutDashboard, ExternalLink, Eye, Building2, PieChart as PieChartIcon, LineChart as LineChartIcon, Shield, Layers, BarChart3, Download } from "lucide-react";
 import { ExportCotacoesModal } from "@/components/ExportCotacoesModal";
 import { CotacoesAnalysisModal } from "@/components/CotacoesAnalysisModal";
@@ -128,47 +127,6 @@ const Dashboard = () => {
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<Cotacao | null>(null);
-  const [showReminder, setShowReminder] = useState(false);
-
-  // Dashboard layout customization - open for all users
-  const dashboardLayout = useDashboardLayout();
-  useEffect(() => {
-    const checkWeeklyReminder = async () => {
-      if (!user?.user_id) return;
-
-      // Only show for Produtor and Operacional roles
-      const targetRoles = ['Produtor', 'Operacional'];
-      if (!user.papel || !targetRoles.includes(user.papel)) return;
-
-      // Check if today is Monday (0 = Sunday, 1 = Monday)
-      const today = new Date();
-      const isMonday = today.getDay() === 1;
-      if (!isMonday) return;
-
-      const todayStr = today.toISOString().split('T')[0];
-
-      // Check if dismissed in localStorage for today
-      const dismissed = localStorage.getItem(`weekly_reminder_dismissed_${user.user_id}`);
-      if (dismissed === todayStr) return;
-
-      // Check if already confirmed in database for today
-      try {
-        const {
-          data,
-          error
-        } = await supabase.from("weekly_reminder_confirmations").select("id").eq("user_id", user.user_id).eq("confirmed_date", todayStr).maybeSingle();
-        if (error) throw error;
-
-        // If not confirmed yet, show reminder
-        if (!data) {
-          setShowReminder(true);
-        }
-      } catch (error) {
-        logger.error("Error checking weekly reminder:", error);
-      }
-    };
-    checkWeeklyReminder();
-  }, [user]);
   const handleImportCSV = () => {
     toast.success("Funcionalidade de importar CSV será implementada");
   };
@@ -1400,7 +1358,6 @@ const Dashboard = () => {
       </span>;
   };
   return <>
-      <WeeklyReminderModal open={showReminder} onClose={() => setShowReminder(false)} userId={user?.user_id || ""} />
       
       <div className="space-y-6">
       {/* Header */}
